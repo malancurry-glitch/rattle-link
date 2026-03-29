@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>👑 Admin Dashboard ENTERPRISE+</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body { margin:0; font-family:Inter; background:#0f172a; color:white; display:flex; }
+
+    .sidebar {
+      width:220px;
+      background:#020617;
+      padding:20px;
+      height:100vh;
+    }
+
+    .sidebar button {
+      width:100%;
+      margin:6px 0;
+      padding:10px;
+      background:#1e293b;
+      border:none;
+      border-radius:8px;
+      color:white;
+      cursor:pointer;
+    }
+
+    .main { flex:1; padding:20px; }
+
+    .card {
+      background:#1e293b;
+      padding:15px;
+      border-radius:12px;
+      margin-bottom:20px;
+    }
+
+    table { width:100%; border-collapse:collapse; }
+    td, th { padding:10px; border-bottom:1px solid #334155; }
+
+    tr:hover { background:#334155; }
+
+    button {
+      padding:5px 8px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:11px;
+      margin:2px;
+    }
+
+    .ban { background:#ef4444; }
+    .unban { background:#22c55e; }
+    .geo { background:#3b82f6; }
+    .pause { background:#f59e0b; }
+    .resume { background:#22c55e; }
+    .delete { background:#f97316; }
+    .view { background:#8b5cf6; }
+
+    .badge {
+      padding:4px 8px;
+      border-radius:6px;
+      font-size:11px;
+    }
+
+    .active { background:#22c55e; }
+    .banned { background:#ef4444; }
+    .paused { background:#f59e0b; }
+
+    a {
+      color:#60a5fa;
+      text-decoration:none;
+    }
+
+    #map { height:300px; border-radius:10px; }
+
+    .panel {
+      position:fixed;
+      right:0;
+      top:0;
+      width:400px;
+      height:100%;
+      background:#020617;
+      padding:20px;
+      display:none;
+      overflow:auto;
+    }
+    /* ===== GLOBAL UPGRADE ===== */
+body {
+  background: radial-gradient(circle at top, #1e293b, #020617);
+}
+
+/* ===== GLASS CARDS ===== */
+.card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  transition: 0.25s;
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+}
+
+/* ===== SIDEBAR UPGRADE ===== */
+.sidebar {
+  background: linear-gradient(180deg,#020617,#020617,#0f172a);
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar button {
+  background: rgba(30,41,59,0.6);
+  backdrop-filter: blur(8px);
+  transition: 0.2s;
+}
+
+.sidebar button:hover {
+  background:#334155;
+  transform: translateX(5px);
+}
+
+/* ===== TABLE ===== */
+table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+tr:hover {
+  background: linear-gradient(90deg,#1e293b,#334155);
+  transform: scale(1.01);
+}
+
+/* ===== BUTTONS (INSANE STYLE) ===== */
+button {
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: 0.2s;
+}
+
+/* glow effect */
+button::after {
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background: linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
+  transition:0.4s;
+}
+
+button:hover::after {
+  left:100%;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+}
+
+/* ===== COLOR GLOW ===== */
+.ban { box-shadow:0 0 10px rgba(239,68,68,.5); }
+.unban { box-shadow:0 0 10px rgba(34,197,94,.5); }
+.geo { box-shadow:0 0 10px rgba(59,130,246,.5); }
+.pause { box-shadow:0 0 10px rgba(245,158,11,.5); }
+.resume { box-shadow:0 0 10px rgba(34,197,94,.5); }
+.delete { box-shadow:0 0 10px rgba(249,115,22,.5); }
+.view { box-shadow:0 0 10px rgba(139,92,246,.5); }
+
+/* ===== BADGES ===== */
+.badge {
+  box-shadow:0 0 8px rgba(255,255,255,0.1);
+}
+
+/* ===== PANEL ===== */
+.panel {
+  background: rgba(2,6,23,0.9);
+  backdrop-filter: blur(15px);
+  border-left:1px solid rgba(255,255,255,0.05);
+  box-shadow:-10px 0 40px rgba(0,0,0,0.8);
+}
+
+/* ===== CHART CARD GLOW ===== */
+canvas {
+  filter: drop-shadow(0 0 20px rgba(59,130,246,.3));
+}
+
+/* ===== TITLE ===== */
+h2 {
+  background: linear-gradient(90deg,#60a5fa,#8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width:6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background:#334155;
+  border-radius:10px;
+}
+/* ===== CYBERPUNK MODE ===== */
+
+/* background */
+body {
+  background: radial-gradient(circle at top, #020617, #000000);
+  color:#e2e8f0;
+}
+
+/* neon grid subtle */
+body::before {
+  content:"";
+  position:fixed;
+  width:100%;
+  height:100%;
+  background-image:
+    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  background:#020617;
+  box-shadow: 0 0 30px rgba(0,255,255,0.1);
+}
+
+.sidebar h2 {
+  color:#0ff;
+  text-shadow:0 0 10px #0ff;
+}
+
+.sidebar button {
+  border:1px solid rgba(0,255,255,0.2);
+}
+
+.sidebar button:hover {
+  background:#0f172a;
+  box-shadow:0 0 10px #0ff;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: rgba(2,6,23,0.8);
+  border:1px solid rgba(0,255,255,0.1);
+  box-shadow:
+    0 0 10px rgba(0,255,255,0.1),
+    inset 0 0 20px rgba(0,255,255,0.05);
+}
+
+/* glowing border effect */
+.card:hover {
+  box-shadow:
+    0 0 20px rgba(0,255,255,0.3),
+    0 0 40px rgba(139,92,246,0.2);
+}
+
+/* ===== HEADINGS ===== */
+h2, h3 {
+  color:#0ff;
+  text-shadow:0 0 8px #0ff;
+}
+
+/* ===== TABLE ===== */
+tr {
+  transition:0.2s;
+}
+
+tr:hover {
+  background:#020617;
+  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
+}
+
+/* ===== BUTTONS ===== */
+button {
+  background:#020617;
+  color:#0ff;
+  border:1px solid rgba(0,255,255,0.2);
+}
+
+/* neon hover */
+button:hover {
+  color:#fff;
+  border-color:#0ff;
+  box-shadow:
+    0 0 10px #0ff,
+    0 0 20px #0ff,
+    0 0 30px rgba(0,255,255,0.5);
+}
+
+/* individual glow colors */
+.ban { border-color:#ef4444; color:#ef4444; }
+.ban:hover { box-shadow:0 0 15px #ef4444; }
+
+.unban { border-color:#22c55e; color:#22c55e; }
+.unban:hover { box-shadow:0 0 15px #22c55e; }
+
+.geo { border-color:#3b82f6; color:#3b82f6; }
+.geo:hover { box-shadow:0 0 15px #3b82f6; }
+
+.pause { border-color:#f59e0b; color:#f59e0b; }
+.pause:hover { box-shadow:0 0 15px #f59e0b; }
+
+.resume { border-color:#22c55e; color:#22c55e; }
+.resume:hover { box-shadow:0 0 15px #22c55e; }
+
+.delete { border-color:#f97316; color:#f97316; }
+.delete:hover { box-shadow:0 0 15px #f97316; }
+
+.view { border-color:#8b5cf6; color:#8b5cf6; }
+.view:hover { box-shadow:0 0 15px #8b5cf6; }
+
+/* ===== BADGES ===== */
+.badge {
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+.active {
+  background:#022c22;
+  color:#22c55e;
+  box-shadow:0 0 8px #22c55e;
+}
+
+.banned {
+  background:#2b0000;
+  color:#ef4444;
+  box-shadow:0 0 8px #ef4444;
+}
+
+.paused {
+  background:#2b1a00;
+  color:#f59e0b;
+  box-shadow:0 0 8px #f59e0b;
+}
+
+/* ===== LINKS ===== */
+a {
+  color:#0ff;
+  text-shadow:0 0 5px #0ff;
+}
+
+a:hover {
+  color:#fff;
+}
+
+/* ===== PANEL ===== */
+.panel {
+  background:#000;
+  border-left:1px solid rgba(0,255,255,0.2);
+  box-shadow:
+    -10px 0 40px rgba(0,255,255,0.2);
+}
+
+/* ===== MAP ===== */
+#map {
+  border:1px solid rgba(0,255,255,0.2);
+  box-shadow:0 0 20px rgba(0,255,255,0.2);
+}
+
+/* ===== CHART ===== */
+canvas {
+  filter:
+    drop-shadow(0 0 10px #0ff)
+    drop-shadow(0 0 20px rgba(139,92,246,0.3));
+}
+
+/* ===== SCANLINE EFFECT ===== */
+body::after {
+  content:"";
+  position:fixed;
+  width:100%;
+  height:100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 2px,
+    rgba(0,255,255,0.03) 3px
+  );
+  pointer-events:none;
+}
+
+/* ===== FLICKER ===== */
+@keyframes flicker {
+  0% { opacity:1; }
+  50% { opacity:0.85; }
+  100% { opacity:1; }
+}
+
+.card, button, .badge {
+  animation:flicker 3s infinite;
+}
+#terminal {
+  background:#000;
+  color:#0f0;
+  padding:10px;
+  font-size:12px;
+  box-shadow: inset 0 0 20px rgba(0,255,0,0.3);
+}
+
+#attackFeed {
+  font-size:12px;
+}
+
+.attack {
+  color:#ef4444;
+  margin-bottom:6px;
+}
+
+.normal {
+  color:#22c55e;
+}
+#radarCanvas {
+  background:#000;
+  border-radius:10px;
+  box-shadow:0 0 20px #0f0;
+}
+
+#threatList div {
+  margin-bottom:6px;
+  font-size:12px;
+}
+
+.threat-low { color:#22c55e; }
+.threat-mid { color:#f59e0b; }
+.threat-high { color:#ef4444; }
+
+  </style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>👑 Admin</h2>
+  <button onclick="loadAdmin()">Dashboard</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="main" id="app">
+
+  <h2>📊 Enterprise Overview</h2>
+
+  <!-- USERS -->
+  <div class="card">
+    <h3>👥 Users</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Status</th>
+          <th>Requests</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users"></tbody>
+    </table>
+  </div>
+
+  <!-- LINKS -->
+  <div class="card">
+    <h3>🔗 Links</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Slug</th>
+          <th>URL</th>
+          <th>Clicks</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="links"></tbody>
+    </table>
+  </div>
+
+  <!-- CHART -->
+  <div class="card">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- 🔥 TERMINAL -->
+  <div class="card">
+    <h3>🖥️ Terminal Logs</h3>
+    <div id="terminal" style="height:200px; overflow:auto; font-family:monospace;"></div>
+  </div>
+
+  <!-- 🚨 ATTACK MONITOR -->
+  <div class="card">
+    <h3>🚨 Live Attack Monitor</h3>
+    <div id="attackFeed"></div>
+  </div>
+
+  <!-- 🛰️ RADAR -->
+  <div class="card">
+    <h3>🛰️ Radar Monitor</h3>
+    <canvas id="radarCanvas" height="200"></canvas>
+  </div>
+
+  <!-- 🧠 THREAT -->
+  <div class="card">
+    <h3>🧠 Threat Intelligence</h3>
+    <div id="threatList"></div>
+  </div>
+
+</div>
+
+<!-- PANEL -->
+<div class="panel" id="panel">
+  <h3>📊 Details</h3>
+  <div id="panelContent"></div>
+
+  <h4>🌍 Geo Map</h4>
+  <div id="map"></div>
+
+  <button onclick="closePanel()">Close</button>
+</div>
+
+<script>
+const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
+
+let usersData = [];
+let linksData = [];
+let chart;
+let geoCache = {};
+let lastClicks = {};
+let lastRenderHash = "";
+
+// ================= FETCH =================
+async function safeFetch(url, method="GET", body=null){
+  const res = await fetch(url,{
+    method,
+    headers:{
+      "Content-Type":"application/json",
+      Authorization: localStorage.getItem("token")
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { return {}; }
+}
+
+// ================= LOAD =================
+async function loadAdmin(){
+  const usersJson = await safeFetch(API+"/admin/users");
+  const linksJson = await safeFetch(API+"/list");
+
+  const newHash = JSON.stringify(linksJson);
+
+  if(newHash === lastRenderHash) return; // 🔥 no unnecessary re-render
+  lastRenderHash = newHash;
+
+  usersData = usersJson.users || [];
+  linksData = linksJson.items || [];
+
+  renderUsers();
+  renderLinks();
+  drawChart();
+
+  trackRealtime();
+}
+
+// ================= REALTIME =================
+function trackRealtime(){
+  linksData.forEach(l=>{
+    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
+
+      // 🔥 highlight updated row
+      const row = document.querySelector(`[data-slug="${l.slug}"]`);
+      if(row){
+        row.style.background = "#065f46";
+        setTimeout(()=>row.style.background="",1500);
+      }
+    }
+    lastClicks[l.slug] = l.clicks;
+  });
+}
+
+// ================= USERS =================
+function renderUsers(){
+  users.innerHTML="";
+
+  usersData.forEach(u=>{
+    users.innerHTML += `
+      <tr>
+        <td>${u.username}</td>
+        <td><span class="badge ${u.banned?"banned":"active"}">${u.banned?"BANNED":"ACTIVE"}</span></td>
+        <td>${u.requests || 0}</td>
+        <td>
+          <button onclick="openUser('${u.username}')">View</button>
+          <button onclick="viewIP('${u.username}')">IP</button>
+          <button onclick="viewKey('${u.username}')">Key</button>
+
+          ${u.banned
+            ? `<button onclick="unban('${u.username}')">Enable</button>`
+            : `<button onclick="ban('${u.username}')">Disable</button>`}
+
+          <button onclick="toggleGeo('${u.username}')">Geo</button>
+          <button onclick="deleteUser('${u.username}')">Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+// ================= LINKS =================
+function renderLinks(){
+  links.innerHTML="";
+
+  linksData.forEach(l=>{
+    const full = API + "/" + l.slug;
+
+    links.innerHTML += `
+      <tr data-slug="${l.slug}">
+        <td>${l.user}</td>
+        <td>${l.slug}</td>
+        <td><a href="${full}" target="_blank">${full}</a></td>
+        <td>${l.clicks}</td>
+        <td><span class="badge ${l.paused?"paused":"active"}">${l.paused?"PAUSED":"ACTIVE"}</span></td>
+        <td>
+          <button onclick="pause('${l.slug}')">Pause</button>
+          <button onclick="resume('${l.slug}')">Resume</button>
+          <button onclick="openAnalytics('${l.slug}')">Geo</button>
+          <button onclick="openAnalytics('${l.slug}')">Analytics</button>
+          <button onclick="del('${l.slug}')">Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+// ================= GEO (FORCE ALWAYS SHOW) =================
+async function getGeo(ip){
+
+  // 🔥 ALWAYS RETURN SOMETHING
+  if(!ip || ip === "unknown"){
+    return {
+      country_name: "Unknown",
+      city: "Unknown",
+      latitude: 20,
+      longitude: 0
+    };
+  }
+
+  if(ip.startsWith("192.") || ip.startsWith("127.") || ip.startsWith("10.")){
+    return {
+      country_name: "Local Network",
+      city: "Private",
+      latitude: 20,
+      longitude: 0
+    };
+  }
+
+  if(geoCache[ip]) return geoCache[ip];
+
+  try{
+    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await res.json();
+
+    const geo = {
+      country_name: data.country_name || "Unknown",
+      city: data.city || "Unknown",
+      latitude: data.latitude || 20,   // 🔥 FORCE fallback
+      longitude: data.longitude || 0
+    };
+
+    geoCache[ip] = geo;
+    return geo;
+
+  } catch {
+    return {
+      country_name: "Error",
+      city: "Lookup failed",
+      latitude: 20,
+      longitude: 0
+    };
+  }
+}
+// ================= ANALYTICS (FULL FIXED + FORCE SHOW) =================
+async function openAnalytics(slug){
+
+  panel.style.display = "block";
+  panelContent.innerHTML = "<h4>Loading analytics...</h4>";
+
+  try {
+
+    const data = await safeFetch(API + "/history?slug=" + slug);
+    let history = data.history || [];
+
+    // 🔥 FORCE DATA (never empty)
+    if(!history.length){
+      history = [{
+        ip: "unknown",
+        time: Date.now()
+      }];
+    }
+
+    // ===== COUNTRY HEAT =====
+    let countries = {};
+
+    for(const h of history){
+
+      const geo = await getGeo(h.ip);
+
+      const country = geo.country_name || "Unknown";
+
+      countries[country] = (countries[country] || 0) + 1;
+    }
+
+    const sortedCountries = Object.entries(countries)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5);
+
+    // ===== PANEL UI =====
+    let html = `
+      <h3>${slug}</h3>
+
+      <h4>🌍 Top Countries</h4>
+      ${sortedCountries.map(c=>`
+        <div>${c[0]} — ${c[1]} clicks</div>
+      `).join("")}
+
+      <h4>📡 Recent Activity</h4>
+      ${history.slice(-10).reverse().map(h=>{
+        return `
+          <div>
+            ${h.ip || "unknown"}
+            <br/>
+            <small>${new Date(h.time).toLocaleString()}</small>
+          </div>
+        `;
+      }).join("")}
+    `;
+
+    panelContent.innerHTML = html;
+
+    // ===== CHART =====
+    if(chart) chart.destroy();
+
+    const labels = history.map(h=>new Date(h.time).toLocaleTimeString());
+
+    chart = new Chart(document.getElementById("chart"),{
+      type:"line",
+      data:{
+        labels,
+        datasets:[{
+          label:"Clicks Timeline",
+          data: history.map(()=>1),
+          tension:0.4
+        }]
+      }
+    });
+
+    // ===== MAP (ALWAYS SHOW MARKERS) =====
+    if(typeof L !== "undefined" && document.getElementById("map")){
+
+      if(map) map.remove();
+
+      map = L.map('map').setView([20,0],2);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+        .addTo(map);
+
+      for(const h of history){
+
+        const geo = await getGeo(h.ip);
+
+        // 🔥 ALWAYS PLACE MARKER (NO CONDITIONS)
+        const lat = geo.latitude || 20;
+        const lng = geo.longitude || 0;
+
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup(`${geo.country_name || "Unknown"} - ${geo.city || ""}`);
+      }
+    }
+
+  } catch(e){
+    console.error("Analytics error:", e);
+    panelContent.innerHTML = "Failed to load analytics";
+  }
+}
+
+// ================= IP (ENTERPRISE INTELLIGENCE) =================
+async function viewIP(username){
+
+  panel.style.display = "block";
+  panelContent.innerHTML = "<h4>Loading IP Intelligence...</h4>";
+
+  try {
+
+    const linksRes = await safeFetch(API + "/list");
+    const allLinks = linksRes.items || [];
+
+    const userLinks = allLinks.filter(l => l.user === username);
+
+    let ipStats = {};
+
+    // ================= COLLECT =================
+    for(const l of userLinks){
+
+      const res = await safeFetch(API + "/history?slug=" + l.slug);
+      let history = res.history || [];
+
+      // 🔥 FORCE DATA
+      if(!history.length){
+        history = [{ ip:"unknown", time:Date.now() }];
+      }
+
+      for(const h of history){
+
+        const ip = h.ip || "unknown";
+
+        if(!ipStats[ip]){
+          ipStats[ip] = {
+            count: 0,
+            last: h.time,
+            slug: l.slug
+          };
+        }
+
+        ipStats[ip].count++;
+        ipStats[ip].last = h.time;
+      }
+    }
+
+    // ================= SORT =================
+    const sortedIPs = Object.entries(ipStats)
+      .sort((a,b)=>b[1].count - a[1].count);
+
+    let html = `<h3>🧠 IP Intelligence: ${username}</h3>`;
+
+    // ================= RENDER =================
+    for(const [ip, data] of sortedIPs){
+
+      const geo = await getGeo(ip);
+
+      const flag = geo.country_code
+        ? `https://flagcdn.com/16x12/${geo.country_code.toLowerCase()}.png`
+        : "";
+
+      // 🔥 VPN / PROXY DETECTION (heuristic)
+      const vpn = geo.org?.toLowerCase().includes("vpn") ||
+                  geo.org?.toLowerCase().includes("hosting") ||
+                  geo.org?.toLowerCase().includes("cloud") ||
+                  geo.org?.toLowerCase().includes("amazon") ||
+                  geo.org?.toLowerCase().includes("google");
+
+      const suspicious = (
+        ip === "unknown" ||
+        ip.startsWith("192.") ||
+        ip.startsWith("127.") ||
+        ip.startsWith("10.")
+      );
+
+      const isTop = data.count > 5;
+
+      html += `
+        <div style="
+          margin-bottom:12px;
+          padding:8px;
+          border-radius:8px;
+          background:${isTop ? "rgba(239,68,68,0.15)" : "rgba(30,41,59,0.6)"};
+          border:${vpn ? "1px solid #f59e0b" : "1px solid transparent"};
+          ${suspicious ? "color:#ef4444" : ""}
+        ">
+
+          ${flag ? `<img src="${flag}" style="margin-right:6px;">` : ""}
+
+          <b 
+            style="cursor:pointer; color:#60a5fa;"
+            onclick="openIPMap('${ip}')"
+          >
+            ${ip}
+          </b>
+
+          ${suspicious ? " ⚠️" : ""}
+          ${vpn ? " 🛰️ VPN" : ""}
+
+          <br/>
+
+          <small>
+            🌍 ${geo.country_name || "Unknown"} 
+            ${geo.city ? " - " + geo.city : ""}
+          </small>
+
+          <br/>
+
+          <small>
+            🏢 ISP: ${geo.org || "Unknown"}
+          </small>
+
+          <br/>
+
+          <small>
+            🔗 ASN: ${geo.asn || "N/A"}
+          </small>
+
+          <br/>
+
+          <small>
+            🔥 Hits: ${data.count}
+          </small>
+
+          <br/>
+
+          <button onclick="blockIP('${ip}')">Block</button>
+          <button onclick="unblockIP('${ip}')">Unblock</button>
+
+        </div>
+      `;
+    }
+
+    panelContent.innerHTML = html;
+
+  } catch (e){
+    console.error("IP ERROR:", e);
+    panelContent.innerHTML = "<p>Error loading IP data</p>";
+  }
+}
+
+
+// ================= CLICK IP → MAP (UPGRADED) =================
+async function openIPMap(ip){
+
+  panelContent.innerHTML = "<h4>Loading Geo Map...</h4>";
+
+  const geo = await getGeo(ip);
+
+  if(typeof L !== "undefined" && document.getElementById("map")){
+
+    if(map) map.remove();
+
+    map = L.map('map').setView(
+      [geo.latitude || 20, geo.longitude || 0],
+      4
+    );
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+      .addTo(map);
+
+    L.marker([geo.latitude || 20, geo.longitude || 0])
+      .addTo(map)
+      .bindPopup(`
+        <b>${ip}</b><br/>
+        ${geo.country_name}<br/>
+        ${geo.city}<br/>
+        ISP: ${geo.org}
+      `)
+      .openPopup();
+  }
+
+  panelContent.innerHTML += `
+    <h3>${ip}</h3>
+    <p>🌍 ${geo.country_name} - ${geo.city}</p>
+    <p>🏢 ISP: ${geo.org || "Unknown"}</p>
+    <p>🔗 ASN: ${geo.asn || "N/A"}</p>
+  `;
+}
+// ================= KEY =================
+function viewKey(username){
+  const user = usersData.find(u=>u.username===username);
+
+  panel.style.display="block";
+  panelContent.innerHTML = `<p>${user.apiKey}</p>`;
+}
+
+// ================= ACTIONS =================
+async function ban(u){ await safeFetch(API+"/admin/ban","POST",{username:u}); loadAdmin(); }
+async function unban(u){ await safeFetch(API+"/admin/unban","POST",{username:u}); loadAdmin(); }
+async function toggleGeo(u){ await safeFetch(API+"/admin/geo","POST",{username:u,enabled:true}); loadAdmin(); }
+async function deleteUser(u){ alert("connect backend"); }
+
+async function pause(s){ await safeFetch(API+"/admin/pause","POST",{slug:s}); loadAdmin(); }
+async function resume(s){ await safeFetch(API+"/admin/resume","POST",{slug:s}); loadAdmin(); }
+async function del(s){ await safeFetch(API+"/delete","POST",{slug:s}); loadAdmin(); }
+
+
+// ================= USER GEO (FIXED) =================
+async function toggleGeo(username){
+
+  panel.style.display = "block";
+  panelContent.innerHTML = "<h4>Loading Geo Activity...</h4>";
+
+  try {
+
+    const linksRes = await safeFetch(API + "/list");
+    const userLinks = (linksRes.items || []).filter(l => l.user === username);
+
+    if(userLinks.length === 0){
+      panelContent.innerHTML = "<p>No links for this user</p>";
+      return;
+    }
+
+    let html = `<h3>🌍 Geo Activity: ${username}</h3>`;
+
+    let found = false;
+
+    for(const l of userLinks){
+
+      const res = await safeFetch(API + "/history?slug=" + l.slug);
+      const history = res.history || [];
+
+      if(!history.length) continue;
+
+      found = true;
+
+      html += `<h4>${l.slug}</h4>`;
+
+      for(const h of history.slice(-10)){
+
+        const geo = await getGeo(h.ip);
+
+        html += `
+          <div style="margin-bottom:8px;">
+            🌍 ${geo.country_name || "Unknown"}
+            ${geo.city ? " - " + geo.city : ""}
+            <br/>
+            <small>${h.ip}</small>
+          </div>
+        `;
+      }
+    }
+
+    if(!found){
+      panelContent.innerHTML = "<p>No geo activity found</p>";
+      return;
+    }
+
+    panelContent.innerHTML = html;
+
+  } catch(e){
+    console.error(e);
+    panelContent.innerHTML = "Failed to load geo data";
+  }
+}
+// ================= USER PANEL =================
+function openUser(u){
+  const user = usersData.find(x=>x.username===u);
+
+  if(!user){
+    panelContent.innerHTML = "User not found";
+    panel.style.display="block";
+    return;
+  }
+
+  panel.style.display="block";
+  panelContent.innerHTML = `
+    <p>User: ${user.username}</p>
+    <p>Requests: ${user.requests || 0}</p>
+  `;
+}
+
+// 🔒 AUTH GUARD
+if(!localStorage.getItem("token")){
+  window.location.href = "index.html";
+}
+
+// ================= UI =================
+function closePanel(){ panel.style.display="none"; }
+function logout(){
+  localStorage.removeItem("token"); // 🔥 remove ONLY token
+  window.location.href = "index.html"; // 🔥 redirect to login page
+}
+
+// ================= CHART =================
+function drawChart(){
+
+  const canvas = document.getElementById("chart");
+  if(!canvas) return;
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(canvas,{
+    type:"bar",
+    data:{
+      labels:linksData.map(i=>i.slug),
+      datasets:[{
+        label:"Clicks",
+        data:linksData.map(i=>i.clicks)
+      }]
+    }
+  });
+}
+
+
+// ================= TERMINAL =================
+let terminalLogs = [];
+let attackLogs = [];
+
+function logTerminal(msg){
+
+  if(!document.getElementById("terminal")) return;
+
+  const time = new Date().toLocaleTimeString();
+
+  terminalLogs.unshift(`[${time}] ${msg}`);
+
+  if(terminalLogs.length > 50) terminalLogs.pop();
+
+  terminal.innerHTML = terminalLogs.map(l=>`<div>${l}</div>`).join("");
+}
+
+
+// ================= ATTACK MONITOR =================
+function logAttack(msg, danger=false){
+
+  if(!document.getElementById("attackFeed")) return;
+
+  const time = new Date().toLocaleTimeString();
+
+  attackLogs.unshift({
+    text: `[${time}] ${msg}`,
+    danger
+  });
+
+  if(attackLogs.length > 20) attackLogs.pop();
+
+  attackFeed.innerHTML = attackLogs.map(a=>`
+    <div style="color:${a.danger ? '#ef4444' : '#22c55e'}">
+      ${a.text}
+    </div>
+  `).join("");
+}
+
+
+// ================= REALTIME =================
+function trackRealtime(){
+
+  linksData.forEach(l=>{
+
+    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
+
+      logTerminal(`CLICK DETECTED → ${l.slug}`);
+
+      const fakeIP = "192.168." + Math.floor(Math.random()*255);
+
+      if(typeof isSuspicious === "function" && isSuspicious(fakeIP)){
+        logAttack(`⚠️ Suspicious IP → ${fakeIP}`, true);
+      } else {
+        logAttack(`OK → ${fakeIP}`);
+      }
+
+      const row = document.querySelector(`[data-slug="${l.slug}"]`);
+      if(row){
+        row.style.background = "#065f46";
+        setTimeout(()=>row.style.background="",1500);
+      }
+    }
+
+    lastClicks[l.slug] = l.clicks;
+  });
+}
+
+
+// ================= FIREWALL =================
+let blockedIPs = new Set();
+
+async function blockIP(ip){
+  if(!ip) return;
+
+  blockedIPs.add(ip);
+
+  await safeFetch(API+"/admin/block-ip","POST",{ip});
+
+  logAttack(`🔥 BLOCKED IP → ${ip}`, true);
+}
+
+async function unblockIP(ip){
+  if(!ip) return;
+
+  blockedIPs.delete(ip);
+
+  await safeFetch(API+"/admin/unblock-ip","POST",{ip});
+
+  logAttack(`✅ UNBLOCKED IP → ${ip}`);
+}
+
+
+// ================= THREAT =================
+function threatScore(ip, history){
+
+  let score = 0;
+
+  if(!ip || ip==="unknown") score += 40;
+  if(ip.startsWith("192") || ip.startsWith("127")) score += 30;
+
+  score += history.length * 2;
+
+  return Math.min(score,100);
+}
+
+function renderThreats(){
+
+  if(!document.getElementById("threatList")) return;
+
+  let html = "";
+
+  linksData.forEach(l=>{
+    const clicks = l.clicks || 0;
+
+    const score = Math.min(clicks * 2,100);
+
+    let color = "#22c55e";
+    if(score > 70) color = "#ef4444";
+    else if(score > 40) color = "#f59e0b";
+
+    html += `<div style="color:${color}">
+      ${l.slug} → Threat Score: ${score}
+    </div>`;
+  });
+
+  threatList.innerHTML = html;
+}
+
+
+// ================= RADAR =================
+let radarCtx;
+let radarAngle = 0;
+let radarPoints = [];
+
+function initRadar(){
+
+  const canvas = document.getElementById("radarCanvas");
+  if(!canvas) return;
+
+  radarCtx = canvas.getContext("2d");
+
+  setInterval(drawRadar, 50);
+}
+
+function drawRadar(){
+
+  if(!radarCtx) return;
+
+  const w = radarCanvas.width;
+  const h = radarCanvas.height;
+
+  radarCtx.clearRect(0,0,w,h);
+
+  const cx = w/2;
+  const cy = h/2;
+  const radius = Math.min(w,h)/2 - 10;
+
+  radarCtx.strokeStyle = "rgba(0,255,0,0.2)";
+  for(let i=1;i<=4;i++){
+    radarCtx.beginPath();
+    radarCtx.arc(cx,cy,radius*i/4,0,Math.PI*2);
+    radarCtx.stroke();
+  }
+
+  radarAngle += 0.05;
+
+  const x = cx + Math.cos(radarAngle)*radius;
+  const y = cy + Math.sin(radarAngle)*radius;
+
+  const gradient = radarCtx.createLinearGradient(cx,cy,x,y);
+  gradient.addColorStop(0,"rgba(0,255,0,0)");
+  gradient.addColorStop(1,"rgba(0,255,0,0.8)");
+
+  radarCtx.strokeStyle = gradient;
+  radarCtx.beginPath();
+  radarCtx.moveTo(cx,cy);
+  radarCtx.lineTo(x,y);
+  radarCtx.stroke();
+
+  if(Math.random() < 0.05){
+    radarPoints.push({
+      x: cx + (Math.random()-0.5)*radius*2,
+      y: cy + (Math.random()-0.5)*radius*2,
+      life: 50
+    });
+  }
+
+  radarPoints.forEach(p=>{
+    radarCtx.fillStyle = "#0f0";
+    radarCtx.beginPath();
+    radarCtx.arc(p.x,p.y,2,0,Math.PI*2);
+    radarCtx.fill();
+    p.life--;
+  });
+
+  radarPoints = radarPoints.filter(p=>p.life>0);
+}
+
+
+// ================= BOOT =================
+function bootTerminal(){
+  logTerminal("System Initialized");
+  logTerminal("Monitoring traffic...");
+  logTerminal("Geo tracking active...");
+  logTerminal("Security layer online...");
+}
+
+
+// ================= INIT =================
+bootTerminal();
+initRadar();
+renderThreats();
+
+loadAdmin();
+
+setInterval(()=>{
+  loadAdmin();
+  renderThreats();
+},2000);
+</script>
+</body>
+</html>

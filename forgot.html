@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Forgot Password - Rattle Link</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+
+/* ================= THEME ================= */
+:root{
+  --bg:#020617;
+  --card:#020617;
+  --text:#0ff;
+  --border:rgba(0,255,255,0.2);
+}
+
+body.light{
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --text:#020617;
+  --border:rgba(0,0,0,0.1);
+}
+
+/* ================= BASE ================= */
+body {
+  margin:0;
+  font-family:Inter, Arial;
+  background:radial-gradient(circle at top, var(--bg), #000);
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+/* ================= THEME TOGGLE ================= */
+.theme-toggle{
+  position:fixed;
+  top:20px;
+  right:20px;
+  cursor:pointer;
+}
+
+/* ================= WRAPPER ================= */
+.wrapper {
+  display:flex;
+  width:750px;
+  max-width:95%;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+}
+
+/* ================= LEFT ================= */
+.left {
+  flex:1;
+  background:linear-gradient(135deg,#3b82f6,#06b6d4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:30px;
+  text-align:center;
+}
+
+.features{
+  margin-top:20px;
+  display:flex;
+  gap:10px;
+}
+
+.features span{
+  background:#000;
+  border:1px solid #0ff;
+  padding:4px 8px;
+  font-size:11px;
+  border-radius:6px;
+}
+
+/* ================= CARD ================= */
+.card {
+  flex:1;
+  background:var(--card);
+  padding:30px;
+  text-align:center;
+  border-left:1px solid var(--border);
+}
+
+.card.success{
+  box-shadow:0 0 30px #22c55e;
+}
+
+/* ================= INPUT ================= */
+.input-group {
+  margin-bottom:14px;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#000;
+  color:#0ff;
+}
+
+body.light input{
+  background:#fff;
+  color:#000;
+}
+
+/* ================= BUTTON ================= */
+button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#0ff;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:disabled{
+  opacity:0.5;
+}
+
+/* ================= SPINNER ================= */
+.spinner{
+  width:14px;
+  height:14px;
+  border:2px solid #000;
+  border-top:2px solid transparent;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  display:none;
+}
+
+@keyframes spin{
+  to{ transform:rotate(360deg); }
+}
+
+/* ================= MSG ================= */
+.msg{ margin-top:10px; }
+.error{ color:#ef4444; }
+.successText{ color:#22c55e; }
+
+/* ================= BACK ================= */
+.back{
+  margin-top:12px;
+  font-size:12px;
+  color:#60a5fa;
+  cursor:pointer;
+}
+
+  </style>
+</head>
+
+<body>
+
+<div class="theme-toggle" onclick="toggleTheme()">🌗</div>
+
+<div class="wrapper">
+
+  <!-- LEFT -->
+  <div class="left">
+    <h1>🐍 Rattle Link</h1>
+    <p>Password recovery made simple</p>
+
+    <div class="features">
+      <span>🔐 Secure</span>
+      <span>⚡ Instant</span>
+      <span>📧 Email Reset</span>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="card" id="card">
+
+    <div id="formBox">
+
+      <h2>Forgot Password</h2>
+      <p>Enter your email to receive reset link</p>
+
+      <div class="input-group">
+        <input id="username" placeholder="Email address">
+      </div>
+
+      <button onclick="sendReset()" id="btn">
+        <span id="btnText">Send Reset Link</span>
+        <span id="spinner" class="spinner"></span>
+      </button>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="back" onclick="goBack()">← Back to Login</div>
+
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="successBox" style="display:none;">
+      <h2>📧 Email Sent</h2>
+      <p>Check your inbox for reset link</p>
+      <button onclick="goBack()">Back to Login</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
+
+let cooldown = 0;
+let timer = null;
+
+// DOM
+const username = document.getElementById("username");
+const msgBox = document.getElementById("msg");
+const btn = document.getElementById("btn");
+const spinner = document.getElementById("spinner");
+const btnText = document.getElementById("btnText");
+const card = document.getElementById("card");
+
+// ================= THEME =================
+function toggleTheme(){
+  document.body.classList.toggle("light");
+}
+
+// ================= UI =================
+function show(msg, type="error"){
+  msgBox.innerText = msg;
+  msgBox.className = "msg " + (type === "success" ? "successText" : "error");
+}
+
+function setLoading(state){
+  btn.disabled = state;
+  spinner.style.display = state ? "inline-block" : "none";
+  btnText.style.display = state ? "none" : "inline";
+}
+
+// ================= EMAIL VALIDATION =================
+function isEmail(val){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+}
+
+// ================= SEND =================
+async function sendReset(){
+
+  const user = username.value.trim();
+
+  if(!user){
+    show("Enter email ❌");
+    return;
+  }
+
+  if(!isEmail(user)){
+    show("Invalid email ❌");
+    return;
+  }
+
+  if(cooldown > 0){
+    show(`Wait ${cooldown}s`);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+
+    const res = await fetch(API+"/forgot",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ username:user })
+    });
+
+    await res.text();
+
+    // ✅ SUCCESS UI SWITCH
+    document.getElementById("formBox").style.display = "none";
+    document.getElementById("successBox").style.display = "block";
+
+    card.classList.add("success");
+
+    // cooldown
+    cooldown = 30;
+
+    timer = setInterval(()=>{
+      cooldown--;
+      btnText.innerText = `Wait (${cooldown}s)`;
+
+      if(cooldown <= 0){
+        clearInterval(timer);
+        btnText.innerText = "Send Reset Link";
+      }
+    },1000);
+
+  } catch (e){
+    console.error(e);
+    show("Network error ❌");
+  }
+
+  setLoading(false);
+}
+
+// ================= NAV =================
+function goBack(){
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
