@@ -1,1145 +1,337 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>User Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <title>Reset Password - Rattle Link</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
-      margin:0;
-      font-family:Inter, Arial;
-      background:#0f172a;
-      color:white;
-    }
-
-    .container { padding:20px; }
-
-    .header {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:20px;
-    }
-
-    .card {
-      background:#1e293b;
-      padding:15px;
-      border-radius:12px;
-      margin-bottom:20px;
-    }
-
-    .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-    }
-
-    input {
-      width:100%;
-      padding:10px;
-      margin:6px 0;
-      border-radius:6px;
-      border:none;
-    }
-
-    button {
-      padding:6px 10px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      margin:2px;
-      font-size:12px;
-    }
-
-    .copy { background:#22c55e; }
-    .open { background:#3b82f6; }
-    .qr { background:#06b6d4; }
-    .delete { background:#ef4444; }
-    .bulk { background:#a855f7; }
-
-    table {
-      width:100%;
-      border-collapse:collapse;
-    }
-
-    th, td {
-      padding:10px;
-      border-bottom:1px solid #334155;
-    }
-
-    .badge {
-      background:#334155;
-      padding:3px 6px;
-      border-radius:6px;
-      font-size:11px;
-    }
-
-    .toast {
-      position:fixed;
-      bottom:20px;
-      right:20px;
-      background:#22c55e;
-      padding:10px;
-      border-radius:6px;
-      display:none;
-    }
-    .form-row {
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.form-row input {
-  flex:1;
-}
-
-input {
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#020617;
-  color:#fff;
-}
-
-input::placeholder {
-  color:#94a3b8;
-}
-
-button {
-  padding:10px 14px;
-}
-.form-row {
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.form-row input {
-  flex:1;
-}
-
-.drop-zone {
-  border:2px dashed #334155;
-  padding:15px;
-  text-align:center;
-  margin-top:10px;
-  border-radius:10px;
-}
-
-.drop-zone:hover {
-  background:#020617;
-}
-
-.panel {
-  position:fixed;
-  right:0;
-  top:0;
-  width:350px;
-  height:100%;
-  background:#020617;
-  padding:20px;
-  display:none;
-  overflow:auto;
-}
-/* ================= CYBERPUNK MODE ================= */
-
-/* background glow */
 body {
-  background: radial-gradient(circle at top, #020617, #000000);
-  color:#e2e8f0;
+  margin:0;
+  font-family:Inter, Arial;
+  background:radial-gradient(circle at top, #020617, #000);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-/* grid overlay */
-body::before {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-image:
-    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-  z-index:0;
+.wrapper {
+  display:flex;
+  width:750px;
+  max-width:95%;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
 }
 
-/* HEADER */
-.header h2 {
-  color:#0ff;
-  text-shadow:0 0 10px #0ff;
+.left {
+  flex:1;
+  background:linear-gradient(135deg,#3b82f6,#06b6d4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:30px;
+  text-align:center;
 }
 
-/* CARDS */
-.card {
-  background: rgba(2,6,23,0.8);
-  border:1px solid rgba(0,255,255,0.1);
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 0 10px rgba(0,255,255,0.1),
-    inset 0 0 20px rgba(0,255,255,0.05);
-  transition:0.25s;
+.features{
+  margin-top:20px;
+  display:flex;
+  gap:10px;
 }
 
-.card:hover {
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.4),
-    0 0 40px rgba(139,92,246,0.2);
-  transform: translateY(-3px);
-}
-
-/* INPUTS */
-input {
+.features span{
   background:#000;
+  border:1px solid #0ff;
+  padding:4px 8px;
+  font-size:11px;
+  border-radius:6px;
+}
+
+.card {
+  flex:1;
+  background:rgba(2,6,23,0.9);
+  padding:30px;
+  text-align:center;
+}
+
+.card.success{
+  animation:successGlow 1s;
+}
+
+@keyframes successGlow {
+  0%{box-shadow:0 0 5px #22c55e;}
+  50%{box-shadow:0 0 40px #22c55e;}
+  100%{box-shadow:0 0 5px #22c55e;}
+}
+
+.input-group {
+  position:relative;
+  margin-bottom:14px;
+}
+
+.input-group input {
+  width:100%;
+  padding:12px;
+  border-radius:8px;
   border:1px solid rgba(0,255,255,0.2);
+  background:#000;
   color:#0ff;
 }
 
-input:focus {
-  outline:none;
-  box-shadow:0 0 10px #0ff;
+.toggle{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
 }
 
-/* BUTTONS */
-button {
-  background:#020617;
-  color:#0ff;
-  border:1px solid rgba(0,255,255,0.3);
-  transition:0.2s;
-}
-
-/* neon glow hover */
-button:hover {
-  color:#fff;
-  border-color:#0ff;
-  box-shadow:
-    0 0 10px #0ff,
-    0 0 20px #0ff,
-    0 0 40px rgba(0,255,255,0.4);
-  transform: scale(1.05);
-}
-
-/* special colors */
-.copy { color:#22c55e; border-color:#22c55e; }
-.copy:hover { box-shadow:0 0 15px #22c55e; }
-
-.open { color:#3b82f6; border-color:#3b82f6; }
-.open:hover { box-shadow:0 0 15px #3b82f6; }
-
-.qr { color:#06b6d4; border-color:#06b6d4; }
-.qr:hover { box-shadow:0 0 15px #06b6d4; }
-
-.delete { color:#ef4444; border-color:#ef4444; }
-.delete:hover { box-shadow:0 0 15px #ef4444; }
-
-.bulk { color:#a855f7; border-color:#a855f7; }
-.bulk:hover { box-shadow:0 0 15px #a855f7; }
-
-/* TABLE */
-table {
-  border-radius:10px;
+.strength-bar{
+  height:5px;
+  background:#111;
+  border-radius:6px;
   overflow:hidden;
 }
 
-tr {
-  transition:0.2s;
+#strengthFill{
+  height:100%;
+  width:0%;
+  transition:0.3s;
 }
 
-tr:hover {
-  background:#020617;
-  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
+.strength-text{
+  font-size:12px;
+  margin-bottom:10px;
 }
 
-/* BADGE */
-.badge {
-  background:#020617;
-  border:1px solid #0ff;
-  color:#0ff;
-  box-shadow:0 0 10px #0ff;
+.match{
+  font-size:12px;
+  margin-top:5px;
 }
 
-/* LINKS */
-a {
-  color:#0ff;
-  text-shadow:0 0 5px #0ff;
-}
+.match.ok{ color:#22c55e; }
+.match.bad{ color:#ef4444; }
 
-a:hover {
-  color:#fff;
-}
-
-/* PANEL */
-.panel {
-  background:#000;
-  border-left:1px solid rgba(0,255,255,0.3);
-  box-shadow:-10px 0 40px rgba(0,255,255,0.3);
-}
-
-/* DROP ZONE */
-.drop-zone {
-  border:2px dashed rgba(0,255,255,0.3);
-}
-
-.drop-zone:hover {
-  background:#020617;
-  box-shadow:0 0 15px #0ff inset;
-}
-
-/* CHART GLOW */
-canvas {
-  filter:
-    drop-shadow(0 0 10px #0ff)
-    drop-shadow(0 0 20px rgba(139,92,246,0.4));
-}
-
-/* TOAST */
-.toast {
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
   background:#0ff;
   color:#000;
-  box-shadow:0 0 15px #0ff;
+  font-weight:bold;
+  cursor:pointer;
 }
 
-/* SCANLINES */
-body::after {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 2px,
-    rgba(0,255,255,0.03) 3px
-  );
-  pointer-events:none;
+button:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
 }
 
-/* FLICKER */
-@keyframes flicker {
-  0% { opacity:1; }
-  50% { opacity:0.85; }
-  100% { opacity:1; }
+.spinner{
+  width:14px;
+  height:14px;
+  border:2px solid #000;
+  border-top:2px solid transparent;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  display:none;
 }
 
-.card, button, .badge {
-  animation:flicker 3s infinite;
-}
-/* HEADER */
-.pro-header {
-  align-items:flex-start;
+@keyframes spin{
+  to{ transform:rotate(360deg); }
 }
 
-.sub {
-  color:#94a3b8;
-  font-size:12px;
-}
-
-/* LOGOUT */
-.logout-btn {
-  background:#ef4444;
-  color:#fff;
-}
-
-/* STATS */
-.stat-card {
-  text-align:center;
-}
-
-.stat-card h3 {
-  font-size:28px;
-  margin:0;
-}
-
-/* CREATE */
-.create-card h3 {
-  margin-bottom:10px;
-}
-
-.primary {
-  background:#3b82f6;
-  color:white;
-}
-
-/* LINKS */
-.links-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-
-.links-header input {
-  width:200px;
-}
-
-/* TABLE */
-table {
-  border-radius:10px;
-  overflow:hidden;
-}
-
-td {
-  vertical-align:middle;
-}
-
-/* RESULT TEXT */
-.result {
-  margin-top:10px;
-  font-size:12px;
-  color:#22c55e;
-}
-
-/* CARDS SPACING */
-.chart-card, .ranking-card {
+.msg{
   margin-top:10px;
 }
-@keyframes pulse {
-  0% { box-shadow:0 0 5px red; }
-  50% { box-shadow:0 0 20px red; }
-  100% { box-shadow:0 0 5px red; }
-}
-.auth-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000d;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
 
-.auth-card{
-  background:#020617;
-  padding:25px;
-  border-radius:12px;
-  width:300px;
-  text-align:center;
-  box-shadow:0 0 30px #0ff;
-}
+.error{ color:#ef4444; }
+.successText{ color:#22c55e; }
 
-.auth-card input{
-  width:100%;
-  margin:6px 0;
-  padding:10px;
-  border-radius:6px;
-  border:none;
-}
-
-.auth-card button{
-  width:100%;
-  margin-top:8px;
-  padding:10px;
-}
-
-.switch{
-  margin-top:10px;
-  font-size:12px;
-}
-<style>
-.auth-overlay{
-  position:fixed;
-  inset:0;
-  background:#000d;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.auth-card{
-  background:#020617;
-  padding:25px;
-  border-radius:12px;
-  width:300px;
-  text-align:center;
-  box-shadow:0 0 30px #0ff;
-}
-
-.auth-card input{
-  width:100%;
-  margin:6px 0;
-  padding:10px;
-  border-radius:6px;
-}
-
-.auth-card button{
-  width:100%;
-  margin-top:8px;
-}
-</style>
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="wrapper">
 
-  <!-- HEADER -->
-  <div class="header pro-header">
-    <div>
-      <h2>📊 User Dashboard</h2>
-      <small class="sub">Manage links • Track performance • Analyze traffic</small>
-    </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  </div>
-
-  <!-- STATS -->
-  <div class="grid pro-stats">
-    <div class="card stat-card">
-      <h3 id="totalLinks">0</h3>
-      <p>Total Links</p>
-    </div>
-
-    <div class="card stat-card">
-      <h3 id="totalClicks">0</h3>
-      <p>Total Clicks</p>
-    </div>
-
-    <div class="card stat-card">
-      <h3 id="avgClicks">0</h3>
-      <p>Avg Clicks</p>
+  <div class="left">
+    <h1>🐍 Rattle Link</h1>
+    <p>Secure password reset</p>
+    <div class="features">
+      <span>🔐 Secure</span>
+      <span>⚡ Fast</span>
+      <span>🛡️ Protected</span>
     </div>
   </div>
 
-  <!-- CREATE -->
-  <div class="card create-card">
-    <h3>🚀 Create Link</h3>
+  <div class="card" id="card">
 
-    <div class="form-row">
-      <input id="url" placeholder="Paste URL (https://...)">
-      <input id="customSlug" placeholder="Custom slug (optional)">
+    <h2>Reset Password</h2>
+    <p>Create a new password</p>
+
+    <div class="input-group">
+      <input id="password" type="password" placeholder="New Password" oninput="validateAll()">
+      <span class="toggle" onclick="togglePass('password')">👁</span>
     </div>
 
-    <div class="form-row">
-      <input id="expire" placeholder="Expire in hours">
-      <button class="primary" onclick="createLink()">Create</button>
+    <div class="input-group">
+      <input id="confirm" type="password" placeholder="Confirm Password" oninput="validateAll()">
+      <span class="toggle" onclick="togglePass('confirm')">👁</span>
     </div>
 
-    <div class="form-row">
-      <input id="bulkCount" placeholder="Bulk count">
-      <button class="bulk" onclick="bulkCreate()">Bulk Create</button>
+    <div class="strength-bar">
+      <div id="strengthFill"></div>
     </div>
+    <div id="strengthText" class="strength-text"></div>
 
-    <!-- DROP ZONE -->
-    <div class="drop-zone" id="dropZone">
-      <p>📂 Drag & Drop CSV or Upload</p>
-      <input type="file" id="csvFile">
-      <button onclick="uploadCSV()">Upload CSV</button>
-    </div>
+    <div id="matchText" class="match"></div>
 
-    <p id="result" class="result"></p>
-  </div>
+    <button onclick="resetPassword()" id="btn" disabled>
+      <span id="btnText">Reset Password</span>
+      <span id="spinner" class="spinner"></span>
+    </button>
 
-  <!-- LINKS -->
-  <div class="card links-card">
-    <div class="links-header">
-      <h3>🔗 Your Links</h3>
-      <input id="search" placeholder="Search links..." oninput="renderTable()">
-    </div>
+    <div id="msg" class="msg"></div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Slug</th>
-          <th>Clicks</th>
-          <th>Link</th>
-          <th>Expire</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="table"></tbody>
-    </table>
-  </div>
-
-  <!-- CHART -->
-  <div class="card chart-card">
-    <h3>📈 Performance Overview</h3>
-    <canvas id="chart"></canvas>
-  </div>
-
-  <!-- RANKING -->
-  <div class="card ranking-card">
-    <h3>🏆 Top Performing Links</h3>
-    <div id="ranking"></div>
   </div>
 
 </div>
-
-<!-- PANEL -->
-<div class="panel" id="panel">
-  <h3>📊 Details</h3>
-  <div id="panelContent"></div>
-
-  <h4>🌍 Geo Map</h4>
-  <div id="map" style="height:300px;"></div>
-
-  <button onclick="closePanel()">Close</button>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast">Copied!</div>
 
 <script>
 const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
+const token = new URLSearchParams(window.location.search).get("token");
 
-let dataStore = [];
-let chart;
-let lastClicks = {};
-let geoCache = {};
-let map;
-let attackLines = [];
-
-// ================= HEADERS =================
-function headers(){
-  return {
-    "Content-Type":"application/json",
-    "Authorization": localStorage.getItem("token")
-  };
+// ================= UI =================
+function show(msg, type="error"){
+  const el = document.getElementById("msg");
+  el.innerText = msg;
+  el.className = "msg " + (type === "success" ? "successText" : "error");
 }
 
-// ================= SAFE FETCH =================
-async function safeFetch(url, options = {}){
-  try{
-    const res = await fetch(url, options);
-    const text = await res.text();
-
-    console.log("API:", url, text); // 🔥 DEBUG
-
-    return JSON.parse(text);
-  }catch(e){
-    console.error("Fetch error:", e);
-    return {};
-  }
+function setLoading(state){
+  btn.disabled = state;
+  spinner.style.display = state ? "inline-block" : "none";
+  btnText.style.display = state ? "none" : "inline";
 }
 
-// ================= LOAD =================
-async function loadLinks(){
-
-  const data = await safeFetch(API+"/list",{headers:headers()});
-  dataStore = data.items || [];
-
-  const total = dataStore.reduce((a,b)=>a+(b.clicks||0),0);
-
-  totalLinks.innerText = dataStore.length;
-  totalClicks.innerText = total;
-  avgClicks.innerText = dataStore.length ? (total/dataStore.length).toFixed(1) : 0;
-
-  renderTable();
-  drawChart();
-  trackRealtime();
-  renderRanking();
+// ================= PASSWORD =================
+function togglePass(id){
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
 }
 
-// ================= REALTIME =================
-function trackRealtime(){
-  dataStore.forEach(l=>{
-    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
+// ================= VALIDATION =================
+function validateAll(){
 
-      const row = document.querySelector(`[data-slug="${l.slug}"]`);
-      if(row){
-        row.style.background = "#065f46";
-        setTimeout(()=>row.style.background="",1000);
-      }
-    }
-    lastClicks[l.slug] = l.clicks;
-  });
-}
-
-// ================= TABLE (FIXED + ADVANCED) =================
-function renderTable(){
-
-  table.innerHTML="";
-
-  dataStore.forEach(i=>{
-
-    const link = API+"/"+i.slug;
-
-    // 🔥 FORMAT EXPIRE
-    let expireHTML = "";
-
-    if(i.expire){
-      const exp = Number(i.expire);
-      const now = Date.now();
-
-      const remaining = exp - now;
-
-      if(remaining <= 0){
-        expireHTML = `<span style="color:#ef4444">Expired</span>`;
-      } else {
-        const hrs = Math.floor(remaining / (1000*60*60));
-        const mins = Math.floor((remaining % (1000*60*60)) / (1000*60));
-
-        expireHTML = `
-          <div style="color:#22c55e">
-            ${new Date(exp).toLocaleString()}
-            <br/>
-            <small>${hrs}h ${mins}m left</small>
-          </div>
-        `;
-      }
-
-    } else {
-      expireHTML = `<span style="color:#64748b">No expiry</span>`;
-    }
-
-    table.innerHTML += `
-    <tr data-slug="${i.slug}">
-      <td>${i.slug}</td>
-
-      <td>
-        <span class="badge">${i.clicks}</span>
-      </td>
-
-      <td>
-        <a href="${link}" target="_blank">${link}</a>
-      </td>
-
-      <!-- ✅ FIXED EXPIRE COLUMN -->
-      <td style="min-width:160px;">
-        ${expireHTML}
-      </td>
-
-      <td>
-        <button onclick="copy('${link}')">Copy</button>
-        <button onclick="window.open('${link}')">Open</button>
-        <button onclick="qr('${link}')">QR</button>
-        <button onclick="del('${i.slug}')">Delete</button>
-        <button onclick="showHistory('${i.slug}')">Stats</button>
-        <button onclick="showGeo('${i.slug}')">🌍</button>
-      </td>
-    </tr>`;
-  });
-}
-// ================= 🌍 CYBER MAP (REALTIME MULTI FIX) =================
-async function showGeo(slug){
-
-  panel.style.display="block";
-  panelContent.innerHTML = `<h3>🌍 Geo Map: ${slug}</h3><div id="map" style="height:320px;"></div>`;
-
-  await new Promise(r=>setTimeout(r,50));
-
-  const mapEl = document.getElementById("map");
-
-  if(map){
-    map.remove();
-    map = null;
-  }
-
-  map = L.map(mapEl).setView([20,0],2);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    .addTo(map);
-
-  const res = await safeFetch(API+"/history?slug="+slug,{headers:headers()});
-  let history = res.history || [];
-
-  if(!history.length){
-    L.marker([20,0]).addTo(map).bindPopup("No data");
-    return;
-  }
-
-  let offset = 0;
-
-  for(const h of history){
-
-    const geo = await getGeo(h.ip);
-
-    let lat = geo.latitude || 20;
-    let lng = geo.longitude || 0;
-
-    // 🔥 spread points
-    lat += offset * 0.4;
-    lng += offset * 0.4;
-    offset++;
-
-    L.circle([lat,lng],{
-      radius:50000,
-      color: h.risk > 70 ? "#ef4444" : "#0ff"
-    }).addTo(map)
-      .bindPopup(`
-        ${geo.country_name || "Unknown"}<br/>
-        ${h.ip}<br/>
-        Risk: ${h.risk || 0}
-      `);
-  }
-}
-// ================= 🧠 AI SCORING =================
-function scoreLink(link){
+  const pass = document.getElementById("password").value;
+  const confirm = document.getElementById("confirm").value;
 
   let score = 0;
 
-  if(link.clicks > 50) score += 50;
-  if(link.clicks > 100) score += 30;
+  if(pass.length > 6) score++;
+  if(/[A-Z]/.test(pass)) score++;
+  if(/[0-9]/.test(pass)) score++;
+  if(/[^A-Za-z0-9]/.test(pass)) score++;
 
-  // random anomaly simulation
-  if(Math.random() > 0.7) score += 20;
+  const colors = ["#ef4444","#f59e0b","#22c55e","#06b6d4"];
+  const labels = ["Weak","Medium","Strong","Very Strong"];
 
-  return Math.min(score,100);
-}
+  strengthFill.style.width = (score * 25) + "%";
+  strengthFill.style.background = colors[score-1] || "#ef4444";
 
-// ================= 🚨 FRAUD DETECTION =================
-function detectFraud(link){
+  strengthText.innerText = pass ? labels[score-1] || "Weak" : "";
 
-  if(link.clicks > 200) return "🔥 Bot Attack";
-  if(link.clicks > 100) return "⚠️ Suspicious";
-  return "✅ Normal";
-}
-// ================= GEO FIX =================
-async function getGeo(ip){
-
-  if(!ip || ip === "unknown"){
-    return {
-      country_name: "Unknown",
-      city: "",
-      latitude: 20,
-      longitude: 0
-    };
+  // MATCH CHECK
+  if(confirm){
+    if(pass === confirm){
+      matchText.innerText = "Passwords match ✔";
+      matchText.className = "match ok";
+    } else {
+      matchText.innerText = "Passwords do not match ❌";
+      matchText.className = "match bad";
+    }
+  } else {
+    matchText.innerText = "";
   }
 
-  try{
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await res.json();
-
-    return {
-      country_name: data.country_name || "Unknown",
-      city: data.city || "",
-      latitude: data.latitude || 20,
-      longitude: data.longitude || 0
-    };
-
-  } catch {
-    return {
-      country_name: "Error",
-      city: "",
-      latitude: 20,
-      longitude: 0
-    };
-  }
+  // ENABLE BUTTON
+  btn.disabled = !(pass.length >= 6 && pass === confirm);
 }
 
-// ================= 📊 LIVE ANALYTICS PANEL (FINAL FULL FIX) =================
-async function showHistory(slug){
+// ================= RESET =================
+async function resetPassword(){
 
-  // 🔥 normalize slug (IMPORTANT FIX)
-  slug = (slug || "").trim();
+  const pass = document.getElementById("password").value;
 
-  panel.style.display = "block";
+  if(!token){
+    show("Invalid link ❌");
+    return;
+  }
 
-  panelContent.innerHTML = `
-    <h3>📊 Live Analytics: ${slug}</h3>
-    <canvas id="statsChart" height="120"></canvas>
-    <div id="statsBody"></div>
-    <div id="map" style="height:300px;margin-top:10px;"></div>
-  `;
+  setLoading(true);
 
   try {
 
-    await new Promise(r => setTimeout(r, 50));
+    const res = await fetch(API+"/reset",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ token, password: pass })
+    });
 
-    const res = await safeFetch(API+"/history?slug="+encodeURIComponent(slug),{headers:headers()});
+    const text = await res.text();
 
-    console.log("RAW HISTORY:", res);
-
-    let history = Array.isArray(res?.history) ? res.history : [];
-
-    // 🔥 HARD FALLBACK (DO NOT EXIT)
-    const link = dataStore.find(l => l.slug === slug);
-
-    if(!history.length && link && link.clicks > 0){
-      console.warn("Using fallback mode (no logs but clicks exist)");
-
-      // create fake history from click count
-      history = Array.from({length: link.clicks}).map((_,i)=>({
-        ip: "unknown",
-        time: Date.now() - (i * 1000),
-        risk: 0,
-        vpn: false,
-        bot: false
-      }));
-    }
-
-    if(!history.length){
-      document.getElementById("statsBody").innerHTML = "<p>No clicks recorded</p>";
+    if(res.status !== 200){
+      show(text);
+      setLoading(false);
       return;
     }
 
-    // ================= CLEAN =================
-    history = history.map(h => ({
-      ip: h.ip || "unknown",
-      time: Number(h.time) || Date.now(),
-      risk: Number(h.risk || 0),
-      vpn: !!h.vpn,
-      bot: !!h.bot
-    }));
+    card.classList.add("success");
+    show("Password updated ✅","success");
 
-    // ================= GROUP =================
-    let stats = {};
+    // 🔥 AUTO LOGIN
+    const user = localStorage.getItem("lastUser");
 
-    history.forEach(h=>{
-      if(!stats[h.ip]){
-        stats[h.ip] = {
-          count: 0,
-          risk: h.risk,
-          vpn: h.vpn,
-          bot: h.bot,
-          last: h.time
-        };
-      }
-      stats[h.ip].count++;
-      stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
-    });
+    if(user){
+      try{
+        const loginRes = await fetch(API+"/login",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            username:user,
+            password:pass,
+            captcha:"bypass"
+          })
+        });
 
-    const sorted = Object.entries(stats)
-      .sort((a,b)=>b[1].count - a[1].count);
+        const data = await loginRes.json();
 
-    // ================= CHART (REAL DATA FIX) =================
-    const labels = history.map(h=>new Date(h.time).toLocaleTimeString());
-    const dataPoints = history.map((_,i)=>i+1);
-
-    if(window.statsChartInstance){
-      window.statsChartInstance.destroy();
-    }
-
-    window.statsChartInstance = new Chart(
-      document.getElementById("statsChart"),
-      {
-        type:"line",
-        data:{
-          labels,
-          datasets:[{
-            label:"Clicks Timeline",
-            data: dataPoints,
-            tension:0.4
-          }]
+        if(data.token){
+          localStorage.setItem("token", data.token);
+          window.location.href = "dashboard.html";
+          return;
         }
-      }
-    );
 
-    // ================= MAP =================
-    if(typeof L !== "undefined" && document.getElementById("map")){
-
-      if(map){
-        map.remove();
-        map = null;
-      }
-
-      map = L.map('map').setView([20,0],2);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-        .addTo(map);
-
-      let offset = 0;
-
-      for(const h of history){
-
-        const geo = await getGeo(h.ip);
-
-        let lat = geo.latitude || (Math.random()*140 - 70);
-        let lng = geo.longitude || (Math.random()*360 - 180);
-
-        lat += offset * 0.3;
-        lng += offset * 0.3;
-        offset++;
-
-        L.circle([lat,lng],{
-          radius:40000,
-          color: h.risk > 70 ? "#ef4444" : "#0ff"
-        }).addTo(map);
-      }
+      } catch{}
     }
 
-    // ================= UI =================
-    let html = `
-      <div><b>Total Clicks:</b> ${history.length}</div>
-      <h4>🚨 Threat Intelligence</h4>
-    `;
+    setTimeout(()=>{
+      window.location.href = "index.html";
+    },1500);
 
-    sorted.slice(0,10).forEach(([ip,data])=>{
-
-      const danger = data.risk > 70;
-
-      html += `
-        <div style="
-          margin-bottom:10px;
-          padding:10px;
-          border-radius:10px;
-          background:${danger ? "rgba(239,68,68,0.2)" : "rgba(30,41,59,0.5)"};
-        ">
-          <b>${ip}</b>
-          ${data.vpn ? " 🛰️ VPN" : ""}
-          ${data.bot ? " 🤖 BOT" : ""}
-          ${danger ? " ⚠️ ATTACKER" : ""}
-          <br/>
-          <small>Clicks: ${data.count}</small>
-          <br/>
-          <small>Risk: ${data.risk}</small>
-        </div>
-      `;
-    });
-
-    document.getElementById("statsBody").innerHTML = html;
-
-  } catch (e){
-    console.error("STATS ERROR:", e);
-    panelContent.innerHTML = "❌ Failed to load analytics";
-  }
-}
-// ================= RANKING =================
-function renderRanking(){
-
-  const sorted = [...dataStore].sort((a,b)=>b.clicks-a.clicks);
-
-  let html = "<h4>🏆 AI Ranking</h4>";
-
-  sorted.slice(0,5).forEach((l,i)=>{
-
-    const score = scoreLink(l);
-    const fraud = detectFraud(l);
-
-    html += `
-      <div>
-        #${i+1} ${l.slug}
-        <br/>Score: ${score}
-        <br/>${fraud}
-      </div>
-    `;
-  });
-
-  ranking.innerHTML = html;
-}
-
-// ================= CREATE (FULL FIXED + PRO) =================
-async function createLink(){
-
-  if(!url.value){
-    result.innerText = "❌ Enter URL";
-    return;
+  } catch {
+    show("Network error ❌");
   }
 
-  result.innerText = "⏳ Creating...";
-
-  const body = {
-    url: url.value.trim(),
-    slug: customSlug.value || undefined,
-    expire: expire.value 
-      ? Date.now() + (Number(expire.value) * 3600000)
-      : undefined
-  };
-
-  const data = await safeFetch(API+"/create",{
-    method:"POST",
-    headers:headers(),
-    body:JSON.stringify(body)
-  });
-
-  if(data.link){
-    result.innerText = "✅ Created: " + data.link;
-  } else {
-    result.innerText = "❌ Failed";
-  }
-
-  // 🔥 clear inputs
-  url.value = "";
-  customSlug.value = "";
-  expire.value = "";
-
-  loadLinks();
+  setLoading(false);
 }
-// ================= BULK (FIXED WITH EXPIRE) =================
-async function bulkCreate(){
-
-  const count = parseInt(bulkCount.value) || 0;
-
-  if(!url.value){
-    result.innerText = "❌ Enter URL first";
-    return;
-  }
-
-  if(count <= 0){
-    result.innerText = "❌ Invalid bulk count";
-    return;
-  }
-
-  result.innerText = "⏳ Bulk creating...";
-
-  // 🔥 calculate expire timestamp (same as createLink)
-  const expireValue = expire.value
-    ? Date.now() + (Number(expire.value) * 3600000)
-    : null;
-
-  for(let i=0;i<count;i++){
-
-    await safeFetch(API+"/create",{
-      method:"POST",
-      headers:headers(),
-      body:JSON.stringify({
-        url: url.value.trim(),
-
-        // ✅ FIXED: include expire
-        expire: expireValue
-      })
-    });
-  }
-
-  result.innerText = `✅ Created ${count} links`;
-
-  loadLinks();
-}
-// ================= DELETE =================
-async function del(slug){
-  await safeFetch(API+"/delete",{
-    method:"POST",
-    headers:headers(),
-    body:JSON.stringify({slug})
-  });
-  loadLinks();
-}
-
-// ================= PANEL CLOSE =================
-function closePanel(){
-  panel.style.display = "none";
-
-  // 🔥 clean map properly
-  if(map){
-    map.remove();
-    map = null;
-  }
-}
-// ================= ACTIONS =================
-function copy(t){ navigator.clipboard.writeText(t); }
-function qr(link){
-  window.open("https://api.qrserver.com/v1/create-qr-code/?data="+encodeURIComponent(link));
-}
-
-// ================= CHART =================
-function drawChart(){
-  if(chart) chart.destroy();
-
-  chart = new Chart(document.getElementById("chart"),{
-    type:"line",
-    data:{
-      labels:dataStore.map(i=>i.slug),
-      datasets:[{
-        label:"Clicks",
-        data:dataStore.map(i=>i.clicks)
-      }]
-    }
-  });
-}
-
-// ================= LOGOUT =================
-function logout(){
-  localStorage.removeItem("token");
-  window.location.href="index.html";
-}
-
-// ================= INIT =================
-loadLinks();
-setInterval(loadLinks,2000);
 </script>
+
 </body>
 </html>
