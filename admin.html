@@ -1,798 +1,1199 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>👑 Admin Dashboard ENTERPRISE+</title>
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  ScanCommand,
+  DeleteItemCommand,
+  UpdateItemCommand,
+  GetItemCommand
+} from "@aws-sdk/client-dynamodb";
 
-<script>
-const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
+import {
+  ApiGatewayManagementApiClient,
+  PostToConnectionCommand
+} from "@aws-sdk/client-apigatewaymanagementapi";
 
-if(!token || role !== "admin"){
-  window.location.href = "index.html";
-}
-</script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+import crypto from "crypto";
+import https from "https";
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+// ================= CONFIG =================
+const client = new DynamoDBClient({ region: "us-east-2" });
 
-  <style>
-    /* ================= ROOT ================= */
-:root{
-  --bg:#020617;
-  --bg2:#0f172a;
-  --card:#020617;
-  --text:#e2e8f0;
-  --primary:#0ff;
-  --border:rgba(0,255,255,0.15);
-}
+const SECRET = process.env.APP_SECRET || "my-secret-key";
+const BASE_URL =
+  process.env.BASE_URL ||
+  "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+const RECAPTCHA_SECRET =
+  process.env.RECAPTCHA_SECRET || "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
+const RESEND_KEY =
+  process.env.RESEND_KEY || "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
+const WS_ENDPOINT =
+  process.env.WS_ENDPOINT ||
+  "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
-/* ================= BASE ================= */
-body {
-  margin:0;
-  font-family:Inter, Arial;
-  background: radial-gradient(circle at top, var(--bg2), #000);
-  color:var(--text);
-  display:flex;
-}
+// ================= CORS =================
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Content-Type": "application/json"
+};
 
-/* subtle grid */
-body::before{
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-image:
-    linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
+// ================= HELPERS =================
+function json(statusCode, data) {
+  return {
+    statusCode,
+    headers: cors,
+    body: JSON.stringify(data)
+  };
 }
 
-/* ================= SIDEBAR ================= */
-.sidebar {
-  width:220px;
-  height:100vh;
-  background:#020617;
-  padding:20px;
-  border-right:1px solid var(--border);
-  box-shadow:0 0 30px rgba(0,255,255,0.1);
+function text(statusCode, message) {
+  return {
+    statusCode,
+    headers: cors,
+    body: typeof message === "string" ? message : JSON.stringify(message)
+  };
 }
 
-.sidebar h2{
-  color:var(--primary);
-  text-shadow:0 0 10px var(--primary);
+function hash(password) {
+  return crypto.createHash("sha256").update(String(password)).digest("hex");
 }
 
-.sidebar button{
-  width:100%;
-  margin:8px 0;
-  padding:10px;
-  background:rgba(30,41,59,0.6);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--primary);
-  cursor:pointer;
-  transition:0.2s;
+function generateToken(username) {
+  return Buffer.from(`${username}:${SECRET}`).toString("base64");
 }
 
-.sidebar button:hover{
-  transform:translateX(6px);
-  box-shadow:0 0 10px var(--primary);
-}
-
-/* ================= MAIN ================= */
-.main{
-  flex:1;
-  padding:20px;
-}
-
-/* ================= GRID ================= */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:20px;
-}
-
-/* ================= CARDS ================= */
-.card{
-  background:rgba(2,6,23,0.85);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:20px;
-  backdrop-filter:blur(12px);
-  box-shadow:
-    0 0 10px rgba(0,255,255,0.1),
-    inset 0 0 20px rgba(0,255,255,0.05);
-  transition:0.25s;
-}
-
-.card:hover{
-  transform:translateY(-3px) scale(1.01);
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.3),
-    0 0 40px rgba(139,92,246,0.2);
-}
-
-/* ================= HEADINGS ================= */
-h2,h3{
-  color:var(--primary);
-  text-shadow:0 0 6px var(--primary);
-}
-
-/* ================= TABLE ================= */
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-td,th{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  font-size:13px;
-}
-
-tr{
-  transition:0.2s;
-}
-
-tr:hover{
-  background:#020617;
-  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
-}
-
-/* ================= BUTTONS ================= */
-button{
-  padding:6px 10px;
-  border-radius:6px;
-  font-size:11px;
-  border:1px solid var(--border);
-  background:#020617;
-  color:var(--primary);
-  cursor:pointer;
-  transition:0.2s;
-  position:relative;
-  overflow:hidden;
-}
-
-/* hover glow */
-button:hover{
-  transform:translateY(-2px);
-  box-shadow:
-    0 0 10px var(--primary),
-    0 0 20px var(--primary);
-}
-
-/* shine effect */
-button::after{
-  content:"";
-  position:absolute;
-  top:0;
-  left:-100%;
-  width:100%;
-  height:100%;
-  background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
-  transition:0.4s;
-}
-button:hover::after{
-  left:100%;
-}
-
-/* ================= COLORS ================= */
-.ban{ border-color:#ef4444; color:#ef4444; }
-.unban{ border-color:#22c55e; color:#22c55e; }
-.pause{ border-color:#f59e0b; color:#f59e0b; }
-.resume{ border-color:#22c55e; color:#22c55e; }
-.delete{ border-color:#f97316; color:#f97316; }
-.view{ border-color:#8b5cf6; color:#8b5cf6; }
-
-/* ================= BADGES ================= */
-.badge{
-  padding:4px 8px;
-  border-radius:6px;
-  font-size:11px;
-  border:1px solid rgba(255,255,255,0.1);
-}
-
-.active{
-  background:#022c22;
-  color:#22c55e;
-  box-shadow:0 0 8px #22c55e;
-}
-
-.banned{
-  background:#2b0000;
-  color:#ef4444;
-  box-shadow:0 0 8px #ef4444;
-}
-
-.paused{
-  background:#2b1a00;
-  color:#f59e0b;
-  box-shadow:0 0 8px #f59e0b;
-}
-
-/* ================= LINKS ================= */
-a{
-  color:var(--primary);
-  text-decoration:none;
-}
-
-a:hover{
-  color:#fff;
-}
-
-/* ================= PANEL ================= */
-.panel{
-  position:fixed;
-  right:0;
-  top:0;
-  width:380px;
-  height:100%;
-  background:#000;
-  padding:20px;
-  display:none;
-  overflow:auto;
-  border-left:1px solid var(--border);
-  box-shadow:-10px 0 40px rgba(0,255,255,0.2);
-}
-
-/* ================= MAP ================= */
-#map{
-  height:300px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  box-shadow:0 0 20px rgba(0,255,255,0.2);
-}
-
-/* ================= TERMINAL ================= */
-#terminal{
-  background:#000;
-  color:#0f0;
-  padding:10px;
-  font-size:12px;
-  height:200px;
-  overflow:auto;
-  box-shadow: inset 0 0 20px rgba(0,255,0,0.3);
-}
-
-/* ================= RADAR ================= */
-#radarCanvas{
-  background:#000;
-  border-radius:10px;
-  box-shadow:0 0 20px #0f0;
-}
-
-/* ================= THREATS ================= */
-#threatList div{
-  margin-bottom:6px;
-  font-size:12px;
-}
-
-.threat-low{ color:#22c55e; }
-.threat-mid{ color:#f59e0b; }
-.threat-high{ color:#ef4444; }
-
-/* ================= SCROLL ================= */
-::-webkit-scrollbar{
-  width:6px;
-}
-::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:10px;
-}
-
-/* ================= ANIMATION ================= */
-@keyframes flicker{
-  0%{opacity:1;}
-  50%{opacity:0.9;}
-  100%{opacity:1;}
-}
-
-.card,button{
-  animation:flicker 3s infinite;
-}
-
-  </style>
-</head>
-
-<body>
-
-<div class="sidebar">
-  <h2>👑 Admin</h2>
-  <button onclick="loadAdmin()">📊 Dashboard</button>
-  <button onclick="openCreateUser()">➕ Create User</button>
-  <button onclick="logout()">🚪 Logout</button>
-</div>
-
-<div class="main" id="app">
-
-  <!-- HEADER -->
-  <h2>📊 Enterprise Control Center</h2>
-
-  <!-- ================= TOP GRID ================= -->
-  <div class="grid">
-
-    <!-- SYSTEM STATS -->
-    <div class="card">
-      <h3>📊 System Stats</h3>
-      <div id="stats"></div>
-      <div id="liveStatus">🟢 Live</div>
-    </div>
-
-    <!-- EMAIL ANALYTICS -->
-    <div class="card">
-      <h3>📧 Email Analytics</h3>
-      <div id="emailStats"></div>
-    </div>
-
-    <!-- AI THREAT -->
-    <div class="card">
-      <h3>🤖 AI Threat Detection</h3>
-      <div id="aiThreats"></div>
-    </div>
-
-  </div>
-
-  <!-- ================= AUDIT ================= -->
-  <div class="card">
-    <h3>📜 Audit Logs</h3>
-    <div id="auditLogs" style="max-height:200px;overflow:auto;"></div>
-  </div>
-
-  <!-- ================= USERS ================= -->
-  <div class="card">
-    <h3>👥 Users</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Status</th>
-          <th>Requests</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="users"></tbody>
-    </table>
-  </div>
-
-  <!-- ================= LINKS ================= -->
-  <div class="card">
-    <h3>🔗 Links</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Slug</th>
-          <th>URL</th>
-          <th>Clicks</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="links"></tbody>
-    </table>
-  </div>
-
-  <!-- ================= CHART ================= -->
-  <div class="card">
-    <h3>📈 Click Analytics</h3>
-    <canvas id="chart"></canvas>
-  </div>
-
-  <!-- ================= TERMINAL ================= -->
-  <div class="card">
-    <h3>🖥️ Terminal Logs</h3>
-    <div id="terminal" class="terminal"></div>
-  </div>
-
-  <!-- ================= ATTACK MONITOR ================= -->
-  <div class="card">
-    <h3>🚨 Live Attack Monitor</h3>
-    <div id="attackFeed"></div>
-  </div>
-
-  <!-- ================= RADAR ================= -->
-  <div class="card">
-    <h3>🛰️ Radar Monitor</h3>
-    <canvas id="radarCanvas" height="200"></canvas>
-  </div>
-
-  <!-- ================= THREAT LIST ================= -->
-  <div class="card">
-    <h3>🧠 Threat Intelligence</h3>
-    <div id="threatList"></div>
-  </div>
-
-</div>
-
-<!-- ================= CREATE USER PANEL ================= -->
-<div id="createUserForm" style="display:none;">
-  <h3>➕ Create User</h3>
-
-  <input id="newUser" placeholder="Email">
-  <input id="newPass" placeholder="Password" type="password">
-
-  <select id="newRole">
-    <option value="user">User</option>
-    <option value="admin">Admin</option>
-  </select>
-
-  <button onclick="createUser()">Create</button>
-</div>
-
-<!-- ================= SIDE PANEL ================= -->
-<div class="panel" id="panel">
-  <h3>📊 Details</h3>
-  <div id="panelContent"></div>
-
-  <h4>🌍 Geo Map</h4>
-  <div id="map"></div>
-
-  <button onclick="closePanel()">Close</button>
-</div>
-
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
-
-// ================= STATE =================
-let usersData = [];
-let linksData = [];
-let chart;
-let geoCache = {};
-let lastClicks = {};
-let lastRenderHash = "";
-
-// 🔒 ADMIN GUARD
-if(localStorage.getItem("role") !== "admin"){
-  window.location.href = "index.html";
-}
-
-// ================= FETCH =================
-async function safeFetch(url, method="GET", body=null){
-  const res = await fetch(url,{
-    method,
-    headers:{
-      "Content-Type":"application/json",
-      Authorization: localStorage.getItem("token")
-    },
-    body: body ? JSON.stringify(body) : null
-  });
-
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch { return {}; }
-}
-
-// ================= LOAD =================
-async function loadAdmin(){
-
-  const usersJson = await safeFetch(API+"/admin/users");
-  const linksJson = await safeFetch(API+"/list");
-
-  const newHash = JSON.stringify(linksJson);
-  if(newHash === lastRenderHash) return;
-  lastRenderHash = newHash;
-
-  usersData = usersJson.users || [];
-  linksData = linksJson.items || [];
-
-  renderUsers();
-  renderLinks();
-  renderStats();
-  drawChart();
-  trackRealtime();
-}
-
-// ================= USERS =================
-function renderUsers(){
-  const el = document.getElementById("users");
-  if(!el) return;
-
-  el.innerHTML="";
-
-  usersData.forEach(u=>{
-    el.innerHTML += `
-      <tr>
-        <td>${u.username}</td>
-        <td><span class="badge ${u.banned?"banned":"active"}">${u.banned?"BANNED":"ACTIVE"}</span></td>
-        <td>${u.requests || 0}</td>
-        <td>
-
-          <button onclick="openUser('${u.username}')">View</button>
-          <button onclick="viewIP('${u.username}')">IP</button>
-
-          ${u.banned
-            ? `<button onclick="unban('${u.username}')">Enable</button>`
-            : `<button onclick="ban('${u.username}')">Disable</button>`}
-
-          <button onclick="makeAdmin('${u.username}')">Admin</button>
-          <button onclick="removeAdmin('${u.username}')">User</button>
-
-        </td>
-      </tr>`;
-  });
-}
-
-// ================= LINKS =================
-function renderLinks(){
-  const el = document.getElementById("links");
-  if(!el) return;
-
-  el.innerHTML="";
-
-  linksData.forEach(l=>{
-    const full = API + "/" + l.slug;
-
-    el.innerHTML += `
-      <tr data-slug="${l.slug}">
-        <td>${l.user}</td>
-        <td>${l.slug}</td>
-        <td><a href="${full}" target="_blank">${full}</a></td>
-        <td>${l.clicks}</td>
-        <td><span class="badge ${l.paused?"paused":"active"}">${l.paused?"PAUSED":"ACTIVE"}</span></td>
-        <td>
-          <button onclick="pause('${l.slug}')">Pause</button>
-          <button onclick="resume('${l.slug}')">Resume</button>
-          <button onclick="openAnalytics('${l.slug}')">Analytics</button>
-          <button onclick="del('${l.slug}')">Delete</button>
-        </td>
-      </tr>`;
-  });
-}
-
-// ================= STATS =================
-function renderStats(){
-  const el = document.getElementById("stats");
-  if(!el) return;
-
-  const totalUsers = usersData.length;
-  const totalLinks = linksData.length;
-  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
-
-  el.innerHTML = `
-    <div>👥 Users: ${totalUsers}</div>
-    <div>🔗 Links: ${totalLinks}</div>
-    <div>📈 Clicks: ${totalClicks}</div>
-  `;
-}
-
-// ================= GEO =================
-async function getGeo(ip){
-
-  if(!ip || ip==="unknown"){
-    return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
-  }
-
-  if(geoCache[ip]) return geoCache[ip];
-
-  try{
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await res.json();
-
-    const geo = {
-      country_name: data.country_name || "Unknown",
-      city: data.city || "Unknown",
-      latitude: data.latitude || 20,
-      longitude: data.longitude || 0
-    };
-
-    geoCache[ip] = geo;
-    return geo;
-
+function verifyToken(event) {
+  const auth = event.headers?.authorization || event.headers?.Authorization;
+  if (!auth) return null;
+
+  try {
+    const token = auth.startsWith("Bearer ") ? auth.split(" ")[1] : auth;
+    const [user, sec] = Buffer.from(token, "base64").toString().split(":");
+    if (!user || sec !== SECRET) return null;
+    return user;
   } catch {
-    return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
+    return null;
   }
 }
 
-// ================= ANALYTICS =================
-async function openAnalytics(slug){
-
-  panel.style.display="block";
-  panelContent.innerHTML="Loading...";
-
-  const data = await safeFetch(API+"/history?slug="+slug);
-  const history = data.history || [];
-
-  panelContent.innerHTML = history.map(h=>`
-    <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
-  `).join("");
+function getBody(event) {
+  try {
+    return JSON.parse(event.body || "{}");
+  } catch {
+    return {};
+  }
 }
 
-// ================= ADMIN ACTIONS =================
-async function ban(u){ await safeFetch(API+"/admin/ban","POST",{username:u}); loadAdmin(); }
-async function unban(u){ await safeFetch(API+"/admin/unban","POST",{username:u}); loadAdmin(); }
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
-async function makeAdmin(u){ await safeFetch(API+"/admin/make-admin","POST",{username:u}); loadAdmin(); }
-async function removeAdmin(u){ await safeFetch(API+"/admin/remove-admin","POST",{username:u}); loadAdmin(); }
+function generateSlug() {
+  return Math.random().toString(36).substring(2, 8);
+}
 
-async function pause(s){ await safeFetch(API+"/admin/pause","POST",{slug:s}); loadAdmin(); }
-async function resume(s){ await safeFetch(API+"/admin/resume","POST",{slug:s}); loadAdmin(); }
-async function del(s){ await safeFetch(API+"/delete","POST",{slug:s}); loadAdmin(); }
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-// ================= CREATE USER =================
-function openCreateUser(){
-  panel.style.display="block";
-  panelContent.innerHTML=`
-    <h3>Create User</h3>
-    <input id="newUser" placeholder="Email"><br><br>
-    <input id="newPass" placeholder="Password"><br><br>
-    <select id="newRole">
-      <option value="user">User</option>
-      <option value="admin">Admin</option>
-    </select><br><br>
-    <button onclick="createUser()">Create</button>
+function isValidUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidSlug(value) {
+  return /^[a-zA-Z0-9_-]{3,64}$/.test(String(value || "").trim());
+}
+
+async function getUser(username) {
+  const res = await client.send(
+    new GetItemCommand({
+      TableName: "users",
+      Key: { username: { S: username } }
+    })
+  );
+  return res.Item || null;
+}
+
+async function isAdmin(username) {
+  const user = await getUser(username);
+  return user?.role?.S === "admin";
+}
+
+async function scanAll(TableName) {
+  let items = [];
+  let lastKey;
+
+  do {
+    const res = await client.send(
+      new ScanCommand({
+        TableName,
+        ExclusiveStartKey: lastKey
+      })
+    );
+
+    if (res.Items) items.push(...res.Items);
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
+
+  return items;
+}
+
+// ================= REAL IP =================
+function getIP(event) {
+  try {
+    const headers = event.headers || {};
+
+    let ip =
+      headers["x-forwarded-for"] ||
+      headers["X-Forwarded-For"] ||
+      headers["x-real-ip"] ||
+      headers["X-Real-IP"] ||
+      event.requestContext?.http?.sourceIp ||
+      event.requestContext?.identity?.sourceIp ||
+      event.requestContext?.identity?.userIp ||
+      "";
+
+    if (typeof ip !== "string") ip = String(ip || "");
+    ip = ip.split(",")[0].trim();
+
+    if (ip === "::1" || ip === "127.0.0.1") ip = "unknown";
+    if (!ip || ip.length < 3) ip = "unknown";
+
+    return ip;
+  } catch {
+    return "unknown";
+  }
+}
+
+// ================= RISK =================
+function isVPN(ip, headers = {}) {
+  const ua = String(headers["user-agent"] || headers["User-Agent"] || "").toLowerCase();
+
+  return (
+    ip.startsWith("10.") ||
+    ip.startsWith("192.") ||
+    ip.startsWith("127.") ||
+    ua.includes("vpn") ||
+    ua.includes("proxy") ||
+    ua.includes("cloud")
+  );
+}
+
+function isBot(headers = {}) {
+  const ua = String(headers["user-agent"] || headers["User-Agent"] || "").toLowerCase();
+
+  return (
+    ua.includes("bot") ||
+    ua.includes("crawl") ||
+    ua.includes("spider") ||
+    ua.includes("curl") ||
+    ua.includes("wget") ||
+    ua.length < 5
+  );
+}
+
+function scoreIP(ip, headers = {}) {
+  let score = 0;
+
+  if (ip === "unknown") score += 40;
+  if (ip.startsWith("192.") || ip.startsWith("127.") || ip.startsWith("10.")) score += 30;
+  if (isVPN(ip, headers)) score += 20;
+  if (isBot(headers)) score += 40;
+
+  return Math.min(score, 100);
+}
+
+// ================= CAPTCHA =================
+async function verifyCaptcha(token) {
+  if (!token) return false;
+
+  return new Promise((resolve) => {
+    const postData = `secret=${encodeURIComponent(RECAPTCHA_SECRET)}&response=${encodeURIComponent(token)}`;
+
+    const req = https.request(
+      {
+        hostname: "www.google.com",
+        path: "/recaptcha/api/siteverify",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(postData)
+        },
+        timeout: 10000
+      },
+      (res) => {
+        let body = "";
+
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+
+        res.on("end", () => {
+          try {
+            const data = JSON.parse(body);
+            resolve(!!data.success);
+          } catch {
+            resolve(false);
+          }
+        });
+      }
+    );
+
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
+
+// ================= EMAIL =================
+function emailTemplate({ title, message, button, link }) {
+  return `
+    <div style="font-family:Inter,Arial;background:#020617;padding:40px;color:#fff;">
+      <div style="max-width:520px;margin:auto;background:#000;padding:30px;border-radius:16px;">
+        <h1 style="text-align:center;color:#0ff;">🐍 Rattle Link</h1>
+        <h2>${title}</h2>
+        <p style="color:#94a3b8;">${message}</p>
+        <a href="${link}" style="
+          display:block;
+          margin:25px 0;
+          padding:14px;
+          text-align:center;
+          background:#0ff;
+          color:#000;
+          border-radius:10px;
+          font-weight:bold;
+          text-decoration:none;
+        ">
+          ${button}
+        </a>
+      </div>
+    </div>
   `;
 }
 
-async function createUser(){
+async function sendEmail(to, { subject, html }) {
+  return new Promise((resolve) => {
+    if (!to || !subject || !html || !RESEND_KEY) return resolve(false);
 
-  const username = document.getElementById("newUser").value.trim();
-  const password = document.getElementById("newPass").value;
-  const role = document.getElementById("newRole").value;
+    const payload = JSON.stringify({
+      from: "Rattle Link <support@rattleshort.online>",
+      to: [to],
+      subject,
+      html,
+      text: "Open this email to continue.",
+      reply_to: "support@rattleshort.online"
+    });
 
-  await safeFetch(API+"/admin/create-user","POST",{username,password,role});
+    const req = https.request(
+      {
+        hostname: "api.resend.com",
+        path: "/emails",
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_KEY}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload)
+        },
+        timeout: 10000
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          resolve(res.statusCode >= 200 && res.statusCode < 300);
+        });
+      }
+    );
 
-  alert("User created");
-  loadAdmin();
-}
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
 
-// ================= LOGOUT =================
-function logout(){
-  localStorage.clear();
-  window.location.href="index.html";
-}
-const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
-
-socket.onopen = () => {
-  console.log("🟢 WebSocket connected");
-};
-
-socket.onmessage = (event) => {
-  console.log("📡 Update received", event.data);
-  loadAdmin(); // 🔥 REAL-TIME UPDATE
-};
-
-// ================= CHART =================
-function drawChart(){
-
-  const canvas = document.getElementById("chart");
-  if(!canvas) return;
-
-  if(chart) chart.destroy();
-
-  chart = new Chart(canvas,{
-    type:"bar",
-    data:{
-      labels:linksData.map(i=>i.slug),
-      datasets:[{
-        label:"Clicks",
-        data:linksData.map(i=>i.clicks)
-      }]
-    }
-  });
-}
-// ================= EMAIL ANALYTICS =================
-async function loadEmailAnalytics(){
-
-  const res = await safeFetch(API + "/admin/email-logs");
-  const logs = res.logs || [];
-
-  let sent = 0, opened = 0, clicked = 0;
-
-  logs.forEach(l=>{
-    if(l.type === "sent") sent++;
-    if(l.type === "opened") opened++;
-    if(l.type === "clicked") clicked++;
-  });
-
-  emailStats.innerHTML = `
-    <div>📨 Sent: ${sent}</div>
-    <div>👁️ Opens: ${opened}</div>
-    <div>🔗 Clicks: ${clicked}</div>
-    <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
-  `;
-}
-
-// ================= AUDIT LOGGING =================
-async function logAudit(action, target){
-
-  await safeFetch(API + "/admin/audit","POST",{
-    action,
-    target,
-    time: Date.now(),
-    admin: localStorage.getItem("lastUser")
+    req.write(payload);
+    req.end();
   });
 }
 
-async function loadAuditLogs(){
-
-  const res = await safeFetch(API + "/admin/audit");
-  const logs = res.logs || [];
-
-  auditLogs.innerHTML = logs.slice(-20).reverse().map(l=>`
-    <div>
-      <b>${l.action}</b> → ${l.target}
-      <br>
-      <small>${new Date(l.time).toLocaleString()}</small>
-    </div>
-  `).join("");
+async function sendEmailWithRetry(to, payload, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    const success = await sendEmail(to, payload);
+    if (success) return true;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
 }
 
-// 🔥 Hook audit into actions
-async function ban(u){
-  await safeFetch(API+"/admin/ban","POST",{username:u});
-  logAudit("BAN USER", u);
-  loadAdmin();
-}
-
-async function unban(u){
-  await safeFetch(API+"/admin/unban","POST",{username:u});
-  logAudit("UNBAN USER", u);
-  loadAdmin();
-}
-
-async function makeAdmin(u){
-  await safeFetch(API+"/admin/make-admin","POST",{username:u});
-  logAudit("PROMOTE ADMIN", u);
-  loadAdmin();
-}
-
-// ================= AI THREAT DETECTION =================
-function detectThreats(){
-
-  let threats = [];
-
-  linksData.forEach(l=>{
-
-    let score = 0;
-
-    // 🚨 heuristic scoring
-    if(l.clicks > 100) score += 40;
-    if(l.clicks > 500) score += 60;
-
-    if(l.slug.includes("admin")) score += 30;
-
-    if(score > 50){
-      threats.push({
-        slug: l.slug,
-        score
-      });
-    }
+async function sendResetEmail(email, link) {
+  return sendEmailWithRetry(email, {
+    subject: "Reset your password 🔐",
+    html: emailTemplate({
+      title: "Reset your password",
+      message: "Click below to reset your password",
+      button: "Reset Password",
+      link
+    })
   });
-
-  aiThreats.innerHTML = threats.map(t=>`
-    <div style="color:#ef4444">
-      ⚠️ ${t.slug} → Threat Score: ${t.score}
-    </div>
-  `).join("") || "<div>No threats detected</div>";
 }
 
-// ================= AUTO REFRESH =================
-setInterval(()=>{
-  loadEmailAnalytics();
-  loadAuditLogs();
-  detectThreats();
-},3000);
+async function sendWelcomeEmail(email) {
+  return sendEmailWithRetry(email, {
+    subject: "Welcome to Rattle Link 🎉",
+    html: emailTemplate({
+      title: "Welcome!",
+      message: "Your account is ready. Start shortening links now.",
+      button: "Go to Dashboard",
+      link: BASE_URL
+    })
+  });
+}
+
+async function sendMagicLink(email, link) {
+  return sendEmailWithRetry(email, {
+    subject: "Your login link 🔑",
+    html: emailTemplate({
+      title: "Login instantly",
+      message: "Click below to login without password",
+      button: "Login",
+      link
+    })
+  });
+}
 
 // ================= REALTIME =================
-function trackRealtime(){
-  linksData.forEach(l=>{
-    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-      const row = document.querySelector(`[data-slug="${l.slug}"]`);
-      if(row){
-        row.style.background="#065f46";
-        setTimeout(()=>row.style.background="",1500);
+async function triggerRealtimeUpdate() {
+  try {
+    const connections = await client.send(
+      new ScanCommand({
+        TableName: "ws_connections"
+      })
+    );
+
+    const wsClient = new ApiGatewayManagementApiClient({
+      endpoint: WS_ENDPOINT
+    });
+
+    for (const c of connections.Items || []) {
+      try {
+        await wsClient.send(
+          new PostToConnectionCommand({
+            ConnectionId: c.id.S,
+            Data: JSON.stringify({
+              type: "click-update",
+              time: Date.now()
+            })
+          })
+        );
+      } catch (err) {
+        console.error("WS PUSH ERROR:", err);
       }
     }
-    lastClicks[l.slug] = l.clicks;
-  });
+  } catch (e) {
+    console.error("REALTIME ERROR:", e);
+  }
 }
 
-// ================= INIT =================
-loadAdmin();
-setInterval(loadAdmin,2000);
-</script>
-</body>
-</html>
+// ================= HANDLER =================
+export const handler = async (event) => {
+  const httpMethod = event.requestContext?.http?.method || event.httpMethod || "GET";
+
+  if (httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: cors, body: "" };
+  }
+
+  const isWebSocket = !!event.requestContext?.connectionId;
+
+  if (isWebSocket) {
+    const routeKey = event.requestContext?.routeKey;
+    const connectionId = event.requestContext?.connectionId;
+
+    try {
+      if (routeKey === "$connect") {
+        await client.send(
+          new PutItemCommand({
+            TableName: "ws_connections",
+            Item: { id: { S: connectionId } }
+          })
+        );
+        return { statusCode: 200 };
+      }
+
+      if (routeKey === "$disconnect") {
+        await client.send(
+          new DeleteItemCommand({
+            TableName: "ws_connections",
+            Key: { id: { S: connectionId } }
+          })
+        );
+        return { statusCode: 200 };
+      }
+
+      if (routeKey === "broadcast") {
+        const connections = await client.send(
+          new ScanCommand({
+            TableName: "ws_connections"
+          })
+        );
+
+        const wsClient = new ApiGatewayManagementApiClient({ endpoint: WS_ENDPOINT });
+
+        for (const c of connections.Items || []) {
+          try {
+            await wsClient.send(
+              new PostToConnectionCommand({
+                ConnectionId: c.id.S,
+                Data: JSON.stringify({ type: "update" })
+              })
+            );
+          } catch (err) {
+            console.error("WS SEND ERROR:", err);
+          }
+        }
+
+        return { statusCode: 200 };
+      }
+
+      return { statusCode: 200 };
+    } catch (err) {
+      console.error("WS ERROR:", err);
+      return { statusCode: 500 };
+    }
+  }
+
+  const rawPath = event.requestContext?.http?.path || event.path || "/";
+  const path = rawPath.replace(/^\/production/, "").toLowerCase();
+  const method = httpMethod;
+
+  try {
+    // ================= LOGIN =================
+    if (method === "POST" && path === "/login") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+      const password = String(body.password || "");
+      const captcha = body.captcha;
+
+      if (!username || !password) {
+        return json(400, { message: "Missing username or password" });
+      }
+
+      let validCaptcha = true;
+      if (captcha !== "bypass") validCaptcha = await verifyCaptcha(captcha);
+
+      if (!validCaptcha) {
+        return json(403, { message: "Captcha failed" });
+      }
+
+      const dbUser = await getUser(username);
+
+      if (!dbUser) return json(401, { message: "Invalid credentials" });
+      if ((dbUser.password?.S || "") !== hash(password)) return json(401, { message: "Invalid credentials" });
+      if (dbUser.banned?.BOOL === true) return json(403, { message: "Account blocked" });
+
+      return json(200, {
+        token: generateToken(username),
+        role: dbUser.role?.S || "user"
+      });
+    }
+
+    // ================= SIGNUP =================
+    if (method === "POST" && path === "/signup") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+      const password = String(body.password || "");
+      const captcha = body.captcha;
+
+      if (!username || !password) return json(400, { message: "Missing username or password" });
+      if (!isValidEmail(username)) return json(400, { message: "Invalid email format" });
+      if (password.length < 6) return json(400, { message: "Password must be at least 6 characters" });
+
+      let validCaptcha = true;
+      if (captcha !== "bypass") validCaptcha = await verifyCaptcha(captcha);
+
+      if (!validCaptcha) return json(403, { message: "Captcha failed" });
+
+      const existing = await getUser(username);
+      if (existing) return json(409, { message: "User already exists" });
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "users",
+          Item: {
+            username: { S: username },
+            password: { S: hash(password) },
+            role: { S: "user" },
+            banned: { BOOL: false },
+            createdAt: { N: String(Date.now()) }
+          },
+          ConditionExpression: "attribute_not_exists(username)"
+        })
+      );
+
+      try {
+        await sendWelcomeEmail(username);
+      } catch {}
+
+      return json(200, { message: "Account created successfully" });
+    }
+
+    // ================= RESET PASSWORD =================
+    if (method === "POST" && path === "/reset") {
+      const body = getBody(event);
+      const token = body.token;
+      const newPassword = body.password;
+
+      if (!token || !newPassword) return text(400, "Missing token or password");
+      if (newPassword.length < 6) return text(400, "Password too short");
+
+      const users = await scanAll("users");
+
+      const user = users.find(
+        (u) => u.resetToken?.S === token && Number(u.resetExpire?.N || 0) > Date.now()
+      );
+
+      if (!user) return text(400, "Invalid or expired token");
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: user.username.S } },
+          UpdateExpression: "SET password = :p REMOVE resetToken, resetExpire",
+          ExpressionAttributeValues: {
+            ":p": { S: hash(newPassword) }
+          }
+        })
+      );
+
+      return text(200, "Password updated");
+    }
+
+    // ================= MAGIC =================
+    if (method === "POST" && path === "/magic-login") {
+      const body = getBody(event);
+      const token = body.token;
+      if (!token) return text(400, "Missing token");
+
+      const users = await scanAll("users");
+
+      const user = users.find(
+        (u) => u.magicToken?.S === token && Number(u.magicExpire?.N || 0) > Date.now()
+      );
+
+      if (!user) return text(400, "Invalid link");
+
+      return json(200, {
+        token: generateToken(user.username.S),
+        role: user.role?.S || "user"
+      });
+    }
+
+    if (method === "POST" && path === "/magic-request") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+
+      if (!username) return json(400, { message: "Username required" });
+
+      const existing = await getUser(username);
+
+      if (existing) {
+        const token = crypto.randomBytes(32).toString("hex");
+
+        await client.send(
+          new UpdateItemCommand({
+            TableName: "users",
+            Key: { username: { S: username } },
+            UpdateExpression: "SET magicToken = :t, magicExpire = :e",
+            ExpressionAttributeValues: {
+              ":t": { S: token },
+              ":e": { N: String(Date.now() + 10 * 60 * 1000) }
+            }
+          })
+        );
+
+        const link = `${BASE_URL}/magic-login.html?token=${token}`;
+        await sendMagicLink(username, link);
+      }
+
+      return text(200, "Magic link sent");
+    }
+
+    // ================= FORGOT =================
+    if (method === "POST" && path === "/forgot") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+
+      if (!username) return json(400, { message: "Username required" });
+
+      const user = await getUser(username);
+
+      if (!user) {
+        return json(200, { message: "If account exists, reset link sent" });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const expire = Date.now() + 15 * 60 * 1000;
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: username } },
+          UpdateExpression: "SET resetToken = :t, resetExpire = :e",
+          ExpressionAttributeValues: {
+            ":t": { S: resetToken },
+            ":e": { N: String(expire) }
+          }
+        })
+      );
+
+      const resetLink = `${BASE_URL}/reset-password.html?token=${resetToken}`;
+      const sent = await sendResetEmail(username, resetLink);
+
+      if (!sent) return json(500, { message: "Email failed to send" });
+
+      return json(200, { message: "If account exists, reset link sent" });
+    }
+
+    // ================= WEBHOOK =================
+    if (path === "/webhook/email") {
+      try {
+        const rawBody = event.body || "";
+        let payload;
+
+        try {
+          payload = JSON.parse(rawBody);
+        } catch {
+          return text(400, "Invalid JSON");
+        }
+
+        const eventType = payload.type || "unknown";
+        const email = payload.data?.to?.[0] || payload.data?.email || "unknown";
+        const messageId = payload.data?.id || crypto.randomUUID();
+        const timestamp = Date.now();
+
+        await client.send(
+          new PutItemCommand({
+            TableName: "email_logs",
+            Item: {
+              id: { S: messageId },
+              type: { S: eventType },
+              email: { S: email },
+              time: { N: String(timestamp) },
+              subject: { S: payload.data?.subject || "unknown" },
+              status: { S: payload.data?.status || "unknown" }
+            }
+          })
+        );
+
+        return text(200, "Webhook received");
+      } catch (err) {
+        return text(500, "Webhook failed");
+      }
+    }
+
+    // ================= AUTH =================
+    const user = verifyToken(event);
+    const needsAuth =
+      path === "/create" ||
+      path === "/list" ||
+      path === "/history" ||
+      path === "/delete" ||
+      path.startsWith("/admin");
+
+    if (needsAuth && !user) {
+      return text(401, "Unauthorized");
+    }
+
+    // ================= CREATE =================
+    if (method === "POST" && path === "/create") {
+      const body = getBody(event);
+      const url = String(body.url || "").trim();
+      const slug = String(body.slug || generateSlug()).trim();
+
+      if (!isValidUrl(url)) return json(400, { message: "Invalid URL" });
+      if (!isValidSlug(slug)) return json(400, { message: "Invalid slug" });
+
+      try {
+        await client.send(
+          new PutItemCommand({
+            TableName: "redirects",
+            Item: {
+              slug: { S: slug },
+              url: { S: url },
+              clicks: { N: "0" },
+              paused: { BOOL: false },
+              user: { S: user },
+              expire:
+                body.expire && !isNaN(body.expire)
+                  ? { N: String(body.expire) }
+                  : { NULL: true }
+            },
+            ConditionExpression: "attribute_not_exists(slug)"
+          })
+        );
+      } catch (err) {
+        if (err.name === "ConditionalCheckFailedException") {
+          return json(409, { message: "Slug already exists" });
+        }
+        throw err;
+      }
+
+      return json(200, { link: `${BASE_URL}/${slug}` });
+    }
+
+    // ================= LIST =================
+    if (method === "GET" && path === "/list") {
+      const res = await client.send(
+        new ScanCommand({
+          TableName: "redirects"
+        })
+      );
+
+      const items = (res.Items || [])
+        .filter((i) => i.user?.S === user)
+        .map((i) => ({
+          slug: i.slug?.S || "",
+          url: i.url?.S || "",
+          clicks: Number(i.clicks?.N || 0),
+          paused: i.paused?.BOOL || false,
+          user: i.user?.S || "",
+          expire: i.expire?.N ? Number(i.expire.N) : null
+        }));
+
+      return json(200, { items });
+    }
+
+    // ================= HISTORY =================
+    if (method === "GET" && path === "/history") {
+      const rawSlug = event.queryStringParameters?.slug || "";
+      const slug = rawSlug.trim().toLowerCase();
+
+      if (!slug) return text(400, "Missing slug");
+
+      const link = await client.send(
+        new GetItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: slug } }
+        })
+      );
+
+      const admin = await isAdmin(user);
+      if (!link.Item || (link.Item.user?.S !== user && !admin)) {
+        return text(403, "Forbidden");
+      }
+
+      const allItems = await scanAll("clicks");
+
+      const history = allItems
+        .filter((i) => (i.slug?.S || "").toLowerCase() === slug)
+        .map((i) => ({
+          time: Number(i.time?.N || Date.now()),
+          ip: i.ip?.S || "unknown",
+          vpn: i.vpn?.BOOL || false,
+          bot: i.bot?.BOOL || false,
+          risk: Number(i.risk?.N || 0),
+          ua: i.ua?.S || "unknown"
+        }))
+        .sort((a, b) => b.time - a.time);
+
+      return json(200, { history });
+    }
+
+    // ================= DELETE =================
+    if (method === "POST" && path === "/delete") {
+      const body = getBody(event);
+      const slug = String(body.slug || "").trim();
+
+      if (!slug) return text(400, "Missing slug");
+
+      const link = await client.send(
+        new GetItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: slug } }
+        })
+      );
+
+      const admin = await isAdmin(user);
+      if (!link.Item || (link.Item.user?.S !== user && !admin)) {
+        return text(403, "Forbidden");
+      }
+
+      await client.send(
+        new DeleteItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: slug } }
+        })
+      );
+
+      return text(200, "deleted");
+    }
+
+    // ================= ADMIN CHECK =================
+    if (path.startsWith("/admin")) {
+      const ok = await isAdmin(user);
+      if (!ok) return text(403, "Admin only");
+    }
+
+    // ================= ADMIN USERS =================
+    if (path === "/admin/users") {
+      const res = await client.send(new ScanCommand({ TableName: "users" }));
+
+      const users = (res.Items || []).map((i) => ({
+        username: i.username?.S || "unknown",
+        role: i.role?.S || "user",
+        banned: i.banned?.BOOL ?? false,
+        requests: Number(i.requests?.N || 0)
+      }));
+
+      return json(200, { users });
+    }
+
+    // ================= ADMIN LINKS =================
+    if (path === "/admin/links") {
+      const res = await client.send(new ScanCommand({ TableName: "redirects" }));
+
+      const items = (res.Items || []).map((i) => ({
+        slug: i.slug?.S || "",
+        url: i.url?.S || "",
+        clicks: Number(i.clicks?.N || 0),
+        paused: i.paused?.BOOL || false,
+        user: i.user?.S || "",
+        expire: i.expire?.N ? Number(i.expire.N) : null
+      }));
+
+      return json(200, { items });
+    }
+
+    // ================= ADMIN CREATE USER =================
+    if (path === "/admin/create-user") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+      const password = String(body.password || "");
+      const role = body.role === "admin" ? "admin" : "user";
+
+      if (!isValidEmail(username)) return json(400, { message: "Invalid email" });
+      if (password.length < 6) return json(400, { message: "Password too short" });
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "users",
+          Item: {
+            username: { S: username },
+            password: { S: hash(password) },
+            role: { S: role },
+            banned: { BOOL: false },
+            createdAt: { N: String(Date.now()) }
+          },
+          ConditionExpression: "attribute_not_exists(username)"
+        })
+      );
+
+      return text(200, "User created");
+    }
+
+    // ================= ADMIN ROLES =================
+    if (path === "/admin/make-admin") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET #r = :r",
+          ExpressionAttributeNames: { "#r": "role" },
+          ExpressionAttributeValues: { ":r": { S: "admin" } }
+        })
+      );
+      return text(200, "ok");
+    }
+
+    if (path === "/admin/remove-admin") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET #r = :r",
+          ExpressionAttributeNames: { "#r": "role" },
+          ExpressionAttributeValues: { ":r": { S: "user" } }
+        })
+      );
+      return text(200, "ok");
+    }
+
+    // ================= EMAIL LOGS =================
+    if (path === "/admin/email-logs") {
+      const res = await client.send(new ScanCommand({ TableName: "email_logs" }));
+
+      const logs = (res.Items || []).map((i) => ({
+        id: i.id?.S || "",
+        type: i.type?.S || "",
+        email: i.email?.S || "",
+        subject: i.subject?.S || "",
+        status: i.status?.S || "",
+        time: Number(i.time?.N || 0)
+      }));
+
+      return json(200, { logs });
+    }
+
+    // ================= AUDIT =================
+    if (path === "/admin/audit" && method === "POST") {
+      const body = getBody(event);
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "audit_logs",
+          Item: {
+            id: { S: crypto.randomUUID() },
+            action: { S: body.action || "UNKNOWN" },
+            target: { S: body.target || "UNKNOWN" },
+            time: { N: String(body.time || Date.now()) },
+            admin: { S: body.admin || user }
+          }
+        })
+      );
+
+      return text(200, "ok");
+    }
+
+    if (path === "/admin/audit" && method === "GET") {
+      const res = await client.send(new ScanCommand({ TableName: "audit_logs" }));
+
+      const logs = (res.Items || []).map((i) => ({
+        action: i.action?.S || "",
+        target: i.target?.S || "",
+        time: Number(i.time?.N || 0),
+        admin: i.admin?.S || ""
+      }));
+
+      return json(200, { logs });
+    }
+
+    // ================= ADMIN CONTROL =================
+    if (path === "/admin/ban") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET banned = :b",
+          ExpressionAttributeValues: { ":b": { BOOL: true } }
+        })
+      );
+      return text(200, "banned");
+    }
+
+    if (path === "/admin/unban") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET banned = :b",
+          ExpressionAttributeValues: { ":b": { BOOL: false } }
+        })
+      );
+      return text(200, "unbanned");
+    }
+
+    if (path === "/admin/geo") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET geoTracking = :g",
+          ExpressionAttributeValues: { ":g": { BOOL: !!body.enabled } }
+        })
+      );
+      return text(200, "geo updated");
+    }
+
+    if (path === "/admin/pause") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } },
+          UpdateExpression: "SET paused = :p",
+          ExpressionAttributeValues: { ":p": { BOOL: true } }
+        })
+      );
+      return text(200, "paused");
+    }
+
+    if (path === "/admin/resume") {
+      const body = getBody(event);
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } },
+          UpdateExpression: "SET paused = :p",
+          ExpressionAttributeValues: { ":p": { BOOL: false } }
+        })
+      );
+      return text(200, "resumed");
+    }
+
+    if (path === "/admin/block-ip") {
+      const body = getBody(event);
+      await client.send(
+        new PutItemCommand({
+          TableName: "blocked_ips",
+          Item: { ip: { S: body.ip } }
+        })
+      );
+      return text(200, "IP blocked");
+    }
+
+    if (path === "/admin/unblock-ip") {
+      const body = getBody(event);
+      await client.send(
+        new DeleteItemCommand({
+          TableName: "blocked_ips",
+          Key: { ip: { S: body.ip } }
+        })
+      );
+      return text(200, "IP unblocked");
+    }
+
+    // ================= REDIRECT =================
+    if (method === "GET") {
+      const blockedRoutes = new Set([
+        "/login",
+        "/signup",
+        "/reset",
+        "/magic-login",
+        "/magic-request",
+        "/forgot",
+        "/worker/email",
+        "/list",
+        "/history",
+        "/create",
+        "/delete",
+        "/webhook/email",
+        "/admin/users",
+        "/admin/links",
+        "/admin/create-user",
+        "/admin/make-admin",
+        "/admin/remove-admin",
+        "/admin/email-logs",
+        "/admin/audit",
+        "/admin/ban",
+        "/admin/unban",
+        "/admin/geo",
+        "/admin/pause",
+        "/admin/resume",
+        "/admin/block-ip",
+        "/admin/unblock-ip"
+      ]);
+
+      if (!blockedRoutes.has(path) && !path.startsWith("/admin")) {
+        const parts = path.split("/").filter(Boolean);
+        const slug = parts.length ? parts.pop().trim() : null;
+
+        if (!slug) return text(400, "Invalid slug");
+
+        const headers = event.headers || {};
+        const ip = getIP(event);
+
+        try {
+          const blocked = await client.send(
+            new GetItemCommand({
+              TableName: "blocked_ips",
+              Key: { ip: { S: String(ip || "unknown") } }
+            })
+          );
+
+          if (blocked.Item) return text(403, "IP blocked");
+        } catch {}
+
+        const res = await client.send(
+          new GetItemCommand({
+            TableName: "redirects",
+            Key: { slug: { S: slug } }
+          })
+        );
+
+        if (!res.Item) return text(404, "Link not found");
+        if (res.Item.paused?.BOOL) return text(403, "Link is paused");
+
+        if (res.Item.expire?.N) {
+          const expireTime = Number(res.Item.expire.N);
+          if (Date.now() > expireTime) return text(410, "Link expired");
+        }
+
+        const url = res.Item.url?.S;
+
+        try {
+          await client.send(
+            new UpdateItemCommand({
+              TableName: "redirects",
+              Key: { slug: { S: slug } },
+              UpdateExpression: "SET clicks = if_not_exists(clicks,:z) + :i",
+              ExpressionAttributeValues: {
+                ":i": { N: "1" },
+                ":z": { N: "0" }
+              }
+            })
+          );
+        } catch {}
+
+        await triggerRealtimeUpdate();
+
+        try {
+          const timestamp = Date.now();
+
+          await client.send(
+            new PutItemCommand({
+              TableName: "clicks",
+              Item: {
+                id: {
+                  S: `${slug}#${timestamp}#${Math.random().toString(36).slice(2, 6)}`
+                },
+                slug: { S: slug },
+                time: { N: String(timestamp) },
+                ip: { S: String(ip || "unknown") },
+                vpn: { BOOL: isVPN(ip, headers) },
+                bot: { BOOL: isBot(headers) },
+                risk: { N: String(scoreIP(ip, headers)) },
+                ua: {
+                  S: headers["user-agent"] || headers["User-Agent"] || "unknown"
+                }
+              }
+            })
+          );
+        } catch {}
+
+        return {
+          statusCode: 302,
+          headers: {
+            ...cors,
+            Location: url
+          },
+          body: ""
+        };
+      }
+    }
+
+    return text(404, "Route not found");
+  } catch (err) {
+    console.error("HANDLER ERROR:", err);
+    return json(500, {
+      message: "Internal server error",
+      error: err.message
+    });
+  }
+};

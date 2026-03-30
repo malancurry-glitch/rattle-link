@@ -569,7 +569,9 @@
 
     async function safeFetch(url, options = {}) {
       try {
+        console.log("🌐 FETCH:", url, options);
         const res = await fetch(url, options);
+        console.log("📡 RESPONSE:", res.status);
         const raw = await res.text();
 
         let data = {};
