@@ -1180,20 +1180,27 @@ if (method === "POST" && path.includes("create")) {
 
 // ================= LIST =================
 if (method === "GET" && path.includes("list")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
+  }
+
   const res = await client.send(new ScanCommand({
     TableName: "redirects"
   }));
 
-  const items = (res.Items || []).map(i => ({
-    slug: i.slug?.S || "",
-    url: i.url?.S || "",
-    clicks: Number(i.clicks?.N || 0),
-    paused: i.paused?.BOOL || false,
-    user: i.user?.S || "",
-
-    // ✅ EXPIRE FIX (ONLY ADDITION)
-    expire: i.expire?.N ? Number(i.expire.N) : null
-  }));
+  const items = (res.Items || [])
+    .filter(i => i.user?.S === username) // 🔥 ONLY THEIR DATA
+    .map(i => ({
+      slug: i.slug?.S || "",
+      url: i.url?.S || "",
+      clicks: Number(i.clicks?.N || 0),
+      paused: i.paused?.BOOL || false,
+      user: i.user?.S || "",
+      expire: i.expire?.N ? Number(i.expire.N) : null
+    }));
 
   return {
     statusCode: 200,
@@ -1201,42 +1208,48 @@ if (method === "GET" && path.includes("list")) {
     body: JSON.stringify({ items })
   };
 }
-// ================= HISTORY (FINAL WORKING + SAFE) =================
+// ================= HISTORY (SECURE + FINAL) =================
 if (method === "GET" && path.includes("history")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
+  }
 
   const rawSlug = event.queryStringParameters?.slug || "";
   const slug = rawSlug.trim().toLowerCase();
 
-  if(!slug){
+  if (!slug) {
     return { statusCode: 400, headers: cors, body: "Missing slug" };
+  }
+
+  // 🔒 VERIFY OWNERSHIP
+  const link = await client.send(new GetItemCommand({
+    TableName: "redirects",
+    Key: { slug: { S: slug } }
+  }));
+
+  if (!link.Item || link.Item.user?.S !== username) {
+    return { statusCode: 403, headers: cors, body: "Forbidden" };
   }
 
   let allItems = [];
   let lastKey;
 
-  // 🔥 PAGINATION SAFE
   do {
     const res = await client.send(new ScanCommand({
       TableName: "clicks",
       ExclusiveStartKey: lastKey
     }));
 
-    if(res.Items) allItems.push(...res.Items);
+    if (res.Items) allItems.push(...res.Items);
     lastKey = res.LastEvaluatedKey;
 
   } while (lastKey);
 
-  console.log("ALL CLICK ITEMS:", allItems.length);
-  console.log("REQUEST SLUG:", slug);
-
-  // ================= MATCH (FIXED) =================
   let history = allItems
-    .filter(i => {
-      const dbSlug = (i.slug?.S || "").toLowerCase().trim();
-
-      // 🔥 FLEXIBLE MATCH (IMPORTANT FIX)
-      return dbSlug === slug || dbSlug.includes(slug);
-    })
+    .filter(i => (i.slug?.S || "").toLowerCase() === slug)
     .map(i => ({
       time: Number(i.time?.N || Date.now()),
       ip: i.ip?.S || "unknown",
@@ -1246,47 +1259,51 @@ if (method === "GET" && path.includes("history")) {
     }))
     .sort((a,b)=>b.time - a.time);
 
-  console.log("MATCHED HISTORY:", history.length);
-
-  // ================= FALLBACK (ONLY IF REALLY EMPTY) =================
-  if(history.length === 0){
-    console.warn("No matching history found for slug:", slug);
-
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: JSON.stringify({ history: [] })
-    };
-  }
-
   return {
     statusCode: 200,
     headers: cors,
     body: JSON.stringify({ history })
   };
 }
-    // ================= DELETE =================
-    if (method === "POST" && path.includes("delete")) {
-      const body = getBody(event);
 
-      await client.send(new DeleteItemCommand({
-        TableName: "redirects",
-        Key: { slug: { S: body.slug } }
-      }));
 
-      return { statusCode: 200, headers: cors, body: "deleted" };
-    }
-    // ================= ADMIN AUTH GUARD =================
+// ================= DELETE (SECURE) =================
+if (method === "POST" && path.includes("delete")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
+  }
+
+  const body = getBody(event);
+
+  // 🔒 VERIFY OWNERSHIP
+  const link = await client.send(new GetItemCommand({
+    TableName: "redirects",
+    Key: { slug: { S: body.slug } }
+  }));
+
+  if (!link.Item || link.Item.user?.S !== username) {
+    return { statusCode: 403, headers: cors, body: "Forbidden" };
+  }
+
+  await client.send(new DeleteItemCommand({
+    TableName: "redirects",
+    Key: { slug: { S: body.slug } }
+  }));
+
+  return { statusCode: 200, headers: cors, body: "deleted" };
+}
+
+
+// ================= ADMIN AUTH GUARD =================
 if (path.includes("admin")) {
 
   const username = verifyToken(event);
 
   if (!username) {
-    return {
-      statusCode: 401,
-      headers: cors,
-      body: "Unauthorized"
-    };
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
   }
 
   const userData = await client.send(new GetItemCommand({
@@ -1294,133 +1311,139 @@ if (path.includes("admin")) {
     Key: { username: { S: username } }
   }));
 
-  if(userData.Item?.role?.S !== "admin"){
-    return {
-      statusCode: 403,
-      headers: cors,
-      body: "Admin only"
-    };
+  if (userData.Item?.role?.S !== "admin") {
+    return { statusCode: 403, headers: cors, body: "Admin only" };
   }
 }
 
-    // ================= ADMIN USERS =================
-    if (path.includes("admin/users")) {
 
-      const res = await client.send(new ScanCommand({
-        TableName: "users"
-      }));
+// ================= ADMIN USERS =================
+if (path.includes("admin/users")) {
 
-      const users = (res.Items || []).map(i => ({
-        username: i.username?.S || "unknown",
-        role: i.role?.S || "user",
-        banned: i.banned?.BOOL ?? false,
-        geoTracking: i.geoTracking?.BOOL ?? true,
-        apiKey: i.apiKey?.S || "",
-        requests: Number(i.requests?.N || 0)
-      }));
+  const res = await client.send(new ScanCommand({
+    TableName: "users"
+  }));
 
-      return { statusCode: 200, headers: cors, body: JSON.stringify({ users }) };
-    }
-    if (path.includes("admin/create-user")) {
+  const users = (res.Items || []).map(i => ({
+    username: i.username?.S || "unknown",
+    role: i.role?.S || "user",
+    banned: i.banned?.BOOL ?? false,
+    requests: Number(i.requests?.N || 0)
+  }));
 
-      const body = getBody(event);
-    
-      await client.send(new PutItemCommand({
-        TableName: "users",
-        Item: {
-          username: { S: body.username },
-          password: { S: hash(body.password) },
-          role: { S: body.role || "user" },
-          banned: { BOOL: false },
-          createdAt: { N: String(Date.now()) }
-        }
-      }));
-    
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: "User created"
-      };
-    }
-    if (path.includes("admin/make-admin")) {
-      const body = getBody(event);
-    
-      await client.send(new UpdateItemCommand({
-        TableName: "users",
-        Key: { username: { S: body.username } },
-        UpdateExpression: "SET #r = :r",
-        ExpressionAttributeNames: { "#r": "role" },
-        ExpressionAttributeValues: { ":r": { S: "admin" } }
-      }));
-    
-      return { statusCode: 200, headers: cors, body: "ok" };
-    }
-    
-    if (path.includes("admin/remove-admin")) {
-      const body = getBody(event);
-    
-      await client.send(new UpdateItemCommand({
-        TableName: "users",
-        Key: { username: { S: body.username } },
-        UpdateExpression: "SET #r = :r",
-        ExpressionAttributeNames: { "#r": "role" },
-        ExpressionAttributeValues: { ":r": { S: "user" } }
-      }));
-    
-      return { statusCode: 200, headers: cors, body: "ok" };
-    }
-    if (path.includes("admin/email-logs")) {
+  return { statusCode: 200, headers: cors, body: JSON.stringify({ users }) };
+}
 
-      const res = await client.send(new ScanCommand({
-        TableName: "email_logs"
-      }));
-    
-      const logs = (res.Items || []).map(i=>({
-        type: i.type?.S,
-        time: Number(i.time?.N || 0)
-      }));
-    
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: JSON.stringify({ logs })
-      };
-    }
-    if (path.includes("admin/audit") && method === "POST") {
 
-      const body = getBody(event);
-    
-      await client.send(new PutItemCommand({
-        TableName: "audit_logs",
-        Item: {
-          id: { S: crypto.randomUUID() },
-          action: { S: body.action },
-          target: { S: body.target },
-          time: { N: String(body.time) },
-          admin: { S: body.admin }
-        }
-      }));
-    
-      return { statusCode: 200, headers: cors, body: "ok" };
-    }
-    if (path.includes("admin/audit") && method === "GET") {
+// ================= CREATE USER =================
+if (path.includes("admin/create-user")) {
 
-      const res = await client.send(new ScanCommand({
-        TableName: "audit_logs"
-      }));
-    
-      const logs = (res.Items || []).map(i=>({
-        action: i.action.S,
-        target: i.target.S,
-        time: Number(i.time.N)
-      }));
-    
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: JSON.stringify({ logs })
-      };
+  const body = getBody(event);
+
+  await client.send(new PutItemCommand({
+    TableName: "users",
+    Item: {
+      username: { S: body.username },
+      password: { S: hash(body.password) },
+      role: { S: body.role || "user" },
+      banned: { BOOL: false },
+      createdAt: { N: String(Date.now()) }
     }
+  }));
+
+  return { statusCode: 200, headers: cors, body: "User created" };
+}
+
+
+// ================= ROLE CONTROL =================
+if (path.includes("admin/make-admin")) {
+
+  const body = getBody(event);
+
+  await client.send(new UpdateItemCommand({
+    TableName: "users",
+    Key: { username: { S: body.username } },
+    UpdateExpression: "SET #r = :r",
+    ExpressionAttributeNames: { "#r": "role" },
+    ExpressionAttributeValues: { ":r": { S: "admin" } }
+  }));
+
+  return { statusCode: 200, headers: cors, body: "ok" };
+}
+
+if (path.includes("admin/remove-admin")) {
+
+  const body = getBody(event);
+
+  await client.send(new UpdateItemCommand({
+    TableName: "users",
+    Key: { username: { S: body.username } },
+    UpdateExpression: "SET #r = :r",
+    ExpressionAttributeNames: { "#r": "role" },
+    ExpressionAttributeValues: { ":r": { S: "user" } }
+  }));
+
+  return { statusCode: 200, headers: cors, body: "ok" };
+}
+
+
+// ================= EMAIL LOGS =================
+if (path.includes("admin/email-logs")) {
+
+  const res = await client.send(new ScanCommand({
+    TableName: "email_logs"
+  }));
+
+  const logs = (res.Items || []).map(i => ({
+    type: i.type?.S,
+    time: Number(i.time?.N || 0)
+  }));
+
+  return {
+    statusCode: 200,
+    headers: cors,
+    body: JSON.stringify({ logs })
+  };
+}
+
+
+// ================= AUDIT LOGS =================
+if (path.includes("admin/audit") && method === "POST") {
+
+  const body = getBody(event);
+
+  await client.send(new PutItemCommand({
+    TableName: "audit_logs",
+    Item: {
+      id: { S: crypto.randomUUID() },
+      action: { S: body.action },
+      target: { S: body.target },
+      time: { N: String(body.time) },
+      admin: { S: body.admin }
+    }
+  }));
+
+  return { statusCode: 200, headers: cors, body: "ok" };
+}
+
+if (path.includes("admin/audit") && method === "GET") {
+
+  const res = await client.send(new ScanCommand({
+    TableName: "audit_logs"
+  }));
+
+  const logs = (res.Items || []).map(i => ({
+    action: i.action.S,
+    target: i.target.S,
+    time: Number(i.time.N)
+  }));
+
+  return {
+    statusCode: 200,
+    headers: cors,
+    body: JSON.stringify({ logs })
+  };
+}
 
     // ================= ADMIN CONTROL =================
     if (path.includes("admin/ban")) {
