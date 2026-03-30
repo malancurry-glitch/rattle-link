@@ -726,7 +726,7 @@ const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
 
 let isSignup = false;
 
-// ================= DOM CACHE =================
+// ================= DOM =================
 const card = document.getElementById("card");
 const errorBox = document.getElementById("error");
 const mainBtn = document.getElementById("mainBtn");
@@ -745,15 +745,13 @@ const switchBtn = document.getElementById("switchBtn");
 const strengthFill = document.getElementById("strengthFill");
 const strength = document.getElementById("strength");
 
-// ================= THEME =================
+// ================= UI =================
 function toggleTheme(){
   document.body.classList.toggle("light");
 }
 
-// ================= HELPERS =================
 function showError(msg){
   errorBox.innerText = msg || "";
-
   card.classList.remove("shake");
   void card.offsetWidth;
   card.classList.add("shake");
@@ -765,14 +763,12 @@ function setLoading(state){
   spinner.style.display = state ? "inline-block" : "none";
 }
 
-// ================= PASSWORD =================
 function togglePass(){
   password.type = password.type === "password" ? "text" : "password";
 }
 
-// ================= PASSWORD STRENGTH =================
+// ================= STRENGTH =================
 function checkStrength(){
-
   if(!isSignup) return;
 
   const val = password.value;
@@ -788,13 +784,11 @@ function checkStrength(){
 
   strengthFill.style.width = (score * 25) + "%";
   strengthFill.style.background = colors[score-1] || "#ef4444";
-
   strength.innerText = val ? labels[score-1] || "Weak" : "";
 }
 
-// ================= TOGGLE MODE =================
+// ================= MODE =================
 function toggleMode(){
-
   isSignup = !isSignup;
 
   title.innerText = isSignup ? "Sign Up" : "Login";
@@ -803,19 +797,15 @@ function toggleMode(){
   switchBtn.innerText = isSignup ? "Login" : "Sign up";
 
   confirmBox.style.display = isSignup ? "block" : "none";
-
   showError("");
 }
 
-// ================= HANDLE =================
+// ================= MAIN =================
 async function handleAuth(){
   if(mainBtn.disabled) return;
-
   if(isSignup) await signup();
   else await login();
 }
-
-
 
 // ================= SIGNUP =================
 async function signup(){
@@ -823,13 +813,13 @@ async function signup(){
   showError("");
   setLoading(true);
 
-  const user = username.value.trim();
+  const user = username.value.trim().toLowerCase();
   const pass = password.value;
-  const confirm = confirmBox.querySelector("input").value;
+  const confirm = document.getElementById("confirm").value;
   const captcha = grecaptcha.getResponse();
 
   if(!user){
-    showError("Enter username ❌");
+    showError("Enter email ❌");
     setLoading(false);
     return;
   }
@@ -846,7 +836,44 @@ async function signup(){
     return;
   }
 
-  if(!captc// ================= LOGIN =================
+  if(!captcha){
+    showError("Complete CAPTCHA ❌");
+    setLoading(false);
+    return;
+  }
+
+  try {
+
+    const res = await fetch(API+"/signup",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ username:user, password:pass, captcha })
+    });
+
+    const text = await res.text();
+
+    if(res.status !== 200){
+      showError(text || "Signup failed ❌");
+      grecaptcha.reset();
+      setLoading(false);
+      return;
+    }
+
+    showError("Account created ✅");
+    card.classList.add("success");
+
+    setTimeout(()=>toggleMode(),800);
+
+  } catch (e){
+    console.error(e);
+    showError("Signup failed ❌");
+  }
+
+  setLoading(false);
+  grecaptcha.reset();
+}
+
+// ================= LOGIN =================
 async function login(){
 
   showError("");
@@ -854,11 +881,7 @@ async function login(){
 
   const user = username.value.trim().toLowerCase();
   const pass = password.value;
-
-  // 🔥 STRICT CAPTCHA
-  const captcha = (typeof grecaptcha !== "undefined")
-    ? grecaptcha.getResponse()
-    : null;
+  const captcha = grecaptcha.getResponse();
 
   if(!user){
     showError("Enter username ❌");
@@ -872,7 +895,6 @@ async function login(){
     return;
   }
 
-  // 🔒 REQUIRE CAPTCHA (NO BYPASS)
   if(!captcha){
     showError("Complete CAPTCHA ❌");
     setLoading(false);
@@ -884,16 +906,11 @@ async function login(){
     const res = await fetch(API+"/login",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        username:user,
-        password:pass,
-        captcha
-      })
+      body: JSON.stringify({ username:user, password:pass, captcha })
     });
 
     const data = await res.json();
 
-    // 🔥 STRICT VALIDATION
     if(res.status !== 200 || !data.token){
       showError(data.message || "Invalid login ❌");
       grecaptcha.reset();
@@ -901,7 +918,7 @@ async function login(){
       return;
     }
 
-    // ================= SAVE SESSION =================
+    // SAVE SESSION
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.role);
     localStorage.setItem("lastUser", user);
@@ -910,9 +927,6 @@ async function login(){
       localStorage.setItem("rememberUser", user);
     }
 
-    console.log("LOGIN SUCCESS:", data);
-
-    // ================= REDIRECT =================
     card.classList.add("success");
 
     setTimeout(()=>{
@@ -922,24 +936,22 @@ async function login(){
     },500);
 
   } catch (e){
-    console.error("LOGIN ERROR:", e);
+    console.error(e);
     showError("Server error ❌");
   }
 
   setLoading(false);
-  if(typeof grecaptcha !== "undefined") grecaptcha.reset();
+  grecaptcha.reset();
 }
 
 // ================= FORGOT =================
 function forgot(){
-  window.location.href = "/forgot.html";
+  window.location.href = "forgot.html";
 }
 
 // ================= REMEMBER =================
 window.onload = () => {
-
   const saved = localStorage.getItem("rememberUser");
-
   if(saved){
     username.value = saved;
     remember.checked = true;
