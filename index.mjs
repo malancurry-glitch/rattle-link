@@ -248,52 +248,32 @@ function emailTemplate({ title, message, button, link }) {
   `;
 }
 async function sendEmail(to, { subject, html }) {
+  try {
 
-  return new Promise((resolve) => {
-
-    const data = JSON.stringify({
-      from: "Rattle Link <support@rattleshort.online>",
-      to: [to],
-      subject,
-      html
-    });
-
-    const options = {
-      hostname: "api.resend.com",
-      path: "/emails",
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(data)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-
-      let body = "";
-
-      res.on("data", chunk => body += chunk);
-
-      res.on("end", () => {
-        console.log("📨 RESEND:", res.statusCode, body);
-
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: "Rattle Link <support@rattleshort.online>",
+        to: [to],
+        subject,
+        html
+      })
     });
 
-    req.on("error", (err) => {
-      console.error("EMAIL ERROR:", err);
-      resolve(false);
-    });
+    const text = await res.text();
 
-    req.write(data);
-    req.end();
-  });
+    console.log("📨 RESEND:", res.status, text);
+
+    return res.ok;
+
+  } catch (err) {
+    console.error("EMAIL ERROR:", err);
+    return false;
+  }
 }
 async function sendEmailWithRetry(to, payload, retries = 2){
 
@@ -438,8 +418,9 @@ if (routeKey) {
   }
 }
 
-const method = req.method;
-const path = req.url.toLowerCase();
+const method = event.requestContext?.http?.method || "GET";
+let path = event.requestContext?.http?.path || "/";
+path = path.toLowerCase();
   path = path.toLowerCase();
   // 🔥 MOVE HERE
   try {
@@ -1010,7 +991,7 @@ if (method === "POST" && path.includes("forgot")) {
     }));
 
     // ================= RESET LINK =================
-    const resetLink = `https://rattleshort.netlify.app/reset-password.html?token=${resetToken}`;
+    const resetLink = `https://rattle-link.vercel.app/reset-password.html?token=${resetToken}`;
 
     console.log("🔗 RESET LINK:", resetLink);
 
