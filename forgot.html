@@ -302,7 +302,20 @@ async function sendReset(){
 
   setLoading(false);
 }
+function sendReset(){
 
+  const email = document.getElementById("email").value;
+
+  fetch(API + "/forgot", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ username: email.trim().toLowerCase() })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+  });
+}
 // ================= NAV =================
 function goBack(){
   window.location.href = "index.html";

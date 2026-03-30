@@ -248,50 +248,51 @@ function emailTemplate({ title, message, button, link }) {
 }
 async function sendEmail(to, { subject, html }) {
 
-  try {
+  return new Promise((resolve) => {
 
-    if (!to || !subject || !html) {
-      console.error("❌ Missing email data");
-      return false;
-    }
+    const data = JSON.stringify({
+      from: "Rattle Link <support@rattleshort.online>",
+      to: [to],
+      subject,
+      html
+    });
 
-    console.log("🚀 Sending email to:", to);
-
-    const res = await fetch("https://api.resend.com/emails", {
+    const options = {
+      hostname: "api.resend.com",
+      path: "/emails",
       method: "POST",
       headers: {
         "Authorization": `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from: "Rattle Link <support@rattleshort.online>",
-        to: [to],
-        subject,
-        html
-      })
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+
+      let body = "";
+
+      res.on("data", chunk => body += chunk);
+
+      res.on("end", () => {
+        console.log("📨 RESEND:", res.statusCode, body);
+
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
     });
 
-    const text = await res.text();
+    req.on("error", (err) => {
+      console.error("EMAIL ERROR:", err);
+      resolve(false);
+    });
 
-    console.log("📨 RESEND STATUS:", res.status);
-    console.log("📨 RESEND BODY:", text);
-
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = text; }
-
-    if (res.ok) {
-      console.log("✅ Email sent:", data?.id || "no-id");
-      return true;
-    }
-
-    console.error("❌ Resend failed:", data);
-    return false;
-
-  } catch (e) {
-    console.error("❌ EMAIL ERROR:", e);
-    return false;
-  }
+    req.write(data);
+    req.end();
+  });
 }
 async function sendEmailWithRetry(to, payload, retries = 2){
 
