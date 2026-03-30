@@ -159,11 +159,14 @@ const cors = {
 
 async function verifyCaptcha(token){
 
-  if(!token) return false;
+  if (!token) {
+    console.warn("⚠️ No CAPTCHA token provided");
+    return false;
+  }
 
   return new Promise((resolve) => {
 
-    const data = `secret=${RECAPTCHA_SECRET}&response=${token}`;
+    const postData = `secret=${RECAPTCHA_SECRET}&response=${token}`;
 
     const options = {
       hostname: "www.google.com",
@@ -171,7 +174,7 @@ async function verifyCaptcha(token){
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": data.length
+        "Content-Length": postData.length
       }
     };
 
@@ -182,23 +185,38 @@ async function verifyCaptcha(token){
       res.on("data", chunk => body += chunk);
 
       res.on("end", () => {
+
         try {
-          const parsed = JSON.parse(body);
-          console.log("CAPTCHA RESULT:", parsed);
-          resolve(parsed.success === true);
-        } catch {
+
+          const data = JSON.parse(body);
+
+          console.log("🧠 CAPTCHA RESPONSE:", data);
+
+          if (!data.success) {
+            console.warn("❌ CAPTCHA FAILED:", data["error-codes"]);
+            return resolve(false);
+          }
+
+          // ✅ DO NOT check score for v2
+          resolve(true);
+
+        } catch (err) {
+          console.error("❌ CAPTCHA PARSE ERROR:", body);
           resolve(false);
         }
+
       });
     });
 
-    req.on("error", () => resolve(false));
+    req.on("error", (err) => {
+      console.error("🔥 CAPTCHA REQUEST ERROR:", err);
+      resolve(false);
+    });
 
-    req.write(data);
+    req.write(postData);
     req.end();
   });
 }
-
 function emailTemplate({ title, message, button, link }) {
   return `
     <div style="font-family:Inter;background:#020617;padding:40px;color:#fff;">
@@ -451,9 +469,13 @@ if (path.includes("admin")) {
       try {
     
         const body = getBody(event);
+    
         const username = body.username?.trim().toLowerCase();
         const password = body.password;
         const captcha = body.captcha;
+    
+        console.log("LOGIN INPUT:", username);
+        console.log("CAPTCHA TOKEN:", captcha);
     
         // ================= VALIDATION =================
         if (!username || !password) {
@@ -465,26 +487,22 @@ if (path.includes("admin")) {
         }
     
         // ================= CAPTCHA =================
-        // 🔥 allow bypass ONLY for development (optional)
-        if (captcha !== "bypass") {
+        if (!captcha) {
+          return {
+            statusCode: 400,
+            headers: cors,
+            body: JSON.stringify({ message: "Captcha required" })
+          };
+        }
     
-          if (!captcha) {
-            return {
-              statusCode: 400,
-              headers: cors,
-              body: JSON.stringify({ message: "Captcha required" })
-            };
-          }
+        const validCaptcha = await verifyCaptcha(captcha);
     
-          const validCaptcha = await verifyCaptcha(captcha);
-    
-          if (!validCaptcha) {
-            return {
-              statusCode: 403,
-              headers: cors,
-              body: JSON.stringify({ message: "Captcha failed" })
-            };
-          }
+        if (!validCaptcha) {
+          return {
+            statusCode: 403,
+            headers: cors,
+            body: JSON.stringify({ message: "Captcha failed" })
+          };
         }
     
         // ================= GET USER =================
@@ -493,8 +511,9 @@ if (path.includes("admin")) {
           Key: { username: { S: username } }
         }));
     
+        console.log("DDB RESULT:", res);
+    
         if (!res.Item) {
-          console.warn("LOGIN FAIL: user not found →", username);
           return {
             statusCode: 401,
             headers: cors,
@@ -502,11 +521,8 @@ if (path.includes("admin")) {
           };
         }
     
-        // ================= PASSWORD CHECK =================
-        const storedPassword = res.Item.password?.S || "";
-    
-        if (storedPassword !== hash(password)) {
-          console.warn("LOGIN FAIL: wrong password →", username);
+        // ================= PASSWORD =================
+        if (res.Item.password?.S !== hash(password)) {
           return {
             statusCode: 401,
             headers: cors,
@@ -514,7 +530,7 @@ if (path.includes("admin")) {
           };
         }
     
-        // ================= BANNED CHECK =================
+        // ================= BLOCK =================
         if (res.Item.banned?.BOOL) {
           return {
             statusCode: 403,
@@ -523,12 +539,10 @@ if (path.includes("admin")) {
           };
         }
     
-        // ================= ROLE =================
         const role = res.Item.role?.S || "user";
     
-        console.log("LOGIN SUCCESS:", username, role);
+        console.log("✅ LOGIN SUCCESS:", username, role);
     
-        // ================= SUCCESS =================
         return {
           statusCode: 200,
           headers: cors,
@@ -539,13 +553,12 @@ if (path.includes("admin")) {
         };
     
       } catch (err) {
-    
-        console.error("🔥 LOGIN ERROR:", err);
+        console.error("🔥 LOGIN CRASH:", err);
     
         return {
           statusCode: 500,
           headers: cors,
-          body: JSON.stringify({ message: "Login failed" })
+          body: JSON.stringify({ message: "Login failed (server error)" })
         };
       }
     }
@@ -646,25 +659,6 @@ if (path.includes("admin")) {
       };
     }
   }
-  // ================= ADMIN AUTH GUARD =================
-if (path.includes("admin")) {
-
-  const username = verifyToken(event);
-
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const userData = await client.send(new GetItemCommand({
-    TableName: "users",
-    Key: { username: { S: username } }
-  }));
-
-  if (userData.Item?.role?.S !== "admin") {
-    return { statusCode: 403, headers: cors, body: "Admin only" };
-  }
-}
-
       
 // ================= RESET PASSWORD =================
 if (method === "POST" && path.includes("reset")) {
