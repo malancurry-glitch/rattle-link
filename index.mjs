@@ -646,6 +646,25 @@ if (path.includes("admin")) {
       };
     }
   }
+  // ================= ADMIN AUTH GUARD =================
+if (path.includes("admin")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
+  }
+
+  const userData = await client.send(new GetItemCommand({
+    TableName: "users",
+    Key: { username: { S: username } }
+  }));
+
+  if (userData.Item?.role?.S !== "admin") {
+    return { statusCode: 403, headers: cors, body: "Admin only" };
+  }
+}
+
       
 // ================= RESET PASSWORD =================
 if (method === "POST" && path.includes("reset")) {
@@ -1294,26 +1313,6 @@ if (method === "POST" && path.includes("delete")) {
   }));
 
   return { statusCode: 200, headers: cors, body: "deleted" };
-}
-
-
-// ================= ADMIN AUTH GUARD =================
-if (path.includes("admin")) {
-
-  const username = verifyToken(event);
-
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const userData = await client.send(new GetItemCommand({
-    TableName: "users",
-    Key: { username: { S: username } }
-  }));
-
-  if (userData.Item?.role?.S !== "admin") {
-    return { statusCode: 403, headers: cors, body: "Admin only" };
-  }
 }
 
 
