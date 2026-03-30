@@ -815,87 +815,7 @@ async function handleAuth(){
   else await login();
 }
 
-// ================= LOGIN =================
-async function login(){
 
-  showError("");
-  setLoading(true);
-
-  const user = username.value.trim().toLowerCase();
-  const pass = password.value;
-  const captcha = typeof grecaptcha !== "undefined"
-    ? grecaptcha.getResponse()
-    : "bypass";
-
-  if(!user){
-    showError("Enter username ❌");
-    setLoading(false);
-    return;
-  }
-
-  if(!pass){
-    showError("Enter password ❌");
-    setLoading(false);
-    return;
-  }
-
-  if(!captcha){
-    showError("Complete CAPTCHA ❌");
-    setLoading(false);
-    return;
-  }
-
-  try {
-
-    const res = await fetch(API+"/login",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ username:user, password:pass, captcha })
-    });
-
-    const text = await res.text();
-
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = { message: text }; }
-
-    if(res.status !== 200){
-      showError(data.message || data.error || "Login failed ❌");
-      if(typeof grecaptcha !== "undefined") grecaptcha.reset();
-      setLoading(false);
-      return;
-    }
-
-    // ================= SAVE SESSION =================
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.role); // 🔥 THIS FIXES ADMIN LOGIN
-    localStorage.setItem("lastUser", user);
-
-    if(remember.checked){
-      localStorage.setItem("rememberUser", user);
-    }
-
-    console.log("LOGIN SUCCESS:", data);
-
-    // ================= REDIRECT =================
-    card.classList.add("success");
-
-    setTimeout(()=>{
-      if(data.role === "admin"){
-        window.location.href = "admin.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-    },500);
-
-  } catch (e){
-    console.error("LOGIN ERROR:", e);
-    showError("Server error ❌");
-  }
-
-  setLoading(false);
-  if(typeof grecaptcha !== "undefined") grecaptcha.reset();
-}
 
 // ================= SIGNUP =================
 async function signup(){
@@ -926,6 +846,33 @@ async function signup(){
     return;
   }
 
+  if(!captc// ================= LOGIN =================
+async function login(){
+
+  showError("");
+  setLoading(true);
+
+  const user = username.value.trim().toLowerCase();
+  const pass = password.value;
+
+  // 🔥 STRICT CAPTCHA
+  const captcha = (typeof grecaptcha !== "undefined")
+    ? grecaptcha.getResponse()
+    : null;
+
+  if(!user){
+    showError("Enter username ❌");
+    setLoading(false);
+    return;
+  }
+
+  if(!pass){
+    showError("Enter password ❌");
+    setLoading(false);
+    return;
+  }
+
+  // 🔒 REQUIRE CAPTCHA (NO BYPASS)
   if(!captcha){
     showError("Complete CAPTCHA ❌");
     setLoading(false);
@@ -934,33 +881,53 @@ async function signup(){
 
   try {
 
-    const res = await fetch(API+"/signup",{
+    const res = await fetch(API+"/login",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ username:user, password:pass, captcha })
+      body: JSON.stringify({
+        username:user,
+        password:pass,
+        captcha
+      })
     });
 
-    const text = await res.text();
+    const data = await res.json();
 
-    if(res.status !== 200){
-      showError(text || "Signup failed ❌");
+    // 🔥 STRICT VALIDATION
+    if(res.status !== 200 || !data.token){
+      showError(data.message || "Invalid login ❌");
       grecaptcha.reset();
       setLoading(false);
       return;
     }
 
-    card.classList.add("success");
-    showError("Account created ✅");
+    // ================= SAVE SESSION =================
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("lastUser", user);
 
-    setTimeout(()=>toggleMode(),800);
+    if(remember.checked){
+      localStorage.setItem("rememberUser", user);
+    }
+
+    console.log("LOGIN SUCCESS:", data);
+
+    // ================= REDIRECT =================
+    card.classList.add("success");
+
+    setTimeout(()=>{
+      window.location.href = data.role === "admin"
+        ? "admin.html"
+        : "dashboard.html";
+    },500);
 
   } catch (e){
-    console.error(e);
-    showError("Signup failed ❌");
+    console.error("LOGIN ERROR:", e);
+    showError("Server error ❌");
   }
 
   setLoading(false);
-  grecaptcha.reset();
+  if(typeof grecaptcha !== "undefined") grecaptcha.reset();
 }
 
 // ================= FORGOT =================
