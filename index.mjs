@@ -843,7 +843,7 @@ if (method === "POST" && path.includes("forgot")) {
     }));
 
     // ================= RESET LINK =================
-    const resetLink = `https://endearing-bombolone-a9ae67.netlify.app/reset-password.html?token=${resetToken}`;
+    const resetLink = `https://rattleshort.netlify.app/reset-password.html?token=${resetToken}`;
 
     console.log("🔗 RESET LINK:", resetLink);
 
@@ -1100,6 +1100,32 @@ if (method === "GET" && path.includes("history")) {
 
       return { statusCode: 200, headers: cors, body: "deleted" };
     }
+    // ================= ADMIN AUTH GUARD =================
+if (path.includes("admin")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return {
+      statusCode: 401,
+      headers: cors,
+      body: "Unauthorized"
+    };
+  }
+
+  const userData = await client.send(new GetItemCommand({
+    TableName: "users",
+    Key: { username: { S: username } }
+  }));
+
+  if(userData.Item?.role?.S !== "admin"){
+    return {
+      statusCode: 403,
+      headers: cors,
+      body: "Admin only"
+    };
+  }
+}
 
     // ================= ADMIN USERS =================
     if (path.includes("admin/users")) {

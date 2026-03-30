@@ -3,6 +3,14 @@
 <head>
   <title>👑 Admin Dashboard ENTERPRISE+</title>
 
+<script>
+const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
+
+if(!token || role !== "admin"){
+  window.location.href = "index.html";
+}
+</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -1069,8 +1077,11 @@ if(!localStorage.getItem("token")){
 // ================= UI =================
 function closePanel(){ panel.style.display="none"; }
 function logout(){
-  localStorage.removeItem("token"); // 🔥 remove ONLY token
-  window.location.href = "index.html"; // 🔥 redirect to login page
+  localStorage.removeItem("token");
+  localStorage.removeItem("role"); // 🔥 IMPORTANT
+  localStorage.removeItem("lastUser"); // optional
+
+  window.location.href = "index.html";
 }
 
 // ================= CHART =================
