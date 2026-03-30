@@ -247,89 +247,36 @@ function emailTemplate({ title, message, button, link }) {
   `;
 }
 async function sendEmail(to, { subject, html }) {
-  return new Promise((resolve) => {
-
-    // ================= VALIDATION =================
-    if (!to || !subject || !html) {
-      console.error("❌ Missing email data:", { to, subject });
-      return resolve(false);
-    }
+  try {
 
     console.log("📤 Sending email to:", to);
 
-    // 🔥 IMPORTANT: use working sender
-    const payload = JSON.stringify({
-      from: "Rattle Link <onboarding@resend.dev>", // ✅ SAFE DEFAULT
-      to: [to],
-      subject,
-      html
-    });
-
-    const options = {
-      hostname: "api.resend.com",
-      path: "/emails",
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(payload)
+        Authorization: `Bearer ${RESEND_KEY}`,
+        "Content-Type": "application/json"
       },
-      timeout: 10000 // 🔥 slightly longer for reliability
-    };
-
-    const req = https.request(options, (res) => {
-
-      let body = "";
-
-      res.on("data", chunk => body += chunk);
-
-      res.on("end", () => {
-
-        console.log("📨 RESEND STATUS:", res.statusCode);
-
-        let data;
-        try {
-          data = JSON.parse(body);
-        } catch {
-          data = body;
-        }
-
-        console.log("📨 RESEND RESPONSE:", data);
-
-        // ✅ SUCCESS
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log("✅ Email sent successfully:", data?.id || "no-id");
-          return resolve(true);
-        }
-
-        // ❌ FAILURE (IMPORTANT DEBUG)
-        console.error("❌ Email failed:", {
-          status: res.statusCode,
-          response: data
-        });
-
-        return resolve(false);
-      });
+      body: JSON.stringify({
+        from: "Rattle Link <support@rattleshort.online>", // ✅ FIXED
+        to: [to],
+        subject,
+        html
+      })
     });
 
-    // ================= ERROR HANDLING =================
-    req.on("error", (err) => {
-      console.error("🔥 REQUEST ERROR:", err.message);
-      resolve(false);
-    });
+    const data = await res.json().catch(() => ({}));
 
-    req.on("timeout", () => {
-      console.error("⏱️ EMAIL TIMEOUT");
-      req.destroy();
-      resolve(false);
-    });
+    console.log("📨 STATUS:", res.status);
+    console.log("📨 RESPONSE:", data);
 
-    // ================= SEND =================
-    req.write(payload);
-    req.end();
-  });
+    return res.ok;
+
+  } catch (err) {
+    console.error("🔥 EMAIL ERROR:", err);
+    return false;
+  }
 }
-
 
 // ================= RETRY WRAPPER =================
 async function sendEmailWithRetry(to, payload, retries = 2) {
