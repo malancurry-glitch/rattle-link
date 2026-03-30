@@ -7,6 +7,11 @@ import {
   GetItemCommand
 } from "@aws-sdk/client-dynamodb";
 
+
+import {
+  ApiGatewayManagementApiClient,
+  PostToConnectionCommand
+} from "@aws-sdk/client-apigatewaymanagementapi";
 import crypto from "crypto";
 import https from "https";
 
@@ -16,6 +21,7 @@ const SECRET = "my-secret-key";
 const BASE_URL = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
 const RECAPTCHA_SECRET = "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
 const RESEND_KEY = "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
+const endpoint = "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
 // ================= UTILS =================
 function hash(password) {
@@ -320,9 +326,97 @@ async function sendMagicLink(email, link){
     })
   });
 }
+async function triggerRealtimeUpdate(){
 
+  try {
+
+    const connections = await client.send(new ScanCommand({
+      TableName: "ws_connections"
+    }));
+
+    const wsClient = new ApiGatewayManagementApiClient({ endpoint });
+
+    for (const c of connections.Items || []) {
+
+      try {
+        await wsClient.send(new PostToConnectionCommand({
+          ConnectionId: c.id.S,
+          Data: JSON.stringify({
+            type: "click-update",
+            time: Date.now()
+          })
+        }));
+      } catch (err) {
+        console.error("WS PUSH ERROR:", err);
+      }
+    }
+
+  } catch (e){
+    console.error("REALTIME ERROR:", e);
+  }
+}
 // ================= HANDLER =================
 export const handler = async (event) => {
+  // ================= WEBSOCKET HANDLER =================
+const routeKey = event.requestContext?.routeKey;
+
+if (routeKey) {
+
+  const connectionId = event.requestContext.connectionId;
+
+  try {
+
+    // CONNECT
+    if (routeKey === "$connect") {
+      await client.send(new PutItemCommand({
+        TableName: "ws_connections",
+        Item: { id: { S: connectionId } }
+      }));
+      console.log("WS CONNECT:", connectionId);
+      return { statusCode: 200 };
+    }
+
+    // DISCONNECT
+    if (routeKey === "$disconnect") {
+      await client.send(new DeleteItemCommand({
+        TableName: "ws_connections",
+        Key: { id: { S: connectionId } }
+      }));
+      console.log("WS DISCONNECT:", connectionId);
+      return { statusCode: 200 };
+    }
+
+    // BROADCAST
+    if (routeKey === "broadcast") {
+
+      const connections = await client.send(new ScanCommand({
+        TableName: "ws_connections"
+      }));
+
+      const wsClient = new ApiGatewayManagementApiClient({ endpoint });
+
+      for (const c of connections.Items || []) {
+        try {
+          await wsClient.send(new PostToConnectionCommand({
+            ConnectionId: c.id.S,
+            Data: JSON.stringify({ type: "update" })
+          }));
+        } catch (err) {
+          console.error("WS SEND ERROR:", err);
+        }
+      }
+
+      console.log("WS BROADCAST DONE");
+      return { statusCode: 200 };
+    }
+
+    return { statusCode: 200 };
+
+  } catch (err) {
+    console.error("WS ERROR:", err);
+    return { statusCode: 500 };
+  }
+}
 
   const method = event.requestContext?.http?.method || "GET";
   let path = event.requestContext?.http?.path || "/";
@@ -748,7 +842,7 @@ if (
     } catch (e){
       console.error("CLICK UPDATE ERROR:", e);
     }
-
+    await triggerRealtimeUpdate();
     // ================= STORE CLICK =================
     try {
 
@@ -1192,6 +1286,58 @@ if (path.includes("admin")) {
       }));
     
       return { statusCode: 200, headers: cors, body: "ok" };
+    }
+    if (path.includes("admin/email-logs")) {
+
+      const res = await client.send(new ScanCommand({
+        TableName: "email_logs"
+      }));
+    
+      const logs = (res.Items || []).map(i=>({
+        type: i.type?.S,
+        time: Number(i.time?.N || 0)
+      }));
+    
+      return {
+        statusCode: 200,
+        headers: cors,
+        body: JSON.stringify({ logs })
+      };
+    }
+    if (path.includes("admin/audit") && method === "POST") {
+
+      const body = getBody(event);
+    
+      await client.send(new PutItemCommand({
+        TableName: "audit_logs",
+        Item: {
+          id: { S: crypto.randomUUID() },
+          action: { S: body.action },
+          target: { S: body.target },
+          time: { N: String(body.time) },
+          admin: { S: body.admin }
+        }
+      }));
+    
+      return { statusCode: 200, headers: cors, body: "ok" };
+    }
+    if (path.includes("admin/audit") && method === "GET") {
+
+      const res = await client.send(new ScanCommand({
+        TableName: "audit_logs"
+      }));
+    
+      const logs = (res.Items || []).map(i=>({
+        action: i.action.S,
+        target: i.target.S,
+        time: Number(i.time.N)
+      }));
+    
+      return {
+        statusCode: 200,
+        headers: cors,
+        body: JSON.stringify({ logs })
+      };
     }
 
     // ================= ADMIN CONTROL =================

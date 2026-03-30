@@ -462,6 +462,18 @@ body::after {
   <h3>📊 System Stats</h3>
   <div id="stats"></div>
   <div id="liveStatus">🟢 Live</div>
+  <div class="card">
+  <h3>📧 Email Analytics</h3>
+  <div id="emailStats"></div>
+  <div class="card">
+  <h3>📜 Audit Logs</h3>
+  <div id="auditLogs" style="max-height:200px;overflow:auto;"></div>
+  <div class="card">
+  <h3>🤖 AI Threat Detection</h3>
+  <div id="aiThreats"></div>
+</div>
+</div>
+</div>
 </div>
 
   <!-- USERS -->
@@ -559,12 +571,18 @@ body::after {
 <script>
 const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
 
+// ================= STATE =================
 let usersData = [];
 let linksData = [];
 let chart;
 let geoCache = {};
 let lastClicks = {};
 let lastRenderHash = "";
+
+// 🔒 ADMIN GUARD
+if(localStorage.getItem("role") !== "admin"){
+  window.location.href = "index.html";
+}
 
 // ================= FETCH =================
 async function safeFetch(url, method="GET", body=null){
@@ -584,12 +602,12 @@ async function safeFetch(url, method="GET", body=null){
 
 // ================= LOAD =================
 async function loadAdmin(){
+
   const usersJson = await safeFetch(API+"/admin/users");
   const linksJson = await safeFetch(API+"/list");
 
   const newHash = JSON.stringify(linksJson);
-
-  if(newHash === lastRenderHash) return; // 🔥 no unnecessary re-render
+  if(newHash === lastRenderHash) return;
   lastRenderHash = newHash;
 
   usersData = usersJson.users || [];
@@ -597,48 +615,36 @@ async function loadAdmin(){
 
   renderUsers();
   renderLinks();
+  renderStats();
   drawChart();
-
   trackRealtime();
-}
-
-// ================= REALTIME =================
-function trackRealtime(){
-  linksData.forEach(l=>{
-    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-
-      // 🔥 highlight updated row
-      const row = document.querySelector(`[data-slug="${l.slug}"]`);
-      if(row){
-        row.style.background = "#065f46";
-        setTimeout(()=>row.style.background="",1500);
-      }
-    }
-    lastClicks[l.slug] = l.clicks;
-  });
 }
 
 // ================= USERS =================
 function renderUsers(){
-  users.innerHTML="";
+  const el = document.getElementById("users");
+  if(!el) return;
+
+  el.innerHTML="";
 
   usersData.forEach(u=>{
-    users.innerHTML += `
+    el.innerHTML += `
       <tr>
         <td>${u.username}</td>
         <td><span class="badge ${u.banned?"banned":"active"}">${u.banned?"BANNED":"ACTIVE"}</span></td>
         <td>${u.requests || 0}</td>
         <td>
+
           <button onclick="openUser('${u.username}')">View</button>
           <button onclick="viewIP('${u.username}')">IP</button>
-          <button onclick="viewKey('${u.username}')">Key</button>
 
           ${u.banned
             ? `<button onclick="unban('${u.username}')">Enable</button>`
             : `<button onclick="ban('${u.username}')">Disable</button>`}
 
-          <button onclick="toggleGeo('${u.username}')">Geo</button>
-          <button onclick="deleteUser('${u.username}')">Delete</button>
+          <button onclick="makeAdmin('${u.username}')">Admin</button>
+          <button onclick="removeAdmin('${u.username}')">User</button>
+
         </td>
       </tr>`;
   });
@@ -646,12 +652,15 @@ function renderUsers(){
 
 // ================= LINKS =================
 function renderLinks(){
-  links.innerHTML="";
+  const el = document.getElementById("links");
+  if(!el) return;
+
+  el.innerHTML="";
 
   linksData.forEach(l=>{
     const full = API + "/" + l.slug;
 
-    links.innerHTML += `
+    el.innerHTML += `
       <tr data-slug="${l.slug}">
         <td>${l.user}</td>
         <td>${l.slug}</td>
@@ -661,7 +670,6 @@ function renderLinks(){
         <td>
           <button onclick="pause('${l.slug}')">Pause</button>
           <button onclick="resume('${l.slug}')">Resume</button>
-          <button onclick="openAnalytics('${l.slug}')">Geo</button>
           <button onclick="openAnalytics('${l.slug}')">Analytics</button>
           <button onclick="del('${l.slug}')">Delete</button>
         </td>
@@ -669,26 +677,27 @@ function renderLinks(){
   });
 }
 
-// ================= GEO (FORCE ALWAYS SHOW) =================
+// ================= STATS =================
+function renderStats(){
+  const el = document.getElementById("stats");
+  if(!el) return;
+
+  const totalUsers = usersData.length;
+  const totalLinks = linksData.length;
+  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
+
+  el.innerHTML = `
+    <div>👥 Users: ${totalUsers}</div>
+    <div>🔗 Links: ${totalLinks}</div>
+    <div>📈 Clicks: ${totalClicks}</div>
+  `;
+}
+
+// ================= GEO =================
 async function getGeo(ip){
 
-  // 🔥 ALWAYS RETURN SOMETHING
-  if(!ip || ip === "unknown"){
-    return {
-      country_name: "Unknown",
-      city: "Unknown",
-      latitude: 20,
-      longitude: 0
-    };
-  }
-
-  if(ip.startsWith("192.") || ip.startsWith("127.") || ip.startsWith("10.")){
-    return {
-      country_name: "Local Network",
-      city: "Private",
-      latitude: 20,
-      longitude: 0
-    };
+  if(!ip || ip==="unknown"){
+    return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
   }
 
   if(geoCache[ip]) return geoCache[ip];
@@ -700,7 +709,7 @@ async function getGeo(ip){
     const geo = {
       country_name: data.country_name || "Unknown",
       city: data.city || "Unknown",
-      latitude: data.latitude || 20,   // 🔥 FORCE fallback
+      latitude: data.latitude || 20,
       longitude: data.longitude || 0
     };
 
@@ -708,403 +717,77 @@ async function getGeo(ip){
     return geo;
 
   } catch {
-    return {
-      country_name: "Error",
-      city: "Lookup failed",
-      latitude: 20,
-      longitude: 0
-    };
+    return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
   }
 }
-// ================= ANALYTICS (FULL FIXED + FORCE SHOW) =================
+
+// ================= ANALYTICS =================
 async function openAnalytics(slug){
 
-  panel.style.display = "block";
-  panelContent.innerHTML = "<h4>Loading analytics...</h4>";
-
-  try {
-
-    const data = await safeFetch(API + "/history?slug=" + slug);
-    let history = data.history || [];
-
-    // 🔥 FORCE DATA (never empty)
-    if(!history.length){
-      history = [{
-        ip: "unknown",
-        time: Date.now()
-      }];
-    }
-
-    // ===== COUNTRY HEAT =====
-    let countries = {};
-
-    for(const h of history){
-
-      const geo = await getGeo(h.ip);
-
-      const country = geo.country_name || "Unknown";
-
-      countries[country] = (countries[country] || 0) + 1;
-    }
-
-    const sortedCountries = Object.entries(countries)
-      .sort((a,b)=>b[1]-a[1])
-      .slice(0,5);
-
-    // ===== PANEL UI =====
-    let html = `
-      <h3>${slug}</h3>
-
-      <h4>🌍 Top Countries</h4>
-      ${sortedCountries.map(c=>`
-        <div>${c[0]} — ${c[1]} clicks</div>
-      `).join("")}
-
-      <h4>📡 Recent Activity</h4>
-      ${history.slice(-10).reverse().map(h=>{
-        return `
-          <div>
-            ${h.ip || "unknown"}
-            <br/>
-            <small>${new Date(h.time).toLocaleString()}</small>
-          </div>
-        `;
-      }).join("")}
-    `;
-
-    panelContent.innerHTML = html;
-
-    // ===== CHART =====
-    if(chart) chart.destroy();
-
-    const labels = history.map(h=>new Date(h.time).toLocaleTimeString());
-
-    chart = new Chart(document.getElementById("chart"),{
-      type:"line",
-      data:{
-        labels,
-        datasets:[{
-          label:"Clicks Timeline",
-          data: history.map(()=>1),
-          tension:0.4
-        }]
-      }
-    });
-
-    // ===== MAP (ALWAYS SHOW MARKERS) =====
-    if(typeof L !== "undefined" && document.getElementById("map")){
-
-      if(map) map.remove();
-
-      map = L.map('map').setView([20,0],2);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-        .addTo(map);
-
-      for(const h of history){
-
-        const geo = await getGeo(h.ip);
-
-        // 🔥 ALWAYS PLACE MARKER (NO CONDITIONS)
-        const lat = geo.latitude || 20;
-        const lng = geo.longitude || 0;
-
-        L.marker([lat, lng])
-          .addTo(map)
-          .bindPopup(`${geo.country_name || "Unknown"} - ${geo.city || ""}`);
-      }
-    }
-
-  } catch(e){
-    console.error("Analytics error:", e);
-    panelContent.innerHTML = "Failed to load analytics";
-  }
-}
-
-// ================= IP (ENTERPRISE INTELLIGENCE) =================
-async function viewIP(username){
-
-  panel.style.display = "block";
-  panelContent.innerHTML = "<h4>Loading IP Intelligence...</h4>";
-
-  try {
-
-    const linksRes = await safeFetch(API + "/list");
-    const allLinks = linksRes.items || [];
-
-    const userLinks = allLinks.filter(l => l.user === username);
-
-    let ipStats = {};
-
-    // ================= COLLECT =================
-    for(const l of userLinks){
-
-      const res = await safeFetch(API + "/history?slug=" + l.slug);
-      let history = res.history || [];
-
-      // 🔥 FORCE DATA
-      if(!history.length){
-        history = [{ ip:"unknown", time:Date.now() }];
-      }
-
-      for(const h of history){
-
-        const ip = h.ip || "unknown";
-
-        if(!ipStats[ip]){
-          ipStats[ip] = {
-            count: 0,
-            last: h.time,
-            slug: l.slug
-          };
-        }
-
-        ipStats[ip].count++;
-        ipStats[ip].last = h.time;
-      }
-    }
-
-    // ================= SORT =================
-    const sortedIPs = Object.entries(ipStats)
-      .sort((a,b)=>b[1].count - a[1].count);
-
-    let html = `<h3>🧠 IP Intelligence: ${username}</h3>`;
-
-    // ================= RENDER =================
-    for(const [ip, data] of sortedIPs){
-
-      const geo = await getGeo(ip);
-
-      const flag = geo.country_code
-        ? `https://flagcdn.com/16x12/${geo.country_code.toLowerCase()}.png`
-        : "";
-
-      // 🔥 VPN / PROXY DETECTION (heuristic)
-      const vpn = geo.org?.toLowerCase().includes("vpn") ||
-                  geo.org?.toLowerCase().includes("hosting") ||
-                  geo.org?.toLowerCase().includes("cloud") ||
-                  geo.org?.toLowerCase().includes("amazon") ||
-                  geo.org?.toLowerCase().includes("google");
-
-      const suspicious = (
-        ip === "unknown" ||
-        ip.startsWith("192.") ||
-        ip.startsWith("127.") ||
-        ip.startsWith("10.")
-      );
-
-      const isTop = data.count > 5;
-
-      html += `
-        <div style="
-          margin-bottom:12px;
-          padding:8px;
-          border-radius:8px;
-          background:${isTop ? "rgba(239,68,68,0.15)" : "rgba(30,41,59,0.6)"};
-          border:${vpn ? "1px solid #f59e0b" : "1px solid transparent"};
-          ${suspicious ? "color:#ef4444" : ""}
-        ">
-
-          ${flag ? `<img src="${flag}" style="margin-right:6px;">` : ""}
-
-          <b 
-            style="cursor:pointer; color:#60a5fa;"
-            onclick="openIPMap('${ip}')"
-          >
-            ${ip}
-          </b>
-
-          ${suspicious ? " ⚠️" : ""}
-          ${vpn ? " 🛰️ VPN" : ""}
-
-          <br/>
-
-          <small>
-            🌍 ${geo.country_name || "Unknown"} 
-            ${geo.city ? " - " + geo.city : ""}
-          </small>
-
-          <br/>
-
-          <small>
-            🏢 ISP: ${geo.org || "Unknown"}
-          </small>
-
-          <br/>
-
-          <small>
-            🔗 ASN: ${geo.asn || "N/A"}
-          </small>
-
-          <br/>
-
-          <small>
-            🔥 Hits: ${data.count}
-          </small>
-
-          <br/>
-
-          <button onclick="blockIP('${ip}')">Block</button>
-          <button onclick="unblockIP('${ip}')">Unblock</button>
-
-        </div>
-      `;
-    }
-
-    panelContent.innerHTML = html;
-
-  } catch (e){
-    console.error("IP ERROR:", e);
-    panelContent.innerHTML = "<p>Error loading IP data</p>";
-  }
-}
-
-
-// ================= CLICK IP → MAP (UPGRADED) =================
-async function openIPMap(ip){
-
-  panelContent.innerHTML = "<h4>Loading Geo Map...</h4>";
-
-  const geo = await getGeo(ip);
-
-  if(typeof L !== "undefined" && document.getElementById("map")){
-
-    if(map) map.remove();
-
-    map = L.map('map').setView(
-      [geo.latitude || 20, geo.longitude || 0],
-      4
-    );
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-      .addTo(map);
-
-    L.marker([geo.latitude || 20, geo.longitude || 0])
-      .addTo(map)
-      .bindPopup(`
-        <b>${ip}</b><br/>
-        ${geo.country_name}<br/>
-        ${geo.city}<br/>
-        ISP: ${geo.org}
-      `)
-      .openPopup();
-  }
-
-  panelContent.innerHTML += `
-    <h3>${ip}</h3>
-    <p>🌍 ${geo.country_name} - ${geo.city}</p>
-    <p>🏢 ISP: ${geo.org || "Unknown"}</p>
-    <p>🔗 ASN: ${geo.asn || "N/A"}</p>
-  `;
-}
-// ================= KEY =================
-function viewKey(username){
-  const user = usersData.find(u=>u.username===username);
-
   panel.style.display="block";
-  panelContent.innerHTML = `<p>${user.apiKey}</p>`;
+  panelContent.innerHTML="Loading...";
+
+  const data = await safeFetch(API+"/history?slug="+slug);
+  const history = data.history || [];
+
+  panelContent.innerHTML = history.map(h=>`
+    <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
+  `).join("");
 }
 
-// ================= ACTIONS =================
+// ================= ADMIN ACTIONS =================
 async function ban(u){ await safeFetch(API+"/admin/ban","POST",{username:u}); loadAdmin(); }
 async function unban(u){ await safeFetch(API+"/admin/unban","POST",{username:u}); loadAdmin(); }
-async function toggleGeo(u){ await safeFetch(API+"/admin/geo","POST",{username:u,enabled:true}); loadAdmin(); }
-async function deleteUser(u){ alert("connect backend"); }
+
+async function makeAdmin(u){ await safeFetch(API+"/admin/make-admin","POST",{username:u}); loadAdmin(); }
+async function removeAdmin(u){ await safeFetch(API+"/admin/remove-admin","POST",{username:u}); loadAdmin(); }
 
 async function pause(s){ await safeFetch(API+"/admin/pause","POST",{slug:s}); loadAdmin(); }
 async function resume(s){ await safeFetch(API+"/admin/resume","POST",{slug:s}); loadAdmin(); }
 async function del(s){ await safeFetch(API+"/delete","POST",{slug:s}); loadAdmin(); }
 
-
-// ================= USER GEO (FIXED) =================
-async function toggleGeo(username){
-
-  panel.style.display = "block";
-  panelContent.innerHTML = "<h4>Loading Geo Activity...</h4>";
-
-  try {
-
-    const linksRes = await safeFetch(API + "/list");
-    const userLinks = (linksRes.items || []).filter(l => l.user === username);
-
-    if(userLinks.length === 0){
-      panelContent.innerHTML = "<p>No links for this user</p>";
-      return;
-    }
-
-    let html = `<h3>🌍 Geo Activity: ${username}</h3>`;
-
-    let found = false;
-
-    for(const l of userLinks){
-
-      const res = await safeFetch(API + "/history?slug=" + l.slug);
-      const history = res.history || [];
-
-      if(!history.length) continue;
-
-      found = true;
-
-      html += `<h4>${l.slug}</h4>`;
-
-      for(const h of history.slice(-10)){
-
-        const geo = await getGeo(h.ip);
-
-        html += `
-          <div style="margin-bottom:8px;">
-            🌍 ${geo.country_name || "Unknown"}
-            ${geo.city ? " - " + geo.city : ""}
-            <br/>
-            <small>${h.ip}</small>
-          </div>
-        `;
-      }
-    }
-
-    if(!found){
-      panelContent.innerHTML = "<p>No geo activity found</p>";
-      return;
-    }
-
-    panelContent.innerHTML = html;
-
-  } catch(e){
-    console.error(e);
-    panelContent.innerHTML = "Failed to load geo data";
-  }
-}
-// ================= USER PANEL =================
-function openUser(u){
-  const user = usersData.find(x=>x.username===u);
-
-  if(!user){
-    panelContent.innerHTML = "User not found";
-    panel.style.display="block";
-    return;
-  }
-
+// ================= CREATE USER =================
+function openCreateUser(){
   panel.style.display="block";
-  panelContent.innerHTML = `
-    <p>User: ${user.username}</p>
-    <p>Requests: ${user.requests || 0}</p>
+  panelContent.innerHTML=`
+    <h3>Create User</h3>
+    <input id="newUser" placeholder="Email"><br><br>
+    <input id="newPass" placeholder="Password"><br><br>
+    <select id="newRole">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select><br><br>
+    <button onclick="createUser()">Create</button>
   `;
 }
 
-// 🔒 AUTH GUARD
-if(!localStorage.getItem("token")){
-  window.location.href = "index.html";
+async function createUser(){
+
+  const username = document.getElementById("newUser").value.trim();
+  const password = document.getElementById("newPass").value;
+  const role = document.getElementById("newRole").value;
+
+  await safeFetch(API+"/admin/create-user","POST",{username,password,role});
+
+  alert("User created");
+  loadAdmin();
 }
 
-// ================= UI =================
-function closePanel(){ panel.style.display="none"; }
+// ================= LOGOUT =================
 function logout(){
-  localStorage.removeItem("token");
-  localStorage.removeItem("role"); // 🔥 IMPORTANT
-  localStorage.removeItem("lastUser"); // optional
-
-  window.location.href = "index.html";
+  localStorage.clear();
+  window.location.href="index.html";
 }
+const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
+
+socket.onopen = () => {
+  console.log("🟢 WebSocket connected");
+};
+
+socket.onmessage = (event) => {
+  console.log("📡 Update received", event.data);
+  loadAdmin(); // 🔥 REAL-TIME UPDATE
+};
 
 // ================= CHART =================
 function drawChart(){
@@ -1125,268 +808,126 @@ function drawChart(){
     }
   });
 }
-function renderStats(){
+// ================= EMAIL ANALYTICS =================
+async function loadEmailAnalytics(){
 
-  const totalUsers = usersData.length;
-  const totalLinks = linksData.length;
-  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
+  const res = await safeFetch(API + "/admin/email-logs");
+  const logs = res.logs || [];
 
-  stats.innerHTML = `
-    <div>👥 Users: ${totalUsers}</div>
-    <div>🔗 Links: ${totalLinks}</div>
-    <div>📈 Clicks: ${totalClicks}</div>
-  `;
-}
-setInterval(()=>{
-  liveStatus.innerText = "🟢 Live " + new Date().toLocaleTimeString();
-},1000);
+  let sent = 0, opened = 0, clicked = 0;
 
-
-// ================= TERMINAL =================
-let terminalLogs = [];
-let attackLogs = [];
-
-function logTerminal(msg){
-
-  if(!document.getElementById("terminal")) return;
-
-  const time = new Date().toLocaleTimeString();
-
-  terminalLogs.unshift(`[${time}] ${msg}`);
-
-  if(terminalLogs.length > 50) terminalLogs.pop();
-
-  terminal.innerHTML = terminalLogs.map(l=>`<div>${l}</div>`).join("");
-}
-
-
-// ================= ATTACK MONITOR =================
-function logAttack(msg, danger=false){
-
-  if(!document.getElementById("attackFeed")) return;
-
-  const time = new Date().toLocaleTimeString();
-
-  attackLogs.unshift({
-    text: `[${time}] ${msg}`,
-    danger
+  logs.forEach(l=>{
+    if(l.type === "sent") sent++;
+    if(l.type === "opened") opened++;
+    if(l.type === "clicked") clicked++;
   });
 
-  if(attackLogs.length > 20) attackLogs.pop();
+  emailStats.innerHTML = `
+    <div>📨 Sent: ${sent}</div>
+    <div>👁️ Opens: ${opened}</div>
+    <div>🔗 Clicks: ${clicked}</div>
+    <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
+  `;
+}
 
-  attackFeed.innerHTML = attackLogs.map(a=>`
-    <div style="color:${a.danger ? '#ef4444' : '#22c55e'}">
-      ${a.text}
+// ================= AUDIT LOGGING =================
+async function logAudit(action, target){
+
+  await safeFetch(API + "/admin/audit","POST",{
+    action,
+    target,
+    time: Date.now(),
+    admin: localStorage.getItem("lastUser")
+  });
+}
+
+async function loadAuditLogs(){
+
+  const res = await safeFetch(API + "/admin/audit");
+  const logs = res.logs || [];
+
+  auditLogs.innerHTML = logs.slice(-20).reverse().map(l=>`
+    <div>
+      <b>${l.action}</b> → ${l.target}
+      <br>
+      <small>${new Date(l.time).toLocaleString()}</small>
     </div>
   `).join("");
 }
-function openCreateUser(){
-  panel.style.display = "block";
-  panelContent.innerHTML = document.getElementById("createUserForm").outerHTML;
-}
 
-async function createUser(){
-
-  const username = document.getElementById("newUser").value.trim().toLowerCase();
-  const password = document.getElementById("newPass").value;
-  const role = document.getElementById("newRole").value;
-
-  if(!username || !password){
-    alert("Fill all fields");
-    return;
-  }
-
-  const res = await safeFetch(API+"/admin/create-user","POST",{
-    username,
-    password,
-    role
-  });
-
-  alert("User created");
+// 🔥 Hook audit into actions
+async function ban(u){
+  await safeFetch(API+"/admin/ban","POST",{username:u});
+  logAudit("BAN USER", u);
   loadAdmin();
 }
 
+async function unban(u){
+  await safeFetch(API+"/admin/unban","POST",{username:u});
+  logAudit("UNBAN USER", u);
+  loadAdmin();
+}
 
-// ================= REALTIME =================
-function trackRealtime(){
+async function makeAdmin(u){
+  await safeFetch(API+"/admin/make-admin","POST",{username:u});
+  logAudit("PROMOTE ADMIN", u);
+  loadAdmin();
+}
+
+// ================= AI THREAT DETECTION =================
+function detectThreats(){
+
+  let threats = [];
 
   linksData.forEach(l=>{
 
+    let score = 0;
+
+    // 🚨 heuristic scoring
+    if(l.clicks > 100) score += 40;
+    if(l.clicks > 500) score += 60;
+
+    if(l.slug.includes("admin")) score += 30;
+
+    if(score > 50){
+      threats.push({
+        slug: l.slug,
+        score
+      });
+    }
+  });
+
+  aiThreats.innerHTML = threats.map(t=>`
+    <div style="color:#ef4444">
+      ⚠️ ${t.slug} → Threat Score: ${t.score}
+    </div>
+  `).join("") || "<div>No threats detected</div>";
+}
+
+// ================= AUTO REFRESH =================
+setInterval(()=>{
+  loadEmailAnalytics();
+  loadAuditLogs();
+  detectThreats();
+},3000);
+
+// ================= REALTIME =================
+function trackRealtime(){
+  linksData.forEach(l=>{
     if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-
-      logTerminal(`CLICK DETECTED → ${l.slug}`);
-
-      const fakeIP = "192.168." + Math.floor(Math.random()*255);
-
-      if(typeof isSuspicious === "function" && isSuspicious(fakeIP)){
-        logAttack(`⚠️ Suspicious IP → ${fakeIP}`, true);
-      } else {
-        logAttack(`OK → ${fakeIP}`);
-      }
-
       const row = document.querySelector(`[data-slug="${l.slug}"]`);
       if(row){
-        row.style.background = "#065f46";
+        row.style.background="#065f46";
         setTimeout(()=>row.style.background="",1500);
       }
     }
-
     lastClicks[l.slug] = l.clicks;
   });
 }
 
-
-// ================= FIREWALL =================
-let blockedIPs = new Set();
-
-async function blockIP(ip){
-  if(!ip) return;
-
-  blockedIPs.add(ip);
-
-  await safeFetch(API+"/admin/block-ip","POST",{ip});
-
-  logAttack(`🔥 BLOCKED IP → ${ip}`, true);
-}
-
-async function unblockIP(ip){
-  if(!ip) return;
-
-  blockedIPs.delete(ip);
-
-  await safeFetch(API+"/admin/unblock-ip","POST",{ip});
-
-  logAttack(`✅ UNBLOCKED IP → ${ip}`);
-}
-
-
-// ================= THREAT =================
-function threatScore(ip, history){
-
-  let score = 0;
-
-  if(!ip || ip==="unknown") score += 40;
-  if(ip.startsWith("192") || ip.startsWith("127")) score += 30;
-
-  score += history.length * 2;
-
-  return Math.min(score,100);
-}
-
-function renderThreats(){
-
-  if(!document.getElementById("threatList")) return;
-
-  let html = "";
-
-  linksData.forEach(l=>{
-    const clicks = l.clicks || 0;
-
-    const score = Math.min(clicks * 2,100);
-
-    let color = "#22c55e";
-    if(score > 70) color = "#ef4444";
-    else if(score > 40) color = "#f59e0b";
-
-    html += `<div style="color:${color}">
-      ${l.slug} → Threat Score: ${score}
-    </div>`;
-  });
-
-  threatList.innerHTML = html;
-}
-
-
-// ================= RADAR =================
-let radarCtx;
-let radarAngle = 0;
-let radarPoints = [];
-
-function initRadar(){
-
-  const canvas = document.getElementById("radarCanvas");
-  if(!canvas) return;
-
-  radarCtx = canvas.getContext("2d");
-
-  setInterval(drawRadar, 50);
-}
-
-function drawRadar(){
-
-  if(!radarCtx) return;
-
-  const w = radarCanvas.width;
-  const h = radarCanvas.height;
-
-  radarCtx.clearRect(0,0,w,h);
-
-  const cx = w/2;
-  const cy = h/2;
-  const radius = Math.min(w,h)/2 - 10;
-
-  radarCtx.strokeStyle = "rgba(0,255,0,0.2)";
-  for(let i=1;i<=4;i++){
-    radarCtx.beginPath();
-    radarCtx.arc(cx,cy,radius*i/4,0,Math.PI*2);
-    radarCtx.stroke();
-  }
-
-  radarAngle += 0.05;
-
-  const x = cx + Math.cos(radarAngle)*radius;
-  const y = cy + Math.sin(radarAngle)*radius;
-
-  const gradient = radarCtx.createLinearGradient(cx,cy,x,y);
-  gradient.addColorStop(0,"rgba(0,255,0,0)");
-  gradient.addColorStop(1,"rgba(0,255,0,0.8)");
-
-  radarCtx.strokeStyle = gradient;
-  radarCtx.beginPath();
-  radarCtx.moveTo(cx,cy);
-  radarCtx.lineTo(x,y);
-  radarCtx.stroke();
-
-  if(Math.random() < 0.05){
-    radarPoints.push({
-      x: cx + (Math.random()-0.5)*radius*2,
-      y: cy + (Math.random()-0.5)*radius*2,
-      life: 50
-    });
-  }
-
-  radarPoints.forEach(p=>{
-    radarCtx.fillStyle = "#0f0";
-    radarCtx.beginPath();
-    radarCtx.arc(p.x,p.y,2,0,Math.PI*2);
-    radarCtx.fill();
-    p.life--;
-  });
-
-  radarPoints = radarPoints.filter(p=>p.life>0);
-}
-
-
-// ================= BOOT =================
-function bootTerminal(){
-  logTerminal("System Initialized");
-  logTerminal("Monitoring traffic...");
-  logTerminal("Geo tracking active...");
-  logTerminal("Security layer online...");
-}
-
-
 // ================= INIT =================
-bootTerminal();
-initRadar();
-renderThreats();
-
 loadAdmin();
-
-setInterval(()=>{
-  loadAdmin();
-  renderThreats();
-},2000);
+setInterval(loadAdmin,2000);
 </script>
 </body>
 </html>
