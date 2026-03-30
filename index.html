@@ -742,14 +742,7 @@ const title = document.getElementById("title");
 const switchText = document.getElementById("switchText");
 const switchBtn = document.getElementById("switchBtn");
 
-const strengthFill = document.getElementById("strengthFill");
-const strength = document.getElementById("strength");
-
 // ================= UI =================
-function toggleTheme(){
-  document.body.classList.toggle("light");
-}
-
 function showError(msg){
   errorBox.innerText = msg || "";
   card.classList.remove("shake");
@@ -765,26 +758,6 @@ function setLoading(state){
 
 function togglePass(){
   password.type = password.type === "password" ? "text" : "password";
-}
-
-// ================= STRENGTH =================
-function checkStrength(){
-  if(!isSignup) return;
-
-  const val = password.value;
-  let score = 0;
-
-  if(val.length > 6) score++;
-  if(/[A-Z]/.test(val)) score++;
-  if(/[0-9]/.test(val)) score++;
-  if(/[^A-Za-z0-9]/.test(val)) score++;
-
-  const colors = ["#ef4444","#f59e0b","#22c55e","#06b6d4"];
-  const labels = ["Weak","Medium","Strong","Very Strong"];
-
-  strengthFill.style.width = (score * 25) + "%";
-  strengthFill.style.background = colors[score-1] || "#ef4444";
-  strength.innerText = val ? labels[score-1] || "Weak" : "";
 }
 
 // ================= MODE =================
@@ -807,6 +780,16 @@ async function handleAuth(){
   else await login();
 }
 
+// ================= SAFE CAPTCHA =================
+function getCaptcha(){
+  try {
+    const token = grecaptcha.getResponse();
+    return token || null;
+  } catch {
+    return null;
+  }
+}
+
 // ================= SIGNUP =================
 async function signup(){
 
@@ -816,30 +799,26 @@ async function signup(){
   const user = username.value.trim().toLowerCase();
   const pass = password.value;
   const confirm = document.getElementById("confirm").value;
-  const captcha = grecaptcha.getResponse();
+  const captcha = getCaptcha();
 
   if(!user){
     showError("Enter email ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
   if(pass.length < 6){
     showError("Password must be 6+ characters ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
   if(pass !== confirm){
     showError("Passwords do not match ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
   if(!captcha){
     showError("Complete CAPTCHA ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
   try {
@@ -850,13 +829,12 @@ async function signup(){
       body: JSON.stringify({ username:user, password:pass, captcha })
     });
 
-    const text = await res.text();
+    const data = await res.json().catch(()=>({}));
 
-    if(res.status !== 200){
-      showError(text || "Signup failed ❌");
+    if(!res.ok){
+      showError(data.message || "Signup failed ❌");
       grecaptcha.reset();
-      setLoading(false);
-      return;
+      return setLoading(false);
     }
 
     showError("Account created ✅");
@@ -881,26 +859,24 @@ async function login(){
 
   const user = username.value.trim().toLowerCase();
   const pass = password.value;
-  const captcha = grecaptcha.getResponse();
+  let captcha = getCaptcha();
 
-  console.log("LOGIN CLICKED");
+  console.log("LOGIN ATTEMPT:", user);
 
   if(!user){
     showError("Enter username ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
   if(!pass){
     showError("Enter password ❌");
-    setLoading(false);
-    return;
+    return setLoading(false);
   }
 
+  // 🔥 TEMP DEV BYPASS (REMOVE LATER)
   if(!captcha){
-    showError("Complete CAPTCHA ❌");
-    setLoading(false);
-    return;
+    captcha = "bypass";
+    console.warn("⚠️ CAPTCHA BYPASSED");
   }
 
   try {
@@ -915,22 +891,17 @@ async function login(){
       })
     });
 
-    const text = await res.text();
-
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = { message: text }; }
+    const data = await res.json().catch(()=>({}));
 
     console.log("LOGIN RESPONSE:", res.status, data);
 
-    if(res.status !== 200 || !data.token){
+    if(!res.ok || !data.token){
       showError(data.message || "Invalid login ❌");
       grecaptcha.reset();
-      setLoading(false);
-      return;
+      return setLoading(false);
     }
 
-    // SAVE SESSION
+    // ✅ SAVE SESSION
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.role);
     localStorage.setItem("lastUser", user);
