@@ -18,8 +18,7 @@ import https from "https";
 // ================= CLIENTS =================
 const client = new DynamoDBClient({ region: "us-east-2" });
 const SECRET = "my-secret-key";
-const BASE_URL = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
-const RECAPTCHA_SECRET = "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
+const BASE_URL = "https://rattle-link.vercel.app";const RECAPTCHA_SECRET = "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
 const RESEND_KEY = "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
 const endpoint = "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
@@ -248,56 +247,82 @@ function emailTemplate({ title, message, button, link }) {
   `;
 }
 async function sendEmail(to, { subject, html }) {
-  try {
 
-    // 🔥 BASIC VALIDATION
+  return new Promise((resolve) => {
+
+    // ================= VALIDATION =================
     if (!to || !subject || !html) {
       console.error("❌ Missing email data:", { to, subject });
-      return false;
+      return resolve(false);
     }
 
     console.log("📤 Sending email to:", to);
 
-    const res = await fetch("https://api.resend.com/emails", {
+    const payload = JSON.stringify({
+      from: "Rattle Link <support@rattleshort.online>",
+      to: [to],
+      subject,
+      html
+    });
+
+    const options = {
+      hostname: "api.resend.com",
+      path: "/emails",
       method: "POST",
       headers: {
         "Authorization": `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload)
       },
-      body: JSON.stringify({
-        from: "Rattle Link <support@rattleshort.online>",
-        to: [to],
-        subject,
-        html
-      })
+      timeout: 8000 // 🔥 prevent hanging
+    };
+
+    const req = https.request(options, (res) => {
+
+      let body = "";
+
+      res.on("data", chunk => body += chunk);
+
+      res.on("end", () => {
+
+        console.log("📨 RESEND STATUS:", res.statusCode);
+        console.log("📨 RESEND BODY:", body);
+
+        let data;
+        try {
+          data = JSON.parse(body);
+        } catch {
+          data = body;
+        }
+
+        // ✅ SUCCESS
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log("✅ Email sent:", data?.id || "no-id");
+          return resolve(true);
+        }
+
+        // ❌ FAILURE
+        console.error("❌ Resend failed:", data);
+        return resolve(false);
+      });
     });
 
-    const text = await res.text();
+    // ================= ERROR HANDLING =================
+    req.on("error", (err) => {
+      console.error("🔥 REQUEST ERROR:", err);
+      resolve(false);
+    });
 
-    // 🔥 LOG EVERYTHING (VERY IMPORTANT)
-    console.log("📨 RESEND STATUS:", res.status);
-    console.log("📨 RESEND BODY:", text);
+    req.on("timeout", () => {
+      console.error("⏱️ EMAIL TIMEOUT");
+      req.destroy();
+      resolve(false);
+    });
 
-    // 🔥 TRY PARSE (SAFE)
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
-
-    if (res.ok) {
-      console.log("✅ Email sent:", data?.id || "no-id");
-      return true;
-    }
-
-    console.error("❌ Resend failed:", data);
-    return false;
-
-  } catch (err) {
-    console.error("🔥 EMAIL ERROR:", err);
-    return false;
-  }
+    // ================= SEND =================
+    req.write(payload);
+    req.end();
+  });
 }
 
 
@@ -1026,9 +1051,7 @@ if (method === "POST" && path.includes("forgot")) {
     }));
 
     // ================= RESET LINK =================
-    const resetLink = `https://rattle-link.vercel.app/reset-password.html?token=${resetToken}`;
-
-    console.log("🔗 RESET LINK:", resetLink);
+    const resetLink = `${BASE_URL}/reset-password.html?token=${resetToken}`;
 
     // ================= SEND EMAIL =================
     console.log("🚀 BEFORE EMAIL");
