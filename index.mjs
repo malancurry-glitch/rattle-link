@@ -249,70 +249,94 @@ function emailTemplate({ title, message, button, link }) {
 async function sendEmail(to, { subject, html }) {
   return new Promise((resolve) => {
 
+    // ================= VALIDATION =================
     if (!to || !subject || !html) {
-      console.error("❌ Missing email data");
+      console.error("❌ Missing email data:", { to, subject });
+      return resolve(false);
+    }
+
+    if (!RESEND_KEY) {
+      console.error("❌ RESEND_KEY missing");
       return resolve(false);
     }
 
     console.log("📤 Sending email to:", to);
 
+    // ================= PAYLOAD =================
     const payload = JSON.stringify({
-      from: "Rattle Link <support@rattleshort.online>", // ✅ YOUR VERIFIED DOMAIN ONLY
+      from: "Rattle Link <support@rattleshort.online>", // MUST match verified domain
       to: [to],
       subject,
       html,
-      text: "Reset your password using the link provided.", // ✅ IMPORTANT
+      text: "Open this email to continue.", // fallback for inbox providers
       reply_to: "support@rattleshort.online"
     });
 
-    const options = {
-      hostname: "api.resend.com",
-      path: "/emails",
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(payload)
+    // ================= REQUEST =================
+    const req = https.request(
+      {
+        hostname: "api.resend.com",
+        path: "/emails",
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_KEY}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload)
+        },
+        timeout: 10000
       },
-      timeout: 10000
-    };
+      (res) => {
 
-    const req = https.request(options, (res) => {
+        let body = "";
 
-      let body = "";
+        res.on("data", chunk => {
+          body += chunk;
+        });
 
-      res.on("data", chunk => body += chunk);
+        res.on("end", () => {
 
-      res.on("end", () => {
+          console.log("📨 STATUS:", res.statusCode);
 
-        console.log("📨 STATUS:", res.statusCode);
-        console.log("📨 BODY:", body);
+          let parsed;
+          try {
+            parsed = JSON.parse(body);
+          } catch {
+            parsed = body;
+          }
 
-        let parsed;
-        try { parsed = JSON.parse(body); }
-        catch { parsed = body; }
+          console.log("📨 RESPONSE:", parsed);
 
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log("✅ EMAIL SENT:", parsed?.id);
-          return resolve(true);
-        }
+          // ================= SUCCESS =================
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log("✅ EMAIL SENT:", parsed?.id || "no-id");
+            return resolve(true);
+          }
 
-        console.error("❌ EMAIL FAILED:", parsed);
-        return resolve(false);
-      });
-    });
+          // ================= FAILURE =================
+          console.error("❌ EMAIL FAILED:", {
+            status: res.statusCode,
+            error: parsed
+          });
 
+          return resolve(false);
+        });
+      }
+    );
+
+    // ================= ERROR =================
     req.on("error", (err) => {
       console.error("🔥 REQUEST ERROR:", err.message);
       resolve(false);
     });
 
+    // ================= TIMEOUT =================
     req.on("timeout", () => {
-      console.error("⏱️ TIMEOUT");
+      console.error("⏱️ EMAIL TIMEOUT");
       req.destroy();
       resolve(false);
     });
 
+    // ================= SEND =================
     req.write(payload);
     req.end();
   });
@@ -471,32 +495,147 @@ if (routeKey) {
 }
 
 const method = event.requestContext?.http?.method || "GET";
-let path = event.requestContext?.http?.path || "/";
-path = path.toLowerCase();
-  path = path.toLowerCase();
-  // 🔥 MOVE HERE
-  try {
 
-    if (path.includes("test-email")) {
-      const ok = await sendEmail("YOUR_EMAIL@gmail.com", {
-        subject: "TEST EMAIL",
-        html: "<h1>WORKING ✅</h1>"
-      });
-    
-      return {
-        statusCode: 200,
-        body: ok ? "sent" : "failed"
-      };
-    }
+// 🔥 CRITICAL FIX: REMOVE /production PREFIX
+const rawPath = event.requestContext?.http?.path || "/";
+const path = rawPath.replace(/^\/production/, "").toLowerCase();
+
+// DEBUG LOGS
+console.log("📍 RAW PATH:", rawPath);
+console.log("📍 CLEAN PATH:", path);
+
+try {
+
+  // ================= TEST EMAIL =================
+  if (path === "/test-email") {
+    const ok = await sendEmail("YOUR_EMAIL@gmail.com", {
+      subject: "TEST EMAIL",
+      html: "<h1>WORKING ✅</h1>"
+    });
+
+    return {
+      statusCode: 200,
+      body: ok ? "sent" : "failed"
+    };
+  }
     // ================= LOGIN =================
-    if (method === "POST" && path.includes("login")) {
+    if (method === "POST" && path.includes("login") && !path.includes("magic-login")) {
 
+      console.log("🔥 LOGIN ROUTE HIT:", path);
+    
+      try {
+    
+        const body = getBody(event);
+    
+        const username = (body.username || "").trim().toLowerCase();
+        const password = String(body.password || "");
+        const captcha = body.captcha;
+    
+        // ================= VALIDATION =================
+        if (!username || !password) {
+          return {
+            statusCode: 400,
+            headers: cors,
+            body: JSON.stringify({ message: "Missing username or password" })
+          };
+        }
+    
+        // ================= CAPTCHA =================
+        let validCaptcha = true;
+    
+        if (captcha !== "bypass") {
+          validCaptcha = await verifyCaptcha(captcha);
+        }
+    
+        if (!validCaptcha) {
+          return {
+            statusCode: 403,
+            headers: cors,
+            body: JSON.stringify({ message: "Captcha failed" })
+          };
+        }
+    
+        // ================= GET USER =================
+        const db = await client.send(new GetItemCommand({
+          TableName: "users",
+          Key: { username: { S: username } }
+        }));
+    
+        console.log("📦 DB RESULT:", db.Item);
+    
+        if (!db.Item) {
+          console.log("❌ USER NOT FOUND:", username);
+          return {
+            statusCode: 401,
+            headers: cors,
+            body: JSON.stringify({ message: "Invalid credentials" })
+          };
+        }
+    
+        // ================= PASSWORD CHECK =================
+        const storedPassword = db.Item.password?.S;
+        const hashedInput = hash(password);
+    
+        console.log("🔑 STORED:", storedPassword);
+        console.log("🔑 INPUT :", hashedInput);
+    
+        if (!storedPassword || storedPassword !== hashedInput) {
+          console.log("❌ PASSWORD MISMATCH");
+          return {
+            statusCode: 401,
+            headers: cors,
+            body: JSON.stringify({ message: "Invalid credentials" })
+          };
+        }
+    
+        // ================= BAN CHECK =================
+        if (db.Item.banned?.BOOL === true) {
+          return {
+            statusCode: 403,
+            headers: cors,
+            body: JSON.stringify({ message: "Account blocked" })
+          };
+        }
+    
+        // ================= SUCCESS =================
+        console.log("✅ LOGIN SUCCESS:", username);
+    
+        return {
+          statusCode: 200,
+          headers: cors,
+          body: JSON.stringify({
+            token: generateToken(username),
+            role: db.Item.role?.S || "user"
+          })
+        };
+    
+      } catch (err) {
+    
+        console.error("🔥 LOGIN ERROR:", err);
+    
+        return {
+          statusCode: 500,
+          headers: cors,
+          body: JSON.stringify({
+            message: "Login failed",
+            error: err.message
+          })
+        };
+      }
+    }
+  // ================= SIGNUP =================
+  if (method === "POST" && path === "/signup") {
+
+    console.log("🔥 SIGNUP ROUTE HIT");
+  
+    try {
+  
       const body = getBody(event);
-    
-      const username = body.username?.trim().toLowerCase();
-      const password = body.password;
+  
+      const username = (body.username || "").trim().toLowerCase();
+      const password = String(body.password || "");
       const captcha = body.captcha;
-    
+  
       if (!username || !password) {
         return {
           statusCode: 400,
@@ -504,14 +643,29 @@ path = path.toLowerCase();
           body: JSON.stringify({ message: "Missing username or password" })
         };
       }
-    
-      // ✅ ALLOW DEV BYPASS
+  
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(username)) {
+        return {
+          statusCode: 400,
+          headers: cors,
+          body: JSON.stringify({ message: "Invalid email format" })
+        };
+      }
+  
+      if (password.length < 6) {
+        return {
+          statusCode: 400,
+          headers: cors,
+          body: JSON.stringify({ message: "Password must be at least 6 characters" })
+        };
+      }
+  
       let validCaptcha = true;
-    
       if (captcha !== "bypass") {
         validCaptcha = await verifyCaptcha(captcha);
       }
-    
+  
       if (!validCaptcha) {
         return {
           statusCode: 403,
@@ -519,94 +673,7 @@ path = path.toLowerCase();
           body: JSON.stringify({ message: "Captcha failed" })
         };
       }
-    
-      const db = await client.send(new GetItemCommand({
-        TableName: "users",
-        Key: { username: { S: username } }
-      }));
-    
-      if (!db.Item) {
-        return {
-          statusCode: 401,
-          headers: cors,
-          body: JSON.stringify({ message: "Invalid credentials" })
-        };
-      }
-    
-      if (db.Item.password?.S !== hash(password)) {
-        return {
-          statusCode: 401,
-          headers: cors,
-          body: JSON.stringify({ message: "Invalid credentials" })
-        };
-      }
-    
-      if (db.Item.banned?.BOOL) {
-        return {
-          statusCode: 403,
-          headers: cors,
-          body: JSON.stringify({ message: "Account blocked" })
-        };
-      }
-    
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: JSON.stringify({
-          token: generateToken(username),
-          role: db.Item.role?.S || "user"
-        })
-      };
-    }
-  // ================= SIGNUP =================
-  if (method === "POST" && path.includes("signup")) {
-
-    try {
   
-      const body = getBody(event);
-      const username = body.username?.trim().toLowerCase();
-      const password = body.password;
-  
-      // ================= VALIDATION =================
-      if (!username || !password || !body.captcha) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: "Missing fields"
-        };
-      }
-  
-      // 🔥 EMAIL VALIDATION
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(username)) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: "Invalid email format"
-        };
-      }
-  
-      // 🔥 PASSWORD VALIDATION
-      if (password.length < 6) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: "Password must be at least 6 characters"
-        };
-      }
-  
-      // ================= CAPTCHA =================
-      const validCaptcha = await verifyCaptcha(body.captcha);
-  
-      if (!validCaptcha) {
-        return {
-          statusCode: 403,
-          headers: cors,
-          body: "Captcha failed"
-        };
-      }
-  
-      // ================= CHECK EXISTING USER =================
       const existing = await client.send(new GetItemCommand({
         TableName: "users",
         Key: { username: { S: username } }
@@ -614,34 +681,29 @@ path = path.toLowerCase();
   
       if (existing.Item) {
         return {
-          statusCode: 400,
+          statusCode: 409,
           headers: cors,
-          body: "User already exists"
+          body: JSON.stringify({ message: "User already exists" })
         };
       }
   
-      // ================= CREATE USER =================
       await client.send(new PutItemCommand({
         TableName: "users",
         Item: {
           username: { S: username },
           password: { S: hash(password) },
-  
-          // 🔥 ADMIN AUTO ASSIGN (CHANGE THIS EMAIL)
-          role: { S: username === "howardanthony7268@gmail.com" ? "admin" : "user" },
-  
+          role: { S: "user" },
           banned: { BOOL: false },
           createdAt: { N: String(Date.now()) }
         }
       }));
   
-      // ================= SUCCESS =================
+      console.log("✅ USER CREATED:", username);
+  
       return {
         statusCode: 200,
         headers: cors,
-        body: JSON.stringify({
-          message: "Account created successfully"
-        })
+        body: JSON.stringify({ message: "Account created successfully" })
       };
   
     } catch (err) {
@@ -651,7 +713,10 @@ path = path.toLowerCase();
       return {
         statusCode: 500,
         headers: cors,
-        body: "Signup failed"
+        body: JSON.stringify({
+          message: "Signup failed",
+          error: err.message
+        })
       };
     }
   }

@@ -1,1145 +1,1274 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>User Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Dashboard</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    body {
-      margin:0;
-      font-family:Inter, Arial;
-      background:#0f172a;
-      color:white;
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:rgba(2,6,23,0.82);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --purple:#a855f7;
+      --border:rgba(0,255,255,0.18);
     }
 
-    .container { padding:20px; }
+    *{ box-sizing:border-box; }
 
-    .header {
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      position:relative;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+      background-size:40px 40px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0,255,255,0.03) 3px
+      );
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      position:relative;
+      z-index:1;
+      padding:20px;
+      max-width:1400px;
+      margin:0 auto;
+    }
+
+    .header{
       display:flex;
       justify-content:space-between;
-      align-items:center;
+      align-items:flex-start;
+      gap:16px;
       margin-bottom:20px;
     }
 
-    .card {
-      background:#1e293b;
-      padding:15px;
-      border-radius:12px;
-      margin-bottom:20px;
+    .header h2{
+      margin:0 0 6px;
+      color:var(--cyan);
+      text-shadow:0 0 10px var(--cyan);
     }
 
-    .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-    }
-
-    input {
-      width:100%;
-      padding:10px;
-      margin:6px 0;
-      border-radius:6px;
-      border:none;
-    }
-
-    button {
-      padding:6px 10px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      margin:2px;
+    .sub{
+      color:var(--muted);
       font-size:12px;
     }
 
-    .copy { background:#22c55e; }
-    .open { background:#3b82f6; }
-    .qr { background:#06b6d4; }
-    .delete { background:#ef4444; }
-    .bulk { background:#a855f7; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      backdrop-filter:blur(12px);
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.12),
+        inset 0 0 20px rgba(0,255,255,0.04);
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:18px;
+      transition:.25s ease;
+    }
 
-    table {
+    .card:hover{
+      box-shadow:
+        0 0 20px rgba(0,255,255,0.35),
+        0 0 40px rgba(139,92,246,0.15);
+      transform:translateY(-2px);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:15px;
+    }
+
+    .stat-card{
+      text-align:center;
+    }
+
+    .stat-card h3{
+      margin:0 0 8px;
+      font-size:30px;
+      color:var(--cyan);
+    }
+
+    .stat-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .form-row{
+      display:flex;
+      gap:10px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .form-row input{
+      flex:1;
+      min-width:180px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.22);
+      background:#000;
+      color:var(--cyan);
+      outline:none;
+    }
+
+    input::placeholder{
+      color:var(--muted);
+    }
+
+    input:focus{
+      box-shadow:0 0 10px var(--cyan);
+    }
+
+    button{
+      padding:10px 14px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      margin:2px;
+      font-size:12px;
+      background:#020617;
+      color:var(--cyan);
+      border:1px solid rgba(0,255,255,0.28);
+      transition:.2s ease;
+    }
+
+    button:hover{
+      color:#fff;
+      border-color:var(--cyan);
+      box-shadow:
+        0 0 10px var(--cyan),
+        0 0 20px var(--cyan),
+        0 0 35px rgba(0,255,255,0.35);
+      transform:scale(1.04);
+    }
+
+    .primary{
+      background:var(--blue);
+      color:#fff;
+      border-color:var(--blue);
+    }
+
+    .copy{ color:var(--green); border-color:var(--green); }
+    .copy:hover{ box-shadow:0 0 15px var(--green); }
+
+    .open{ color:var(--blue); border-color:var(--blue); }
+    .open:hover{ box-shadow:0 0 15px var(--blue); }
+
+    .qr{ color:#06b6d4; border-color:#06b6d4; }
+    .qr:hover{ box-shadow:0 0 15px #06b6d4; }
+
+    .delete{ color:var(--red); border-color:var(--red); }
+    .delete:hover{ box-shadow:0 0 15px var(--red); }
+
+    .bulk{ color:var(--purple); border-color:var(--purple); }
+    .bulk:hover{ box-shadow:0 0 15px var(--purple); }
+
+    .logout-btn{
+      background:var(--red);
+      color:#fff;
+      border-color:var(--red);
+    }
+
+    .links-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .links-header input{
+      width:260px;
+      max-width:100%;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    table{
       width:100%;
       border-collapse:collapse;
+      min-width:900px;
     }
 
-    th, td {
+    th, td{
       padding:10px;
       border-bottom:1px solid #334155;
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
     }
 
-    .badge {
-      background:#334155;
-      padding:3px 6px;
-      border-radius:6px;
+    th{
+      color:var(--cyan);
+      font-weight:600;
+    }
+
+    tr:hover{
+      background:#020617;
+      box-shadow:inset 0 0 10px rgba(0,255,255,0.15);
+    }
+
+    .badge{
+      background:#020617;
+      border:1px solid var(--cyan);
+      color:var(--cyan);
+      box-shadow:0 0 10px var(--cyan);
+      padding:4px 8px;
+      border-radius:999px;
       font-size:11px;
+      display:inline-block;
     }
 
-    .toast {
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .result{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--green);
+      word-break:break-word;
+    }
+
+    .drop-zone{
+      border:2px dashed rgba(0,255,255,0.25);
+      padding:15px;
+      text-align:center;
+      margin-top:10px;
+      border-radius:12px;
+      transition:.2s ease;
+    }
+
+    .drop-zone:hover{
+      background:#020617;
+      box-shadow:0 0 15px var(--cyan) inset;
+    }
+
+    .drop-zone input[type="file"]{
+      background:transparent;
+      border:none;
+      color:var(--muted);
+      margin:10px auto;
+      display:block;
+    }
+
+    .panel{
+      position:fixed;
+      right:0;
+      top:0;
+      width:380px;
+      max-width:100%;
+      height:100%;
+      background:#000;
+      border-left:1px solid rgba(0,255,255,0.3);
+      box-shadow:-10px 0 40px rgba(0,255,255,0.22);
+      padding:20px;
+      display:none;
+      overflow:auto;
+      z-index:1000;
+    }
+
+    .panel h3, .panel h4{
+      color:var(--cyan);
+      margin-top:0;
+    }
+
+    .toast{
       position:fixed;
       bottom:20px;
       right:20px;
-      background:#22c55e;
-      padding:10px;
-      border-radius:6px;
+      background:var(--cyan);
+      color:#000;
+      box-shadow:0 0 15px var(--cyan);
+      padding:12px 14px;
+      border-radius:10px;
       display:none;
+      z-index:2000;
+      font-weight:600;
     }
-    .form-row {
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
 
-.form-row input {
-  flex:1;
-}
+    .ranking-item{
+      padding:10px;
+      border-radius:10px;
+      margin-bottom:10px;
+      background:rgba(15,23,42,0.65);
+      border:1px solid rgba(0,255,255,0.12);
+    }
 
-input {
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#020617;
-  color:#fff;
-}
+    .danger{
+      color:var(--red);
+    }
 
-input::placeholder {
-  color:#94a3b8;
-}
+    .success{
+      color:var(--green);
+    }
 
-button {
-  padding:10px 14px;
-}
-.form-row {
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
+    .warn{
+      color:#f59e0b;
+    }
 
-.form-row input {
-  flex:1;
-}
+    .pill{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      margin-right:6px;
+      border:1px solid currentColor;
+    }
 
-.drop-zone {
-  border:2px dashed #334155;
-  padding:15px;
-  text-align:center;
-  margin-top:10px;
-  border-radius:10px;
-}
+    .status-paused{
+      color:#f59e0b;
+    }
 
-.drop-zone:hover {
-  background:#020617;
-}
+    .status-live{
+      color:#22c55e;
+    }
 
-.panel {
-  position:fixed;
-  right:0;
-  top:0;
-  width:350px;
-  height:100%;
-  background:#020617;
-  padding:20px;
-  display:none;
-  overflow:auto;
-}
-/* ================= CYBERPUNK MODE ================= */
+    .status-expired{
+      color:#ef4444;
+    }
 
-/* background glow */
-body {
-  background: radial-gradient(circle at top, #020617, #000000);
-  color:#e2e8f0;
-}
+    canvas{
+      max-width:100%;
+      filter:
+        drop-shadow(0 0 10px #0ff)
+        drop-shadow(0 0 20px rgba(139,92,246,0.3));
+    }
 
-/* grid overlay */
-body::before {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-image:
-    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-  z-index:0;
-}
+    @media (max-width: 900px){
+      .header{
+        flex-direction:column;
+        align-items:stretch;
+      }
 
-/* HEADER */
-.header h2 {
-  color:#0ff;
-  text-shadow:0 0 10px #0ff;
-}
-
-/* CARDS */
-.card {
-  background: rgba(2,6,23,0.8);
-  border:1px solid rgba(0,255,255,0.1);
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 0 10px rgba(0,255,255,0.1),
-    inset 0 0 20px rgba(0,255,255,0.05);
-  transition:0.25s;
-}
-
-.card:hover {
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.4),
-    0 0 40px rgba(139,92,246,0.2);
-  transform: translateY(-3px);
-}
-
-/* INPUTS */
-input {
-  background:#000;
-  border:1px solid rgba(0,255,255,0.2);
-  color:#0ff;
-}
-
-input:focus {
-  outline:none;
-  box-shadow:0 0 10px #0ff;
-}
-
-/* BUTTONS */
-button {
-  background:#020617;
-  color:#0ff;
-  border:1px solid rgba(0,255,255,0.3);
-  transition:0.2s;
-}
-
-/* neon glow hover */
-button:hover {
-  color:#fff;
-  border-color:#0ff;
-  box-shadow:
-    0 0 10px #0ff,
-    0 0 20px #0ff,
-    0 0 40px rgba(0,255,255,0.4);
-  transform: scale(1.05);
-}
-
-/* special colors */
-.copy { color:#22c55e; border-color:#22c55e; }
-.copy:hover { box-shadow:0 0 15px #22c55e; }
-
-.open { color:#3b82f6; border-color:#3b82f6; }
-.open:hover { box-shadow:0 0 15px #3b82f6; }
-
-.qr { color:#06b6d4; border-color:#06b6d4; }
-.qr:hover { box-shadow:0 0 15px #06b6d4; }
-
-.delete { color:#ef4444; border-color:#ef4444; }
-.delete:hover { box-shadow:0 0 15px #ef4444; }
-
-.bulk { color:#a855f7; border-color:#a855f7; }
-.bulk:hover { box-shadow:0 0 15px #a855f7; }
-
-/* TABLE */
-table {
-  border-radius:10px;
-  overflow:hidden;
-}
-
-tr {
-  transition:0.2s;
-}
-
-tr:hover {
-  background:#020617;
-  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
-}
-
-/* BADGE */
-.badge {
-  background:#020617;
-  border:1px solid #0ff;
-  color:#0ff;
-  box-shadow:0 0 10px #0ff;
-}
-
-/* LINKS */
-a {
-  color:#0ff;
-  text-shadow:0 0 5px #0ff;
-}
-
-a:hover {
-  color:#fff;
-}
-
-/* PANEL */
-.panel {
-  background:#000;
-  border-left:1px solid rgba(0,255,255,0.3);
-  box-shadow:-10px 0 40px rgba(0,255,255,0.3);
-}
-
-/* DROP ZONE */
-.drop-zone {
-  border:2px dashed rgba(0,255,255,0.3);
-}
-
-.drop-zone:hover {
-  background:#020617;
-  box-shadow:0 0 15px #0ff inset;
-}
-
-/* CHART GLOW */
-canvas {
-  filter:
-    drop-shadow(0 0 10px #0ff)
-    drop-shadow(0 0 20px rgba(139,92,246,0.4));
-}
-
-/* TOAST */
-.toast {
-  background:#0ff;
-  color:#000;
-  box-shadow:0 0 15px #0ff;
-}
-
-/* SCANLINES */
-body::after {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 2px,
-    rgba(0,255,255,0.03) 3px
-  );
-  pointer-events:none;
-}
-
-/* FLICKER */
-@keyframes flicker {
-  0% { opacity:1; }
-  50% { opacity:0.85; }
-  100% { opacity:1; }
-}
-
-.card, button, .badge {
-  animation:flicker 3s infinite;
-}
-/* HEADER */
-.pro-header {
-  align-items:flex-start;
-}
-
-.sub {
-  color:#94a3b8;
-  font-size:12px;
-}
-
-/* LOGOUT */
-.logout-btn {
-  background:#ef4444;
-  color:#fff;
-}
-
-/* STATS */
-.stat-card {
-  text-align:center;
-}
-
-.stat-card h3 {
-  font-size:28px;
-  margin:0;
-}
-
-/* CREATE */
-.create-card h3 {
-  margin-bottom:10px;
-}
-
-.primary {
-  background:#3b82f6;
-  color:white;
-}
-
-/* LINKS */
-.links-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-
-.links-header input {
-  width:200px;
-}
-
-/* TABLE */
-table {
-  border-radius:10px;
-  overflow:hidden;
-}
-
-td {
-  vertical-align:middle;
-}
-
-/* RESULT TEXT */
-.result {
-  margin-top:10px;
-  font-size:12px;
-  color:#22c55e;
-}
-
-/* CARDS SPACING */
-.chart-card, .ranking-card {
-  margin-top:10px;
-}
-@keyframes pulse {
-  0% { box-shadow:0 0 5px red; }
-  50% { box-shadow:0 0 20px red; }
-  100% { box-shadow:0 0 5px red; }
-}
-.auth-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000d;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.auth-card{
-  background:#020617;
-  padding:25px;
-  border-radius:12px;
-  width:300px;
-  text-align:center;
-  box-shadow:0 0 30px #0ff;
-}
-
-.auth-card input{
-  width:100%;
-  margin:6px 0;
-  padding:10px;
-  border-radius:6px;
-  border:none;
-}
-
-.auth-card button{
-  width:100%;
-  margin-top:8px;
-  padding:10px;
-}
-
-.switch{
-  margin-top:10px;
-  font-size:12px;
-}
-<style>
-.auth-overlay{
-  position:fixed;
-  inset:0;
-  background:#000d;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.auth-card{
-  background:#020617;
-  padding:25px;
-  border-radius:12px;
-  width:300px;
-  text-align:center;
-  box-shadow:0 0 30px #0ff;
-}
-
-.auth-card input{
-  width:100%;
-  margin:6px 0;
-  padding:10px;
-  border-radius:6px;
-}
-
-.auth-card button{
-  width:100%;
-  margin-top:8px;
-}
-</style>
+      .panel{
+        width:100%;
+      }
+    }
+  </style>
 </head>
-
 <body>
-
-<div class="container">
-
-  <!-- HEADER -->
-  <div class="header pro-header">
-    <div>
-      <h2>📊 User Dashboard</h2>
-      <small class="sub">Manage links • Track performance • Analyze traffic</small>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h2>📊 User Dashboard</h2>
+        <small class="sub">Manage links • Track performance • Analyze traffic</small>
+      </div>
+      <div>
+        <button onclick="refreshNow()">Refresh</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
     </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <div class="grid">
+      <div class="card stat-card">
+        <h3 id="totalLinks">0</h3>
+        <p>Total Links</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="totalClicks">0</h3>
+        <p>Total Clicks</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="avgClicks">0</h3>
+        <p>Avg Clicks</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🚀 Create Link</h3>
+
+      <div class="form-row">
+        <input id="url" placeholder="Paste URL (https://...)" />
+        <input id="customSlug" placeholder="Custom slug (optional)" />
+      </div>
+
+      <div class="form-row">
+        <input id="expire" type="number" min="1" placeholder="Expire in hours" />
+        <button class="primary" onclick="createLink()">Create</button>
+      </div>
+
+      <div class="form-row">
+        <input id="bulkCount" type="number" min="1" placeholder="Bulk count" />
+        <button class="bulk" onclick="bulkCreate()">Bulk Create</button>
+      </div>
+
+      <div class="drop-zone" id="dropZone">
+        <p>📂 Upload CSV with one URL per line or a column named <b>url</b></p>
+        <input type="file" id="csvFile" accept=".csv,.txt" />
+        <button onclick="uploadCSV()">Upload CSV</button>
+      </div>
+
+      <p id="result" class="result"></p>
+    </div>
+
+    <div class="card">
+      <div class="links-header">
+        <h3>🔗 Your Links</h3>
+        <input id="search" placeholder="Search slug or URL..." oninput="renderTable()" />
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Slug</th>
+              <th>Clicks</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th>Expire</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📈 Performance Overview</h3>
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>🏆 Top Performing Links</h3>
+      <div id="ranking"></div>
+    </div>
   </div>
 
-  <!-- STATS -->
-  <div class="grid pro-stats">
-    <div class="card stat-card">
-      <h3 id="totalLinks">0</h3>
-      <p>Total Links</p>
-    </div>
-
-    <div class="card stat-card">
-      <h3 id="totalClicks">0</h3>
-      <p>Total Clicks</p>
-    </div>
-
-    <div class="card stat-card">
-      <h3 id="avgClicks">0</h3>
-      <p>Avg Clicks</p>
-    </div>
+  <div class="panel" id="panel">
+    <div id="panelContent"></div>
+    <button onclick="closePanel()">Close</button>
   </div>
 
-  <!-- CREATE -->
-  <div class="card create-card">
-    <h3>🚀 Create Link</h3>
+  <div class="toast" id="toast">Copied!</div>
 
-    <div class="form-row">
-      <input id="url" placeholder="Paste URL (https://...)">
-      <input id="customSlug" placeholder="Custom slug (optional)">
-    </div>
+  <script>
+    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    <div class="form-row">
-      <input id="expire" placeholder="Expire in hours">
-      <button class="primary" onclick="createLink()">Create</button>
-    </div>
+    let dataStore = [];
+    let chart = null;
+    let statsChartInstance = null;
+    let refreshTimer = null;
+    let map = null;
+    let loadingLinks = false;
 
-    <div class="form-row">
-      <input id="bulkCount" placeholder="Bulk count">
-      <button class="bulk" onclick="bulkCreate()">Bulk Create</button>
-    </div>
+    const totalLinks = document.getElementById("totalLinks");
+    const totalClicks = document.getElementById("totalClicks");
+    const avgClicks = document.getElementById("avgClicks");
+    const table = document.getElementById("table");
+    const ranking = document.getElementById("ranking");
+    const panel = document.getElementById("panel");
+    const panelContent = document.getElementById("panelContent");
+    const toast = document.getElementById("toast");
+    const result = document.getElementById("result");
 
-    <!-- DROP ZONE -->
-    <div class="drop-zone" id="dropZone">
-      <p>📂 Drag & Drop CSV or Upload</p>
-      <input type="file" id="csvFile">
-      <button onclick="uploadCSV()">Upload CSV</button>
-    </div>
+    const urlInput = document.getElementById("url");
+    const slugInput = document.getElementById("customSlug");
+    const expireInput = document.getElementById("expire");
+    const bulkCountInput = document.getElementById("bulkCount");
+    const searchInput = document.getElementById("search");
+    const csvFile = document.getElementById("csvFile");
 
-    <p id="result" class="result"></p>
-  </div>
-
-  <!-- LINKS -->
-  <div class="card links-card">
-    <div class="links-header">
-      <h3>🔗 Your Links</h3>
-      <input id="search" placeholder="Search links..." oninput="renderTable()">
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Slug</th>
-          <th>Clicks</th>
-          <th>Link</th>
-          <th>Expire</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="table"></tbody>
-    </table>
-  </div>
-
-  <!-- CHART -->
-  <div class="card chart-card">
-    <h3>📈 Performance Overview</h3>
-    <canvas id="chart"></canvas>
-  </div>
-
-  <!-- RANKING -->
-  <div class="card ranking-card">
-    <h3>🏆 Top Performing Links</h3>
-    <div id="ranking"></div>
-  </div>
-
-</div>
-
-<!-- PANEL -->
-<div class="panel" id="panel">
-  <h3>📊 Details</h3>
-  <div id="panelContent"></div>
-
-  <h4>🌍 Geo Map</h4>
-  <div id="map" style="height:300px;"></div>
-
-  <button onclick="closePanel()">Close</button>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast">Copied!</div>
-
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
-
-let dataStore = [];
-let chart;
-let lastClicks = {};
-let geoCache = {};
-let map;
-let attackLines = [];
-
-// ================= HEADERS =================
-function headers(){
-  return {
-    "Content-Type":"application/json",
-    "Authorization": localStorage.getItem("token")
-  };
-}
-
-// ================= SAFE FETCH =================
-async function safeFetch(url, options = {}){
-  try{
-    const res = await fetch(url, options);
-    const text = await res.text();
-
-    console.log("API:", url, text); // 🔥 DEBUG
-
-    return JSON.parse(text);
-  }catch(e){
-    console.error("Fetch error:", e);
-    return {};
-  }
-}
-
-// ================= LOAD =================
-async function loadLinks(){
-
-  const data = await safeFetch(API+"/list",{headers:headers()});
-  dataStore = data.items || [];
-
-  const total = dataStore.reduce((a,b)=>a+(b.clicks||0),0);
-
-  totalLinks.innerText = dataStore.length;
-  totalClicks.innerText = total;
-  avgClicks.innerText = dataStore.length ? (total/dataStore.length).toFixed(1) : 0;
-
-  renderTable();
-  drawChart();
-  trackRealtime();
-  renderRanking();
-}
-
-// ================= REALTIME =================
-function trackRealtime(){
-  dataStore.forEach(l=>{
-    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-
-      const row = document.querySelector(`[data-slug="${l.slug}"]`);
-      if(row){
-        row.style.background = "#065f46";
-        setTimeout(()=>row.style.background="",1000);
-      }
-    }
-    lastClicks[l.slug] = l.clicks;
-  });
-}
-
-// ================= TABLE (FIXED + ADVANCED) =================
-function renderTable(){
-
-  table.innerHTML="";
-
-  dataStore.forEach(i=>{
-
-    const link = API+"/"+i.slug;
-
-    // 🔥 FORMAT EXPIRE
-    let expireHTML = "";
-
-    if(i.expire){
-      const exp = Number(i.expire);
-      const now = Date.now();
-
-      const remaining = exp - now;
-
-      if(remaining <= 0){
-        expireHTML = `<span style="color:#ef4444">Expired</span>`;
-      } else {
-        const hrs = Math.floor(remaining / (1000*60*60));
-        const mins = Math.floor((remaining % (1000*60*60)) / (1000*60));
-
-        expireHTML = `
-          <div style="color:#22c55e">
-            ${new Date(exp).toLocaleString()}
-            <br/>
-            <small>${hrs}h ${mins}m left</small>
-          </div>
-        `;
-      }
-
-    } else {
-      expireHTML = `<span style="color:#64748b">No expiry</span>`;
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token") || ""
+      };
     }
 
-    table.innerHTML += `
-    <tr data-slug="${i.slug}">
-      <td>${i.slug}</td>
-
-      <td>
-        <span class="badge">${i.clicks}</span>
-      </td>
-
-      <td>
-        <a href="${link}" target="_blank">${link}</a>
-      </td>
-
-      <!-- ✅ FIXED EXPIRE COLUMN -->
-      <td style="min-width:160px;">
-        ${expireHTML}
-      </td>
-
-      <td>
-        <button onclick="copy('${link}')">Copy</button>
-        <button onclick="window.open('${link}')">Open</button>
-        <button onclick="qr('${link}')">QR</button>
-        <button onclick="del('${i.slug}')">Delete</button>
-        <button onclick="showHistory('${i.slug}')">Stats</button>
-        <button onclick="showGeo('${i.slug}')">🌍</button>
-      </td>
-    </tr>`;
-  });
-}
-// ================= 🌍 CYBER MAP (REALTIME MULTI FIX) =================
-async function showGeo(slug){
-
-  panel.style.display="block";
-  panelContent.innerHTML = `<h3>🌍 Geo Map: ${slug}</h3><div id="map" style="height:320px;"></div>`;
-
-  await new Promise(r=>setTimeout(r,50));
-
-  const mapEl = document.getElementById("map");
-
-  if(map){
-    map.remove();
-    map = null;
-  }
-
-  map = L.map(mapEl).setView([20,0],2);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    .addTo(map);
-
-  const res = await safeFetch(API+"/history?slug="+slug,{headers:headers()});
-  let history = res.history || [];
-
-  if(!history.length){
-    L.marker([20,0]).addTo(map).bindPopup("No data");
-    return;
-  }
-
-  let offset = 0;
-
-  for(const h of history){
-
-    const geo = await getGeo(h.ip);
-
-    let lat = geo.latitude || 20;
-    let lng = geo.longitude || 0;
-
-    // 🔥 spread points
-    lat += offset * 0.4;
-    lng += offset * 0.4;
-    offset++;
-
-    L.circle([lat,lng],{
-      radius:50000,
-      color: h.risk > 70 ? "#ef4444" : "#0ff"
-    }).addTo(map)
-      .bindPopup(`
-        ${geo.country_name || "Unknown"}<br/>
-        ${h.ip}<br/>
-        Risk: ${h.risk || 0}
-      `);
-  }
-}
-// ================= 🧠 AI SCORING =================
-function scoreLink(link){
-
-  let score = 0;
-
-  if(link.clicks > 50) score += 50;
-  if(link.clicks > 100) score += 30;
-
-  // random anomaly simulation
-  if(Math.random() > 0.7) score += 20;
-
-  return Math.min(score,100);
-}
-
-// ================= 🚨 FRAUD DETECTION =================
-function detectFraud(link){
-
-  if(link.clicks > 200) return "🔥 Bot Attack";
-  if(link.clicks > 100) return "⚠️ Suspicious";
-  return "✅ Normal";
-}
-// ================= GEO FIX =================
-async function getGeo(ip){
-
-  if(!ip || ip === "unknown"){
-    return {
-      country_name: "Unknown",
-      city: "",
-      latitude: 20,
-      longitude: 0
-    };
-  }
-
-  try{
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await res.json();
-
-    return {
-      country_name: data.country_name || "Unknown",
-      city: data.city || "",
-      latitude: data.latitude || 20,
-      longitude: data.longitude || 0
-    };
-
-  } catch {
-    return {
-      country_name: "Error",
-      city: "",
-      latitude: 20,
-      longitude: 0
-    };
-  }
-}
-
-// ================= 📊 LIVE ANALYTICS PANEL (FINAL FULL FIX) =================
-async function showHistory(slug){
-
-  // 🔥 normalize slug (IMPORTANT FIX)
-  slug = (slug || "").trim();
-
-  panel.style.display = "block";
-
-  panelContent.innerHTML = `
-    <h3>📊 Live Analytics: ${slug}</h3>
-    <canvas id="statsChart" height="120"></canvas>
-    <div id="statsBody"></div>
-    <div id="map" style="height:300px;margin-top:10px;"></div>
-  `;
-
-  try {
-
-    await new Promise(r => setTimeout(r, 50));
-
-    const res = await safeFetch(API+"/history?slug="+encodeURIComponent(slug),{headers:headers()});
-
-    console.log("RAW HISTORY:", res);
-
-    let history = Array.isArray(res?.history) ? res.history : [];
-
-    // 🔥 HARD FALLBACK (DO NOT EXIT)
-    const link = dataStore.find(l => l.slug === slug);
-
-    if(!history.length && link && link.clicks > 0){
-      console.warn("Using fallback mode (no logs but clicks exist)");
-
-      // create fake history from click count
-      history = Array.from({length: link.clicks}).map((_,i)=>({
-        ip: "unknown",
-        time: Date.now() - (i * 1000),
-        risk: 0,
-        vpn: false,
-        bot: false
-      }));
+    function showToast(message = "Copied!") {
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1600);
     }
 
-    if(!history.length){
-      document.getElementById("statsBody").innerHTML = "<p>No clicks recorded</p>";
-      return;
+    function setResult(message, isError = false) {
+      result.textContent = message;
+      result.style.color = isError ? "#ef4444" : "#22c55e";
     }
 
-    // ================= CLEAN =================
-    history = history.map(h => ({
-      ip: h.ip || "unknown",
-      time: Number(h.time) || Date.now(),
-      risk: Number(h.risk || 0),
-      vpn: !!h.vpn,
-      bot: !!h.bot
-    }));
+    async function safeFetch(url, options = {}) {
+      try {
+        const res = await fetch(url, options);
+        const raw = await res.text();
 
-    // ================= GROUP =================
-    let stats = {};
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
 
-    history.forEach(h=>{
-      if(!stats[h.ip]){
-        stats[h.ip] = {
-          count: 0,
-          risk: h.risk,
-          vpn: h.vpn,
-          bot: h.bot,
-          last: h.time
+        if (res.status === 401) {
+          logout();
+          return { ok: false, status: 401, message: "Unauthorized" };
+        }
+
+        return {
+          ok: res.ok,
+          status: res.status,
+          data,
+          raw
+        };
+      } catch (e) {
+        console.error("Fetch error:", e);
+        return {
+          ok: false,
+          status: 0,
+          data: {},
+          raw: "",
+          message: "Network error"
         };
       }
-      stats[h.ip].count++;
-      stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
-    });
-
-    const sorted = Object.entries(stats)
-      .sort((a,b)=>b[1].count - a[1].count);
-
-    // ================= CHART (REAL DATA FIX) =================
-    const labels = history.map(h=>new Date(h.time).toLocaleTimeString());
-    const dataPoints = history.map((_,i)=>i+1);
-
-    if(window.statsChartInstance){
-      window.statsChartInstance.destroy();
     }
 
-    window.statsChartInstance = new Chart(
-      document.getElementById("statsChart"),
-      {
-        type:"line",
-        data:{
-          labels,
-          datasets:[{
-            label:"Clicks Timeline",
-            data: dataPoints,
-            tension:0.4
-          }]
-        }
+    function ensureAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "index.html";
+        return false;
       }
-    );
+      return true;
+    }
 
-    // ================= MAP =================
-    if(typeof L !== "undefined" && document.getElementById("map")){
+    function buildPublicLink(slug) {
+      return `https://rattle-link.vercel.app/${slug}`;
+    }
 
-      if(map){
+    function formatExpire(expire) {
+      if (!expire) {
+        return '<span class="muted">No expiry</span>';
+      }
+
+      const exp = Number(expire);
+      if (!Number.isFinite(exp)) {
+        return '<span class="muted">No expiry</span>';
+      }
+
+      const now = Date.now();
+      const remaining = exp - now;
+
+      if (remaining <= 0) {
+        return `<span class="status-expired">Expired</span>`;
+      }
+
+      const hrs = Math.floor(remaining / (1000 * 60 * 60));
+      const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+
+      return `
+        <div class="success">
+          ${new Date(exp).toLocaleString()}
+          <br>
+          <small>${hrs}h ${mins}m left</small>
+        </div>
+      `;
+    }
+
+    function getStatus(link) {
+      if (link.paused) {
+        return '<span class="pill status-paused">Paused</span>';
+      }
+
+      if (link.expire && Number(link.expire) <= Date.now()) {
+        return '<span class="pill status-expired">Expired</span>';
+      }
+
+      return '<span class="pill status-live">Live</span>';
+    }
+
+    function scoreLink(link) {
+      let score = 0;
+      if ((link.clicks || 0) > 20) score += 20;
+      if ((link.clicks || 0) > 50) score += 30;
+      if ((link.clicks || 0) > 100) score += 30;
+      if (!link.paused) score += 10;
+      if (!link.expire || Number(link.expire) > Date.now()) score += 10;
+      return Math.min(score, 100);
+    }
+
+    function detectFraud(link) {
+      const clicks = Number(link.clicks || 0);
+      if (clicks > 200) return "🔥 Bot Attack";
+      if (clicks > 100) return "⚠️ Suspicious";
+      return "✅ Normal";
+    }
+
+    async function loadLinks(showLoading = false) {
+      if (loadingLinks) return;
+      loadingLinks = true;
+
+      if (showLoading) setResult("⏳ Loading...", false);
+
+      const res = await safeFetch(`${API}/list`, {
+        method: "GET",
+        headers: authHeaders()
+      });
+
+      loadingLinks = false;
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Failed to load links", true);
+        return;
+      }
+
+      dataStore = Array.isArray(res.data?.items) ? res.data.items : [];
+
+      const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+
+      totalLinks.textContent = dataStore.length;
+      totalClicks.textContent = total;
+      avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+
+      renderTable();
+      drawChart();
+      renderRanking();
+
+      if (showLoading) setResult("✅ Loaded");
+    }
+
+    function renderTable() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = dataStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        return !q || slug.includes(q) || url.includes(q);
+      });
+
+      if (!filtered.length) {
+        table.innerHTML = `
+          <tr>
+            <td colspan="6" class="muted">No links found</td>
+          </tr>
+        `;
+        return;
+      }
+
+      table.innerHTML = filtered.map(item => {
+        const publicLink = buildPublicLink(item.slug);
+
+        return `
+          <tr data-slug="${item.slug}">
+            <td><b>${escapeHtml(item.slug || "")}</b></td>
+            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+            <td>
+              <a href="${publicLink}" target="_blank" rel="noopener noreferrer">${publicLink}</a>
+              <div class="muted">${escapeHtml(item.url || "")}</div>
+            </td>
+            <td>${getStatus(item)}</td>
+            <td style="min-width:160px;">${formatExpire(item.expire)}</td>
+            <td>
+              <button class="copy" onclick="copyLink('${escapeJs(publicLink)}')">Copy</button>
+              <button class="open" onclick="window.open('${escapeJs(publicLink)}','_blank')">Open</button>
+              <button class="qr" onclick="showQR('${escapeJs(publicLink)}')">QR</button>
+              <button onclick="showHistory('${escapeJs(item.slug)}')">Stats</button>
+              <button onclick="showGeo('${escapeJs(item.slug)}')">🌍</button>
+              <button class="delete" onclick="deleteLink('${escapeJs(item.slug)}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("chart");
+      if (!canvas) return;
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+      chart = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: sorted.map(i => i.slug),
+          datasets: [{
+            label: "Clicks",
+            data: sorted.map(i => Number(i.clicks || 0)),
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#e2e8f0"
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.12)" }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.12)" }
+            }
+          }
+        }
+      });
+    }
+
+    function renderRanking() {
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+      if (!sorted.length) {
+        ranking.innerHTML = `<div class="muted">No links yet</div>`;
+        return;
+      }
+
+      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => {
+        const score = scoreLink(item);
+        const fraud = detectFraud(item);
+
+        return `
+          <div class="ranking-item">
+            <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+            <div>Clicks: ${Number(item.clicks || 0)}</div>
+            <div>Score: ${score}/100</div>
+            <div>${fraud}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function createLink() {
+      const url = urlInput.value.trim();
+      const slug = slugInput.value.trim();
+      const expireHours = expireInput.value.trim();
+
+      if (!url) {
+        setResult("❌ Enter URL", true);
+        return;
+      }
+
+      setResult("⏳ Creating...", false);
+
+      const body = {
+        url
+      };
+
+      if (slug) body.slug = slug;
+      if (expireHours) {
+        const hours = Number(expireHours);
+        if (!Number.isFinite(hours) || hours <= 0) {
+          setResult("❌ Expire must be a positive number", true);
+          return;
+        }
+        body.expire = Date.now() + (hours * 60 * 60 * 1000);
+      }
+
+      const res = await safeFetch(`${API}/create`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        setResult(`❌ ${res.data?.message || "Failed to create link"}`, true);
+        return;
+      }
+
+      setResult(`✅ Created: ${res.data?.link || "Success"}`, false);
+
+      urlInput.value = "";
+      slugInput.value = "";
+      expireInput.value = "";
+
+      await loadLinks();
+    }
+
+    async function bulkCreate() {
+      const count = Number(bulkCountInput.value || 0);
+      const url = urlInput.value.trim();
+      const expireHours = expireInput.value.trim();
+
+      if (!url) {
+        setResult("❌ Enter URL first", true);
+        return;
+      }
+
+      if (!Number.isFinite(count) || count <= 0) {
+        setResult("❌ Invalid bulk count", true);
+        return;
+      }
+
+      setResult("⏳ Bulk creating...", false);
+
+      let expire = undefined;
+      if (expireHours) {
+        const hours = Number(expireHours);
+        if (!Number.isFinite(hours) || hours <= 0) {
+          setResult("❌ Expire must be a positive number", true);
+          return;
+        }
+        expire = Date.now() + (hours * 60 * 60 * 1000);
+      }
+
+      let success = 0;
+
+      for (let i = 0; i < count; i++) {
+        const res = await safeFetch(`${API}/create`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            url,
+            ...(expire ? { expire } : {})
+          })
+        });
+
+        if (res.ok) success++;
+      }
+
+      setResult(`✅ Created ${success}/${count} links`, false);
+      await loadLinks();
+    }
+
+    async function deleteLink(slug) {
+      if (!confirm(`Delete ${slug}?`)) return;
+
+      const res = await safeFetch(`${API}/delete`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ slug })
+      });
+
+      if (!res.ok) {
+        showToast("Delete failed");
+        return;
+      }
+
+      showToast("Deleted");
+      await loadLinks();
+    }
+
+    async function copyLink(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    function showQR(link) {
+      window.open(
+        "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
+        "_blank"
+      );
+    }
+
+    async function getGeo(ip) {
+      if (!ip || ip === "unknown") {
+        return {
+          country_name: "Unknown",
+          city: "",
+          latitude: 20,
+          longitude: 0
+        };
+      }
+
+      try {
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+        const data = await res.json();
+
+        return {
+          country_name: data.country_name || "Unknown",
+          city: data.city || "",
+          latitude: data.latitude || 20,
+          longitude: data.longitude || 0
+        };
+      } catch {
+        return {
+          country_name: "Error",
+          city: "",
+          latitude: 20,
+          longitude: 0
+        };
+      }
+    }
+
+    function destroyMap() {
+      if (map) {
         map.remove();
         map = null;
       }
+    }
 
-      map = L.map('map').setView([20,0],2);
+    function closePanel() {
+      panel.style.display = "none";
+      panelContent.innerHTML = "";
+      destroyMap();
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-        .addTo(map);
-
-      let offset = 0;
-
-      for(const h of history){
-
-        const geo = await getGeo(h.ip);
-
-        let lat = geo.latitude || (Math.random()*140 - 70);
-        let lng = geo.longitude || (Math.random()*360 - 180);
-
-        lat += offset * 0.3;
-        lng += offset * 0.3;
-        offset++;
-
-        L.circle([lat,lng],{
-          radius:40000,
-          color: h.risk > 70 ? "#ef4444" : "#0ff"
-        }).addTo(map);
+      if (statsChartInstance) {
+        statsChartInstance.destroy();
+        statsChartInstance = null;
       }
     }
 
-    // ================= UI =================
-    let html = `
-      <div><b>Total Clicks:</b> ${history.length}</div>
-      <h4>🚨 Threat Intelligence</h4>
-    `;
-
-    sorted.slice(0,10).forEach(([ip,data])=>{
-
-      const danger = data.risk > 70;
-
-      html += `
-        <div style="
-          margin-bottom:10px;
-          padding:10px;
-          border-radius:10px;
-          background:${danger ? "rgba(239,68,68,0.2)" : "rgba(30,41,59,0.5)"};
-        ">
-          <b>${ip}</b>
-          ${data.vpn ? " 🛰️ VPN" : ""}
-          ${data.bot ? " 🤖 BOT" : ""}
-          ${danger ? " ⚠️ ATTACKER" : ""}
-          <br/>
-          <small>Clicks: ${data.count}</small>
-          <br/>
-          <small>Risk: ${data.risk}</small>
-        </div>
+    async function showGeo(slug) {
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
+        <div class="muted">Loading location data...</div>
+        <div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
       `;
-    });
 
-    document.getElementById("statsBody").innerHTML = html;
+      await new Promise(r => setTimeout(r, 60));
 
-  } catch (e){
-    console.error("STATS ERROR:", e);
-    panelContent.innerHTML = "❌ Failed to load analytics";
-  }
-}
-// ================= RANKING =================
-function renderRanking(){
+      destroyMap();
 
-  const sorted = [...dataStore].sort((a,b)=>b.clicks-a.clicks);
+      const mapEl = document.getElementById("map");
+      map = L.map(mapEl).setView([20, 0], 2);
 
-  let html = "<h4>🏆 AI Ranking</h4>";
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
 
-  sorted.slice(0,5).forEach((l,i)=>{
+      const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`, {
+        method: "GET",
+        headers: authHeaders()
+      });
 
-    const score = scoreLink(l);
-    const fraud = detectFraud(l);
+      const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
-    html += `
-      <div>
-        #${i+1} ${l.slug}
-        <br/>Score: ${score}
-        <br/>${fraud}
-      </div>
-    `;
-  });
+      if (!history.length) {
+        L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
+        return;
+      }
 
-  ranking.innerHTML = html;
-}
+      let offset = 0;
 
-// ================= CREATE (FULL FIXED + PRO) =================
-async function createLink(){
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
 
-  if(!url.value){
-    result.innerText = "❌ Enter URL";
-    return;
-  }
+        let lat = Number(geo.latitude || 20);
+        let lng = Number(geo.longitude || 0);
 
-  result.innerText = "⏳ Creating...";
+        lat += offset * 0.25;
+        lng += offset * 0.25;
+        offset++;
 
-  const body = {
-    url: url.value.trim(),
-    slug: customSlug.value || undefined,
-    expire: expire.value 
-      ? Date.now() + (Number(expire.value) * 3600000)
-      : undefined
-  };
-
-  const data = await safeFetch(API+"/create",{
-    method:"POST",
-    headers:headers(),
-    body:JSON.stringify(body)
-  });
-
-  if(data.link){
-    result.innerText = "✅ Created: " + data.link;
-  } else {
-    result.innerText = "❌ Failed";
-  }
-
-  // 🔥 clear inputs
-  url.value = "";
-  customSlug.value = "";
-  expire.value = "";
-
-  loadLinks();
-}
-// ================= BULK (FIXED WITH EXPIRE) =================
-async function bulkCreate(){
-
-  const count = parseInt(bulkCount.value) || 0;
-
-  if(!url.value){
-    result.innerText = "❌ Enter URL first";
-    return;
-  }
-
-  if(count <= 0){
-    result.innerText = "❌ Invalid bulk count";
-    return;
-  }
-
-  result.innerText = "⏳ Bulk creating...";
-
-  // 🔥 calculate expire timestamp (same as createLink)
-  const expireValue = expire.value
-    ? Date.now() + (Number(expire.value) * 3600000)
-    : null;
-
-  for(let i=0;i<count;i++){
-
-    await safeFetch(API+"/create",{
-      method:"POST",
-      headers:headers(),
-      body:JSON.stringify({
-        url: url.value.trim(),
-
-        // ✅ FIXED: include expire
-        expire: expireValue
-      })
-    });
-  }
-
-  result.innerText = `✅ Created ${count} links`;
-
-  loadLinks();
-}
-// ================= DELETE =================
-async function del(slug){
-  await safeFetch(API+"/delete",{
-    method:"POST",
-    headers:headers(),
-    body:JSON.stringify({slug})
-  });
-  loadLinks();
-}
-
-// ================= PANEL CLOSE =================
-function closePanel(){
-  panel.style.display = "none";
-
-  // 🔥 clean map properly
-  if(map){
-    map.remove();
-    map = null;
-  }
-}
-// ================= ACTIONS =================
-function copy(t){ navigator.clipboard.writeText(t); }
-function qr(link){
-  window.open("https://api.qrserver.com/v1/create-qr-code/?data="+encodeURIComponent(link));
-}
-
-// ================= CHART =================
-function drawChart(){
-  if(chart) chart.destroy();
-
-  chart = new Chart(document.getElementById("chart"),{
-    type:"line",
-    data:{
-      labels:dataStore.map(i=>i.slug),
-      datasets:[{
-        label:"Clicks",
-        data:dataStore.map(i=>i.clicks)
-      }]
+        L.circle([lat, lng], {
+          radius: 45000,
+          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`
+          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
+          ${escapeHtml(h.ip || "unknown")}<br>
+          Risk: ${Number(h.risk || 0)}
+        `);
+      }
     }
-  });
-}
 
-// ================= LOGOUT =================
-function logout(){
-  localStorage.removeItem("token");
-  window.location.href="index.html";
-}
+    async function showHistory(slug) {
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
+        <canvas id="statsChart" height="120"></canvas>
+        <div id="statsBody" style="margin-top:14px;"></div>
+        <h4 style="margin-top:18px;">🌍 Geo Activity</h4>
+        <div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>
+      `;
 
-// ================= INIT =================
-loadLinks();
-setInterval(loadLinks,2000);
-</script>
+      await new Promise(r => setTimeout(r, 60));
+
+      destroyMap();
+
+      const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`, {
+        method: "GET",
+        headers: authHeaders()
+      });
+
+      let history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+      const link = dataStore.find(l => l.slug === slug);
+
+      if (!history.length && link && Number(link.clicks || 0) > 0) {
+        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+          ip: "unknown",
+          time: Date.now() - (i * 1000 * 30),
+          risk: 0,
+          vpn: false,
+          bot: false
+        }));
+      }
+
+      if (!history.length) {
+        document.getElementById("statsBody").innerHTML = "<p class='muted'>No clicks recorded</p>";
+        return;
+      }
+
+      history = history.map(h => ({
+        ip: h.ip || "unknown",
+        time: Number(h.time || Date.now()),
+        risk: Number(h.risk || 0),
+        vpn: !!h.vpn,
+        bot: !!h.bot
+      })).sort((a, b) => a.time - b.time);
+
+      const labels = history.map(h => new Date(h.time).toLocaleTimeString());
+      const dataPoints = history.map((_, i) => i + 1);
+
+      if (statsChartInstance) {
+        statsChartInstance.destroy();
+      }
+
+      statsChartInstance = new Chart(document.getElementById("statsChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Clicks Timeline",
+            data: dataPoints,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: { color: "#e2e8f0" }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.12)" }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.12)" }
+            }
+          }
+        }
+      });
+
+      const stats = {};
+
+      for (const h of history) {
+        if (!stats[h.ip]) {
+          stats[h.ip] = {
+            count: 0,
+            risk: h.risk,
+            vpn: h.vpn,
+            bot: h.bot,
+            last: h.time
+          };
+        }
+        stats[h.ip].count++;
+        stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
+        stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
+      }
+
+      const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
+
+      let html = `
+        <div><b>Total Clicks:</b> ${history.length}</div>
+        <div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>
+      `;
+
+      sorted.slice(0, 10).forEach(([ip, data]) => {
+        const danger = data.risk > 70;
+
+        html += `
+          <div style="
+            margin-bottom:10px;
+            padding:10px;
+            border-radius:10px;
+            background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};
+            border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};
+          ">
+            <b>${escapeHtml(ip)}</b>
+            ${data.vpn ? "<span class='warn'> 🛰️ VPN</span>" : ""}
+            ${data.bot ? "<span class='warn'> 🤖 BOT</span>" : ""}
+            ${danger ? "<span class='danger'> ⚠️ ATTACKER</span>" : ""}
+            <br>
+            <small>Clicks: ${data.count}</small>
+            <br>
+            <small>Risk: ${data.risk}</small>
+          </div>
+        `;
+      });
+
+      document.getElementById("statsBody").innerHTML = html;
+
+      const mapEl = document.getElementById("map");
+      map = L.map(mapEl).setView([20, 0], 2);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      let offset = 0;
+
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
+
+        let lat = Number(geo.latitude || (Math.random() * 140 - 70));
+        let lng = Number(geo.longitude || (Math.random() * 360 - 180));
+
+        lat += offset * 0.22;
+        lng += offset * 0.22;
+        offset++;
+
+        L.circle([lat, lng], {
+          radius: 40000,
+          color: h.risk > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`
+          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
+          ${escapeHtml(h.ip || "unknown")}<br>
+          Risk: ${Number(h.risk || 0)}
+        `);
+      }
+    }
+
+    async function uploadCSV() {
+      const file = csvFile.files?.[0];
+      if (!file) {
+        setResult("❌ Choose a CSV file first", true);
+        return;
+      }
+
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      if (!lines.length) {
+        setResult("❌ CSV is empty", true);
+        return;
+      }
+
+      let urls = [];
+
+      if (lines[0].toLowerCase().includes("url")) {
+        const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+        const urlIndex = header.indexOf("url");
+        if (urlIndex >= 0) {
+          urls = lines.slice(1).map(line => {
+            const cols = line.split(",");
+            return (cols[urlIndex] || "").trim();
+          }).filter(Boolean);
+        }
+      } else {
+        urls = lines;
+      }
+
+      if (!urls.length) {
+        setResult("❌ No URLs found in file", true);
+        return;
+      }
+
+      setResult(`⏳ Uploading ${urls.length} URLs...`, false);
+
+      let ok = 0;
+
+      for (const url of urls) {
+        const res = await safeFetch(`${API}/create`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ url })
+        });
+
+        if (res.ok) ok++;
+      }
+
+      setResult(`✅ Uploaded ${ok}/${urls.length} links`, false);
+      csvFile.value = "";
+      await loadLinks();
+    }
+
+    function refreshNow() {
+      loadLinks(true);
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      window.location.href = "index.html";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeJs(str) {
+      return String(str)
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'")
+        .replaceAll('"', '\\"');
+    }
+
+    // ================= INIT =================
+    (async function init() {
+      if (!ensureAuth()) return;
+
+      await loadLinks(true);
+
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (document.hidden) return;
+        loadLinks(false);
+      }, 5000);
+    })();
+  </script>
 </body>
 </html>
