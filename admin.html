@@ -451,12 +451,18 @@ body::after {
 <div class="sidebar">
   <h2>👑 Admin</h2>
   <button onclick="loadAdmin()">Dashboard</button>
+  <button onclick="openCreateUser()">➕ Create User</button>
   <button onclick="logout()">Logout</button>
 </div>
 
 <div class="main" id="app">
 
   <h2>📊 Enterprise Overview</h2>
+  <div class="card">
+  <h3>📊 System Stats</h3>
+  <div id="stats"></div>
+  <div id="liveStatus">🟢 Live</div>
+</div>
 
   <!-- USERS -->
   <div class="card">
@@ -473,6 +479,22 @@ body::after {
       <tbody id="users"></tbody>
     </table>
   </div>
+
+  <div id="createUserForm" style="display:none;">
+
+  <h3>➕ Create User</h3>
+
+  <input id="newUser" placeholder="Email" style="width:100%;margin-bottom:10px;">
+  <input id="newPass" placeholder="Password" type="password" style="width:100%;margin-bottom:10px;">
+
+  <select id="newRole" style="width:100%;margin-bottom:10px;">
+    <option value="user">User</option>
+    <option value="admin">Admin</option>
+  </select>
+
+  <button onclick="createUser()">Create</button>
+
+</div>
 
   <!-- LINKS -->
   <div class="card">
@@ -1103,6 +1125,21 @@ function drawChart(){
     }
   });
 }
+function renderStats(){
+
+  const totalUsers = usersData.length;
+  const totalLinks = linksData.length;
+  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
+
+  stats.innerHTML = `
+    <div>👥 Users: ${totalUsers}</div>
+    <div>🔗 Links: ${totalLinks}</div>
+    <div>📈 Clicks: ${totalClicks}</div>
+  `;
+}
+setInterval(()=>{
+  liveStatus.innerText = "🟢 Live " + new Date().toLocaleTimeString();
+},1000);
 
 
 // ================= TERMINAL =================
@@ -1142,6 +1179,31 @@ function logAttack(msg, danger=false){
       ${a.text}
     </div>
   `).join("");
+}
+function openCreateUser(){
+  panel.style.display = "block";
+  panelContent.innerHTML = document.getElementById("createUserForm").outerHTML;
+}
+
+async function createUser(){
+
+  const username = document.getElementById("newUser").value.trim().toLowerCase();
+  const password = document.getElementById("newPass").value;
+  const role = document.getElementById("newRole").value;
+
+  if(!username || !password){
+    alert("Fill all fields");
+    return;
+  }
+
+  const res = await safeFetch(API+"/admin/create-user","POST",{
+    username,
+    password,
+    role
+  });
+
+  alert("User created");
+  loadAdmin();
 }
 
 

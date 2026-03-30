@@ -1145,6 +1145,54 @@ if (path.includes("admin")) {
 
       return { statusCode: 200, headers: cors, body: JSON.stringify({ users }) };
     }
+    if (path.includes("admin/create-user")) {
+
+      const body = getBody(event);
+    
+      await client.send(new PutItemCommand({
+        TableName: "users",
+        Item: {
+          username: { S: body.username },
+          password: { S: hash(body.password) },
+          role: { S: body.role || "user" },
+          banned: { BOOL: false },
+          createdAt: { N: String(Date.now()) }
+        }
+      }));
+    
+      return {
+        statusCode: 200,
+        headers: cors,
+        body: "User created"
+      };
+    }
+    if (path.includes("admin/make-admin")) {
+      const body = getBody(event);
+    
+      await client.send(new UpdateItemCommand({
+        TableName: "users",
+        Key: { username: { S: body.username } },
+        UpdateExpression: "SET #r = :r",
+        ExpressionAttributeNames: { "#r": "role" },
+        ExpressionAttributeValues: { ":r": { S: "admin" } }
+      }));
+    
+      return { statusCode: 200, headers: cors, body: "ok" };
+    }
+    
+    if (path.includes("admin/remove-admin")) {
+      const body = getBody(event);
+    
+      await client.send(new UpdateItemCommand({
+        TableName: "users",
+        Key: { username: { S: body.username } },
+        UpdateExpression: "SET #r = :r",
+        ExpressionAttributeNames: { "#r": "role" },
+        ExpressionAttributeValues: { ":r": { S: "user" } }
+      }));
+    
+      return { statusCode: 200, headers: cors, body: "ok" };
+    }
 
     // ================= ADMIN CONTROL =================
     if (path.includes("admin/ban")) {
