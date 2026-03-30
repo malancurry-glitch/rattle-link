@@ -17,431 +17,282 @@ if(!token || role !== "admin"){
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    body { margin:0; font-family:Inter; background:#0f172a; color:white; display:flex; }
+    /* ================= ROOT ================= */
+:root{
+  --bg:#020617;
+  --bg2:#0f172a;
+  --card:#020617;
+  --text:#e2e8f0;
+  --primary:#0ff;
+  --border:rgba(0,255,255,0.15);
+}
 
-    .sidebar {
-      width:220px;
-      background:#020617;
-      padding:20px;
-      height:100vh;
-    }
-
-    .sidebar button {
-      width:100%;
-      margin:6px 0;
-      padding:10px;
-      background:#1e293b;
-      border:none;
-      border-radius:8px;
-      color:white;
-      cursor:pointer;
-    }
-
-    .main { flex:1; padding:20px; }
-
-    .card {
-      background:#1e293b;
-      padding:15px;
-      border-radius:12px;
-      margin-bottom:20px;
-    }
-
-    table { width:100%; border-collapse:collapse; }
-    td, th { padding:10px; border-bottom:1px solid #334155; }
-
-    tr:hover { background:#334155; }
-
-    button {
-      padding:5px 8px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      font-size:11px;
-      margin:2px;
-    }
-
-    .ban { background:#ef4444; }
-    .unban { background:#22c55e; }
-    .geo { background:#3b82f6; }
-    .pause { background:#f59e0b; }
-    .resume { background:#22c55e; }
-    .delete { background:#f97316; }
-    .view { background:#8b5cf6; }
-
-    .badge {
-      padding:4px 8px;
-      border-radius:6px;
-      font-size:11px;
-    }
-
-    .active { background:#22c55e; }
-    .banned { background:#ef4444; }
-    .paused { background:#f59e0b; }
-
-    a {
-      color:#60a5fa;
-      text-decoration:none;
-    }
-
-    #map { height:300px; border-radius:10px; }
-
-    .panel {
-      position:fixed;
-      right:0;
-      top:0;
-      width:400px;
-      height:100%;
-      background:#020617;
-      padding:20px;
-      display:none;
-      overflow:auto;
-    }
-    /* ===== GLOBAL UPGRADE ===== */
+/* ================= BASE ================= */
 body {
-  background: radial-gradient(circle at top, #1e293b, #020617);
+  margin:0;
+  font-family:Inter, Arial;
+  background: radial-gradient(circle at top, var(--bg2), #000);
+  color:var(--text);
+  display:flex;
 }
 
-/* ===== GLASS CARDS ===== */
-.card {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-  transition: 0.25s;
+/* subtle grid */
+body::before{
+  content:"";
+  position:fixed;
+  width:100%;
+  height:100%;
+  background-image:
+    linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
 }
 
-.card:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-}
-
-/* ===== SIDEBAR UPGRADE ===== */
+/* ================= SIDEBAR ================= */
 .sidebar {
-  background: linear-gradient(180deg,#020617,#020617,#0f172a);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  width:220px;
+  height:100vh;
+  background:#020617;
+  padding:20px;
+  border-right:1px solid var(--border);
+  box-shadow:0 0 30px rgba(0,255,255,0.1);
 }
 
-.sidebar button {
-  background: rgba(30,41,59,0.6);
-  backdrop-filter: blur(8px);
-  transition: 0.2s;
+.sidebar h2{
+  color:var(--primary);
+  text-shadow:0 0 10px var(--primary);
 }
 
-.sidebar button:hover {
-  background:#334155;
-  transform: translateX(5px);
+.sidebar button{
+  width:100%;
+  margin:8px 0;
+  padding:10px;
+  background:rgba(30,41,59,0.6);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--primary);
+  cursor:pointer;
+  transition:0.2s;
 }
 
-/* ===== TABLE ===== */
-table {
-  border-radius: 10px;
-  overflow: hidden;
+.sidebar button:hover{
+  transform:translateX(6px);
+  box-shadow:0 0 10px var(--primary);
 }
 
-tr:hover {
-  background: linear-gradient(90deg,#1e293b,#334155);
-  transform: scale(1.01);
+/* ================= MAIN ================= */
+.main{
+  flex:1;
+  padding:20px;
 }
 
-/* ===== BUTTONS (INSANE STYLE) ===== */
-button {
-  position: relative;
-  overflow: hidden;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  transition: 0.2s;
+/* ================= GRID ================= */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;
 }
 
-/* glow effect */
-button::after {
+/* ================= CARDS ================= */
+.card{
+  background:rgba(2,6,23,0.85);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:20px;
+  backdrop-filter:blur(12px);
+  box-shadow:
+    0 0 10px rgba(0,255,255,0.1),
+    inset 0 0 20px rgba(0,255,255,0.05);
+  transition:0.25s;
+}
+
+.card:hover{
+  transform:translateY(-3px) scale(1.01);
+  box-shadow:
+    0 0 20px rgba(0,255,255,0.3),
+    0 0 40px rgba(139,92,246,0.2);
+}
+
+/* ================= HEADINGS ================= */
+h2,h3{
+  color:var(--primary);
+  text-shadow:0 0 6px var(--primary);
+}
+
+/* ================= TABLE ================= */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td,th{
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  font-size:13px;
+}
+
+tr{
+  transition:0.2s;
+}
+
+tr:hover{
+  background:#020617;
+  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
+}
+
+/* ================= BUTTONS ================= */
+button{
+  padding:6px 10px;
+  border-radius:6px;
+  font-size:11px;
+  border:1px solid var(--border);
+  background:#020617;
+  color:var(--primary);
+  cursor:pointer;
+  transition:0.2s;
+  position:relative;
+  overflow:hidden;
+}
+
+/* hover glow */
+button:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    0 0 10px var(--primary),
+    0 0 20px var(--primary);
+}
+
+/* shine effect */
+button::after{
   content:"";
   position:absolute;
   top:0;
   left:-100%;
   width:100%;
   height:100%;
-  background: linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
   transition:0.4s;
 }
-
-button:hover::after {
+button:hover::after{
   left:100%;
 }
 
-button:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 5px 20px rgba(0,0,0,0.6);
-}
+/* ================= COLORS ================= */
+.ban{ border-color:#ef4444; color:#ef4444; }
+.unban{ border-color:#22c55e; color:#22c55e; }
+.pause{ border-color:#f59e0b; color:#f59e0b; }
+.resume{ border-color:#22c55e; color:#22c55e; }
+.delete{ border-color:#f97316; color:#f97316; }
+.view{ border-color:#8b5cf6; color:#8b5cf6; }
 
-/* ===== COLOR GLOW ===== */
-.ban { box-shadow:0 0 10px rgba(239,68,68,.5); }
-.unban { box-shadow:0 0 10px rgba(34,197,94,.5); }
-.geo { box-shadow:0 0 10px rgba(59,130,246,.5); }
-.pause { box-shadow:0 0 10px rgba(245,158,11,.5); }
-.resume { box-shadow:0 0 10px rgba(34,197,94,.5); }
-.delete { box-shadow:0 0 10px rgba(249,115,22,.5); }
-.view { box-shadow:0 0 10px rgba(139,92,246,.5); }
-
-/* ===== BADGES ===== */
-.badge {
-  box-shadow:0 0 8px rgba(255,255,255,0.1);
-}
-
-/* ===== PANEL ===== */
-.panel {
-  background: rgba(2,6,23,0.9);
-  backdrop-filter: blur(15px);
-  border-left:1px solid rgba(255,255,255,0.05);
-  box-shadow:-10px 0 40px rgba(0,0,0,0.8);
-}
-
-/* ===== CHART CARD GLOW ===== */
-canvas {
-  filter: drop-shadow(0 0 20px rgba(59,130,246,.3));
-}
-
-/* ===== TITLE ===== */
-h2 {
-  background: linear-gradient(90deg,#60a5fa,#8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* ===== SCROLLBAR ===== */
-::-webkit-scrollbar {
-  width:6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background:#334155;
-  border-radius:10px;
-}
-/* ===== CYBERPUNK MODE ===== */
-
-/* background */
-body {
-  background: radial-gradient(circle at top, #020617, #000000);
-  color:#e2e8f0;
-}
-
-/* neon grid subtle */
-body::before {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-image:
-    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-  z-index:0;
-}
-
-/* ===== SIDEBAR ===== */
-.sidebar {
-  background:#020617;
-  box-shadow: 0 0 30px rgba(0,255,255,0.1);
-}
-
-.sidebar h2 {
-  color:#0ff;
-  text-shadow:0 0 10px #0ff;
-}
-
-.sidebar button {
-  border:1px solid rgba(0,255,255,0.2);
-}
-
-.sidebar button:hover {
-  background:#0f172a;
-  box-shadow:0 0 10px #0ff;
-}
-
-/* ===== CARDS ===== */
-.card {
-  background: rgba(2,6,23,0.8);
-  border:1px solid rgba(0,255,255,0.1);
-  box-shadow:
-    0 0 10px rgba(0,255,255,0.1),
-    inset 0 0 20px rgba(0,255,255,0.05);
-}
-
-/* glowing border effect */
-.card:hover {
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.3),
-    0 0 40px rgba(139,92,246,0.2);
-}
-
-/* ===== HEADINGS ===== */
-h2, h3 {
-  color:#0ff;
-  text-shadow:0 0 8px #0ff;
-}
-
-/* ===== TABLE ===== */
-tr {
-  transition:0.2s;
-}
-
-tr:hover {
-  background:#020617;
-  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
-}
-
-/* ===== BUTTONS ===== */
-button {
-  background:#020617;
-  color:#0ff;
-  border:1px solid rgba(0,255,255,0.2);
-}
-
-/* neon hover */
-button:hover {
-  color:#fff;
-  border-color:#0ff;
-  box-shadow:
-    0 0 10px #0ff,
-    0 0 20px #0ff,
-    0 0 30px rgba(0,255,255,0.5);
-}
-
-/* individual glow colors */
-.ban { border-color:#ef4444; color:#ef4444; }
-.ban:hover { box-shadow:0 0 15px #ef4444; }
-
-.unban { border-color:#22c55e; color:#22c55e; }
-.unban:hover { box-shadow:0 0 15px #22c55e; }
-
-.geo { border-color:#3b82f6; color:#3b82f6; }
-.geo:hover { box-shadow:0 0 15px #3b82f6; }
-
-.pause { border-color:#f59e0b; color:#f59e0b; }
-.pause:hover { box-shadow:0 0 15px #f59e0b; }
-
-.resume { border-color:#22c55e; color:#22c55e; }
-.resume:hover { box-shadow:0 0 15px #22c55e; }
-
-.delete { border-color:#f97316; color:#f97316; }
-.delete:hover { box-shadow:0 0 15px #f97316; }
-
-.view { border-color:#8b5cf6; color:#8b5cf6; }
-.view:hover { box-shadow:0 0 15px #8b5cf6; }
-
-/* ===== BADGES ===== */
-.badge {
+/* ================= BADGES ================= */
+.badge{
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:11px;
   border:1px solid rgba(255,255,255,0.1);
 }
 
-.active {
+.active{
   background:#022c22;
   color:#22c55e;
   box-shadow:0 0 8px #22c55e;
 }
 
-.banned {
+.banned{
   background:#2b0000;
   color:#ef4444;
   box-shadow:0 0 8px #ef4444;
 }
 
-.paused {
+.paused{
   background:#2b1a00;
   color:#f59e0b;
   box-shadow:0 0 8px #f59e0b;
 }
 
-/* ===== LINKS ===== */
-a {
-  color:#0ff;
-  text-shadow:0 0 5px #0ff;
+/* ================= LINKS ================= */
+a{
+  color:var(--primary);
+  text-decoration:none;
 }
 
-a:hover {
+a:hover{
   color:#fff;
 }
 
-/* ===== PANEL ===== */
-.panel {
+/* ================= PANEL ================= */
+.panel{
+  position:fixed;
+  right:0;
+  top:0;
+  width:380px;
+  height:100%;
   background:#000;
-  border-left:1px solid rgba(0,255,255,0.2);
-  box-shadow:
-    -10px 0 40px rgba(0,255,255,0.2);
+  padding:20px;
+  display:none;
+  overflow:auto;
+  border-left:1px solid var(--border);
+  box-shadow:-10px 0 40px rgba(0,255,255,0.2);
 }
 
-/* ===== MAP ===== */
-#map {
-  border:1px solid rgba(0,255,255,0.2);
+/* ================= MAP ================= */
+#map{
+  height:300px;
+  border-radius:10px;
+  border:1px solid var(--border);
   box-shadow:0 0 20px rgba(0,255,255,0.2);
 }
 
-/* ===== CHART ===== */
-canvas {
-  filter:
-    drop-shadow(0 0 10px #0ff)
-    drop-shadow(0 0 20px rgba(139,92,246,0.3));
-}
-
-/* ===== SCANLINE EFFECT ===== */
-body::after {
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 2px,
-    rgba(0,255,255,0.03) 3px
-  );
-  pointer-events:none;
-}
-
-/* ===== FLICKER ===== */
-@keyframes flicker {
-  0% { opacity:1; }
-  50% { opacity:0.85; }
-  100% { opacity:1; }
-}
-
-.card, button, .badge {
-  animation:flicker 3s infinite;
-}
-#terminal {
+/* ================= TERMINAL ================= */
+#terminal{
   background:#000;
   color:#0f0;
   padding:10px;
   font-size:12px;
+  height:200px;
+  overflow:auto;
   box-shadow: inset 0 0 20px rgba(0,255,0,0.3);
 }
 
-#attackFeed {
-  font-size:12px;
-}
-
-.attack {
-  color:#ef4444;
-  margin-bottom:6px;
-}
-
-.normal {
-  color:#22c55e;
-}
-#radarCanvas {
+/* ================= RADAR ================= */
+#radarCanvas{
   background:#000;
   border-radius:10px;
   box-shadow:0 0 20px #0f0;
 }
 
-#threatList div {
+/* ================= THREATS ================= */
+#threatList div{
   margin-bottom:6px;
   font-size:12px;
 }
 
-.threat-low { color:#22c55e; }
-.threat-mid { color:#f59e0b; }
-.threat-high { color:#ef4444; }
+.threat-low{ color:#22c55e; }
+.threat-mid{ color:#f59e0b; }
+.threat-high{ color:#ef4444; }
+
+/* ================= SCROLL ================= */
+::-webkit-scrollbar{
+  width:6px;
+}
+::-webkit-scrollbar-thumb{
+  background:#334155;
+  border-radius:10px;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes flicker{
+  0%{opacity:1;}
+  50%{opacity:0.9;}
+  100%{opacity:1;}
+}
+
+.card,button{
+  animation:flicker 3s infinite;
+}
 
   </style>
 </head>
