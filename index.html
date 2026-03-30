@@ -824,9 +824,11 @@ async function login(){
   showError("");
   setLoading(true);
 
-  const user = username.value.trim();
+  const user = username.value.trim().toLowerCase();
   const pass = password.value;
-  const captcha = grecaptcha.getResponse();
+  const captcha = typeof grecaptcha !== "undefined"
+    ? grecaptcha.getResponse()
+    : "bypass";
 
   if(!user){
     showError("Enter username ❌");
@@ -862,34 +864,40 @@ async function login(){
 
     if(res.status !== 200){
       showError(data.message || data.error || "Login failed ❌");
-      grecaptcha.reset();
+      if(typeof grecaptcha !== "undefined") grecaptcha.reset();
       setLoading(false);
       return;
     }
 
     // ================= SAVE SESSION =================
     localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role); // 🔥 THIS FIXES ADMIN LOGIN
     localStorage.setItem("lastUser", user);
 
     if(remember.checked){
       localStorage.setItem("rememberUser", user);
     }
 
+    console.log("LOGIN SUCCESS:", data);
+
+    // ================= REDIRECT =================
     card.classList.add("success");
 
     setTimeout(()=>{
-      window.location.href = data.role === "admin"
-        ? "admin.html"
-        : "dashboard.html";
+      if(data.role === "admin"){
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
     },500);
 
   } catch (e){
-    console.error(e);
+    console.error("LOGIN ERROR:", e);
     showError("Server error ❌");
   }
 
   setLoading(false);
-  grecaptcha.reset();
+  if(typeof grecaptcha !== "undefined") grecaptcha.reset();
 }
 
 // ================= SIGNUP =================
