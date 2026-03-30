@@ -456,23 +456,35 @@ if (path.includes("admin")) {
         const captcha = body.captcha;
     
         // ================= VALIDATION =================
-        if (!username || !password || !captcha) {
+        if (!username || !password) {
           return {
             statusCode: 400,
             headers: cors,
-            body: JSON.stringify({ message: "Missing credentials" })
+            body: JSON.stringify({ message: "Missing username or password" })
           };
         }
     
         // ================= CAPTCHA =================
-        const validCaptcha = await verifyCaptcha(captcha);
+        // 🔥 allow bypass ONLY for development (optional)
+        if (captcha !== "bypass") {
     
-        if (!validCaptcha) {
-          return {
-            statusCode: 403,
-            headers: cors,
-            body: JSON.stringify({ message: "Captcha failed" })
-          };
+          if (!captcha) {
+            return {
+              statusCode: 400,
+              headers: cors,
+              body: JSON.stringify({ message: "Captcha required" })
+            };
+          }
+    
+          const validCaptcha = await verifyCaptcha(captcha);
+    
+          if (!validCaptcha) {
+            return {
+              statusCode: 403,
+              headers: cors,
+              body: JSON.stringify({ message: "Captcha failed" })
+            };
+          }
         }
     
         // ================= GET USER =================
@@ -482,21 +494,23 @@ if (path.includes("admin")) {
         }));
     
         if (!res.Item) {
+          console.warn("LOGIN FAIL: user not found →", username);
           return {
             statusCode: 401,
             headers: cors,
-            body: JSON.stringify({ message: "User not found" })
+            body: JSON.stringify({ message: "Invalid credentials" })
           };
         }
     
         // ================= PASSWORD CHECK =================
-        const storedPassword = res.Item.password?.S;
+        const storedPassword = res.Item.password?.S || "";
     
         if (storedPassword !== hash(password)) {
+          console.warn("LOGIN FAIL: wrong password →", username);
           return {
             statusCode: 401,
             headers: cors,
-            body: JSON.stringify({ message: "Invalid password" })
+            body: JSON.stringify({ message: "Invalid credentials" })
           };
         }
     
@@ -526,7 +540,7 @@ if (path.includes("admin")) {
     
       } catch (err) {
     
-        console.error("LOGIN ERROR:", err);
+        console.error("🔥 LOGIN ERROR:", err);
     
         return {
           statusCode: 500,
