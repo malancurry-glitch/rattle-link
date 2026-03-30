@@ -209,7 +209,7 @@ button:disabled{
 </div>
 
 <script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
+const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
 let cooldown = 0;
 let timer = null;
@@ -244,10 +244,10 @@ function isEmail(val){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 }
 
-// ================= SEND =================
+// ================= SEND RESET =================
 async function sendReset(){
 
-  const user = username.value.trim();
+  const user = username.value.trim().toLowerCase();
 
   if(!user){
     show("Enter email ❌");
@@ -268,15 +268,27 @@ async function sendReset(){
 
   try {
 
-    const res = await fetch(API+"/forgot",{
+    const res = await fetch(API + "/forgot", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ username:user })
     });
 
-    await res.text();
+    const text = await res.text();
 
-    // ✅ SUCCESS UI SWITCH
+    let data;
+    try { data = JSON.parse(text); }
+    catch { data = { message: text }; }
+
+    console.log("FORGOT RESPONSE:", res.status, data);
+
+    if(res.status !== 200){
+      show(data.message || "Failed ❌");
+      setLoading(false);
+      return;
+    }
+
+    // ✅ SUCCESS UI
     document.getElementById("formBox").style.display = "none";
     document.getElementById("successBox").style.display = "block";
 
@@ -296,31 +308,17 @@ async function sendReset(){
     },1000);
 
   } catch (e){
-    console.error(e);
+    console.error("FORGOT ERROR:", e);
     show("Network error ❌");
   }
 
   setLoading(false);
 }
-function sendReset(){
 
-  const email = document.getElementById("email").value;
-
-  fetch(API + "/forgot", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ username: email.trim().toLowerCase() })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-  });
-}
 // ================= NAV =================
 function goBack(){
   window.location.href = "index.html";
 }
 </script>
-
 </body>
 </html>
