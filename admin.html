@@ -631,25 +631,34 @@ async function loadAdmin(){
   renderLinks();
   renderStats();
   drawChart();
-  detectThreats();
+  trackRealtime();
 }
 
 // ================= USERS =================
 function renderUsers(){
-  users.innerHTML="";
+  const el = document.getElementById("users");
+  if(!el) return;
+
+  el.innerHTML="";
 
   usersData.forEach(u=>{
-    users.innerHTML += `
+    el.innerHTML += `
       <tr>
         <td>${u.username}</td>
         <td><span class="badge ${u.banned?"banned":"active"}">${u.banned?"BANNED":"ACTIVE"}</span></td>
         <td>${u.requests || 0}</td>
         <td>
+
+          <button onclick="openUser('${u.username}')">View</button>
           <button onclick="viewIP('${u.username}')">IP</button>
+
           ${u.banned
             ? `<button onclick="unban('${u.username}')">Enable</button>`
             : `<button onclick="ban('${u.username}')">Disable</button>`}
+
           <button onclick="makeAdmin('${u.username}')">Admin</button>
+          <button onclick="removeAdmin('${u.username}')">User</button>
+
         </td>
       </tr>`;
   });
@@ -657,12 +666,15 @@ function renderUsers(){
 
 // ================= LINKS =================
 function renderLinks(){
-  links.innerHTML="";
+  const el = document.getElementById("links");
+  if(!el) return;
+
+  el.innerHTML="";
 
   linksData.forEach(l=>{
     const full = API + "/" + l.slug;
 
-    links.innerHTML += `
+    el.innerHTML += `
       <tr data-slug="${l.slug}">
         <td>${l.user}</td>
         <td>${l.slug}</td>
@@ -673,6 +685,7 @@ function renderLinks(){
           <button onclick="pause('${l.slug}')">Pause</button>
           <button onclick="resume('${l.slug}')">Resume</button>
           <button onclick="openAnalytics('${l.slug}')">Analytics</button>
+          <button onclick="del('${l.slug}')">Delete</button>
         </td>
       </tr>`;
   });
@@ -680,19 +693,125 @@ function renderLinks(){
 
 // ================= STATS =================
 function renderStats(){
-  stats.innerHTML = `
-    <div>👥 Users: ${usersData.length}</div>
-    <div>🔗 Links: ${linksData.length}</div>
-    <div>📈 Clicks: ${linksData.reduce((a,b)=>a+b.clicks,0)}</div>
+  const el = document.getElementById("stats");
+  if(!el) return;
+
+  const totalUsers = usersData.length;
+  const totalLinks = linksData.length;
+  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
+
+  el.innerHTML = `
+    <div>👥 Users: ${totalUsers}</div>
+    <div>🔗 Links: ${totalLinks}</div>
+    <div>📈 Clicks: ${totalClicks}</div>
   `;
 }
+
+// ================= GEO =================
+async function getGeo(ip){
+
+  if(!ip || ip==="unknown"){
+    return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
+  }
+
+  if(geoCache[ip]) return geoCache[ip];
+
+  try{
+    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await res.json();
+
+    const geo = {
+      country_name: data.country_name || "Unknown",
+      city: data.city || "Unknown",
+      latitude: data.latitude || 20,
+      longitude: data.longitude || 0
+    };
+
+    geoCache[ip] = geo;
+    return geo;
+
+  } catch {
+    return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
+  }
+}
+
+// ================= ANALYTICS =================
+async function openAnalytics(slug){
+
+  panel.style.display="block";
+  panelContent.innerHTML="Loading...";
+
+  const data = await safeFetch(API+"/history?slug="+slug);
+  const history = data.history || [];
+
+  panelContent.innerHTML = history.map(h=>`
+    <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
+  `).join("");
+}
+
+// ================= ADMIN ACTIONS =================
+async function ban(u){ await safeFetch(API+"/admin/ban","POST",{username:u}); loadAdmin(); }
+async function unban(u){ await safeFetch(API+"/admin/unban","POST",{username:u}); loadAdmin(); }
+
+async function makeAdmin(u){ await safeFetch(API+"/admin/make-admin","POST",{username:u}); loadAdmin(); }
+async function removeAdmin(u){ await safeFetch(API+"/admin/remove-admin","POST",{username:u}); loadAdmin(); }
+
+async function pause(s){ await safeFetch(API+"/admin/pause","POST",{slug:s}); loadAdmin(); }
+async function resume(s){ await safeFetch(API+"/admin/resume","POST",{slug:s}); loadAdmin(); }
+async function del(s){ await safeFetch(API+"/delete","POST",{slug:s}); loadAdmin(); }
+
+// ================= CREATE USER =================
+function openCreateUser(){
+  panel.style.display="block";
+  panelContent.innerHTML=`
+    <h3>Create User</h3>
+    <input id="newUser" placeholder="Email"><br><br>
+    <input id="newPass" placeholder="Password"><br><br>
+    <select id="newRole">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select><br><br>
+    <button onclick="createUser()">Create</button>
+  `;
+}
+
+async function createUser(){
+
+  const username = document.getElementById("newUser").value.trim();
+  const password = document.getElementById("newPass").value;
+  const role = document.getElementById("newRole").value;
+
+  await safeFetch(API+"/admin/create-user","POST",{username,password,role});
+
+  alert("User created");
+  loadAdmin();
+}
+
+// ================= LOGOUT =================
+function logout(){
+  localStorage.clear();
+  window.location.href="index.html";
+}
+const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
+
+socket.onopen = () => {
+  console.log("🟢 WebSocket connected");
+};
+
+socket.onmessage = (event) => {
+  console.log("📡 Update received", event.data);
+  loadAdmin(); // 🔥 REAL-TIME UPDATE
+};
 
 // ================= CHART =================
 function drawChart(){
 
+  const canvas = document.getElementById("chart");
+  if(!canvas) return;
+
   if(chart) chart.destroy();
 
-  chart = new Chart(chart,{
+  chart = new Chart(canvas,{
     type:"bar",
     data:{
       labels:linksData.map(i=>i.slug),
@@ -703,143 +822,126 @@ function drawChart(){
     }
   });
 }
-
-// ================= WEBSOCKET =================
-const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
-
-socket.onmessage = ()=>{
-  logTerminal("⚡ Real-time update received");
-  loadAdmin();
-  loadEmailAnalytics();
-};
-
 // ================= EMAIL ANALYTICS =================
 async function loadEmailAnalytics(){
 
-  const res = await safeFetch(API+"/admin/email-logs");
+  const res = await safeFetch(API + "/admin/email-logs");
   const logs = res.logs || [];
 
-  let sent=0, opened=0, clicked=0;
+  let sent = 0, opened = 0, clicked = 0;
 
   logs.forEach(l=>{
-    if(l.type==="sent") sent++;
-    if(l.type==="opened") opened++;
-    if(l.type==="clicked") clicked++;
+    if(l.type === "sent") sent++;
+    if(l.type === "opened") opened++;
+    if(l.type === "clicked") clicked++;
   });
 
   emailStats.innerHTML = `
-    <div>📨 ${sent}</div>
-    <div>👁️ ${opened}</div>
-    <div>🔗 ${clicked}</div>
+    <div>📨 Sent: ${sent}</div>
+    <div>👁️ Opens: ${opened}</div>
+    <div>🔗 Clicks: ${clicked}</div>
+    <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
   `;
 }
 
-// ================= AUDIT =================
-async function logAudit(action,target){
-  await safeFetch(API+"/admin/audit","POST",{action,target,time:Date.now()});
+// ================= AUDIT LOGGING =================
+async function logAudit(action, target){
+
+  await safeFetch(API + "/admin/audit","POST",{
+    action,
+    target,
+    time: Date.now(),
+    admin: localStorage.getItem("lastUser")
+  });
 }
 
 async function loadAuditLogs(){
 
-  const res = await safeFetch(API+"/admin/audit");
+  const res = await safeFetch(API + "/admin/audit");
   const logs = res.logs || [];
 
-  auditLogs.innerHTML = logs.slice(-10).reverse().map(l=>`
-    <div>${l.action} → ${l.target}</div>
+  auditLogs.innerHTML = logs.slice(-20).reverse().map(l=>`
+    <div>
+      <b>${l.action}</b> → ${l.target}
+      <br>
+      <small>${new Date(l.time).toLocaleString()}</small>
+    </div>
   `).join("");
 }
 
-// ================= ACTIONS =================
+// 🔥 Hook audit into actions
 async function ban(u){
   await safeFetch(API+"/admin/ban","POST",{username:u});
-  logAudit("BAN",u);
+  logAudit("BAN USER", u);
   loadAdmin();
 }
 
 async function unban(u){
   await safeFetch(API+"/admin/unban","POST",{username:u});
-  logAudit("UNBAN",u);
+  logAudit("UNBAN USER", u);
   loadAdmin();
 }
 
 async function makeAdmin(u){
   await safeFetch(API+"/admin/make-admin","POST",{username:u});
-  logAudit("ADMIN",u);
+  logAudit("PROMOTE ADMIN", u);
   loadAdmin();
 }
 
-async function pause(s){
-  await safeFetch(API+"/admin/pause","POST",{slug:s});
-  loadAdmin();
-}
-
-async function resume(s){
-  await safeFetch(API+"/admin/resume","POST",{slug:s});
-  loadAdmin();
-}
-
-// ================= ANALYTICS =================
-async function openAnalytics(slug){
-
-  panel.style.display="block";
-
-  const data = await safeFetch(API+"/history?slug="+slug);
-
-  panelContent.innerHTML = (data.history||[]).map(h=>`
-    <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
-  `).join("");
-}
-
-// ================= CREATE USER =================
-function openCreateUser(){
-  panel.style.display="block";
-  panelContent.innerHTML = document.getElementById("createUserForm").innerHTML;
-}
-
-async function createUser(){
-
-  const username = newUser.value.trim();
-  const password = newPass.value;
-
-  await safeFetch(API+"/admin/create-user","POST",{username,password});
-
-  loadAdmin();
-}
-
-// ================= TERMINAL =================
-let logs=[];
-
-function logTerminal(msg){
-  logs.unshift(msg);
-  terminal.innerHTML = logs.slice(0,20).map(l=>`<div>${l}</div>`).join("");
-}
-
-// ================= AI THREATS =================
+// ================= AI THREAT DETECTION =================
 function detectThreats(){
 
-  let threats=[];
+  let threats = [];
 
   linksData.forEach(l=>{
-    let score = l.clicks > 100 ? 50 : 0;
-    if(l.clicks > 500) score += 50;
+
+    let score = 0;
+
+    // 🚨 heuristic scoring
+    if(l.clicks > 100) score += 40;
+    if(l.clicks > 500) score += 60;
+
+    if(l.slug.includes("admin")) score += 30;
 
     if(score > 50){
-      threats.push(`${l.slug} → ${score}`);
+      threats.push({
+        slug: l.slug,
+        score
+      });
     }
   });
 
-  aiThreats.innerHTML = threats.join("<br>") || "No threats";
+  aiThreats.innerHTML = threats.map(t=>`
+    <div style="color:#ef4444">
+      ⚠️ ${t.slug} → Threat Score: ${t.score}
+    </div>
+  `).join("") || "<div>No threats detected</div>";
+}
+
+// ================= AUTO REFRESH =================
+setInterval(()=>{
+  loadEmailAnalytics();
+  loadAuditLogs();
+  detectThreats();
+},3000);
+
+// ================= REALTIME =================
+function trackRealtime(){
+  linksData.forEach(l=>{
+    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
+      const row = document.querySelector(`[data-slug="${l.slug}"]`);
+      if(row){
+        row.style.background="#065f46";
+        setTimeout(()=>row.style.background="",1500);
+      }
+    }
+    lastClicks[l.slug] = l.clicks;
+  });
 }
 
 // ================= INIT =================
 loadAdmin();
-loadEmailAnalytics();
-loadAuditLogs();
-
-setInterval(()=>{
-  loadAuditLogs();
-},4000);
-
+setInterval(loadAdmin,2000);
 </script>
 </body>
 </html>

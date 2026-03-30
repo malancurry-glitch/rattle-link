@@ -7,11 +7,11 @@ import {
   GetItemCommand
 } from "@aws-sdk/client-dynamodb";
 
-
 import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand
 } from "@aws-sdk/client-apigatewaymanagementapi";
+
 import crypto from "crypto";
 import https from "https";
 
@@ -421,6 +421,24 @@ if (routeKey) {
   const method = event.requestContext?.http?.method || "GET";
   let path = event.requestContext?.http?.path || "/";
   path = path.toLowerCase();
+  // 🔥 MOVE HERE
+if (path.includes("admin")) {
+
+  const username = verifyToken(event);
+
+  if (!username) {
+    return { statusCode: 401, headers: cors, body: "Unauthorized" };
+  }
+
+  const userData = await client.send(new GetItemCommand({
+    TableName: "users",
+    Key: { username: { S: username } }
+  }));
+
+  if(userData.Item?.role?.S !== "admin"){
+    return { statusCode: 403, headers: cors, body: "Admin only" };
+  }
+}
 
   if (method === "OPTIONS") {
     return { statusCode: 200, headers: cors };
@@ -428,45 +446,95 @@ if (routeKey) {
 
   try {
 
-      if (method === "POST" && path.includes("login")) {
+    if (method === "POST" && path.includes("login")) {
 
+      try {
+    
         const body = getBody(event);
         const username = body.username?.trim().toLowerCase();
         const password = body.password;
-      
-        if (!username || !password || !body.captcha) {
-          return { statusCode: 400, headers: cors, body: "Missing credentials" };
+        const captcha = body.captcha;
+    
+        // ================= VALIDATION =================
+        if (!username || !password || !captcha) {
+          return {
+            statusCode: 400,
+            headers: cors,
+            body: JSON.stringify({ message: "Missing credentials" })
+          };
         }
-      
-        // 🔥 CAPTCHA CHECK
-        const validCaptcha = await verifyCaptcha(body.captcha);
-      
+    
+        // ================= CAPTCHA =================
+        const validCaptcha = await verifyCaptcha(captcha);
+    
         if (!validCaptcha) {
-          return { statusCode: 403, headers: cors, body: "Captcha failed" };
+          return {
+            statusCode: 403,
+            headers: cors,
+            body: JSON.stringify({ message: "Captcha failed" })
+          };
         }
-      
+    
+        // ================= GET USER =================
         const res = await client.send(new GetItemCommand({
           TableName: "users",
           Key: { username: { S: username } }
         }));
-      
-        if (!res.Item || res.Item.password?.S !== hash(password)) {
-          return { statusCode: 401, headers: cors, body: "Invalid credentials" };
+    
+        if (!res.Item) {
+          return {
+            statusCode: 401,
+            headers: cors,
+            body: JSON.stringify({ message: "User not found" })
+          };
         }
-      
+    
+        // ================= PASSWORD CHECK =================
+        const storedPassword = res.Item.password?.S;
+    
+        if (storedPassword !== hash(password)) {
+          return {
+            statusCode: 401,
+            headers: cors,
+            body: JSON.stringify({ message: "Invalid password" })
+          };
+        }
+    
+        // ================= BANNED CHECK =================
         if (res.Item.banned?.BOOL) {
-          return { statusCode: 403, headers: cors, body: "Account blocked" };
+          return {
+            statusCode: 403,
+            headers: cors,
+            body: JSON.stringify({ message: "Account blocked" })
+          };
         }
-      
+    
+        // ================= ROLE =================
+        const role = res.Item.role?.S || "user";
+    
+        console.log("LOGIN SUCCESS:", username, role);
+    
+        // ================= SUCCESS =================
         return {
           statusCode: 200,
           headers: cors,
           body: JSON.stringify({
             token: generateToken(username),
-            role: res.Item.role?.S || "user"
+            role
           })
         };
+    
+      } catch (err) {
+    
+        console.error("LOGIN ERROR:", err);
+    
+        return {
+          statusCode: 500,
+          headers: cors,
+          body: JSON.stringify({ message: "Login failed" })
+        };
       }
+    }
   // ================= SIGNUP =================
   if (method === "POST" && path.includes("signup")) {
 
