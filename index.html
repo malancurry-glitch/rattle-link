@@ -958,7 +958,27 @@ async function login(){
 
 // ================= FORGOT =================
 function forgot(){
-  window.location.href = "forgot.html";
+
+  const email = prompt("Enter your email:");
+
+  if(!email){
+    alert("Email required");
+    return;
+  }
+
+  fetch(API + "/forgot", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ username: email.trim().toLowerCase() })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message || "If account exists, reset link sent");
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to send reset email");
+  });
 }
 
 // ================= REMEMBER =================
