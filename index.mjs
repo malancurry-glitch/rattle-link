@@ -250,6 +250,14 @@ function emailTemplate({ title, message, button, link }) {
 async function sendEmail(to, { subject, html }) {
   try {
 
+    // 🔥 BASIC VALIDATION
+    if (!to || !subject || !html) {
+      console.error("❌ Missing email data:", { to, subject });
+      return false;
+    }
+
+    console.log("📤 Sending email to:", to);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -266,16 +274,35 @@ async function sendEmail(to, { subject, html }) {
 
     const text = await res.text();
 
-    console.log("📨 RESEND:", res.status, text);
+    // 🔥 LOG EVERYTHING (VERY IMPORTANT)
+    console.log("📨 RESEND STATUS:", res.status);
+    console.log("📨 RESEND BODY:", text);
 
-    return res.ok;
+    // 🔥 TRY PARSE (SAFE)
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+
+    if (res.ok) {
+      console.log("✅ Email sent:", data?.id || "no-id");
+      return true;
+    }
+
+    console.error("❌ Resend failed:", data);
+    return false;
 
   } catch (err) {
-    console.error("EMAIL ERROR:", err);
+    console.error("🔥 EMAIL ERROR:", err);
     return false;
   }
 }
-async function sendEmailWithRetry(to, payload, retries = 2){
+
+
+// ================= RETRY WRAPPER =================
+async function sendEmailWithRetry(to, payload, retries = 2) {
 
   for (let i = 0; i <= retries; i++) {
 
@@ -283,15 +310,23 @@ async function sendEmailWithRetry(to, payload, retries = 2){
 
     if (success) return true;
 
-    console.warn(`⚠️ Retry ${i+1} failed`);
+    console.warn(`⚠️ Retry ${i + 1} failed`);
 
+    // small delay between retries
     await new Promise(r => setTimeout(r, 1000));
   }
 
   console.error("❌ All retries failed");
   return false;
 }
-async function sendResetEmail(email, link){
+async function sendResetEmail(email, link) {
+
+  if (!email || !link) {
+    console.error("❌ Missing reset email data");
+    return false;
+  }
+
+  console.log("🔗 Reset link:", link);
 
   return sendEmailWithRetry(email, {
     subject: "Reset your password 🔐",
@@ -1002,7 +1037,11 @@ if (method === "POST" && path.includes("forgot")) {
     console.log("🚀 AFTER EMAIL:", sent);
 
     if (!sent) {
-      console.error("🚨 EMAIL FAILED TO SEND");
+      return {
+        statusCode: 500,
+        headers: cors,
+        body: JSON.stringify({ message: "Email failed to send" })
+      };
     }
 
     // ================= RESPONSE =================
