@@ -247,7 +247,6 @@ function emailTemplate({ title, message, button, link }) {
   `;
 }
 async function sendEmail(to, { subject, html }) {
-
   return new Promise((resolve) => {
 
     // ================= VALIDATION =================
@@ -258,8 +257,9 @@ async function sendEmail(to, { subject, html }) {
 
     console.log("📤 Sending email to:", to);
 
+    // 🔥 IMPORTANT: use working sender
     const payload = JSON.stringify({
-      from: "Rattle Link <support@rattleshort.online>",
+      from: "Rattle Link <onboarding@resend.dev>", // ✅ SAFE DEFAULT
       to: [to],
       subject,
       html
@@ -274,7 +274,7 @@ async function sendEmail(to, { subject, html }) {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(payload)
       },
-      timeout: 8000 // 🔥 prevent hanging
+      timeout: 10000 // 🔥 slightly longer for reliability
     };
 
     const req = https.request(options, (res) => {
@@ -286,7 +286,6 @@ async function sendEmail(to, { subject, html }) {
       res.on("end", () => {
 
         console.log("📨 RESEND STATUS:", res.statusCode);
-        console.log("📨 RESEND BODY:", body);
 
         let data;
         try {
@@ -295,21 +294,27 @@ async function sendEmail(to, { subject, html }) {
           data = body;
         }
 
+        console.log("📨 RESEND RESPONSE:", data);
+
         // ✅ SUCCESS
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log("✅ Email sent:", data?.id || "no-id");
+          console.log("✅ Email sent successfully:", data?.id || "no-id");
           return resolve(true);
         }
 
-        // ❌ FAILURE
-        console.error("❌ Resend failed:", data);
+        // ❌ FAILURE (IMPORTANT DEBUG)
+        console.error("❌ Email failed:", {
+          status: res.statusCode,
+          response: data
+        });
+
         return resolve(false);
       });
     });
 
     // ================= ERROR HANDLING =================
     req.on("error", (err) => {
-      console.error("🔥 REQUEST ERROR:", err);
+      console.error("🔥 REQUEST ERROR:", err.message);
       resolve(false);
     });
 

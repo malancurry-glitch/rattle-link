@@ -5,23 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-
-/* ================= THEME ================= */
 :root{
   --bg:#020617;
   --card:#020617;
   --text:#0ff;
   --border:rgba(0,255,255,0.2);
 }
-
 body.light{
   --bg:#f1f5f9;
   --card:#ffffff;
   --text:#020617;
   --border:rgba(0,0,0,0.1);
 }
-
-/* ================= BASE ================= */
 body {
   margin:0;
   font-family:Inter, Arial;
@@ -32,16 +27,12 @@ body {
   align-items:center;
   height:100vh;
 }
-
-/* ================= THEME TOGGLE ================= */
 .theme-toggle{
   position:fixed;
   top:20px;
   right:20px;
   cursor:pointer;
 }
-
-/* ================= WRAPPER ================= */
 .wrapper {
   display:flex;
   width:750px;
@@ -50,8 +41,6 @@ body {
   overflow:hidden;
   box-shadow:0 20px 60px rgba(0,0,0,.7);
 }
-
-/* ================= LEFT ================= */
 .left {
   flex:1;
   background:linear-gradient(135deg,#3b82f6,#06b6d4);
@@ -62,13 +51,11 @@ body {
   padding:30px;
   text-align:center;
 }
-
 .features{
   margin-top:20px;
   display:flex;
   gap:10px;
 }
-
 .features span{
   background:#000;
   border:1px solid #0ff;
@@ -76,8 +63,6 @@ body {
   font-size:11px;
   border-radius:6px;
 }
-
-/* ================= CARD ================= */
 .card {
   flex:1;
   background:var(--card);
@@ -85,16 +70,12 @@ body {
   text-align:center;
   border-left:1px solid var(--border);
 }
-
 .card.success{
   box-shadow:0 0 30px #22c55e;
 }
-
-/* ================= INPUT ================= */
 .input-group {
   margin-bottom:14px;
 }
-
 input {
   width:100%;
   padding:12px;
@@ -103,13 +84,10 @@ input {
   background:#000;
   color:#0ff;
 }
-
 body.light input{
   background:#fff;
   color:#000;
 }
-
-/* ================= BUTTON ================= */
 button {
   width:100%;
   padding:12px;
@@ -120,12 +98,9 @@ button {
   font-weight:bold;
   cursor:pointer;
 }
-
 button:disabled{
   opacity:0.5;
 }
-
-/* ================= SPINNER ================= */
 .spinner{
   width:14px;
   height:14px;
@@ -135,24 +110,18 @@ button:disabled{
   animation:spin 1s linear infinite;
   display:none;
 }
-
 @keyframes spin{
   to{ transform:rotate(360deg); }
 }
-
-/* ================= MSG ================= */
 .msg{ margin-top:10px; }
 .error{ color:#ef4444; }
 .successText{ color:#22c55e; }
-
-/* ================= BACK ================= */
 .back{
   margin-top:12px;
   font-size:12px;
   color:#60a5fa;
   cursor:pointer;
 }
-
   </style>
 </head>
 
@@ -162,11 +131,9 @@ button:disabled{
 
 <div class="wrapper">
 
-  <!-- LEFT -->
   <div class="left">
     <h1>🐍 Rattle Link</h1>
     <p>Password recovery made simple</p>
-
     <div class="features">
       <span>🔐 Secure</span>
       <span>⚡ Instant</span>
@@ -174,11 +141,9 @@ button:disabled{
     </div>
   </div>
 
-  <!-- RIGHT -->
   <div class="card" id="card">
 
     <div id="formBox">
-
       <h2>Forgot Password</h2>
       <p>Enter your email to receive reset link</p>
 
@@ -186,7 +151,7 @@ button:disabled{
         <input id="username" placeholder="Email address">
       </div>
 
-      <button onclick="sendReset()" id="btn">
+      <button id="btn" onclick="sendReset()">
         <span id="btnText">Send Reset Link</span>
         <span id="spinner" class="spinner"></span>
       </button>
@@ -194,18 +159,15 @@ button:disabled{
       <div id="msg" class="msg"></div>
 
       <div class="back" onclick="goBack()">← Back to Login</div>
-
     </div>
 
-    <!-- SUCCESS SCREEN -->
     <div id="successBox" style="display:none;">
       <h2>📧 Email Sent</h2>
-      <p>Check your inbox for reset link</p>
+      <p>Check your inbox (and spam) for reset link</p>
       <button onclick="goBack()">Back to Login</button>
     </div>
 
   </div>
-
 </div>
 
 <script>
@@ -214,7 +176,6 @@ const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 let cooldown = 0;
 let timer = null;
 
-// DOM
 const username = document.getElementById("username");
 const msgBox = document.getElementById("msg");
 const btn = document.getElementById("btn");
@@ -222,12 +183,10 @@ const spinner = document.getElementById("spinner");
 const btnText = document.getElementById("btnText");
 const card = document.getElementById("card");
 
-// ================= THEME =================
 function toggleTheme(){
   document.body.classList.toggle("light");
 }
 
-// ================= UI =================
 function show(msg, type="error"){
   msgBox.innerText = msg;
   msgBox.className = "msg " + (type === "success" ? "successText" : "error");
@@ -239,13 +198,13 @@ function setLoading(state){
   btnText.style.display = state ? "none" : "inline";
 }
 
-// ================= EMAIL VALIDATION =================
 function isEmail(val){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 }
 
-// ================= SEND RESET =================
 async function sendReset(){
+
+  if(btn.disabled) return;
 
   const user = username.value.trim().toLowerCase();
 
@@ -265,6 +224,7 @@ async function sendReset(){
   }
 
   setLoading(true);
+  show("");
 
   try {
 
@@ -280,7 +240,7 @@ async function sendReset(){
     try { data = JSON.parse(text); }
     catch { data = { message: text }; }
 
-    console.log("FORGOT RESPONSE:", res.status, data);
+    console.log("FORGOT:", res.status, data);
 
     if(res.status !== 200){
       show(data.message || "Failed ❌");
@@ -288,37 +248,32 @@ async function sendReset(){
       return;
     }
 
-    // ✅ SUCCESS UI
+    // SUCCESS UI
     document.getElementById("formBox").style.display = "none";
     document.getElementById("successBox").style.display = "block";
-
     card.classList.add("success");
 
     // cooldown
     cooldown = 30;
-
     timer = setInterval(()=>{
       cooldown--;
-      btnText.innerText = `Wait (${cooldown}s)`;
-
       if(cooldown <= 0){
         clearInterval(timer);
-        btnText.innerText = "Send Reset Link";
       }
     },1000);
 
   } catch (e){
-    console.error("FORGOT ERROR:", e);
+    console.error("ERROR:", e);
     show("Network error ❌");
   }
 
   setLoading(false);
 }
 
-// ================= NAV =================
 function goBack(){
   window.location.href = "index.html";
 }
 </script>
+
 </body>
 </html>
