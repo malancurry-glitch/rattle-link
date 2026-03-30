@@ -440,128 +440,112 @@ if (routeKey) {
   let path = event.requestContext?.http?.path || "/";
   path = path.toLowerCase();
   // 🔥 MOVE HERE
-if (path.includes("admin")) {
+  try {
 
-  const username = verifyToken(event);
+    // ================= LOGIN =================
+if (method === "POST" && path.endsWith("/login")) {
 
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const userData = await client.send(new GetItemCommand({
-    TableName: "users",
-    Key: { username: { S: username } }
-  }));
-
-  if(userData.Item?.role?.S !== "admin"){
-    return { statusCode: 403, headers: cors, body: "Admin only" };
-  }
-}
-
-  if (method === "OPTIONS") {
-    return { statusCode: 200, headers: cors };
-  }
+  console.log("🔥 LOGIN ROUTE HIT:", path);
 
   try {
 
-    if (method === "POST" && path.includes("login")) {
+    let body = {};
 
-      try {
-    
-        const body = getBody(event);
-    
-        const username = body.username?.trim().toLowerCase();
-        const password = body.password;
-        const captcha = body.captcha;
-    
-        console.log("LOGIN INPUT:", username);
-        console.log("CAPTCHA TOKEN:", captcha);
-    
-        // ================= VALIDATION =================
-        if (!username || !password) {
-          return {
-            statusCode: 400,
-            headers: cors,
-            body: JSON.stringify({ message: "Missing username or password" })
-          };
-        }
-    
-        // ================= CAPTCHA =================
-        if (!captcha) {
-          return {
-            statusCode: 400,
-            headers: cors,
-            body: JSON.stringify({ message: "Captcha required" })
-          };
-        }
-    
-        const validCaptcha = await verifyCaptcha(captcha);
-    
-        if (!validCaptcha) {
-          return {
-            statusCode: 403,
-            headers: cors,
-            body: JSON.stringify({ message: "Captcha failed" })
-          };
-        }
-    
-        // ================= GET USER =================
-        const res = await client.send(new GetItemCommand({
-          TableName: "users",
-          Key: { username: { S: username } }
-        }));
-    
-        console.log("DDB RESULT:", res);
-    
-        if (!res.Item) {
-          return {
-            statusCode: 401,
-            headers: cors,
-            body: JSON.stringify({ message: "Invalid credentials" })
-          };
-        }
-    
-        // ================= PASSWORD =================
-        if (res.Item.password?.S !== hash(password)) {
-          return {
-            statusCode: 401,
-            headers: cors,
-            body: JSON.stringify({ message: "Invalid credentials" })
-          };
-        }
-    
-        // ================= BLOCK =================
-        if (res.Item.banned?.BOOL) {
-          return {
-            statusCode: 403,
-            headers: cors,
-            body: JSON.stringify({ message: "Account blocked" })
-          };
-        }
-    
-        const role = res.Item.role?.S || "user";
-    
-        console.log("✅ LOGIN SUCCESS:", username, role);
-    
-        return {
-          statusCode: 200,
-          headers: cors,
-          body: JSON.stringify({
-            token: generateToken(username),
-            role
-          })
-        };
-    
-      } catch (err) {
-        console.error("🔥 LOGIN CRASH:", err);
-    
-        return {
-          statusCode: 500,
-          headers: cors,
-          body: JSON.stringify({ message: "Login failed (server error)" })
-        };
-      }
+    try {
+      body = typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body || {};
+    } catch (e) {
+      console.error("BODY PARSE ERROR:", event.body);
+      return {
+        statusCode: 400,
+        headers: cors,
+        body: JSON.stringify({ message: "Invalid request body" })
+      };
     }
+
+    const username = body.username?.trim().toLowerCase();
+    const password = body.password;
+    const captcha = body.captcha;
+
+    console.log("USERNAME:", username);
+
+    if (!username || !password) {
+      return {
+        statusCode: 400,
+        headers: cors,
+        body: JSON.stringify({ message: "Missing username or password" })
+      };
+    }
+
+    if (!captcha) {
+      return {
+        statusCode: 400,
+        headers: cors,
+        body: JSON.stringify({ message: "Captcha required" })
+      };
+    }
+
+    const validCaptcha = await verifyCaptcha(captcha);
+
+    if (!validCaptcha) {
+      return {
+        statusCode: 403,
+        headers: cors,
+        body: JSON.stringify({ message: "Captcha failed" })
+      };
+    }
+
+    const res = await client.send(new GetItemCommand({
+      TableName: "users",
+      Key: { username: { S: username } }
+    }));
+
+    if (!res.Item) {
+      return {
+        statusCode: 401,
+        headers: cors,
+        body: JSON.stringify({ message: "Invalid credentials" })
+      };
+    }
+
+    if (res.Item.password?.S !== hash(password)) {
+      return {
+        statusCode: 401,
+        headers: cors,
+        body: JSON.stringify({ message: "Invalid credentials" })
+      };
+    }
+
+    if (res.Item.banned?.BOOL) {
+      return {
+        statusCode: 403,
+        headers: cors,
+        body: JSON.stringify({ message: "Account blocked" })
+      };
+    }
+
+    const role = res.Item.role?.S || "user";
+
+    return {
+      statusCode: 200,
+      headers: cors,
+      body: JSON.stringify({
+        token: generateToken(username),
+        role
+      })
+    };
+
+  } catch (err) {
+    console.error("🔥 LOGIN ERROR:", err);
+
+    return {
+      statusCode: 500,
+      headers: cors,
+      body: JSON.stringify({ message: "Login failed" })
+    };
+  }
+}
   // ================= SIGNUP =================
   if (method === "POST" && path.includes("signup")) {
 
