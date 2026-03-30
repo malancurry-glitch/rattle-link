@@ -232,7 +232,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:900px;
+      min-width:950px;
     }
 
     th, td{
@@ -439,7 +439,7 @@
         <button class="bulk" onclick="bulkCreate()">Bulk Create</button>
       </div>
 
-      <div class="drop-zone" id="dropZone">
+      <div class="drop-zone">
         <p>📂 Upload CSV with one URL per line or a column named <b>url</b></p>
         <input type="file" id="csvFile" accept=".csv,.txt" />
         <button onclick="uploadCSV()">Upload CSV</button>
@@ -491,6 +491,7 @@
 
   <script>
     const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const SHORT_BASE = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
     let dataStore = [];
     let chart = null;
@@ -551,7 +552,7 @@
 
         if (res.status === 401) {
           logout();
-          return { ok: false, status: 401, message: "Unauthorized" };
+          return { ok: false, status: 401, message: "Unauthorized", data: {} };
         }
 
         return {
@@ -582,7 +583,7 @@
     }
 
     function buildPublicLink(slug) {
-      return `https://rattle-link.vercel.app/${slug}`;
+      return `${SHORT_BASE}/${slug}`;
     }
 
     function formatExpire(expire) {
@@ -678,6 +679,7 @@
 
     function renderTable() {
       const q = (searchInput.value || "").trim().toLowerCase();
+
       const filtered = dataStore.filter(item => {
         const slug = String(item.slug || "").toLowerCase();
         const url = String(item.url || "").toLowerCase();
@@ -697,7 +699,7 @@
         const publicLink = buildPublicLink(item.slug);
 
         return `
-          <tr data-slug="${item.slug}">
+          <tr data-slug="${escapeHtml(item.slug || "")}">
             <td><b>${escapeHtml(item.slug || "")}</b></td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
             <td>
@@ -707,12 +709,12 @@
             <td>${getStatus(item)}</td>
             <td style="min-width:160px;">${formatExpire(item.expire)}</td>
             <td>
-              <button class="copy" onclick="copyLink('${escapeJs(publicLink)}')">Copy</button>
-              <button class="open" onclick="window.open('${escapeJs(publicLink)}','_blank')">Open</button>
-              <button class="qr" onclick="showQR('${escapeJs(publicLink)}')">QR</button>
-              <button onclick="showHistory('${escapeJs(item.slug)}')">Stats</button>
-              <button onclick="showGeo('${escapeJs(item.slug)}')">🌍</button>
-              <button class="delete" onclick="deleteLink('${escapeJs(item.slug)}')">Delete</button>
+              <button class="copy" onclick="copyLink(${JSON.stringify(publicLink)})">Copy</button>
+              <button class="open" onclick="window.open(${JSON.stringify(publicLink)},'_blank')">Open</button>
+              <button class="qr" onclick="showQR(${JSON.stringify(publicLink)})">QR</button>
+              <button onclick="showHistory(${JSON.stringify(item.slug)})">Stats</button>
+              <button onclick="showGeo(${JSON.stringify(item.slug)})">🌍</button>
+              <button class="delete" onclick="deleteLink(${JSON.stringify(item.slug)})">Delete</button>
             </td>
           </tr>
         `;
@@ -798,11 +800,10 @@
 
       setResult("⏳ Creating...", false);
 
-      const body = {
-        url
-      };
+      const body = { url };
 
       if (slug) body.slug = slug;
+
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
@@ -850,6 +851,7 @@
       setResult("⏳ Bulk creating...", false);
 
       let expire = undefined;
+
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
@@ -969,7 +971,6 @@
       `;
 
       await new Promise(r => setTimeout(r, 60));
-
       destroyMap();
 
       const mapEl = document.getElementById("map");
@@ -1025,7 +1026,6 @@
       `;
 
       await new Promise(r => setTimeout(r, 60));
-
       destroyMap();
 
       const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`, {
@@ -1034,7 +1034,6 @@
       });
 
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
-
       const link = dataStore.find(l => l.slug === slug);
 
       if (!history.length && link && Number(link.clicks || 0) > 0) {
@@ -1197,6 +1196,7 @@
       if (lines[0].toLowerCase().includes("url")) {
         const header = lines[0].split(",").map(h => h.trim().toLowerCase());
         const urlIndex = header.indexOf("url");
+
         if (urlIndex >= 0) {
           urls = lines.slice(1).map(line => {
             const cols = line.split(",");
@@ -1250,14 +1250,6 @@
         .replaceAll("'", "&#39;");
     }
 
-    function escapeJs(str) {
-      return String(str)
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'")
-        .replaceAll('"', '\\"');
-    }
-
-    // ================= INIT =================
     (async function init() {
       if (!ensureAuth()) return;
 
