@@ -22,6 +22,7 @@
       --red:#ef4444;
       --purple:#a855f7;
       --border:rgba(0,255,255,0.18);
+      --yellow:#f59e0b;
     }
 
     *{ box-sizing:border-box; }
@@ -183,6 +184,13 @@
       transform:scale(1.04);
     }
 
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
     .primary{
       background:var(--blue);
       color:#fff;
@@ -274,6 +282,7 @@
       font-size:13px;
       color:var(--green);
       word-break:break-word;
+      min-height:20px;
     }
 
     .drop-zone{
@@ -285,9 +294,10 @@
       transition:.2s ease;
     }
 
-    .drop-zone:hover{
+    .drop-zone.dragover{
       background:#020617;
       box-shadow:0 0 15px var(--cyan) inset;
+      border-color:var(--cyan);
     }
 
     .drop-zone input[type="file"]{
@@ -302,7 +312,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:380px;
+      width:420px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -350,7 +360,7 @@
     }
 
     .warn{
-      color:#f59e0b;
+      color:var(--yellow);
     }
 
     .pill{
@@ -363,15 +373,19 @@
     }
 
     .status-paused{
-      color:#f59e0b;
+      color:var(--yellow);
     }
 
     .status-live{
-      color:#22c55e;
+      color:var(--green);
     }
 
     .status-expired{
-      color:#ef4444;
+      color:var(--red);
+    }
+
+    .small-actions button{
+      margin-top:6px;
     }
 
     canvas{
@@ -401,7 +415,7 @@
         <small class="sub">Manage links • Track performance • Analyze traffic</small>
       </div>
       <div>
-        <button onclick="refreshNow()">Refresh</button>
+        <button id="refreshBtn" onclick="refreshNow()">Refresh</button>
         <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -431,18 +445,18 @@
 
       <div class="form-row">
         <input id="expire" type="number" min="1" placeholder="Expire in hours" />
-        <button class="primary" onclick="createLink()">Create</button>
+        <button id="createBtn" class="primary" onclick="createLink()">Create</button>
       </div>
 
       <div class="form-row">
         <input id="bulkCount" type="number" min="1" placeholder="Bulk count" />
-        <button class="bulk" onclick="bulkCreate()">Bulk Create</button>
+        <button id="bulkBtn" class="bulk" onclick="bulkCreate()">Bulk Create</button>
       </div>
 
-      <div class="drop-zone">
+      <div class="drop-zone" id="dropZone">
         <p>📂 Upload CSV with one URL per line or a column named <b>url</b></p>
         <input type="file" id="csvFile" accept=".csv,.txt" />
-        <button onclick="uploadCSV()">Upload CSV</button>
+        <button id="uploadBtn" onclick="uploadCSV()">Upload CSV</button>
       </div>
 
       <p id="result" class="result"></p>
@@ -516,12 +530,27 @@
     const bulkCountInput = document.getElementById("bulkCount");
     const searchInput = document.getElementById("search");
     const csvFile = document.getElementById("csvFile");
+    const dropZone = document.getElementById("dropZone");
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const createBtn = document.getElementById("createBtn");
+    const bulkBtn = document.getElementById("bulkBtn");
+    const uploadBtn = document.getElementById("uploadBtn");
 
     function authHeaders() {
       return {
         "Content-Type": "application/json",
         "Authorization": localStorage.getItem("token") || ""
       };
+    }
+
+    function setBusy(button, busy, text = "") {
+      if (!button) return;
+      if (!button.dataset.originalText) {
+        button.dataset.originalText = button.textContent;
+      }
+      button.disabled = busy;
+      button.textContent = busy ? text : button.dataset.originalText;
     }
 
     function showToast(message = "Copied!") {
@@ -648,7 +677,10 @@
       if (loadingLinks) return;
       loadingLinks = true;
 
-      if (showLoading) setResult("⏳ Loading...", false);
+      if (showLoading) {
+        setResult("⏳ Loading...", false);
+        setBusy(refreshBtn, true, "Loading...");
+      }
 
       const res = await safeFetch(`${API}/list`, {
         method: "GET",
@@ -656,6 +688,7 @@
       });
 
       loadingLinks = false;
+      setBusy(refreshBtn, false);
 
       if (!res.ok) {
         setResult(res.data?.message || "Failed to load links", true);
@@ -708,9 +741,9 @@
             </td>
             <td>${getStatus(item)}</td>
             <td style="min-width:160px;">${formatExpire(item.expire)}</td>
-            <td>
+            <td class="small-actions">
               <button class="copy" onclick="copyLink(${JSON.stringify(publicLink)})">Copy</button>
-              <button class="open" onclick="window.open(${JSON.stringify(publicLink)},'_blank')">Open</button>
+              <button class="open" onclick="openLink(${JSON.stringify(publicLink)})">Open</button>
               <button class="qr" onclick="showQR(${JSON.stringify(publicLink)})">QR</button>
               <button onclick="showHistory(${JSON.stringify(item.slug)})">Stats</button>
               <button onclick="showGeo(${JSON.stringify(item.slug)})">🌍</button>
@@ -725,9 +758,7 @@
       const canvas = document.getElementById("chart");
       if (!canvas) return;
 
-      if (chart) {
-        chart.destroy();
-      }
+      if (chart) chart.destroy();
 
       const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
 
@@ -745,9 +776,7 @@
           responsive: true,
           plugins: {
             legend: {
-              labels: {
-                color: "#e2e8f0"
-              }
+              labels: { color: "#e2e8f0" }
             }
           },
           scales: {
@@ -798,6 +827,7 @@
         return;
       }
 
+      setBusy(createBtn, true, "Creating...");
       setResult("⏳ Creating...", false);
 
       const body = { url };
@@ -807,6 +837,7 @@
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
+          setBusy(createBtn, false);
           setResult("❌ Expire must be a positive number", true);
           return;
         }
@@ -818,6 +849,8 @@
         headers: authHeaders(),
         body: JSON.stringify(body)
       });
+
+      setBusy(createBtn, false);
 
       if (!res.ok) {
         setResult(`❌ ${res.data?.message || "Failed to create link"}`, true);
@@ -848,8 +881,6 @@
         return;
       }
 
-      setResult("⏳ Bulk creating...", false);
-
       let expire = undefined;
 
       if (expireHours) {
@@ -860,6 +891,9 @@
         }
         expire = Date.now() + (hours * 60 * 60 * 1000);
       }
+
+      setBusy(bulkBtn, true, "Creating...");
+      setResult(`⏳ Bulk creating ${count} links...`, false);
 
       let success = 0;
 
@@ -874,8 +908,10 @@
         });
 
         if (res.ok) success++;
+        setResult(`⏳ Bulk creating... ${success}/${count}`, false);
       }
 
+      setBusy(bulkBtn, false);
       setResult(`✅ Created ${success}/${count} links`, false);
       await loadLinks();
     }
@@ -907,10 +943,15 @@
       }
     }
 
+    function openLink(link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+
     function showQR(link) {
       window.open(
         "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
-        "_blank"
+        "_blank",
+        "noopener,noreferrer"
       );
     }
 
@@ -1176,8 +1217,7 @@
       }
     }
 
-    async function uploadCSV() {
-      const file = csvFile.files?.[0];
+    async function processFile(file) {
       if (!file) {
         setResult("❌ Choose a CSV file first", true);
         return;
@@ -1207,11 +1247,14 @@
         urls = lines;
       }
 
+      urls = urls.filter(Boolean);
+
       if (!urls.length) {
         setResult("❌ No URLs found in file", true);
         return;
       }
 
+      setBusy(uploadBtn, true, "Uploading...");
       setResult(`⏳ Uploading ${urls.length} URLs...`, false);
 
       let ok = 0;
@@ -1224,11 +1267,18 @@
         });
 
         if (res.ok) ok++;
+        setResult(`⏳ Uploading... ${ok}/${urls.length}`, false);
       }
 
-      setResult(`✅ Uploaded ${ok}/${urls.length} links`, false);
+      setBusy(uploadBtn, false);
       csvFile.value = "";
+      setResult(`✅ Uploaded ${ok}/${urls.length} links`, false);
       await loadLinks();
+    }
+
+    async function uploadCSV() {
+      const file = csvFile.files?.[0];
+      await processFile(file);
     }
 
     function refreshNow() {
@@ -1250,8 +1300,55 @@
         .replaceAll("'", "&#39;");
     }
 
+    function setupKeyboardShortcuts() {
+      urlInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") createLink();
+      });
+
+      slugInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") createLink();
+      });
+
+      expireInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") createLink();
+      });
+
+      bulkCountInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") bulkCreate();
+      });
+    }
+
+    function setupDragAndDrop() {
+      ["dragenter", "dragover"].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "dragend", "drop"].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove("dragover");
+        });
+      });
+
+      dropZone.addEventListener("drop", async (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) {
+          csvFile.files = e.dataTransfer.files;
+          await processFile(file);
+        }
+      });
+    }
+
     (async function init() {
       if (!ensureAuth()) return;
+
+      setupKeyboardShortcuts();
+      setupDragAndDrop();
 
       await loadLinks(true);
 
