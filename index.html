@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
   <style>
     :root{
       --bg:#020617;
@@ -268,17 +271,7 @@
       display:flex;
       justify-content:center;
       min-height:78px;
-    }
-
-    .captcha-dev{
       width:100%;
-      padding:12px;
-      border:1px dashed var(--yellow);
-      border-radius:10px;
-      color:var(--yellow);
-      text-align:center;
-      font-size:12px;
-      background:rgba(245,158,11,.08);
     }
 
     button{
@@ -398,7 +391,7 @@
   </style>
 </head>
 <body>
-  <button class="theme-toggle secondary" onclick="toggleTheme()">🌗</button>
+  <button class="theme-toggle secondary" type="button" onclick="toggleTheme()">🌗</button>
 
   <div class="wrapper">
     <div class="left">
@@ -461,14 +454,16 @@
         <span onclick="goForgot()" class="link">Forgot password?</span>
       </div>
 
-      <div class="captcha-wrap" id="captchaWrap"></div>
+      <div class="captcha-wrap" id="captchaWrap">
+        <div id="recaptchaBox"></div>
+      </div>
 
-      <button class="primary" id="mainBtn" onclick="handleMainAction()">
+      <button class="primary" id="mainBtn" type="button" onclick="handleMainAction()">
         <span id="btnText">Login</span>
         <span id="spinner" class="spinner"></span>
       </button>
 
-      <button class="secondary" id="secondaryBtn" onclick="secondaryAction()">
+      <button class="secondary" id="secondaryBtn" type="button" onclick="secondaryAction()">
         🔑 Reset Password
       </button>
 
@@ -488,13 +483,12 @@
   <script>
     const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // You only gave the SECRET key, not the SITE key.
-    // A real frontend captcha cannot work without the SITE key.
-    // So for now this page uses backend-supported bypass mode.
-    const RECAPTCHA_SITE_KEY = "";
-    const CAPTCHA_DEV_BYPASS = true;
+    // Replace this with your real SITE key only
+    const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
 
     let mode = "login";
+    let captchaWidgetId = null;
+    let captchaReady = false;
 
     const card = document.getElementById("card");
     const errorBox = document.getElementById("error");
@@ -523,13 +517,14 @@
     const switchText = document.getElementById("switchText");
     const switchBtn = document.getElementById("switchBtn");
     const secondaryBtn = document.getElementById("secondaryBtn");
-
-    let captchaRendered = false;
-    let captchaWidgetId = null;
+    const passwordArea = document.getElementById("passwordArea");
 
     function toggleTheme() {
       document.body.classList.toggle("light");
-      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+      localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
+      );
     }
 
     function loadTheme() {
@@ -560,28 +555,35 @@
       input.type = input.type === "password" ? "text" : "password";
     }
 
-    function renderCaptchaArea() {
-      if (mode === "magic") {
-        captchaWrap.innerHTML = "";
-        return;
+    function mountCaptcha() {
+      if (!RECAPTCHA_SITE_KEY || !window.grecaptcha) return;
+      if (captchaWidgetId !== null) return;
+
+      const box = document.getElementById("recaptchaBox");
+      if (!box) return;
+
+      try {
+        captchaWidgetId = grecaptcha.render("recaptchaBox", {
+          sitekey: RECAPTCHA_SITE_KEY
+        });
+        captchaReady = true;
+      } catch (e) {
+        console.error("reCAPTCHA render error:", e);
       }
+    }
 
-      if (RECAPTCHA_SITE_KEY) {
-        captchaWrap.innerHTML = '<div id="recaptchaBox"></div>';
-
-        if (window.grecaptcha && !captchaRendered) {
-          captchaWidgetId = grecaptcha.render("recaptchaBox", {
-            sitekey: RECAPTCHA_SITE_KEY
-          });
-          captchaRendered = true;
+    function waitForCaptchaAndMount() {
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        if (window.grecaptcha && typeof grecaptcha.render === "function") {
+          clearInterval(timer);
+          mountCaptcha();
         }
-      } else {
-        captchaWrap.innerHTML = `
-          <div class="captcha-dev">
-            CAPTCHA dev bypass is enabled because no frontend site key is configured.
-          </div>
-        `;
-      }
+        if (tries > 100) {
+          clearInterval(timer);
+        }
+      }, 200);
     }
 
     function setMode(nextMode) {
@@ -622,7 +624,6 @@
         helperText.textContent = "Enter your email and we will send you a secure login link.";
       }
 
-      renderCaptchaArea();
       showError("");
     }
 
@@ -632,26 +633,25 @@
 
     function getCaptchaToken() {
       if (mode === "magic") return "bypass";
-
-      if (!RECAPTCHA_SITE_KEY) {
-        return CAPTCHA_DEV_BYPASS ? "bypass" : "";
-      }
+      if (!RECAPTCHA_SITE_KEY) return "";
+      if (!window.grecaptcha || captchaWidgetId === null) return "";
 
       try {
-        const token = window.grecaptcha ? grecaptcha.getResponse(captchaWidgetId) : "";
-        return token || "";
+        return grecaptcha.getResponse(captchaWidgetId) || "";
       } catch {
         return "";
       }
     }
 
     function resetCaptcha() {
-      if (!RECAPTCHA_SITE_KEY) return;
+      if (mode === "magic") return;
+      if (!window.grecaptcha || captchaWidgetId === null) return;
+
       try {
-        if (window.grecaptcha && captchaWidgetId !== null) {
-          grecaptcha.reset(captchaWidgetId);
-        }
-      } catch {}
+        grecaptcha.reset(captchaWidgetId);
+      } catch (e) {
+        console.error("reCAPTCHA reset error:", e);
+      }
     }
 
     function checkStrength() {
@@ -763,7 +763,7 @@
         showError("Login successful ✅", true);
 
         setTimeout(() => {
-          window.location.href = (data.role === "admin") ? "admin.html" : "dashboard.html";
+          window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
         }, 500);
       } catch (e) {
         console.error("LOGIN ERROR:", e);
@@ -925,6 +925,7 @@
     loadTheme();
     loadRememberedUser();
     setMode("login");
+    waitForCaptchaAndMount();
   </script>
 </body>
 </html>
