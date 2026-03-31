@@ -713,48 +713,80 @@
     }
 
     function renderTable() {
-      const q = (searchInput.value || "").trim().toLowerCase();
 
-      const filtered = dataStore.filter(item => {
-        const slug = String(item.slug || "").toLowerCase();
-        const url = String(item.url || "").toLowerCase();
-        return !q || slug.includes(q) || url.includes(q);
-      });
+  const q = (searchInput.value || "").trim().toLowerCase();
 
-      if (!filtered.length) {
-        table.innerHTML = `
-          <tr>
-            <td colspan="6" class="muted">No links found</td>
-          </tr>
-        `;
-        return;
-      }
+  const filtered = dataStore.filter(item => {
+    const slug = String(item.slug || "").toLowerCase();
+    const url = String(item.url || "").toLowerCase();
+    return !q || slug.includes(q) || url.includes(q);
+  });
 
-      table.innerHTML = filtered.map(item => {
-        const publicLink = buildPublicLink(item.slug);
+  if (!filtered.length) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="6" class="muted">No links found</td>
+      </tr>
+    `;
+    return;
+  }
 
-        return `
-          <tr data-slug="${escapeHtml(item.slug || "")}">
-            <td><b>${escapeHtml(item.slug || "")}</b></td>
-            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
-            <td>
-              <a href="${publicLink}" target="_blank" rel="noopener noreferrer">${publicLink}</a>
-              <div class="muted">${escapeHtml(item.url || "")}</div>
-            </td>
-            <td>${getStatus(item)}</td>
-            <td style="min-width:160px;">${formatExpire(item.expire)}</td>
-            <td class="small-actions">
-              <button class="copy" onclick="copyLink(${JSON.stringify(publicLink)})">Copy</button>
-              <button class="open" onclick="openLink(${JSON.stringify(publicLink)})">Open</button>
-              <button class="qr" onclick="showQR(${JSON.stringify(publicLink)})">QR</button>
-              <button onclick="showHistory(${JSON.stringify(item.slug)})">Stats</button>
-              <button onclick="showGeo(${JSON.stringify(item.slug)})">🌍</button>
-              <button class="delete" onclick="deleteLink(${JSON.stringify(item.slug)})">Delete</button>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
+  // 🔥 CLEAN HTML (NO onclick)
+  table.innerHTML = filtered.map(item => {
+    const publicLink = buildPublicLink(item.slug);
+
+    return `
+      <tr data-slug="${item.slug}">
+        <td><b>${item.slug}</b></td>
+        <td><span class="badge">${item.clicks}</span></td>
+
+        <td>
+          <a href="${publicLink}" target="_blank">${publicLink}</a>
+          <div class="muted">${item.url}</div>
+        </td>
+
+        <td>${getStatus(item)}</td>
+
+        <td>${formatExpire(item.expire)}</td>
+
+        <td class="small-actions">
+          <button class="copy-btn" data-link="${publicLink}">Copy</button>
+          <button class="open-btn" data-link="${publicLink}">Open</button>
+          <button class="qr-btn" data-link="${publicLink}">QR</button>
+          <button class="stats-btn" data-slug="${item.slug}">Stats</button>
+          <button class="geo-btn" data-slug="${item.slug}">🌍</button>
+          <button class="delete-btn" data-slug="${item.slug}">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  // 🔥 ATTACH EVENTS (THIS FIXES EVERYTHING)
+
+  document.querySelectorAll(".copy-btn").forEach(btn=>{
+    btn.onclick = () => copyLink(btn.dataset.link);
+  });
+
+  document.querySelectorAll(".open-btn").forEach(btn=>{
+    btn.onclick = () => openLink(btn.dataset.link);
+  });
+
+  document.querySelectorAll(".qr-btn").forEach(btn=>{
+    btn.onclick = () => showQR(btn.dataset.link);
+  });
+
+  document.querySelectorAll(".stats-btn").forEach(btn=>{
+    btn.onclick = () => showHistory(btn.dataset.slug);
+  });
+
+  document.querySelectorAll(".geo-btn").forEach(btn=>{
+    btn.onclick = () => showGeo(btn.dataset.slug);
+  });
+
+  document.querySelectorAll(".delete-btn").forEach(btn=>{
+    btn.onclick = () => deleteLink(btn.dataset.slug);
+  });
+}
 
     function drawChart() {
       const canvas = document.getElementById("chart");
@@ -945,9 +977,14 @@
       }
     }
 
-    function openLink(link) {
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
+    function openLink(link){
+  const a = document.createElement("a");
+  a.href = link;
+  a.target = "_blank";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
     function showQR(link) {
       window.open(
