@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magic Login - Rattle Link</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family:Inter, Arial;
+  background:radial-gradient(circle at top,#020617,#000);
+  color:#e2e8f0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.card{
+  width:380px;
+  background:#020617;
+  padding:28px;
+  border-radius:14px;
+  border:1px solid rgba(0,255,255,0.2);
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+
+h2{ color:#00ffff; margin-bottom:10px; }
+
+.sub{
+  font-size:12px;
+  color:#94a3b8;
+  margin-bottom:18px;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid rgba(0,255,255,0.2);
+  background:#000;
+  color:#0ff;
+  margin-bottom:12px;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#0ff;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:6px;
+}
+
+button:hover{
+  box-shadow:0 0 20px #0ff;
+}
+
+.secondary{
+  background:#020617;
+  color:#0ff;
+  border:1px solid #0ff;
+}
+
+.error{ color:#ef4444; font-size:12px; margin-top:10px; }
+.success{ color:#22c55e; font-size:12px; margin-top:10px; }
+
+.spinner{
+  width:14px;
+  height:14px;
+  border:2px solid #000;
+  border-top:2px solid transparent;
+  border-radius:50%;
+  display:inline-block;
+  animation:spin 1s linear infinite;
+  margin-left:6px;
+}
+
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
+.timer{
+  margin-top:10px;
+  font-size:12px;
+  color:#f59e0b;
+}
+
+.qr{
+  margin-top:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <h2>🔑 Magic Login</h2>
+  <div class="sub">Passwordless secure access</div>
+
+  <input id="email" placeholder="Enter your email">
+
+  <button id="btn" onclick="sendMagic()">Send Magic Link</button>
+  <button class="secondary" onclick="generateQR()">📱 QR Login</button>
+
+  <div id="timer" class="timer"></div>
+  <div id="qr" class="qr"></div>
+  <div id="msg"></div>
+
+</div>
+
+<script>
+const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+const emailInput = document.getElementById("email");
+const btn = document.getElementById("btn");
+const msg = document.getElementById("msg");
+const timerEl = document.getElementById("timer");
+const qrBox = document.getElementById("qr");
+
+let expiryTime = null;
+
+// ================= DEVICE TRACK =================
+function getDeviceInfo(){
+  return {
+    ua: navigator.userAgent,
+    platform: navigator.platform,
+    screen: `${screen.width}x${screen.height}`
+  };
+}
+
+// ================= MESSAGE =================
+function showMessage(text, type="error"){
+  msg.innerHTML = text;
+  msg.className = type === "success" ? "success" : "error";
+}
+
+// ================= TIMER =================
+function startTimer(minutes = 10){
+  expiryTime = Date.now() + minutes * 60 * 1000;
+
+  const interval = setInterval(()=>{
+    const left = expiryTime - Date.now();
+
+    if(left <= 0){
+      timerEl.innerText = "⛔ Link expired";
+      clearInterval(interval);
+      return;
+    }
+
+    const m = Math.floor(left/60000);
+    const s = Math.floor((left%60000)/1000);
+
+    timerEl.innerText = `⏱ Expires in ${m}:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+
+// ================= SEND MAGIC =================
+async function sendMagic(){
+
+  const email = emailInput.value.trim().toLowerCase();
+
+  if(!email){
+    return showMessage("Enter email ❌");
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = 'Sending <span class="spinner"></span>';
+
+  try{
+
+    const res = await fetch(API + "/magic-request", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        username: email,
+        device: getDeviceInfo()
+      })
+    });
+
+    const data = await res.json().catch(()=>({}));
+
+    if(!res.ok){
+      showMessage(data.message || "Failed ❌");
+      btn.disabled = false;
+      btn.innerText = "Send Magic Link";
+      return;
+    }
+
+    showMessage("Magic link sent ✅", "success");
+    startTimer(10);
+
+  }catch(e){
+    console.error(e);
+    showMessage("Server error ❌");
+  }
+
+  btn.disabled = false;
+  btn.innerText = "Send Magic Link";
+}
+
+// ================= QR LOGIN =================
+function generateQR(){
+
+  const email = emailInput.value.trim();
+
+  if(!email){
+    return showMessage("Enter email first ❌");
+  }
+
+  const qrUrl = `${API}/magic-request?username=${encodeURIComponent(email)}`;
+
+  qrBox.innerHTML = `
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}">
+  `;
+}
+
+// ================= AUTO LOGIN =================
+async function autoLogin(){
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+
+  if(!token) return;
+
+  showMessage("Logging in... ⏳", "success");
+
+  try{
+
+    const res = await fetch(API + "/magic-login", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ 
+        token,
+        device: getDeviceInfo()
+      })
+    });
+
+    const data = await res.json().catch(()=>({}));
+
+    if(!res.ok || !data.token){
+      showMessage("❌ Invalid or expired link");
+      return;
+    }
+
+    // 🔐 one-time use UX
+    window.history.replaceState({}, "", "/magic-login.html");
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+
+    showMessage("Login successful ✅", "success");
+
+    setTimeout(()=>{
+      window.location.href = data.role === "admin"
+        ? "admin.html"
+        : "dashboard.html";
+    },800);
+
+  }catch(e){
+    console.error(e);
+    showMessage("Login failed ❌");
+  }
+}
+
+// ================= INIT =================
+autoLogin();
+</script>
+
+</body>
+</html>

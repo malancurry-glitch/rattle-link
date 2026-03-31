@@ -1,93 +1,166 @@
 import {
   DynamoDBClient,
+  GetItemCommand,
   PutItemCommand,
-  ScanCommand,
-  DeleteItemCommand,
   UpdateItemCommand,
-  GetItemCommand
+  DeleteItemCommand,
+  ScanCommand
 } from "@aws-sdk/client-dynamodb";
-
 import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand
 } from "@aws-sdk/client-apigatewaymanagementapi";
-
 import crypto from "crypto";
 import https from "https";
 
-// ================= CLIENTS =================
-const client = new DynamoDBClient({ region: "us-east-2" });
+// ================= CONFIG =================
+const REGION = process.env.AWS_REGION || "us-east-2";
 
-const SECRET = process.env.APP_SECRET || "my-secret-key";
-const BASE_URL = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";const RECAPTCHA_SECRET =
-  process.env.RECAPTCHA_SECRET || "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
-const RESEND_KEY =
-  process.env.RESEND_KEY || "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
+const USERS_TABLE = process.env.USERS_TABLE || "users";
+const REDIRECTS_TABLE = process.env.REDIRECTS_TABLE || "redirects";
+const CLICKS_TABLE = process.env.CLICKS_TABLE || "clicks";
+const WS_CONNECTIONS_TABLE = process.env.WS_CONNECTIONS_TABLE || "ws_connections";
+const BLOCKED_IPS_TABLE = process.env.BLOCKED_IPS_TABLE || "blocked_ips";
+const EMAIL_LOGS_TABLE = process.env.EMAIL_LOGS_TABLE || "email_logs";
+const AUDIT_LOGS_TABLE = process.env.AUDIT_LOGS_TABLE || "audit_logs";
+const EMAIL_QUEUE_TABLE = process.env.EMAIL_QUEUE_TABLE || "email_queue";
+
+const APP_SECRET =
+  process.env.APP_SECRET ||
+  "6360dffbeee180ce660717dc8401497b5985e8abf13c6d056435196bee8dd14b4560f499ed022484285d4e84d9e18409b9937a4f4424e6b08c7e1e8a457c4656";
+
+const FRONTEND_BASE =
+  (process.env.FRONTEND_BASE || "https://rattle-link.vercel.app").replace(/\/+$/, "");
+
+const API_BASE =
+  (process.env.API_BASE ||
+    "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production").replace(/\/+$/, "");
+
 const WS_ENDPOINT =
   process.env.WS_ENDPOINT ||
   "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
+const RECAPTCHA_SECRET =
+  process.env.RECAPTCHA_SECRET ||
+  "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
+
+const RESEND_KEY =
+  process.env.RESEND_KEY ||
+  "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
+
+const RESEND_FROM =
+  process.env.RESEND_FROM || "Rattle Link <support@rattleshort.online>";
+
+const RESET_PAGE = process.env.RESET_PAGE || "/reset-password.html";
+const MAGIC_PAGE = process.env.MAGIC_PAGE || "/magic-login.html";
+
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const TOKEN_TTL_SECONDS = Number(
+  process.env.TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7
+);
+const CLICK_HISTORY_QUERY_LIMIT = Number(
+  process.env.CLICK_HISTORY_QUERY_LIMIT || 1000
+);
+
+// ================= CLIENTS =================
+const db = new DynamoDBClient({ region: REGION });
+
 // ================= CORS =================
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Content-Type": "application/json"
+const corsHeaders = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
 };
 
-// ================= HELPERS =================
-function json(statusCode, data) {
+// ================= RESPONSE HELPERS =================
+function response(statusCode, body, extraHeaders = {}) {
   return {
     statusCode,
-    headers: cors,
-    body: JSON.stringify(data)
+    headers: {
+      ...corsHeaders,
+      ...extraHeaders
+    },
+    body: typeof body === "string" ? body : JSON.stringify(body)
   };
 }
 
-function text(statusCode, message) {
-  return {
-    statusCode,
-    headers: cors,
-    body: message
-  };
+function json(statusCode, data, extraHeaders = {}) {
+  return response(statusCode, data, {
+    "Content-Type": "application/json",
+    ...extraHeaders
+  });
 }
 
-function hash(password) {
-  return crypto.createHash("sha256").update(String(password)).digest("hex");
+function text(statusCode, message, extraHeaders = {}) {
+  return response(statusCode, message, {
+    "Content-Type": "text/plain; charset=utf-8",
+    ...extraHeaders
+  });
 }
 
-function generateToken(username) {
-  return Buffer.from(`${username}:${SECRET}`).toString("base64");
+function ok(data) {
+  return json(200, data);
 }
 
-function verifyToken(event) {
-  const auth = event.headers?.authorization || event.headers?.Authorization;
-  if (!auth) return null;
+function badRequest(message) {
+  return json(400, { message });
+}
 
-  try {
-    const token = auth.startsWith("Bearer ") ? auth.split(" ")[1] : auth;
-    const [user, sec] = Buffer.from(token, "base64").toString().split(":");
-    if (!user || sec !== SECRET) return null;
-    return user;
-  } catch {
-    return null;
-  }
+function unauthorized(message = "Unauthorized") {
+  return json(401, { message });
+}
+
+function forbidden(message = "Forbidden") {
+  return json(403, { message });
+}
+
+function notFound(message = "Not found") {
+  return json(404, { message });
+}
+
+function conflict(message = "Resource already exists") {
+  return json(409, { message });
+}
+
+function serverError(message = "Internal server error", error = null) {
+  console.error(message, error);
+  return json(500, { message, error: error?.message || undefined });
+}
+
+// ================= EVENT HELPERS =================
+function getMethod(event) {
+  return event?.requestContext?.http?.method || event?.httpMethod || "GET";
+}
+
+function getPath(event) {
+  const raw = event?.requestContext?.http?.path || event?.path || "/";
+  return (raw.replace(/^\/production/, "") || "/").toLowerCase();
+}
+
+function getHeaders(event) {
+  return event?.headers || {};
+}
+
+function getQuery(event) {
+  return event?.queryStringParameters || {};
 }
 
 function getBody(event) {
+  if (!event?.body) return {};
   try {
-    return JSON.parse(event.body || "{}");
+    return typeof event.body === "string" ? JSON.parse(event.body) : event.body;
   } catch {
     return {};
   }
 }
 
+// ================= GENERAL HELPERS =================
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function generateSlug() {
-  return Math.random().toString(36).substring(2, 8);
+function normalizeSlug(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function isValidEmail(email) {
@@ -103,19 +176,136 @@ function isValidUrl(value) {
   }
 }
 
-async function getUser(username) {
-  const res = await client.send(
-    new GetItemCommand({
-      TableName: "users",
-      Key: { username: { S: username } }
-    })
-  );
-  return res.Item || null;
+function isValidSlug(slug) {
+  return /^[a-z0-9][a-z0-9-_]{2,63}$/.test(String(slug || ""));
 }
 
-async function isAdmin(username) {
-  const user = await getUser(username);
-  return user?.role?.S === "admin";
+function randomId(bytes = 16) {
+  return crypto.randomBytes(bytes).toString("hex");
+}
+
+function generateSlug() {
+  return Math.random().toString(36).substring(2, 8).toLowerCase();
+}
+
+function hashPassword(password) {
+  // keep legacy sha256 so old users can still log in
+  return crypto.createHash("sha256").update(String(password)).digest("hex");
+}
+
+// ================= TOKEN HELPERS =================
+// legacy token support: base64(username:secret)
+function generateLegacyToken(username) {
+  return Buffer.from(`${username}:${APP_SECRET}`).toString("base64");
+}
+
+function verifyLegacyToken(rawToken) {
+  try {
+    const [user, sec] = Buffer.from(String(rawToken || ""), "base64")
+      .toString()
+      .split(":");
+
+    if (!user || sec !== APP_SECRET) return null;
+    return { sub: user, role: "user" };
+  } catch {
+    return null;
+  }
+}
+
+// optional signed token support
+function signToken(payload) {
+  const jsonPayload = JSON.stringify(payload);
+  const base = Buffer.from(jsonPayload).toString("base64url");
+  const sig = crypto
+    .createHmac("sha256", APP_SECRET)
+    .update(base)
+    .digest("base64url");
+  return `${base}.${sig}`;
+}
+
+function verifySignedToken(token) {
+  try {
+    const [base, sig] = String(token || "").split(".");
+    if (!base || !sig) return null;
+
+    const expected = crypto
+      .createHmac("sha256", APP_SECRET)
+      .update(base)
+      .digest("base64url");
+
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+      return null;
+    }
+
+    const payload = JSON.parse(
+      Buffer.from(base, "base64url").toString("utf8")
+    );
+
+    if (!payload?.sub || !payload?.exp) return null;
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function issueAuthToken(username, role) {
+  // return legacy token because your frontend/backend old flow depends on it
+  return generateLegacyToken(username);
+}
+
+function getBearerToken(event) {
+  const auth = getHeaders(event).authorization || getHeaders(event).Authorization;
+  if (!auth) return null;
+  return auth.startsWith("Bearer ") ? auth.slice(7).trim() : auth.trim();
+}
+
+async function getCurrentUser(event) {
+  const raw = getBearerToken(event);
+  if (!raw) return null;
+
+  const signed = verifySignedToken(raw);
+  if (signed?.sub) {
+    return {
+      username: signed.sub,
+      role: signed.role || "user"
+    };
+  }
+
+  const legacy = verifyLegacyToken(raw);
+  if (!legacy?.sub) return null;
+
+  const dbUser = await getUser(legacy.sub);
+  return {
+    username: legacy.sub,
+    role: dbUser?.role?.S || "user"
+  };
+}
+
+// ================= DYNAMO HELPERS =================
+function ddbString(value) {
+  return { S: String(value) };
+}
+
+function ddbNumber(value) {
+  return { N: String(value) };
+}
+
+function ddbBool(value) {
+  return { BOOL: !!value };
+}
+
+function attrString(item, key, fallback = "") {
+  return item?.[key]?.S ?? fallback;
+}
+
+function attrNumber(item, key, fallback = 0) {
+  return item?.[key]?.N !== undefined ? Number(item[key].N) : fallback;
+}
+
+function attrBool(item, key, fallback = false) {
+  return item?.[key]?.BOOL !== undefined ? item[key].BOOL : fallback;
 }
 
 async function scanAll(TableName) {
@@ -123,67 +313,86 @@ async function scanAll(TableName) {
   let lastKey;
 
   do {
-    const res = await client.send(
+    const res = await db.send(
       new ScanCommand({
         TableName,
         ExclusiveStartKey: lastKey
       })
     );
-
-    if (res.Items) items.push(...res.Items);
+    items = items.concat(res.Items || []);
     lastKey = res.LastEvaluatedKey;
   } while (lastKey);
 
   return items;
 }
 
-// ================= REAL IP =================
+async function getUser(username) {
+  const res = await db.send(
+    new GetItemCommand({
+      TableName: USERS_TABLE,
+      Key: { username: ddbString(username) }
+    })
+  );
+  return res.Item || null;
+}
+
+async function isAdmin(username) {
+  const user = await getUser(username);
+  return attrString(user, "role", "user") === "admin";
+}
+
+async function assertAdmin(username) {
+  const ok = await isAdmin(username);
+  if (!ok) throw new Error("ADMIN_ONLY");
+}
+
+async function getRedirect(slug) {
+  const res = await db.send(
+    new GetItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(slug) }
+    })
+  );
+  return res.Item || null;
+}
+
+async function isBlockedIP(ip) {
+  const res = await db.send(
+    new GetItemCommand({
+      TableName: BLOCKED_IPS_TABLE,
+      Key: { ip: ddbString(ip) }
+    })
+  );
+  return !!res.Item;
+}
+
+// ================= NETWORK / IP =================
 function getIP(event) {
   try {
-    const headers = event.headers || {};
+    const headers = getHeaders(event);
 
     let ip =
       headers["x-forwarded-for"] ||
       headers["X-Forwarded-For"] ||
       headers["x-real-ip"] ||
       headers["X-Real-IP"] ||
-      event.requestContext?.http?.sourceIp ||
-      event.requestContext?.identity?.sourceIp ||
-      event.requestContext?.identity?.userIp ||
-      "";
+      event?.requestContext?.http?.sourceIp ||
+      event?.requestContext?.identity?.sourceIp ||
+      event?.requestContext?.identity?.userIp ||
+      "unknown";
 
-    if (typeof ip !== "string") ip = String(ip || "");
-
-    ip = ip.split(",")[0].trim();
+    ip = String(ip).split(",")[0].trim();
 
     if (ip === "::1" || ip === "127.0.0.1") ip = "unknown";
     if (!ip || ip.length < 3) ip = "unknown";
 
-    console.log("FINAL IP:", ip);
     return ip;
-  } catch (e) {
-    console.error("IP ERROR:", e);
+  } catch (error) {
+    console.error("IP ERROR", error);
     return "unknown";
   }
 }
 
-// ================= VPN DETECTION =================
-function isVPN(ip, headers = {}) {
-  const ua = String(
-    headers["user-agent"] || headers["User-Agent"] || ""
-  ).toLowerCase();
-
-  return (
-    ip.startsWith("10.") ||
-    ip.startsWith("192.") ||
-    ip.startsWith("127.") ||
-    ua.includes("vpn") ||
-    ua.includes("proxy") ||
-    ua.includes("cloud")
-  );
-}
-
-// ================= BOT DETECTION =================
 function isBot(headers = {}) {
   const ua = String(
     headers["user-agent"] || headers["User-Agent"] || ""
@@ -195,24 +404,41 @@ function isBot(headers = {}) {
     ua.includes("spider") ||
     ua.includes("curl") ||
     ua.includes("wget") ||
+    ua.includes("python") ||
+    ua.includes("scrapy") ||
     ua.length < 5
   );
 }
 
-// ================= RISK SCORING =================
+function isVPN(ip, headers = {}) {
+  const ua = String(
+    headers["user-agent"] || headers["User-Agent"] || ""
+  ).toLowerCase();
+
+  return (
+    ip.startsWith("10.") ||
+    ip.startsWith("192.") ||
+    ip.startsWith("127.") ||
+    ip.startsWith("172.") ||
+    ua.includes("vpn") ||
+    ua.includes("proxy") ||
+    ua.includes("tor") ||
+    ua.includes("cloud")
+  );
+}
+
 function scoreIP(ip, headers = {}) {
   let score = 0;
 
   if (ip === "unknown") score += 40;
-
   if (
     ip.startsWith("192.") ||
     ip.startsWith("127.") ||
-    ip.startsWith("10.")
+    ip.startsWith("10.") ||
+    ip.startsWith("172.")
   ) {
     score += 30;
   }
-
   if (isVPN(ip, headers)) score += 20;
   if (isBot(headers)) score += 40;
 
@@ -221,59 +447,44 @@ function scoreIP(ip, headers = {}) {
 
 // ================= CAPTCHA =================
 async function verifyCaptcha(token) {
-  if (!token) {
-    console.warn("No CAPTCHA token provided");
-    return false;
-  }
+  if (!RECAPTCHA_SECRET) return true;
+  if (!token) return false;
+  if (token === "bypass") return true;
 
   return new Promise((resolve) => {
     const postData = `secret=${encodeURIComponent(
       RECAPTCHA_SECRET
     )}&response=${encodeURIComponent(token)}`;
 
-    const options = {
-      hostname: "www.google.com",
-      path: "/recaptcha/api/siteverify",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": Buffer.byteLength(postData)
+    const req = https.request(
+      {
+        hostname: "www.google.com",
+        path: "/recaptcha/api/siteverify",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(postData)
+        },
+        timeout: 10000
       },
-      timeout: 10000
-    };
-
-    const req = https.request(options, (res) => {
-      let body = "";
-
-      res.on("data", (chunk) => {
-        body += chunk;
-      });
-
-      res.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          console.log("CAPTCHA RESPONSE:", data);
-
-          if (!data.success) {
-            console.warn("CAPTCHA FAILED:", data["error-codes"]);
-            return resolve(false);
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          try {
+            const parsed = JSON.parse(body);
+            resolve(!!parsed.success);
+          } catch {
+            resolve(false);
           }
+        });
+      }
+    );
 
-          resolve(true);
-        } catch (err) {
-          console.error("CAPTCHA PARSE ERROR:", body);
-          resolve(false);
-        }
-      });
-    });
-
-    req.on("error", (err) => {
-      console.error("CAPTCHA REQUEST ERROR:", err);
-      resolve(false);
-    });
-
+    req.on("error", () => resolve(false));
     req.on("timeout", () => {
-      console.error("CAPTCHA TIMEOUT");
       req.destroy();
       resolve(false);
     });
@@ -286,43 +497,23 @@ async function verifyCaptcha(token) {
 // ================= EMAIL =================
 function emailTemplate({ title, message, button, link }) {
   return `
-    <div style="font-family:Inter,Arial;background:#020617;padding:40px;color:#fff;">
-      <div style="max-width:520px;margin:auto;background:#000;padding:30px;border-radius:16px;">
-        <h1 style="text-align:center;color:#0ff;">🐍 Rattle Link</h1>
+    <div style="font-family:Inter,Arial,sans-serif;background:#020617;padding:40px;color:#fff;">
+      <div style="max-width:520px;margin:auto;background:#000;padding:32px;border-radius:16px;">
+        <h1 style="text-align:center;color:#00ffff;margin-top:0;">🐍 Rattle Link</h1>
         <h2>${title}</h2>
-        <p style="color:#94a3b8;">${message}</p>
-        <a href="${link}" style="
-          display:block;
-          margin:25px 0;
-          padding:14px;
-          text-align:center;
-          background:#0ff;
-          color:#000;
-          border-radius:10px;
-          font-weight:bold;
-          text-decoration:none;
-        ">
-          ${button}
-        </a>
+        <p style="color:#94a3b8;line-height:1.6;">${message}</p>
+        <a href="${link}" style="display:block;margin-top:24px;padding:14px 16px;background:#00ffff;color:#000;text-align:center;border-radius:12px;text-decoration:none;font-weight:bold;">${button}</a>
       </div>
     </div>
   `;
 }
 
 async function sendEmail(to, { subject, html }) {
+  if (!RESEND_KEY || !to || !subject || !html) return false;
+
   return new Promise((resolve) => {
-    if (!to || !subject || !html) {
-      console.error("Missing email data:", { to, subject });
-      return resolve(false);
-    }
-
-    if (!RESEND_KEY) {
-      console.error("RESEND_KEY missing");
-      return resolve(false);
-    }
-
     const payload = JSON.stringify({
-      from: "Rattle Link <support@rattleshort.online>",
+      from: RESEND_FROM,
       to: [to],
       subject,
       html,
@@ -344,38 +535,17 @@ async function sendEmail(to, { subject, html }) {
       },
       (res) => {
         let body = "";
-
         res.on("data", (chunk) => {
           body += chunk;
         });
-
         res.on("end", () => {
-          let parsed;
-          try {
-            parsed = JSON.parse(body);
-          } catch {
-            parsed = body;
-          }
-
-          console.log("EMAIL STATUS:", res.statusCode);
-          console.log("EMAIL RESPONSE:", parsed);
-
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            return resolve(true);
-          }
-
-          resolve(false);
+          resolve(res.statusCode >= 200 && res.statusCode < 300);
         });
       }
     );
 
-    req.on("error", (err) => {
-      console.error("EMAIL REQUEST ERROR:", err.message);
-      resolve(false);
-    });
-
+    req.on("error", () => resolve(false));
     req.on("timeout", () => {
-      console.error("EMAIL TIMEOUT");
       req.destroy();
       resolve(false);
     });
@@ -387,17 +557,35 @@ async function sendEmail(to, { subject, html }) {
 
 async function sendEmailWithRetry(to, payload, retries = 2) {
   for (let i = 0; i <= retries; i++) {
-    const success = await sendEmail(to, payload);
-    if (success) return true;
+    const sent = await sendEmail(to, payload);
+    if (sent) return true;
     await new Promise((r) => setTimeout(r, 1000));
   }
   return false;
 }
 
-async function sendResetEmail(email, link) {
-  if (!email || !link) return false;
+async function logEmailEvent(type, email, subject, status = "unknown") {
+  try {
+    await db.send(
+      new PutItemCommand({
+        TableName: EMAIL_LOGS_TABLE,
+        Item: {
+          id: ddbString(crypto.randomUUID()),
+          type: ddbString(type),
+          email: ddbString(email),
+          subject: ddbString(subject || "unknown"),
+          status: ddbString(status),
+          time: ddbNumber(Date.now())
+        }
+      })
+    );
+  } catch (error) {
+    console.error("EMAIL LOG ERROR", error);
+  }
+}
 
-  return sendEmailWithRetry(email, {
+async function sendResetEmail(email, link) {
+  const sent = await sendEmailWithRetry(email, {
     subject: "Reset your password 🔐",
     html: emailTemplate({
       title: "Reset your password",
@@ -406,22 +594,40 @@ async function sendResetEmail(email, link) {
       link
     })
   });
+
+  await logEmailEvent(
+    sent ? "sent" : "failed",
+    email,
+    "Reset your password",
+    sent ? "sent" : "failed"
+  );
+
+  return sent;
 }
 
 async function sendWelcomeEmail(email) {
-  return sendEmailWithRetry(email, {
+  const sent = await sendEmailWithRetry(email, {
     subject: "Welcome to Rattle Link 🎉",
     html: emailTemplate({
       title: "Welcome!",
       message: "Your account is ready. Start shortening links now.",
       button: "Go to Dashboard",
-      link: BASE_URL
+      link: FRONTEND_BASE
     })
   });
+
+  await logEmailEvent(
+    sent ? "sent" : "failed",
+    email,
+    "Welcome to Rattle Link",
+    sent ? "sent" : "failed"
+  );
+
+  return sent;
 }
 
 async function sendMagicLink(email, link) {
-  return sendEmailWithRetry(email, {
+  const sent = await sendEmailWithRetry(email, {
     subject: "Your login link 🔑",
     html: emailTemplate({
       title: "Login instantly",
@@ -430,986 +636,999 @@ async function sendMagicLink(email, link) {
       link
     })
   });
+
+  await logEmailEvent(
+    sent ? "sent" : "failed",
+    email,
+    "Your login link",
+    sent ? "sent" : "failed"
+  );
+
+  return sent;
 }
 
 // ================= REALTIME =================
-async function triggerRealtimeUpdate() {
+async function pushRealtimeUpdate(type = "click-update") {
   try {
-    const connections = await client.send(
-      new ScanCommand({
-        TableName: "ws_connections"
-      })
-    );
+    const connections = await scanAll(WS_CONNECTIONS_TABLE);
+    if (!connections.length) return;
 
-    const wsClient = new ApiGatewayManagementApiClient({
+    const ws = new ApiGatewayManagementApiClient({
       endpoint: WS_ENDPOINT
     });
 
-    for (const c of connections.Items || []) {
+    for (const connection of connections) {
       try {
-        await wsClient.send(
+        await ws.send(
           new PostToConnectionCommand({
-            ConnectionId: c.id.S,
+            ConnectionId: attrString(connection, "id"),
             Data: JSON.stringify({
-              type: "click-update",
+              type,
               time: Date.now()
             })
           })
         );
-      } catch (err) {
-        console.error("WS PUSH ERROR:", err);
+      } catch (error) {
+        console.error("WS PUSH ERROR", error);
       }
     }
-  } catch (e) {
-    console.error("REALTIME ERROR:", e);
+  } catch (error) {
+    console.error("REALTIME ERROR", error);
   }
+}
+
+// ================= AUDIT =================
+async function createAuditLog(admin, action, target) {
+  try {
+    await db.send(
+      new PutItemCommand({
+        TableName: AUDIT_LOGS_TABLE,
+        Item: {
+          id: ddbString(crypto.randomUUID()),
+          admin: ddbString(admin),
+          action: ddbString(action),
+          target: ddbString(target),
+          time: ddbNumber(Date.now())
+        }
+      })
+    );
+  } catch (error) {
+    console.error("AUDIT LOG ERROR", error);
+  }
+}
+
+// ================= AUTH CHECK =================
+function authRequired(event) {
+  const path = getPath(event);
+  return (
+    path === "/create" ||
+    path === "/list" ||
+    path === "/history" ||
+    path === "/delete" ||
+    path.startsWith("/admin")
+  );
+}
+
+// ================= WEBSOCKET =================
+async function handleWebSocket(event) {
+  const routeKey = event?.requestContext?.routeKey;
+  const connectionId = event?.requestContext?.connectionId;
+
+  if (!connectionId) return { statusCode: 200 };
+
+  try {
+    if (routeKey === "$connect") {
+      await db.send(
+        new PutItemCommand({
+          TableName: WS_CONNECTIONS_TABLE,
+          Item: {
+            id: ddbString(connectionId),
+            connectedAt: ddbNumber(Date.now())
+          }
+        })
+      );
+    }
+
+    if (routeKey === "$disconnect") {
+      await db.send(
+        new DeleteItemCommand({
+          TableName: WS_CONNECTIONS_TABLE,
+          Key: { id: ddbString(connectionId) }
+        })
+      );
+    }
+
+    if (routeKey === "broadcast") {
+      await pushRealtimeUpdate("update");
+    }
+
+    return { statusCode: 200 };
+  } catch (error) {
+    console.error("WS ERROR", error);
+    return { statusCode: 500 };
+  }
+}
+
+// ================= MAIN ROUTER =================
+async function routeHttp(event) {
+  const method = getMethod(event);
+  const path = getPath(event);
+  const headers = getHeaders(event);
+  const body = getBody(event);
+  const currentUser = await getCurrentUser(event);
+
+  if (method === "OPTIONS") {
+    return response(200, "");
+  }
+
+  if (event?.requestContext?.connectionId) {
+    return handleWebSocket(event);
+  }
+
+  if (authRequired(event) && !currentUser) {
+    return unauthorized();
+  }
+
+  // ================= TEST EMAIL =================
+  if (method === "GET" && path === "/test-email") {
+    const sent = await sendEmail("YOUR_EMAIL@gmail.com", {
+      subject: "TEST EMAIL",
+      html: "<h1>WORKING ✅</h1>"
+    });
+    return text(200, sent ? "sent" : "failed");
+  }
+
+  // ================= LOGIN =================
+  if (method === "POST" && path === "/login") {
+    const username = normalizeEmail(body.username);
+    const password = String(body.password || "");
+    const captcha = body.captcha;
+
+    if (!username || !password) {
+      return badRequest("Missing username or password");
+    }
+
+    const validCaptcha = await verifyCaptcha(captcha);
+    if (!validCaptcha) {
+      return forbidden("Captcha failed");
+    }
+
+    const dbUser = await getUser(username);
+
+    if (!dbUser) {
+      return unauthorized("Invalid credentials");
+    }
+
+    if (attrBool(dbUser, "banned")) {
+      return forbidden("Account blocked");
+    }
+
+    const storedPassword = attrString(dbUser, "password", "");
+    const hashedInput = hashPassword(password);
+
+    if (storedPassword !== hashedInput) {
+      return unauthorized("Invalid credentials");
+    }
+
+    return ok({
+      token: issueAuthToken(username, attrString(dbUser, "role", "user")),
+      role: attrString(dbUser, "role", "user")
+    });
+  }
+
+  // ================= SIGNUP =================
+  if (method === "POST" && path === "/signup") {
+    const username = normalizeEmail(body.username);
+    const password = String(body.password || "");
+    const captcha = body.captcha;
+
+    if (!username || !password) {
+      return badRequest("Missing username or password");
+    }
+
+    if (!isValidEmail(username)) {
+      return badRequest("Invalid email format");
+    }
+
+    if (password.length < 6) {
+      return badRequest("Password must be at least 6 characters");
+    }
+
+    const validCaptcha = await verifyCaptcha(captcha);
+    if (!validCaptcha) {
+      return forbidden("Captcha failed");
+    }
+
+    const existing = await getUser(username);
+    if (existing) {
+      return conflict("User already exists");
+    }
+
+    await db.send(
+      new PutItemCommand({
+        TableName: USERS_TABLE,
+        Item: {
+          username: ddbString(username),
+          password: ddbString(hashPassword(password)),
+          role: ddbString("user"),
+          banned: ddbBool(false),
+          geoTracking: ddbBool(true),
+          requests: ddbNumber(0),
+          createdAt: ddbNumber(Date.now())
+        },
+        ConditionExpression: "attribute_not_exists(username)"
+      })
+    );
+
+    await sendWelcomeEmail(username);
+
+    return ok({ message: "Account created successfully" });
+  }
+
+  // ================= FORGOT PASSWORD =================
+  if (method === "POST" && path === "/forgot") {
+    const username = normalizeEmail(body.username);
+
+    if (!username) {
+      return badRequest("Username required");
+    }
+
+    if (!isValidEmail(username)) {
+      return badRequest("Invalid email");
+    }
+
+    const user = await getUser(username);
+
+    if (!user) {
+      return ok({ message: "If account exists, reset link sent" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expire = Date.now() + 15 * 60 * 1000;
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET resetToken = :t, resetExpire = :e",
+        ExpressionAttributeValues: {
+          ":t": ddbString(resetToken),
+          ":e": ddbNumber(expire)
+        }
+      })
+    );
+
+    const resetLink = `${FRONTEND_BASE}${RESET_PAGE}?token=${resetToken}`;
+    const sent = await sendResetEmail(username, resetLink);
+
+    if (!sent) {
+      return serverError("Email failed to send");
+    }
+
+    return ok({ message: "If account exists, reset link sent" });
+  }
+
+  // ================= RESET PASSWORD =================
+  if (method === "POST" && path === "/reset") {
+    const token = String(body.token || "");
+    const newPassword = String(body.password || "");
+
+    if (!token || !newPassword) {
+      return badRequest("Missing token or password");
+    }
+
+    if (newPassword.length < 6) {
+      return badRequest("Password too short");
+    }
+
+    const users = await scanAll(USERS_TABLE);
+
+    const user = users.find(
+      (u) =>
+        attrString(u, "resetToken") === token &&
+        attrNumber(u, "resetExpire", 0) > Date.now()
+    );
+
+    if (!user) {
+      return badRequest("Invalid or expired token");
+    }
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(attrString(user, "username")) },
+        UpdateExpression: "SET password = :p REMOVE resetToken, resetExpire",
+        ExpressionAttributeValues: {
+          ":p": ddbString(hashPassword(newPassword))
+        }
+      })
+    );
+
+    return ok({ message: "Password updated" });
+  }
+
+  // ================= MAGIC REQUEST =================
+  if (method === "POST" && path === "/magic-request") {
+    const username = normalizeEmail(body.username);
+
+    if (!username) {
+      return badRequest("Username required");
+    }
+
+    if (!isValidEmail(username)) {
+      return badRequest("Invalid email");
+    }
+
+    const existing = await getUser(username);
+
+    if (existing) {
+      const token = crypto.randomBytes(32).toString("hex");
+
+      await db.send(
+        new UpdateItemCommand({
+          TableName: USERS_TABLE,
+          Key: { username: ddbString(username) },
+          UpdateExpression: "SET magicToken = :t, magicExpire = :e",
+          ExpressionAttributeValues: {
+            ":t": ddbString(token),
+            ":e": ddbNumber(Date.now() + 10 * 60 * 1000)
+          }
+        })
+      );
+
+      const link = `${FRONTEND_BASE}${MAGIC_PAGE}?token=${token}`;
+      await sendMagicLink(username, link);
+    }
+
+    return ok({ message: "Magic link sent" });
+  }
+
+  // ================= MAGIC LOGIN =================
+  if (method === "POST" && path === "/magic-login") {
+    const token = String(body.token || "");
+
+    if (!token) {
+      return badRequest("Missing token");
+    }
+
+    const users = await scanAll(USERS_TABLE);
+
+    const user = users.find(
+      (u) =>
+        attrString(u, "magicToken") === token &&
+        attrNumber(u, "magicExpire", 0) > Date.now()
+    );
+
+    if (!user) {
+      return badRequest("Invalid link");
+    }
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(attrString(user, "username")) },
+        UpdateExpression: "REMOVE magicToken, magicExpire"
+      })
+    );
+
+    return ok({
+      token: issueAuthToken(
+        attrString(user, "username"),
+        attrString(user, "role", "user")
+      ),
+      role: attrString(user, "role", "user")
+    });
+  }
+
+  // ================= WEBHOOK =================
+  if (path === "/webhook/email") {
+    try {
+      const payload =
+        typeof event.body === "string" ? JSON.parse(event.body || "{}") : body;
+
+      const eventType = payload?.type || "unknown";
+      const email = payload?.data?.to?.[0] || payload?.data?.email || "unknown";
+      const subject = payload?.data?.subject || "unknown";
+      const status = payload?.data?.status || "unknown";
+
+      await logEmailEvent(eventType, email, subject, status);
+
+      return text(200, "Webhook received");
+    } catch (error) {
+      console.error("WEBHOOK ERROR", error);
+      return serverError("Webhook failed", error);
+    }
+  }
+
+  // ================= EMAIL WORKER =================
+  if (path === "/worker/email") {
+    try {
+      const items = await scanAll(EMAIL_QUEUE_TABLE);
+
+      for (const job of items) {
+        if (attrString(job, "status") !== "pending") continue;
+
+        const id = attrString(job, "id");
+        const to = attrString(job, "to");
+        const type = attrString(job, "type");
+        const link = attrString(job, "link", "");
+        const attempts = attrNumber(job, "attempts", 0);
+
+        let success = false;
+
+        if (type === "reset") success = await sendResetEmail(to, link);
+        if (type === "magic") success = await sendMagicLink(to, link);
+        if (type === "welcome") success = await sendWelcomeEmail(to);
+
+        const newStatus = success
+          ? "sent"
+          : attempts < 2
+          ? "pending"
+          : "dead";
+
+        await db.send(
+          new UpdateItemCommand({
+            TableName: EMAIL_QUEUE_TABLE,
+            Key: { id: ddbString(id) },
+            UpdateExpression: "SET #s = :s, attempts = :a",
+            ExpressionAttributeNames: {
+              "#s": "status"
+            },
+            ExpressionAttributeValues: {
+              ":s": ddbString(newStatus),
+              ":a": ddbNumber(attempts + 1)
+            }
+          })
+        );
+      }
+
+      return text(200, "Worker completed");
+    } catch (error) {
+      console.error("WORKER ERROR", error);
+      return serverError("Worker failed", error);
+    }
+  }
+
+  // ================= CREATE LINK =================
+  if (method === "POST" && path === "/create") {
+    const url = String(body.url || "").trim();
+    const slug = normalizeSlug(body.slug || generateSlug());
+    const expire = body.expire ? Number(body.expire) : null;
+
+    if (!isValidUrl(url)) {
+      return badRequest("Invalid URL");
+    }
+
+    if (!isValidSlug(slug)) {
+      return badRequest("Invalid slug");
+    }
+
+    await db.send(
+      new PutItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Item: {
+          slug: ddbString(slug),
+          url: ddbString(url),
+          clicks: ddbNumber(0),
+          paused: ddbBool(false),
+          user: ddbString(currentUser.username),
+          expire: expire ? ddbNumber(expire) : { NULL: true },
+          createdAt: ddbNumber(Date.now())
+        },
+        ConditionExpression: "attribute_not_exists(slug)"
+      })
+    );
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(currentUser.username) },
+        UpdateExpression: "SET requests = if_not_exists(requests, :z) + :i",
+        ExpressionAttributeValues: {
+          ":z": ddbNumber(0),
+          ":i": ddbNumber(1)
+        }
+      })
+    );
+
+    return ok({ link: `${API_BASE}/${slug}` });
+  }
+
+  // ================= LIST USER LINKS =================
+  if (method === "GET" && path === "/list") {
+    const items = await scanAll(REDIRECTS_TABLE);
+
+    return ok({
+      items: items
+        .filter((item) => attrString(item, "user") === currentUser.username)
+        .map((item) => ({
+          slug: attrString(item, "slug"),
+          url: attrString(item, "url"),
+          clicks: attrNumber(item, "clicks"),
+          paused: attrBool(item, "paused"),
+          user: attrString(item, "user"),
+          expire: item?.expire?.N ? Number(item.expire.N) : null,
+          createdAt: attrNumber(item, "createdAt", 0)
+        }))
+    });
+  }
+
+  // ================= HISTORY =================
+  if (method === "GET" && path === "/history") {
+    const slug = normalizeSlug(getQuery(event).slug);
+
+    if (!slug) {
+      return badRequest("Missing slug");
+    }
+
+    const link = await getRedirect(slug);
+
+    if (!link) {
+      return notFound("Link not found");
+    }
+
+    const owner = attrString(link, "user");
+    if (owner !== currentUser.username && currentUser.role !== "admin") {
+      return forbidden("Forbidden");
+    }
+
+    const allItems = await scanAll(CLICKS_TABLE);
+
+    const history = allItems
+      .filter((i) => attrString(i, "slug").toLowerCase() === slug)
+      .map((i) => ({
+        id: attrString(i, "id"),
+        slug: attrString(i, "slug"),
+        time: attrNumber(i, "time", Date.now()),
+        ip: attrString(i, "ip", "unknown"),
+        vpn: attrBool(i, "vpn", false),
+        bot: attrBool(i, "bot", false),
+        risk: attrNumber(i, "risk", 0),
+        ua: attrString(i, "ua", "unknown")
+      }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, CLICK_HISTORY_QUERY_LIMIT);
+
+    return ok({ history });
+  }
+
+  // ================= DELETE LINK =================
+  if (method === "POST" && path === "/delete") {
+    const slug = normalizeSlug(body.slug);
+
+    if (!slug) {
+      return badRequest("Missing slug");
+    }
+
+    const link = await getRedirect(slug);
+
+    if (!link) {
+      return notFound("Link not found");
+    }
+
+    const owner = attrString(link, "user");
+    if (owner !== currentUser.username && currentUser.role !== "admin") {
+      return forbidden("Forbidden");
+    }
+
+    await db.send(
+      new DeleteItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Key: { slug: ddbString(slug) }
+      })
+    );
+
+    return text(200, "deleted");
+  }
+
+  // ================= ADMIN AUTH =================
+  if (path.startsWith("/admin")) {
+    try {
+      await assertAdmin(currentUser.username);
+    } catch (error) {
+      if (error.message === "ADMIN_ONLY") {
+        return forbidden("Admin only");
+      }
+      throw error;
+    }
+  }
+
+  // ================= ADMIN USERS =================
+  if (method === "GET" && path === "/admin/users") {
+    const users = await scanAll(USERS_TABLE);
+
+    return ok({
+      users: users.map((item) => ({
+        username: attrString(item, "username"),
+        role: attrString(item, "role", "user"),
+        banned: attrBool(item, "banned", false),
+        geoTracking: attrBool(item, "geoTracking", true),
+        requests: attrNumber(item, "requests", 0),
+        createdAt: attrNumber(item, "createdAt", 0)
+      }))
+    });
+  }
+
+  // ================= ADMIN LINKS =================
+  if (method === "GET" && path === "/admin/links") {
+    const links = await scanAll(REDIRECTS_TABLE);
+
+    return ok({
+      items: links.map((item) => ({
+        slug: attrString(item, "slug"),
+        url: attrString(item, "url"),
+        clicks: attrNumber(item, "clicks"),
+        paused: attrBool(item, "paused", false),
+        user: attrString(item, "user"),
+        expire: item?.expire?.N ? Number(item.expire.N) : null,
+        createdAt: attrNumber(item, "createdAt", 0)
+      }))
+    });
+  }
+
+  // ================= ADMIN CREATE USER =================
+  if (method === "POST" && path === "/admin/create-user") {
+    const username = normalizeEmail(body.username);
+    const password = String(body.password || "");
+    const role = body.role === "admin" ? "admin" : "user";
+
+    if (!isValidEmail(username)) {
+      return badRequest("Invalid email");
+    }
+
+    if (password.length < 6) {
+      return badRequest("Password must be at least 6 characters");
+    }
+
+    await db.send(
+      new PutItemCommand({
+        TableName: USERS_TABLE,
+        Item: {
+          username: ddbString(username),
+          password: ddbString(hashPassword(password)),
+          role: ddbString(role),
+          banned: ddbBool(false),
+          geoTracking: ddbBool(true),
+          requests: ddbNumber(0),
+          createdAt: ddbNumber(Date.now())
+        },
+        ConditionExpression: "attribute_not_exists(username)"
+      })
+    );
+
+    await createAuditLog(currentUser.username, "CREATE USER", username);
+
+    return text(200, "User created");
+  }
+
+  // ================= ADMIN ROLE CONTROL =================
+  if (method === "POST" && path === "/admin/make-admin") {
+    const username = normalizeEmail(body.username);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET #r = :r",
+        ExpressionAttributeNames: { "#r": "role" },
+        ExpressionAttributeValues: { ":r": ddbString("admin") }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "PROMOTE ADMIN", username);
+
+    return text(200, "ok");
+  }
+
+  if (method === "POST" && path === "/admin/remove-admin") {
+    const username = normalizeEmail(body.username);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET #r = :r",
+        ExpressionAttributeNames: { "#r": "role" },
+        ExpressionAttributeValues: { ":r": ddbString("user") }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "REMOVE ADMIN", username);
+
+    return text(200, "ok");
+  }
+
+  // ================= ADMIN USER CONTROL =================
+  if (method === "POST" && path === "/admin/ban") {
+    const username = normalizeEmail(body.username);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET banned = :b",
+        ExpressionAttributeValues: { ":b": ddbBool(true) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "BAN USER", username);
+
+    return text(200, "banned");
+  }
+
+  if (method === "POST" && path === "/admin/unban") {
+    const username = normalizeEmail(body.username);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET banned = :b",
+        ExpressionAttributeValues: { ":b": ddbBool(false) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "UNBAN USER", username);
+
+    return text(200, "unbanned");
+  }
+
+  if (method === "POST" && path === "/admin/geo") {
+    const username = normalizeEmail(body.username);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: USERS_TABLE,
+        Key: { username: ddbString(username) },
+        UpdateExpression: "SET geoTracking = :g",
+        ExpressionAttributeValues: { ":g": ddbBool(!!body.enabled) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "UPDATE GEO", username);
+
+    return text(200, "geo updated");
+  }
+
+  // ================= ADMIN LINK CONTROL =================
+  if (method === "POST" && path === "/admin/pause") {
+    const slug = normalizeSlug(body.slug);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Key: { slug: ddbString(slug) },
+        UpdateExpression: "SET paused = :p",
+        ExpressionAttributeValues: { ":p": ddbBool(true) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "PAUSE LINK", slug);
+
+    return text(200, "paused");
+  }
+
+  if (method === "POST" && path === "/admin/resume") {
+    const slug = normalizeSlug(body.slug);
+
+    await db.send(
+      new UpdateItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Key: { slug: ddbString(slug) },
+        UpdateExpression: "SET paused = :p",
+        ExpressionAttributeValues: { ":p": ddbBool(false) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "RESUME LINK", slug);
+
+    return text(200, "resumed");
+  }
+
+  if (method === "POST" && path === "/admin/block-ip") {
+    const ip = String(body.ip || "").trim();
+
+    if (!ip) {
+      return badRequest("Missing ip");
+    }
+
+    await db.send(
+      new PutItemCommand({
+        TableName: BLOCKED_IPS_TABLE,
+        Item: {
+          ip: ddbString(ip),
+          blockedAt: ddbNumber(Date.now())
+        }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "BLOCK IP", ip);
+
+    return text(200, "IP blocked");
+  }
+
+  if (method === "POST" && path === "/admin/unblock-ip") {
+    const ip = String(body.ip || "").trim();
+
+    if (!ip) {
+      return badRequest("Missing ip");
+    }
+
+    await db.send(
+      new DeleteItemCommand({
+        TableName: BLOCKED_IPS_TABLE,
+        Key: { ip: ddbString(ip) }
+      })
+    );
+
+    await createAuditLog(currentUser.username, "UNBLOCK IP", ip);
+
+    return text(200, "IP unblocked");
+  }
+
+  // ================= EMAIL LOGS =================
+  if (method === "GET" && path === "/admin/email-logs") {
+    const logs = await scanAll(EMAIL_LOGS_TABLE);
+
+    return ok({
+      logs: logs.map((item) => ({
+        id: attrString(item, "id"),
+        type: attrString(item, "type"),
+        email: attrString(item, "email"),
+        subject: attrString(item, "subject"),
+        status: attrString(item, "status"),
+        time: attrNumber(item, "time")
+      }))
+    });
+  }
+
+  // ================= AUDIT =================
+  if (method === "POST" && path === "/admin/audit") {
+    await createAuditLog(
+      currentUser.username,
+      String(body.action || "UNKNOWN"),
+      String(body.target || "UNKNOWN")
+    );
+    return text(200, "ok");
+  }
+
+  if (method === "GET" && path === "/admin/audit") {
+    const logs = await scanAll(AUDIT_LOGS_TABLE);
+
+    return ok({
+      logs: logs.map((item) => ({
+        id: attrString(item, "id"),
+        admin: attrString(item, "admin"),
+        action: attrString(item, "action"),
+        target: attrString(item, "target"),
+        time: attrNumber(item, "time")
+      }))
+    });
+  }
+
+  // ================= PUBLIC REDIRECT =================
+  if (method === "GET") {
+    const reservedRoutes = new Set([
+      "/",
+      "/login",
+      "/signup",
+      "/reset",
+      "/magic-login",
+      "/magic-request",
+      "/forgot",
+      "/worker/email",
+      "/test-email",
+      "/list",
+      "/history",
+      "/create",
+      "/delete",
+      "/webhook/email",
+      "/admin/users",
+      "/admin/links",
+      "/admin/create-user",
+      "/admin/make-admin",
+      "/admin/remove-admin",
+      "/admin/ban",
+      "/admin/unban",
+      "/admin/geo",
+      "/admin/pause",
+      "/admin/resume",
+      "/admin/block-ip",
+      "/admin/unblock-ip",
+      "/admin/email-logs",
+      "/admin/audit"
+    ]);
+
+    if (!reservedRoutes.has(path) && !path.startsWith("/admin")) {
+      const slug = normalizeSlug(path.split("/").filter(Boolean).pop());
+
+      if (!slug) {
+        return badRequest("Invalid slug");
+      }
+
+      const ip = getIP(event);
+
+      if (await isBlockedIP(ip)) {
+        return forbidden("IP blocked");
+      }
+
+      const item = await getRedirect(slug);
+
+      if (!item) {
+        return notFound("Link not found");
+      }
+
+      if (attrBool(item, "paused")) {
+        return forbidden("Link is paused");
+      }
+
+      if (item?.expire?.N) {
+        const expireTime = Number(item.expire.N);
+        if (Date.now() > expireTime) {
+          return json(410, { message: "Link expired" });
+        }
+      }
+
+      const url = attrString(item, "url");
+
+      await db.send(
+        new UpdateItemCommand({
+          TableName: REDIRECTS_TABLE,
+          Key: { slug: ddbString(slug) },
+          UpdateExpression: "SET clicks = if_not_exists(clicks, :z) + :i",
+          ExpressionAttributeValues: {
+            ":i": ddbNumber(1),
+            ":z": ddbNumber(0)
+          }
+        })
+      );
+
+      await db.send(
+        new PutItemCommand({
+          TableName: CLICKS_TABLE,
+          Item: {
+            id: ddbString(`${slug}#${Date.now()}#${randomId(4)}`),
+            slug: ddbString(slug),
+            time: ddbNumber(Date.now()),
+            ip: ddbString(ip),
+            vpn: ddbBool(isVPN(ip, headers)),
+            bot: ddbBool(isBot(headers)),
+            risk: ddbNumber(scoreIP(ip, headers)),
+            ua: ddbString(
+              headers["user-agent"] || headers["User-Agent"] || "unknown"
+            )
+          }
+        })
+      );
+
+      await pushRealtimeUpdate("click-update");
+
+      return {
+        statusCode: 302,
+        headers: {
+          ...corsHeaders,
+          Location: url,
+          "Content-Type": "text/plain; charset=utf-8"
+        },
+        body: ""
+      };
+    }
+  }
+
+  return notFound("Route not found");
 }
 
 // ================= HANDLER =================
 export const handler = async (event) => {
-  // ================= OPTIONS =================
-  const httpMethod =
-    event.requestContext?.http?.method || event.httpMethod || "GET";
-
-  if (httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: ""
-    };
-  }
-
-  // ================= WEBSOCKET ONLY =================
-  // IMPORTANT FIX:
-  // Only handle websocket if connectionId exists.
-  const isWebSocket = !!event.requestContext?.connectionId;
-
-  if (isWebSocket) {
-    const routeKey = event.requestContext?.routeKey;
-    const connectionId = event.requestContext?.connectionId;
-
-    try {
-      if (routeKey === "$connect") {
-        await client.send(
-          new PutItemCommand({
-            TableName: "ws_connections",
-            Item: { id: { S: connectionId } }
-          })
-        );
-        console.log("WS CONNECT:", connectionId);
-        return { statusCode: 200 };
-      }
-
-      if (routeKey === "$disconnect") {
-        await client.send(
-          new DeleteItemCommand({
-            TableName: "ws_connections",
-            Key: { id: { S: connectionId } }
-          })
-        );
-        console.log("WS DISCONNECT:", connectionId);
-        return { statusCode: 200 };
-      }
-
-      if (routeKey === "broadcast") {
-        const connections = await client.send(
-          new ScanCommand({
-            TableName: "ws_connections"
-          })
-        );
-
-        const wsClient = new ApiGatewayManagementApiClient({
-          endpoint: WS_ENDPOINT
-        });
-
-        for (const c of connections.Items || []) {
-          try {
-            await wsClient.send(
-              new PostToConnectionCommand({
-                ConnectionId: c.id.S,
-                Data: JSON.stringify({ type: "update" })
-              })
-            );
-          } catch (err) {
-            console.error("WS SEND ERROR:", err);
-          }
-        }
-
-        return { statusCode: 200 };
-      }
-
-      return { statusCode: 200 };
-    } catch (err) {
-      console.error("WS ERROR:", err);
-      return { statusCode: 500 };
-    }
-  }
-
-  // ================= HTTP PATH =================
-  const rawPath = event.requestContext?.http?.path || event.path || "/";
-  const path = rawPath.replace(/^\/production/, "").toLowerCase();
-  const method = httpMethod;
-
-  console.log("RAW PATH:", rawPath);
-  console.log("CLEAN PATH:", path);
-  console.log("METHOD:", method);
-
   try {
-    // ================= TEST EMAIL =================
-    if (method === "GET" && path === "/test-email") {
-      const ok = await sendEmail("YOUR_EMAIL@gmail.com", {
-        subject: "TEST EMAIL",
-        html: "<h1>WORKING ✅</h1>"
-      });
+    return await routeHttp(event);
+  } catch (error) {
+    console.error("Unhandled error", error);
 
-      return text(200, ok ? "sent" : "failed");
+    if (error?.name === "ConditionalCheckFailedException") {
+      return conflict("Resource already exists");
     }
 
-    // ================= LOGIN =================
-    if (method === "POST" && path === "/login") {
-      const body = getBody(event);
-
-      const username = normalizeEmail(body.username);
-      const password = String(body.password || "");
-      const captcha = body.captcha;
-
-      console.log("LOGIN ATTEMPT:", username);
-
-      if (!username || !password) {
-        return json(400, { message: "Missing username or password" });
-      }
-
-      let validCaptcha = true;
-      if (captcha !== "bypass") {
-        validCaptcha = await verifyCaptcha(captcha);
-      }
-
-      if (!validCaptcha) {
-        return json(403, { message: "Captcha failed" });
-      }
-
-      const dbUser = await getUser(username);
-
-      if (!dbUser) {
-        console.log("USER NOT FOUND:", username);
-        return json(401, { message: "Invalid credentials" });
-      }
-
-      const storedPassword = dbUser.password?.S || "";
-      const hashedInput = hash(password);
-
-      if (storedPassword !== hashedInput) {
-        console.log("PASSWORD MISMATCH:", username);
-        return json(401, { message: "Invalid credentials" });
-      }
-
-      if (dbUser.banned?.BOOL === true) {
-        return json(403, { message: "Account blocked" });
-      }
-
-      return json(200, {
-        token: generateToken(username),
-        role: dbUser.role?.S || "user"
-      });
-    }
-
-    // ================= SIGNUP =================
-    if (method === "POST" && path === "/signup") {
-      const body = getBody(event);
-
-      const username = normalizeEmail(body.username);
-      const password = String(body.password || "");
-      const captcha = body.captcha;
-
-      console.log("SIGNUP ATTEMPT:", username);
-
-      if (!username || !password) {
-        return json(400, { message: "Missing username or password" });
-      }
-
-      if (!isValidEmail(username)) {
-        return json(400, { message: "Invalid email format" });
-      }
-
-      if (password.length < 6) {
-        return json(400, { message: "Password must be at least 6 characters" });
-      }
-
-      let validCaptcha = true;
-      if (captcha !== "bypass") {
-        validCaptcha = await verifyCaptcha(captcha);
-      }
-
-      if (!validCaptcha) {
-        return json(403, { message: "Captcha failed" });
-      }
-
-      const existing = await getUser(username);
-
-      if (existing) {
-        return json(409, { message: "User already exists" });
-      }
-
-      await client.send(
-        new PutItemCommand({
-          TableName: "users",
-          Item: {
-            username: { S: username },
-            password: { S: hash(password) },
-            role: { S: "user" },
-            banned: { BOOL: false },
-            createdAt: { N: String(Date.now()) }
-          },
-          ConditionExpression: "attribute_not_exists(username)"
-        })
-      );
-
-      try {
-        await sendWelcomeEmail(username);
-      } catch (e) {
-        console.error("WELCOME EMAIL ERROR:", e);
-      }
-
-      return json(200, { message: "Account created successfully" });
-    }
-
-    // ================= RESET PASSWORD =================
-    if (method === "POST" && path === "/reset") {
-      const body = getBody(event);
-      const token = body.token;
-      const newPassword = body.password;
-
-      if (!token || !newPassword) {
-        return text(400, "Missing token or password");
-      }
-
-      if (newPassword.length < 6) {
-        return text(400, "Password too short");
-      }
-
-      const users = await scanAll("users");
-
-      const user = users.find(
-        (u) =>
-          u.resetToken?.S === token &&
-          Number(u.resetExpire?.N || 0) > Date.now()
-      );
-
-      if (!user) {
-        return text(400, "Invalid or expired token");
-      }
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: user.username.S } },
-          UpdateExpression: "SET password = :p REMOVE resetToken, resetExpire",
-          ExpressionAttributeValues: {
-            ":p": { S: hash(newPassword) }
-          }
-        })
-      );
-
-      return text(200, "Password updated");
-    }
-
-    // ================= MAGIC LOGIN =================
-    if (method === "POST" && path === "/magic-login") {
-      const body = getBody(event);
-      const token = body.token;
-
-      if (!token) {
-        return text(400, "Missing token");
-      }
-
-      const users = await scanAll("users");
-
-      const user = users.find(
-        (u) =>
-          u.magicToken?.S === token &&
-          Number(u.magicExpire?.N || 0) > Date.now()
-      );
-
-      if (!user) {
-        return text(400, "Invalid link");
-      }
-
-      return json(200, {
-        token: generateToken(user.username.S),
-        role: user.role?.S || "user"
-      });
-    }
-
-    // ================= MAGIC REQUEST =================
-    if (method === "POST" && path === "/magic-request") {
-      const body = getBody(event);
-      const username = normalizeEmail(body.username);
-
-      if (!username) {
-        return json(400, { message: "Username required" });
-      }
-
-      const existing = await getUser(username);
-
-      if (existing) {
-        const token = crypto.randomBytes(32).toString("hex");
-
-        await client.send(
-          new UpdateItemCommand({
-            TableName: "users",
-            Key: { username: { S: username } },
-            UpdateExpression: "SET magicToken = :t, magicExpire = :e",
-            ExpressionAttributeValues: {
-              ":t": { S: token },
-              ":e": { N: String(Date.now() + 10 * 60 * 1000) }
-            }
-          })
-        );
-
-        const link = `${BASE_URL}/magic-login.html?token=${token}`;
-        await sendMagicLink(username, link);
-      }
-
-      return text(200, "Magic link sent");
-    }
-
-    // ================= WEBHOOK =================
-    if (path === "/webhook/email") {
-      try {
-        const rawBody = event.body || "";
-        const headers = event.headers || {};
-
-        const signature =
-          headers["resend-signature"] || headers["Resend-Signature"];
-
-        if (!signature) {
-          console.warn("Missing webhook signature");
-        }
-
-        let payload;
-        try {
-          payload = JSON.parse(rawBody);
-        } catch {
-          return text(400, "Invalid JSON");
-        }
-
-        const eventType = payload.type || "unknown";
-        const email = payload.data?.to?.[0] || payload.data?.email || "unknown";
-        const messageId = payload.data?.id || crypto.randomUUID();
-        const timestamp = Date.now();
-
-        await client.send(
-          new PutItemCommand({
-            TableName: "email_logs",
-            Item: {
-              id: { S: messageId },
-              type: { S: eventType },
-              email: { S: email },
-              time: { N: String(timestamp) },
-              subject: { S: payload.data?.subject || "unknown" },
-              status: { S: payload.data?.status || "unknown" }
-            }
-          })
-        );
-
-        return text(200, "Webhook received");
-      } catch (err) {
-        console.error("WEBHOOK ERROR:", err);
-        return text(500, "Webhook failed");
-      }
-    }
-
-    // ================= FORGOT PASSWORD =================
-    if (method === "POST" && path === "/forgot") {
-      try {
-        const body = getBody(event);
-        const username = normalizeEmail(body.username);
-
-        if (!username) {
-          return json(400, { message: "Username required" });
-        }
-
-        const user = await getUser(username);
-
-        if (!user) {
-          return json(200, { message: "If account exists, reset link sent" });
-        }
-
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const expire = Date.now() + 15 * 60 * 1000;
-
-        await client.send(
-          new UpdateItemCommand({
-            TableName: "users",
-            Key: { username: { S: username } },
-            UpdateExpression: "SET resetToken = :t, resetExpire = :e",
-            ExpressionAttributeValues: {
-              ":t": { S: resetToken },
-              ":e": { N: String(expire) }
-            }
-          })
-        );
-
-        const resetLink = `${BASE_URL}/reset-password.html?token=${resetToken}`;
-
-        const sent = await sendResetEmail(username, resetLink);
-
-        if (!sent) {
-          return json(500, { message: "Email failed to send" });
-        }
-
-        return json(200, { message: "If account exists, reset link sent" });
-      } catch (err) {
-        console.error("FORGOT ERROR:", err);
-        return json(500, { message: "Failed to process request" });
-      }
-    }
-
-    // ================= EMAIL WORKER =================
-    if (path === "/worker/email") {
-      try {
-        const items = await scanAll("email_queue");
-
-        for (const job of items) {
-          if (job.status?.S !== "pending") continue;
-
-          const id = job.id.S;
-          const to = job.to.S;
-          const type = job.type.S;
-          const link = job.link?.S || "";
-          const attempts = Number(job.attempts?.N || 0);
-
-          let success = false;
-
-          try {
-            if (type === "reset") success = await sendResetEmail(to, link);
-            if (type === "magic") success = await sendMagicLink(to, link);
-            if (type === "welcome") success = await sendWelcomeEmail(to);
-          } catch (e) {
-            console.error("SEND ERROR:", e);
-          }
-
-          let newStatus = "failed";
-          if (success) newStatus = "sent";
-          else if (attempts < 2) newStatus = "pending";
-          else newStatus = "dead";
-
-          await client.send(
-            new UpdateItemCommand({
-              TableName: "email_queue",
-              Key: { id: { S: id } },
-              UpdateExpression: "SET #s = :s, attempts = :a",
-              ExpressionAttributeNames: {
-                "#s": "status"
-              },
-              ExpressionAttributeValues: {
-                ":s": { S: newStatus },
-                ":a": { N: String(attempts + 1) }
-              }
-            })
-          );
-        }
-
-        return text(200, "Worker completed");
-      } catch (err) {
-        console.error("WORKER ERROR:", err);
-        return text(500, "Worker failed");
-      }
-    }
-
-    // ================= AUTH =================
-    const user = verifyToken(event);
-    const needsAuth =
-      path === "/create" ||
-      path === "/list" ||
-      path === "/history" ||
-      path === "/delete" ||
-      path.startsWith("/admin");
-
-    if (needsAuth && !user) {
-      return text(401, "Unauthorized");
-    }
-
-    // ================= CREATE =================
-    if (method === "POST" && path === "/create") {
-      const body = getBody(event);
-      const url = String(body.url || "").trim();
-
-      if (!isValidUrl(url)) {
-        return json(400, { message: "Invalid URL" });
-      }
-
-      const slug = String(body.slug || generateSlug()).trim();
-
-      await client.send(
-        new PutItemCommand({
-          TableName: "redirects",
-          Item: {
-            slug: { S: slug },
-            url: { S: url },
-            clicks: { N: "0" },
-            paused: { BOOL: false },
-            user: { S: user },
-            expire:
-              body.expire && !isNaN(body.expire)
-                ? { N: String(body.expire) }
-                : { NULL: true }
-          },
-          ConditionExpression: "attribute_not_exists(slug)"
-        })
-      );
-
-      return json(200, { link: `${BASE_URL}/${slug}` });
-    }
-
-    // ================= LIST =================
-    if (method === "GET" && path === "/list") {
-      const res = await client.send(
-        new ScanCommand({
-          TableName: "redirects"
-        })
-      );
-
-      const items = (res.Items || [])
-        .filter((i) => i.user?.S === user)
-        .map((i) => ({
-          slug: i.slug?.S || "",
-          url: i.url?.S || "",
-          clicks: Number(i.clicks?.N || 0),
-          paused: i.paused?.BOOL || false,
-          user: i.user?.S || "",
-          expire: i.expire?.N ? Number(i.expire.N) : null
-        }));
-
-      return json(200, { items });
-    }
-
-    // ================= HISTORY =================
-    if (method === "GET" && path === "/history") {
-      const rawSlug = event.queryStringParameters?.slug || "";
-      const slug = rawSlug.trim().toLowerCase();
-
-      if (!slug) {
-        return text(400, "Missing slug");
-      }
-
-      const link = await client.send(
-        new GetItemCommand({
-          TableName: "redirects",
-          Key: { slug: { S: slug } }
-        })
-      );
-
-      if (!link.Item || link.Item.user?.S !== user) {
-        return text(403, "Forbidden");
-      }
-
-      const allItems = await scanAll("clicks");
-
-      const history = allItems
-        .filter((i) => (i.slug?.S || "").toLowerCase() === slug)
-        .map((i) => ({
-          time: Number(i.time?.N || Date.now()),
-          ip: i.ip?.S || "unknown",
-          vpn: i.vpn?.BOOL || false,
-          bot: i.bot?.BOOL || false,
-          risk: Number(i.risk?.N || 0)
-        }))
-        .sort((a, b) => b.time - a.time);
-
-      return json(200, { history });
-    }
-
-    // ================= DELETE =================
-    if (method === "POST" && path === "/delete") {
-      const body = getBody(event);
-
-      const link = await client.send(
-        new GetItemCommand({
-          TableName: "redirects",
-          Key: { slug: { S: body.slug } }
-        })
-      );
-
-      if (!link.Item || link.Item.user?.S !== user) {
-        return text(403, "Forbidden");
-      }
-
-      await client.send(
-        new DeleteItemCommand({
-          TableName: "redirects",
-          Key: { slug: { S: body.slug } }
-        })
-      );
-
-      return text(200, "deleted");
-    }
-
-    // ================= ADMIN CHECK =================
-    if (path.startsWith("/admin")) {
-      const ok = await isAdmin(user);
-      if (!ok) return text(403, "Admin only");
-    }
-
-    // ================= ADMIN USERS =================
-    if (path === "/admin/users") {
-      const res = await client.send(
-        new ScanCommand({
-          TableName: "users"
-        })
-      );
-
-      const users = (res.Items || []).map((i) => ({
-        username: i.username?.S || "unknown",
-        role: i.role?.S || "user",
-        banned: i.banned?.BOOL ?? false,
-        requests: Number(i.requests?.N || 0)
-      }));
-
-      return json(200, { users });
-    }
-
-    // ================= ADMIN CREATE USER =================
-    if (path === "/admin/create-user") {
-      const body = getBody(event);
-
-      await client.send(
-        new PutItemCommand({
-          TableName: "users",
-          Item: {
-            username: { S: normalizeEmail(body.username) },
-            password: { S: hash(body.password) },
-            role: { S: body.role || "user" },
-            banned: { BOOL: false },
-            createdAt: { N: String(Date.now()) }
-          }
-        })
-      );
-
-      return text(200, "User created");
-    }
-
-    // ================= ROLE CONTROL =================
-    if (path === "/admin/make-admin") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: normalizeEmail(body.username) } },
-          UpdateExpression: "SET #r = :r",
-          ExpressionAttributeNames: { "#r": "role" },
-          ExpressionAttributeValues: { ":r": { S: "admin" } }
-        })
-      );
-
-      return text(200, "ok");
-    }
-
-    if (path === "/admin/remove-admin") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: normalizeEmail(body.username) } },
-          UpdateExpression: "SET #r = :r",
-          ExpressionAttributeNames: { "#r": "role" },
-          ExpressionAttributeValues: { ":r": { S: "user" } }
-        })
-      );
-
-      return text(200, "ok");
-    }
-
-    // ================= EMAIL LOGS =================
-    if (path === "/admin/email-logs") {
-      const res = await client.send(
-        new ScanCommand({
-          TableName: "email_logs"
-        })
-      );
-
-      const logs = (res.Items || []).map((i) => ({
-        type: i.type?.S,
-        time: Number(i.time?.N || 0)
-      }));
-
-      return json(200, { logs });
-    }
-
-    // ================= AUDIT =================
-    if (path === "/admin/audit" && method === "POST") {
-      const body = getBody(event);
-
-      await client.send(
-        new PutItemCommand({
-          TableName: "audit_logs",
-          Item: {
-            id: { S: crypto.randomUUID() },
-            action: { S: body.action },
-            target: { S: body.target },
-            time: { N: String(body.time || Date.now()) },
-            admin: { S: body.admin || user }
-          }
-        })
-      );
-
-      return text(200, "ok");
-    }
-
-    if (path === "/admin/audit" && method === "GET") {
-      const res = await client.send(
-        new ScanCommand({
-          TableName: "audit_logs"
-        })
-      );
-
-      const logs = (res.Items || []).map((i) => ({
-        action: i.action?.S,
-        target: i.target?.S,
-        time: Number(i.time?.N || 0)
-      }));
-
-      return json(200, { logs });
-    }
-
-    // ================= ADMIN CONTROL =================
-    if (path === "/admin/ban") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: normalizeEmail(body.username) } },
-          UpdateExpression: "SET banned = :b",
-          ExpressionAttributeValues: { ":b": { BOOL: true } }
-        })
-      );
-
-      return text(200, "banned");
-    }
-
-    if (path === "/admin/unban") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: normalizeEmail(body.username) } },
-          UpdateExpression: "SET banned = :b",
-          ExpressionAttributeValues: { ":b": { BOOL: false } }
-        })
-      );
-
-      return text(200, "unbanned");
-    }
-
-    if (path === "/admin/geo") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "users",
-          Key: { username: { S: normalizeEmail(body.username) } },
-          UpdateExpression: "SET geoTracking = :g",
-          ExpressionAttributeValues: { ":g": { BOOL: !!body.enabled } }
-        })
-      );
-
-      return text(200, "geo updated");
-    }
-
-    if (path === "/admin/pause") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "redirects",
-          Key: { slug: { S: body.slug } },
-          UpdateExpression: "SET paused = :p",
-          ExpressionAttributeValues: { ":p": { BOOL: true } }
-        })
-      );
-
-      return text(200, "paused");
-    }
-
-    if (path === "/admin/resume") {
-      const body = getBody(event);
-
-      await client.send(
-        new UpdateItemCommand({
-          TableName: "redirects",
-          Key: { slug: { S: body.slug } },
-          UpdateExpression: "SET paused = :p",
-          ExpressionAttributeValues: { ":p": { BOOL: false } }
-        })
-      );
-
-      return text(200, "resumed");
-    }
-
-    if (path === "/admin/block-ip") {
-      const body = getBody(event);
-
-      await client.send(
-        new PutItemCommand({
-          TableName: "blocked_ips",
-          Item: { ip: { S: body.ip } }
-        })
-      );
-
-      return text(200, "IP blocked");
-    }
-
-    if (path === "/admin/unblock-ip") {
-      const body = getBody(event);
-
-      await client.send(
-        new DeleteItemCommand({
-          TableName: "blocked_ips",
-          Key: { ip: { S: body.ip } }
-        })
-      );
-
-      return text(200, "IP unblocked");
-    }
-
-    // ================= REDIRECT =================
-    if (method === "GET") {
-      const blockedRoutes = new Set([
-        "/login",
-        "/signup",
-        "/reset",
-        "/magic-login",
-        "/magic-request",
-        "/forgot",
-        "/worker/email",
-        "/test-email",
-        "/list",
-        "/history",
-        "/create",
-        "/delete",
-        "/webhook/email"
-      ]);
-
-      if (!blockedRoutes.has(path) && !path.startsWith("/admin")) {
-        const parts = path.split("/").filter(Boolean);
-        const slug = parts.length ? parts.pop().trim() : null;
-
-        if (!slug) {
-          return text(400, "Invalid slug");
-        }
-
-        const headers = event.headers || {};
-        const ip = getIP(event);
-
-        try {
-          const blocked = await client.send(
-            new GetItemCommand({
-              TableName: "blocked_ips",
-              Key: { ip: { S: String(ip || "unknown") } }
-            })
-          );
-
-          if (blocked.Item) {
-            return text(403, "IP blocked");
-          }
-        } catch (e) {
-          console.error("BLOCK CHECK ERROR:", e);
-        }
-
-        const res = await client.send(
-          new GetItemCommand({
-            TableName: "redirects",
-            Key: { slug: { S: slug } }
-          })
-        );
-
-        if (!res.Item) {
-          return text(404, "Link not found");
-        }
-
-        if (res.Item.paused?.BOOL) {
-          return text(403, "Link is paused");
-        }
-
-        if (res.Item.expire?.N) {
-          const expireTime = Number(res.Item.expire.N);
-          if (Date.now() > expireTime) {
-            return text(410, "Link expired");
-          }
-        }
-
-        const url = res.Item.url?.S;
-
-        try {
-          await client.send(
-            new UpdateItemCommand({
-              TableName: "redirects",
-              Key: { slug: { S: slug } },
-              UpdateExpression: "SET clicks = if_not_exists(clicks,:z) + :i",
-              ExpressionAttributeValues: {
-                ":i": { N: "1" },
-                ":z": { N: "0" }
-              }
-            })
-          );
-        } catch (e) {
-          console.error("CLICK UPDATE ERROR:", e);
-        }
-
-        await triggerRealtimeUpdate();
-
-        try {
-          const timestamp = Date.now();
-
-          await client.send(
-            new PutItemCommand({
-              TableName: "clicks",
-              Item: {
-                id: {
-                  S: `${slug}#${timestamp}#${Math.random()
-                    .toString(36)
-                    .slice(2, 6)}`
-                },
-                slug: { S: slug },
-                time: { N: String(timestamp) },
-                ip: { S: String(ip || "unknown") },
-                vpn: { BOOL: isVPN(ip, headers) },
-                bot: { BOOL: isBot(headers) },
-                risk: { N: String(scoreIP(ip, headers)) },
-                ua: {
-                  S:
-                    headers["user-agent"] ||
-                    headers["User-Agent"] ||
-                    "unknown"
-                }
-              }
-            })
-          );
-        } catch (e) {
-          console.error("CLICK STORE ERROR:", e);
-        }
-
-        return {
-          statusCode: 302,
-          headers: {
-            ...cors,
-            Location: url
-          },
-          body: ""
-        };
-      }
-    }
-
-    return text(404, "Route not found");
-  } catch (err) {
-    console.error("HANDLER ERROR:", err);
-    return json(500, {
-      message: "Internal server error",
-      error: err.message
-    });
+    return serverError("Internal server error", error);
   }
 };
