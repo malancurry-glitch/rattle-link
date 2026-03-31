@@ -17,18 +17,47 @@ import https from "https";
 
 // ================= CLIENTS =================
 const client = new DynamoDBClient({ region: "us-east-2" });
-const SECRET = "my-secret-key";
-const BASE_URL = "https://rattle-link.vercel.app";const RECAPTCHA_SECRET = "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
-const RESEND_KEY = "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
-const endpoint = "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
-// ================= UTILS =================
+const SECRET = process.env.APP_SECRET || "my-secret-key";
+const BASE_URL = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";const RECAPTCHA_SECRET =
+  process.env.RECAPTCHA_SECRET || "6LfBaZwsAAAAALGh_1Ld0rYE-3ws60BA9Wvt6pRO";
+const RESEND_KEY =
+  process.env.RESEND_KEY || "re_Nqt7buh8_3R8Ch2735okZj9TgEgaVmUXk";
+const WS_ENDPOINT =
+  process.env.WS_ENDPOINT ||
+  "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
+
+// ================= CORS =================
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Content-Type": "application/json"
+};
+
+// ================= HELPERS =================
+function json(statusCode, data) {
+  return {
+    statusCode,
+    headers: cors,
+    body: JSON.stringify(data)
+  };
+}
+
+function text(statusCode, message) {
+  return {
+    statusCode,
+    headers: cors,
+    body: message
+  };
+}
+
 function hash(password) {
-  return crypto.createHash("sha256").update(password).digest("hex");
+  return crypto.createHash("sha256").update(String(password)).digest("hex");
 }
 
 function generateToken(username) {
-  return Buffer.from(username + ":" + SECRET).toString("base64");
+  return Buffer.from(`${username}:${SECRET}`).toString("base64");
 }
 
 function verifyToken(event) {
@@ -38,24 +67,79 @@ function verifyToken(event) {
   try {
     const token = auth.startsWith("Bearer ") ? auth.split(" ")[1] : auth;
     const [user, sec] = Buffer.from(token, "base64").toString().split(":");
-    if (sec !== SECRET) return null;
+    if (!user || sec !== SECRET) return null;
     return user;
   } catch {
     return null;
   }
 }
 
-// SAFE BODY
-function getBody(event){
-  try { return JSON.parse(event.body || "{}"); }
-  catch { return {}; }
+function getBody(event) {
+  try {
+    return JSON.parse(event.body || "{}");
+  } catch {
+    return {};
+  }
 }
 
-// ================= REAL IP (FINAL FIXED) =================
-function getIP(event){
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
+function generateSlug() {
+  return Math.random().toString(36).substring(2, 8);
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidUrl(value) {
   try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
+async function getUser(username) {
+  const res = await client.send(
+    new GetItemCommand({
+      TableName: "users",
+      Key: { username: { S: username } }
+    })
+  );
+  return res.Item || null;
+}
+
+async function isAdmin(username) {
+  const user = await getUser(username);
+  return user?.role?.S === "admin";
+}
+
+async function scanAll(TableName) {
+  let items = [];
+  let lastKey;
+
+  do {
+    const res = await client.send(
+      new ScanCommand({
+        TableName,
+        ExclusiveStartKey: lastKey
+      })
+    );
+
+    if (res.Items) items.push(...res.Items);
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
+
+  return items;
+}
+
+// ================= REAL IP =================
+function getIP(event) {
+  try {
     const headers = event.headers || {};
 
     let ip =
@@ -68,38 +152,26 @@ function getIP(event){
       event.requestContext?.identity?.userIp ||
       "";
 
-    // 🔥 ensure string
-    if(typeof ip !== "string"){
-      ip = String(ip || "");
-    }
+    if (typeof ip !== "string") ip = String(ip || "");
 
-    // 🔥 handle multiple IPs (proxy chain)
     ip = ip.split(",")[0].trim();
 
-    // 🔥 normalize localhost
-    if(ip === "::1" || ip === "127.0.0.1"){
-      ip = "unknown";
-    }
-
-    // 🔥 final fallback
-    if(!ip || ip.length < 3){
-      ip = "unknown";
-    }
+    if (ip === "::1" || ip === "127.0.0.1") ip = "unknown";
+    if (!ip || ip.length < 3) ip = "unknown";
 
     console.log("FINAL IP:", ip);
-
     return ip;
-
-  } catch (e){
+  } catch (e) {
     console.error("IP ERROR:", e);
     return "unknown";
   }
 }
 
 // ================= VPN DETECTION =================
-function isVPN(ip, headers = {}){
-
-  const ua = (headers["user-agent"] || "").toLowerCase();
+function isVPN(ip, headers = {}) {
+  const ua = String(
+    headers["user-agent"] || headers["User-Agent"] || ""
+  ).toLowerCase();
 
   return (
     ip.startsWith("10.") ||
@@ -112,9 +184,10 @@ function isVPN(ip, headers = {}){
 }
 
 // ================= BOT DETECTION =================
-function isBot(headers = {}){
-
-  const ua = (headers["user-agent"] || "").toLowerCase();
+function isBot(headers = {}) {
+  const ua = String(
+    headers["user-agent"] || headers["User-Agent"] || ""
+  ).toLowerCase();
 
   return (
     ua.includes("bot") ||
@@ -127,46 +200,36 @@ function isBot(headers = {}){
 }
 
 // ================= RISK SCORING =================
-function scoreIP(ip, headers = {}){
-
+function scoreIP(ip, headers = {}) {
   let score = 0;
 
-  if(ip === "unknown") score += 40;
+  if (ip === "unknown") score += 40;
 
-  if(ip.startsWith("192.") || ip.startsWith("127.") || ip.startsWith("10.")){
+  if (
+    ip.startsWith("192.") ||
+    ip.startsWith("127.") ||
+    ip.startsWith("10.")
+  ) {
     score += 30;
   }
 
-  if(isVPN(ip, headers)) score += 20;
-
-  if(isBot(headers)) score += 40;
+  if (isVPN(ip, headers)) score += 20;
+  if (isBot(headers)) score += 40;
 
   return Math.min(score, 100);
 }
 
-// ================= SLUG =================
-function generateSlug() {
-  return Math.random().toString(36).substring(2, 8);
-}
-
-// ================= CORS =================
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
-};
-
-
-async function verifyCaptcha(token){
-
+// ================= CAPTCHA =================
+async function verifyCaptcha(token) {
   if (!token) {
-    console.warn("⚠️ No CAPTCHA token provided");
+    console.warn("No CAPTCHA token provided");
     return false;
   }
 
   return new Promise((resolve) => {
-
-    const postData = `secret=${RECAPTCHA_SECRET}&response=${token}`;
+    const postData = `secret=${encodeURIComponent(
+      RECAPTCHA_SECRET
+    )}&response=${encodeURIComponent(token)}`;
 
     const options = {
       hostname: "www.google.com",
@@ -174,42 +237,44 @@ async function verifyCaptcha(token){
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": postData.length
-      }
+        "Content-Length": Buffer.byteLength(postData)
+      },
+      timeout: 10000
     };
 
     const req = https.request(options, (res) => {
-
       let body = "";
 
-      res.on("data", chunk => body += chunk);
+      res.on("data", (chunk) => {
+        body += chunk;
+      });
 
       res.on("end", () => {
-
         try {
-
           const data = JSON.parse(body);
-
-          console.log("🧠 CAPTCHA RESPONSE:", data);
+          console.log("CAPTCHA RESPONSE:", data);
 
           if (!data.success) {
-            console.warn("❌ CAPTCHA FAILED:", data["error-codes"]);
+            console.warn("CAPTCHA FAILED:", data["error-codes"]);
             return resolve(false);
           }
 
-          // ✅ DO NOT check score for v2
           resolve(true);
-
         } catch (err) {
-          console.error("❌ CAPTCHA PARSE ERROR:", body);
+          console.error("CAPTCHA PARSE ERROR:", body);
           resolve(false);
         }
-
       });
     });
 
     req.on("error", (err) => {
-      console.error("🔥 CAPTCHA REQUEST ERROR:", err);
+      console.error("CAPTCHA REQUEST ERROR:", err);
+      resolve(false);
+    });
+
+    req.on("timeout", () => {
+      console.error("CAPTCHA TIMEOUT");
+      req.destroy();
       resolve(false);
     });
 
@@ -217,17 +282,15 @@ async function verifyCaptcha(token){
     req.end();
   });
 }
+
+// ================= EMAIL =================
 function emailTemplate({ title, message, button, link }) {
   return `
-    <div style="font-family:Inter;background:#020617;padding:40px;color:#fff;">
+    <div style="font-family:Inter,Arial;background:#020617;padding:40px;color:#fff;">
       <div style="max-width:520px;margin:auto;background:#000;padding:30px;border-radius:16px;">
-        
         <h1 style="text-align:center;color:#0ff;">🐍 Rattle Link</h1>
-
         <h2>${title}</h2>
-
         <p style="color:#94a3b8;">${message}</p>
-
         <a href="${link}" style="
           display:block;
           margin:25px 0;
@@ -241,38 +304,32 @@ function emailTemplate({ title, message, button, link }) {
         ">
           ${button}
         </a>
-
       </div>
     </div>
   `;
 }
+
 async function sendEmail(to, { subject, html }) {
   return new Promise((resolve) => {
-
-    // ================= VALIDATION =================
     if (!to || !subject || !html) {
-      console.error("❌ Missing email data:", { to, subject });
+      console.error("Missing email data:", { to, subject });
       return resolve(false);
     }
 
     if (!RESEND_KEY) {
-      console.error("❌ RESEND_KEY missing");
+      console.error("RESEND_KEY missing");
       return resolve(false);
     }
 
-    console.log("📤 Sending email to:", to);
-
-    // ================= PAYLOAD =================
     const payload = JSON.stringify({
-      from: "Rattle Link <support@rattleshort.online>", // MUST match verified domain
+      from: "Rattle Link <support@rattleshort.online>",
       to: [to],
       subject,
       html,
-      text: "Open this email to continue.", // fallback for inbox providers
+      text: "Open this email to continue.",
       reply_to: "support@rattleshort.online"
     });
 
-    // ================= REQUEST =================
     const req = https.request(
       {
         hostname: "api.resend.com",
@@ -286,17 +343,13 @@ async function sendEmail(to, { subject, html }) {
         timeout: 10000
       },
       (res) => {
-
         let body = "";
 
-        res.on("data", chunk => {
+        res.on("data", (chunk) => {
           body += chunk;
         });
 
         res.on("end", () => {
-
-          console.log("📨 STATUS:", res.statusCode);
-
           let parsed;
           try {
             parsed = JSON.parse(body);
@@ -304,70 +357,45 @@ async function sendEmail(to, { subject, html }) {
             parsed = body;
           }
 
-          console.log("📨 RESPONSE:", parsed);
+          console.log("EMAIL STATUS:", res.statusCode);
+          console.log("EMAIL RESPONSE:", parsed);
 
-          // ================= SUCCESS =================
           if (res.statusCode >= 200 && res.statusCode < 300) {
-            console.log("✅ EMAIL SENT:", parsed?.id || "no-id");
             return resolve(true);
           }
 
-          // ================= FAILURE =================
-          console.error("❌ EMAIL FAILED:", {
-            status: res.statusCode,
-            error: parsed
-          });
-
-          return resolve(false);
+          resolve(false);
         });
       }
     );
 
-    // ================= ERROR =================
     req.on("error", (err) => {
-      console.error("🔥 REQUEST ERROR:", err.message);
+      console.error("EMAIL REQUEST ERROR:", err.message);
       resolve(false);
     });
 
-    // ================= TIMEOUT =================
     req.on("timeout", () => {
-      console.error("⏱️ EMAIL TIMEOUT");
+      console.error("EMAIL TIMEOUT");
       req.destroy();
       resolve(false);
     });
 
-    // ================= SEND =================
     req.write(payload);
     req.end();
   });
 }
 
-// ================= RETRY WRAPPER =================
 async function sendEmailWithRetry(to, payload, retries = 2) {
-
   for (let i = 0; i <= retries; i++) {
-
     const success = await sendEmail(to, payload);
-
     if (success) return true;
-
-    console.warn(`⚠️ Retry ${i + 1} failed`);
-
-    // small delay between retries
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
   }
-
-  console.error("❌ All retries failed");
   return false;
 }
+
 async function sendResetEmail(email, link) {
-
-  if (!email || !link) {
-    console.error("❌ Missing reset email data");
-    return false;
-  }
-
-  console.log("🔗 Reset link:", link);
+  if (!email || !link) return false;
 
   return sendEmailWithRetry(email, {
     subject: "Reset your password 🔐",
@@ -378,8 +406,9 @@ async function sendResetEmail(email, link) {
       link
     })
   });
-}async function sendWelcomeEmail(email){
+}
 
+async function sendWelcomeEmail(email) {
   return sendEmailWithRetry(email, {
     subject: "Welcome to Rattle Link 🎉",
     html: emailTemplate({
@@ -390,8 +419,8 @@ async function sendResetEmail(email, link) {
     })
   });
 }
-async function sendMagicLink(email, link){
 
+async function sendMagicLink(email, link) {
   return sendEmailWithRetry(email, {
     subject: "Your login link 🔑",
     html: emailTemplate({
@@ -402,1199 +431,985 @@ async function sendMagicLink(email, link){
     })
   });
 }
-async function triggerRealtimeUpdate(){
 
+// ================= REALTIME =================
+async function triggerRealtimeUpdate() {
   try {
+    const connections = await client.send(
+      new ScanCommand({
+        TableName: "ws_connections"
+      })
+    );
 
-    const connections = await client.send(new ScanCommand({
-      TableName: "ws_connections"
-    }));
-
-    const wsClient = new ApiGatewayManagementApiClient({ endpoint });
+    const wsClient = new ApiGatewayManagementApiClient({
+      endpoint: WS_ENDPOINT
+    });
 
     for (const c of connections.Items || []) {
-
       try {
-        await wsClient.send(new PostToConnectionCommand({
-          ConnectionId: c.id.S,
-          Data: JSON.stringify({
-            type: "click-update",
-            time: Date.now()
+        await wsClient.send(
+          new PostToConnectionCommand({
+            ConnectionId: c.id.S,
+            Data: JSON.stringify({
+              type: "click-update",
+              time: Date.now()
+            })
           })
-        }));
+        );
       } catch (err) {
         console.error("WS PUSH ERROR:", err);
       }
     }
-
-  } catch (e){
+  } catch (e) {
     console.error("REALTIME ERROR:", e);
   }
 }
+
 // ================= HANDLER =================
 export const handler = async (event) => {
-  // ================= WEBSOCKET HANDLER =================
-const routeKey = event.requestContext?.routeKey;
+  // ================= OPTIONS =================
+  const httpMethod =
+    event.requestContext?.http?.method || event.httpMethod || "GET";
 
-if (routeKey) {
-
-  const connectionId = event.requestContext.connectionId;
-
-  try {
-
-    // CONNECT
-    if (routeKey === "$connect") {
-      await client.send(new PutItemCommand({
-        TableName: "ws_connections",
-        Item: { id: { S: connectionId } }
-      }));
-      console.log("WS CONNECT:", connectionId);
-      return { statusCode: 200 };
-    }
-
-    // DISCONNECT
-    if (routeKey === "$disconnect") {
-      await client.send(new DeleteItemCommand({
-        TableName: "ws_connections",
-        Key: { id: { S: connectionId } }
-      }));
-      console.log("WS DISCONNECT:", connectionId);
-      return { statusCode: 200 };
-    }
-
-    // BROADCAST
-    if (routeKey === "broadcast") {
-
-      const connections = await client.send(new ScanCommand({
-        TableName: "ws_connections"
-      }));
-
-      const wsClient = new ApiGatewayManagementApiClient({ endpoint });
-
-      for (const c of connections.Items || []) {
-        try {
-          await wsClient.send(new PostToConnectionCommand({
-            ConnectionId: c.id.S,
-            Data: JSON.stringify({ type: "update" })
-          }));
-        } catch (err) {
-          console.error("WS SEND ERROR:", err);
-        }
-      }
-
-      console.log("WS BROADCAST DONE");
-      return { statusCode: 200 };
-    }
-
-    return { statusCode: 200 };
-
-  } catch (err) {
-    console.error("WS ERROR:", err);
-    return { statusCode: 500 };
-  }
-}
-
-const method = event.requestContext?.http?.method || "GET";
-
-// 🔥 CRITICAL FIX: REMOVE /production PREFIX
-const rawPath = event.requestContext?.http?.path || "/";
-const path = rawPath.replace(/^\/production/, "").toLowerCase();
-
-// DEBUG LOGS
-console.log("📍 RAW PATH:", rawPath);
-console.log("📍 CLEAN PATH:", path);
-
-try {
-
-  // ================= TEST EMAIL =================
-  if (path === "/test-email") {
-    const ok = await sendEmail("YOUR_EMAIL@gmail.com", {
-      subject: "TEST EMAIL",
-      html: "<h1>WORKING ✅</h1>"
-    });
-
+  if (httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
-      body: ok ? "sent" : "failed"
+      headers: cors,
+      body: ""
     };
   }
-    // ================= LOGIN =================
-    if (method === "POST" && path.includes("login") && !path.includes("magic-login")) {
 
-      console.log("🔥 LOGIN ROUTE HIT:", path);
-    
-      try {
-    
-        const body = getBody(event);
-    
-        const username = (body.username || "").trim().toLowerCase();
-        const password = String(body.password || "");
-        const captcha = body.captcha;
-    
-        // ================= VALIDATION =================
-        if (!username || !password) {
-          return {
-            statusCode: 400,
-            headers: cors,
-            body: JSON.stringify({ message: "Missing username or password" })
-          };
-        }
-    
-        // ================= CAPTCHA =================
-        let validCaptcha = true;
-    
-        if (captcha !== "bypass") {
-          validCaptcha = await verifyCaptcha(captcha);
-        }
-    
-        if (!validCaptcha) {
-          return {
-            statusCode: 403,
-            headers: cors,
-            body: JSON.stringify({ message: "Captcha failed" })
-          };
-        }
-    
-        // ================= GET USER =================
-        const db = await client.send(new GetItemCommand({
-          TableName: "users",
-          Key: { username: { S: username } }
-        }));
-    
-        console.log("📦 DB RESULT:", db.Item);
-    
-        if (!db.Item) {
-          console.log("❌ USER NOT FOUND:", username);
-          return {
-            statusCode: 401,
-            headers: cors,
-            body: JSON.stringify({ message: "Invalid credentials" })
-          };
-        }
-    
-        // ================= PASSWORD CHECK =================
-        const storedPassword = db.Item.password?.S;
-        const hashedInput = hash(password);
-    
-        console.log("🔑 STORED:", storedPassword);
-        console.log("🔑 INPUT :", hashedInput);
-    
-        if (!storedPassword || storedPassword !== hashedInput) {
-          console.log("❌ PASSWORD MISMATCH");
-          return {
-            statusCode: 401,
-            headers: cors,
-            body: JSON.stringify({ message: "Invalid credentials" })
-          };
-        }
-    
-        // ================= BAN CHECK =================
-        if (db.Item.banned?.BOOL === true) {
-          return {
-            statusCode: 403,
-            headers: cors,
-            body: JSON.stringify({ message: "Account blocked" })
-          };
-        }
-    
-        // ================= SUCCESS =================
-        console.log("✅ LOGIN SUCCESS:", username);
-    
-        return {
-          statusCode: 200,
-          headers: cors,
-          body: JSON.stringify({
-            token: generateToken(username),
-            role: db.Item.role?.S || "user"
-          })
-        };
-    
-      } catch (err) {
-    
-        console.error("🔥 LOGIN ERROR:", err);
-    
-        return {
-          statusCode: 500,
-          headers: cors,
-          body: JSON.stringify({
-            message: "Login failed",
-            error: err.message
-          })
-        };
-      }
-    }
-  // ================= SIGNUP =================
-  if (method === "POST" && path === "/signup") {
+  // ================= WEBSOCKET ONLY =================
+  // IMPORTANT FIX:
+  // Only handle websocket if connectionId exists.
+  const isWebSocket = !!event.requestContext?.connectionId;
 
-    console.log("🔥 SIGNUP ROUTE HIT");
-  
+  if (isWebSocket) {
+    const routeKey = event.requestContext?.routeKey;
+    const connectionId = event.requestContext?.connectionId;
+
     try {
-  
+      if (routeKey === "$connect") {
+        await client.send(
+          new PutItemCommand({
+            TableName: "ws_connections",
+            Item: { id: { S: connectionId } }
+          })
+        );
+        console.log("WS CONNECT:", connectionId);
+        return { statusCode: 200 };
+      }
+
+      if (routeKey === "$disconnect") {
+        await client.send(
+          new DeleteItemCommand({
+            TableName: "ws_connections",
+            Key: { id: { S: connectionId } }
+          })
+        );
+        console.log("WS DISCONNECT:", connectionId);
+        return { statusCode: 200 };
+      }
+
+      if (routeKey === "broadcast") {
+        const connections = await client.send(
+          new ScanCommand({
+            TableName: "ws_connections"
+          })
+        );
+
+        const wsClient = new ApiGatewayManagementApiClient({
+          endpoint: WS_ENDPOINT
+        });
+
+        for (const c of connections.Items || []) {
+          try {
+            await wsClient.send(
+              new PostToConnectionCommand({
+                ConnectionId: c.id.S,
+                Data: JSON.stringify({ type: "update" })
+              })
+            );
+          } catch (err) {
+            console.error("WS SEND ERROR:", err);
+          }
+        }
+
+        return { statusCode: 200 };
+      }
+
+      return { statusCode: 200 };
+    } catch (err) {
+      console.error("WS ERROR:", err);
+      return { statusCode: 500 };
+    }
+  }
+
+  // ================= HTTP PATH =================
+  const rawPath = event.requestContext?.http?.path || event.path || "/";
+  const path = rawPath.replace(/^\/production/, "").toLowerCase();
+  const method = httpMethod;
+
+  console.log("RAW PATH:", rawPath);
+  console.log("CLEAN PATH:", path);
+  console.log("METHOD:", method);
+
+  try {
+    // ================= TEST EMAIL =================
+    if (method === "GET" && path === "/test-email") {
+      const ok = await sendEmail("YOUR_EMAIL@gmail.com", {
+        subject: "TEST EMAIL",
+        html: "<h1>WORKING ✅</h1>"
+      });
+
+      return text(200, ok ? "sent" : "failed");
+    }
+
+    // ================= LOGIN =================
+    if (method === "POST" && path === "/login") {
       const body = getBody(event);
-  
-      const username = (body.username || "").trim().toLowerCase();
+
+      const username = normalizeEmail(body.username);
       const password = String(body.password || "");
       const captcha = body.captcha;
-  
+
+      console.log("LOGIN ATTEMPT:", username);
+
       if (!username || !password) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: JSON.stringify({ message: "Missing username or password" })
-        };
+        return json(400, { message: "Missing username or password" });
       }
-  
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(username)) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: JSON.stringify({ message: "Invalid email format" })
-        };
-      }
-  
-      if (password.length < 6) {
-        return {
-          statusCode: 400,
-          headers: cors,
-          body: JSON.stringify({ message: "Password must be at least 6 characters" })
-        };
-      }
-  
+
       let validCaptcha = true;
       if (captcha !== "bypass") {
         validCaptcha = await verifyCaptcha(captcha);
       }
-  
+
       if (!validCaptcha) {
-        return {
-          statusCode: 403,
-          headers: cors,
-          body: JSON.stringify({ message: "Captcha failed" })
-        };
+        return json(403, { message: "Captcha failed" });
       }
-  
-      const existing = await client.send(new GetItemCommand({
-        TableName: "users",
-        Key: { username: { S: username } }
-      }));
-  
-      if (existing.Item) {
-        return {
-          statusCode: 409,
-          headers: cors,
-          body: JSON.stringify({ message: "User already exists" })
-        };
+
+      const dbUser = await getUser(username);
+
+      if (!dbUser) {
+        console.log("USER NOT FOUND:", username);
+        return json(401, { message: "Invalid credentials" });
       }
-  
-      await client.send(new PutItemCommand({
-        TableName: "users",
-        Item: {
-          username: { S: username },
-          password: { S: hash(password) },
-          role: { S: "user" },
-          banned: { BOOL: false },
-          createdAt: { N: String(Date.now()) }
-        }
-      }));
-  
-      console.log("✅ USER CREATED:", username);
-  
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: JSON.stringify({ message: "Account created successfully" })
-      };
-  
-    } catch (err) {
-  
-      console.error("🔥 SIGNUP ERROR:", err);
-  
-      return {
-        statusCode: 500,
-        headers: cors,
-        body: JSON.stringify({
-          message: "Signup failed",
-          error: err.message
+
+      const storedPassword = dbUser.password?.S || "";
+      const hashedInput = hash(password);
+
+      if (storedPassword !== hashedInput) {
+        console.log("PASSWORD MISMATCH:", username);
+        return json(401, { message: "Invalid credentials" });
+      }
+
+      if (dbUser.banned?.BOOL === true) {
+        return json(403, { message: "Account blocked" });
+      }
+
+      return json(200, {
+        token: generateToken(username),
+        role: dbUser.role?.S || "user"
+      });
+    }
+
+    // ================= SIGNUP =================
+    if (method === "POST" && path === "/signup") {
+      const body = getBody(event);
+
+      const username = normalizeEmail(body.username);
+      const password = String(body.password || "");
+      const captcha = body.captcha;
+
+      console.log("SIGNUP ATTEMPT:", username);
+
+      if (!username || !password) {
+        return json(400, { message: "Missing username or password" });
+      }
+
+      if (!isValidEmail(username)) {
+        return json(400, { message: "Invalid email format" });
+      }
+
+      if (password.length < 6) {
+        return json(400, { message: "Password must be at least 6 characters" });
+      }
+
+      let validCaptcha = true;
+      if (captcha !== "bypass") {
+        validCaptcha = await verifyCaptcha(captcha);
+      }
+
+      if (!validCaptcha) {
+        return json(403, { message: "Captcha failed" });
+      }
+
+      const existing = await getUser(username);
+
+      if (existing) {
+        return json(409, { message: "User already exists" });
+      }
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "users",
+          Item: {
+            username: { S: username },
+            password: { S: hash(password) },
+            role: { S: "user" },
+            banned: { BOOL: false },
+            createdAt: { N: String(Date.now()) }
+          },
+          ConditionExpression: "attribute_not_exists(username)"
         })
-      };
-    }
-  }
-      
-// ================= RESET PASSWORD =================
-if (method === "POST" && path.includes("reset")) {
+      );
 
-  try {
-
-    const body = getBody(event);
-    const token = body.token;
-    const newPassword = body.password;
-
-    if (!token || !newPassword) {
-      return { statusCode: 400, headers: cors, body: "Missing token or password" };
-    }
-
-    if (newPassword.length < 6) {
-      return { statusCode: 400, headers: cors, body: "Password too short" };
-    }
-
-    const res = await client.send(new ScanCommand({
-      TableName: "users"
-    }));
-
-    const user = (res.Items || []).find(u =>
-      u.resetToken?.S === token &&
-      Number(u.resetExpire?.N || 0) > Date.now()
-    );
-
-    // 🔥 IMPORTANT FIX
-    if (!user) {
-      return { statusCode: 400, headers: cors, body: "Invalid or expired token" };
-    }
-
-    await client.send(new UpdateItemCommand({
-      TableName: "users",
-      Key: { username: { S: user.username.S } },
-      UpdateExpression: "SET password = :p REMOVE resetToken, resetExpire",
-      ExpressionAttributeValues: {
-        ":p": { S: hash(newPassword) }
+      try {
+        await sendWelcomeEmail(username);
+      } catch (e) {
+        console.error("WELCOME EMAIL ERROR:", e);
       }
-    }));
 
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: "Password updated"
-    };
-
-  } catch (err) {
-    console.error("RESET ERROR:", err);
-    return { statusCode: 500, headers: cors, body: "Reset failed" };
-  }
-}
-
-if (method === "POST" && path.includes("magic-login")) {
-
-  const body = getBody(event);
-  const token = body.token;
-
-  const res = await client.send(new ScanCommand({
-    TableName: "users"
-  }));
-
-  const user = (res.Items || []).find(u =>
-    u.magicToken?.S === token &&
-    Number(u.magicExpire?.N || 0) > Date.now()
-  );
-
-  if (!user) {
-    return { statusCode: 400, body: "Invalid link" };
-  }
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      token: generateToken(user.username.S),
-      role: user.role?.S || "user"
-    })
-  };
-}
-if (method === "POST" && path.includes("magic-request")) {
-
-  const body = getBody(event);
-  const username = body.username?.trim().toLowerCase();
-
-  const token = crypto.randomBytes(32).toString("hex");
-
-  await client.send(new UpdateItemCommand({
-    TableName: "users",
-    Key: { username: { S: username } },
-    UpdateExpression: "SET magicToken = :t, magicExpire = :e",
-    ExpressionAttributeValues: {
-      ":t": { S: token },
-      ":e": { N: String(Date.now() + 10 * 60 * 1000) }
-    }
-  }));
-
-  const link = `${BASE_URL}/magic-login.html?token=${token}`;
-
-  await sendMagicLink(username, link);
-
-  return {
-    statusCode: 200,
-    body: "Magic link sent"
-  };
-}
-// ================= RESEND WEBHOOK =================
-if (path.includes("webhook/email")) {
-
-  try {
-
-    // 🔥 RAW BODY (important for signature verification)
-    const rawBody = event.body || "";
-    const headers = event.headers || {};
-
-    // ================= OPTIONAL: VERIFY SIGNATURE =================
-    // (recommended for production)
-    const signature = headers["resend-signature"] || headers["Resend-Signature"];
-
-    if (!signature) {
-      console.warn("⚠️ Missing webhook signature");
+      return json(200, { message: "Account created successfully" });
     }
 
-    // ================= PARSE BODY =================
-    let payload;
-    try {
-      payload = JSON.parse(rawBody);
-    } catch (e) {
-      console.error("❌ Invalid JSON body:", rawBody);
-      return { statusCode: 400, body: "Invalid JSON" };
-    }
+    // ================= RESET PASSWORD =================
+    if (method === "POST" && path === "/reset") {
+      const body = getBody(event);
+      const token = body.token;
+      const newPassword = body.password;
 
-    console.log("📊 EMAIL EVENT:", payload);
-
-    // ================= EXTRACT DATA =================
-    const eventType = payload.type || "unknown";
-
-    const email =
-      payload.data?.to?.[0] ||
-      payload.data?.email ||
-      "unknown";
-
-    const messageId =
-      payload.data?.id ||
-      crypto.randomUUID();
-
-    const timestamp = Date.now();
-
-    // ================= STORE IN DB =================
-    await client.send(new PutItemCommand({
-      TableName: "email_logs",
-      Item: {
-        id: { S: messageId },
-        type: { S: eventType },
-        email: { S: email },
-        time: { N: String(timestamp) },
-
-        // 🔥 EXTRA METADATA (VERY USEFUL)
-        subject: { S: payload.data?.subject || "unknown" },
-        status: { S: payload.data?.status || "unknown" }
+      if (!token || !newPassword) {
+        return text(400, "Missing token or password");
       }
-    }));
 
-    // ================= RESPONSE =================
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: "Webhook received"
-    };
-
-  } catch (err) {
-
-    console.error("🔥 WEBHOOK ERROR:", err);
-
-    return {
-      statusCode: 500,
-      headers: cors,
-      body: "Webhook failed"
-    };
-  }
-}
-
-// ================= REDIRECT =================
-if (
-  method === "GET" &&
-  !path.includes("create") &&
-  !path.includes("list") &&
-  !path.includes("admin")
-) {
-
-  try {
-
-    const parts = path.split("/").filter(Boolean);
-    const slug = parts.length ? parts.pop().trim() : null;
-
-    if (!slug) {
-      return {
-        statusCode: 400,
-        headers: cors,
-        body: "Invalid slug"
-      };
-    }
-
-    const headers = event.headers || {};
-    const ip = getIP(event);
-
-    console.log("IP:", ip);
-    console.log("Slug:", slug);
-
-    // ================= IP BLOCK CHECK =================
-    try {
-      const blocked = await client.send(new GetItemCommand({
-        TableName: "blocked_ips",
-        Key: { ip: { S: String(ip || "unknown") } }
-      }));
-
-      if (blocked.Item) {
-        return {
-          statusCode: 403,
-          headers: cors,
-          body: "IP blocked"
-        };
+      if (newPassword.length < 6) {
+        return text(400, "Password too short");
       }
-    } catch (e){
-      console.error("BLOCK CHECK ERROR:", e);
-    }
 
-    // ================= GET LINK =================
-    const res = await client.send(new GetItemCommand({
-      TableName: "redirects",
-      Key: { slug: { S: slug } }
-    }));
+      const users = await scanAll("users");
 
-    if (!res.Item) {
-      return {
-        statusCode: 404,
-        headers: cors,
-        body: "Link not found"
-      };
-    }
+      const user = users.find(
+        (u) =>
+          u.resetToken?.S === token &&
+          Number(u.resetExpire?.N || 0) > Date.now()
+      );
 
-    // ================= PAUSE CHECK =================
-    if (res.Item.paused?.BOOL) {
-      return {
-        statusCode: 403,
-        headers: cors,
-        body: "Link is paused"
-      };
-    }
-
-    // ================= EXPIRE CHECK =================
-    if (res.Item.expire?.N) {
-      const expireTime = Number(res.Item.expire.N);
-
-      if (Date.now() > expireTime) {
-        return {
-          statusCode: 410,
-          headers: cors,
-          body: "Link expired"
-        };
+      if (!user) {
+        return text(400, "Invalid or expired token");
       }
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: user.username.S } },
+          UpdateExpression: "SET password = :p REMOVE resetToken, resetExpire",
+          ExpressionAttributeValues: {
+            ":p": { S: hash(newPassword) }
+          }
+        })
+      );
+
+      return text(200, "Password updated");
     }
 
-    const url = res.Item.url?.S;
+    // ================= MAGIC LOGIN =================
+    if (method === "POST" && path === "/magic-login") {
+      const body = getBody(event);
+      const token = body.token;
 
-    // ================= CLICK COUNT =================
-    try {
-      await client.send(new UpdateItemCommand({
-        TableName: "redirects",
-        Key: { slug: { S: slug } },
-        UpdateExpression: "SET clicks = if_not_exists(clicks,:z) + :i",
-        ExpressionAttributeValues: {
-          ":i": { N: "1" },
-          ":z": { N: "0" }
+      if (!token) {
+        return text(400, "Missing token");
+      }
+
+      const users = await scanAll("users");
+
+      const user = users.find(
+        (u) =>
+          u.magicToken?.S === token &&
+          Number(u.magicExpire?.N || 0) > Date.now()
+      );
+
+      if (!user) {
+        return text(400, "Invalid link");
+      }
+
+      return json(200, {
+        token: generateToken(user.username.S),
+        role: user.role?.S || "user"
+      });
+    }
+
+    // ================= MAGIC REQUEST =================
+    if (method === "POST" && path === "/magic-request") {
+      const body = getBody(event);
+      const username = normalizeEmail(body.username);
+
+      if (!username) {
+        return json(400, { message: "Username required" });
+      }
+
+      const existing = await getUser(username);
+
+      if (existing) {
+        const token = crypto.randomBytes(32).toString("hex");
+
+        await client.send(
+          new UpdateItemCommand({
+            TableName: "users",
+            Key: { username: { S: username } },
+            UpdateExpression: "SET magicToken = :t, magicExpire = :e",
+            ExpressionAttributeValues: {
+              ":t": { S: token },
+              ":e": { N: String(Date.now() + 10 * 60 * 1000) }
+            }
+          })
+        );
+
+        const link = `${BASE_URL}/magic-login.html?token=${token}`;
+        await sendMagicLink(username, link);
+      }
+
+      return text(200, "Magic link sent");
+    }
+
+    // ================= WEBHOOK =================
+    if (path === "/webhook/email") {
+      try {
+        const rawBody = event.body || "";
+        const headers = event.headers || {};
+
+        const signature =
+          headers["resend-signature"] || headers["Resend-Signature"];
+
+        if (!signature) {
+          console.warn("Missing webhook signature");
         }
-      }));
-    } catch (e){
-      console.error("CLICK UPDATE ERROR:", e);
-    }
-    await triggerRealtimeUpdate();
-    // ================= STORE CLICK =================
-    try {
 
-      const timestamp = Date.now();
-
-      await client.send(new PutItemCommand({
-        TableName: "clicks",
-        Item: {
-          id: { S: `${slug}#${timestamp}#${Math.random().toString(36).slice(2,6)}` },
-          slug: { S: slug },
-          time: { N: String(timestamp) },
-          ip: { S: String(ip || "unknown") },
-          vpn: { BOOL: isVPN(ip, headers) },
-          bot: { BOOL: isBot(headers) },
-          risk: { N: String(scoreIP(ip, headers)) },
-          ua: { S: headers["user-agent"] || "unknown" }
+        let payload;
+        try {
+          payload = JSON.parse(rawBody);
+        } catch {
+          return text(400, "Invalid JSON");
         }
+
+        const eventType = payload.type || "unknown";
+        const email = payload.data?.to?.[0] || payload.data?.email || "unknown";
+        const messageId = payload.data?.id || crypto.randomUUID();
+        const timestamp = Date.now();
+
+        await client.send(
+          new PutItemCommand({
+            TableName: "email_logs",
+            Item: {
+              id: { S: messageId },
+              type: { S: eventType },
+              email: { S: email },
+              time: { N: String(timestamp) },
+              subject: { S: payload.data?.subject || "unknown" },
+              status: { S: payload.data?.status || "unknown" }
+            }
+          })
+        );
+
+        return text(200, "Webhook received");
+      } catch (err) {
+        console.error("WEBHOOK ERROR:", err);
+        return text(500, "Webhook failed");
+      }
+    }
+
+    // ================= FORGOT PASSWORD =================
+    if (method === "POST" && path === "/forgot") {
+      try {
+        const body = getBody(event);
+        const username = normalizeEmail(body.username);
+
+        if (!username) {
+          return json(400, { message: "Username required" });
+        }
+
+        const user = await getUser(username);
+
+        if (!user) {
+          return json(200, { message: "If account exists, reset link sent" });
+        }
+
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const expire = Date.now() + 15 * 60 * 1000;
+
+        await client.send(
+          new UpdateItemCommand({
+            TableName: "users",
+            Key: { username: { S: username } },
+            UpdateExpression: "SET resetToken = :t, resetExpire = :e",
+            ExpressionAttributeValues: {
+              ":t": { S: resetToken },
+              ":e": { N: String(expire) }
+            }
+          })
+        );
+
+        const resetLink = `${BASE_URL}/reset-password.html?token=${resetToken}`;
+
+        const sent = await sendResetEmail(username, resetLink);
+
+        if (!sent) {
+          return json(500, { message: "Email failed to send" });
+        }
+
+        return json(200, { message: "If account exists, reset link sent" });
+      } catch (err) {
+        console.error("FORGOT ERROR:", err);
+        return json(500, { message: "Failed to process request" });
+      }
+    }
+
+    // ================= EMAIL WORKER =================
+    if (path === "/worker/email") {
+      try {
+        const items = await scanAll("email_queue");
+
+        for (const job of items) {
+          if (job.status?.S !== "pending") continue;
+
+          const id = job.id.S;
+          const to = job.to.S;
+          const type = job.type.S;
+          const link = job.link?.S || "";
+          const attempts = Number(job.attempts?.N || 0);
+
+          let success = false;
+
+          try {
+            if (type === "reset") success = await sendResetEmail(to, link);
+            if (type === "magic") success = await sendMagicLink(to, link);
+            if (type === "welcome") success = await sendWelcomeEmail(to);
+          } catch (e) {
+            console.error("SEND ERROR:", e);
+          }
+
+          let newStatus = "failed";
+          if (success) newStatus = "sent";
+          else if (attempts < 2) newStatus = "pending";
+          else newStatus = "dead";
+
+          await client.send(
+            new UpdateItemCommand({
+              TableName: "email_queue",
+              Key: { id: { S: id } },
+              UpdateExpression: "SET #s = :s, attempts = :a",
+              ExpressionAttributeNames: {
+                "#s": "status"
+              },
+              ExpressionAttributeValues: {
+                ":s": { S: newStatus },
+                ":a": { N: String(attempts + 1) }
+              }
+            })
+          );
+        }
+
+        return text(200, "Worker completed");
+      } catch (err) {
+        console.error("WORKER ERROR:", err);
+        return text(500, "Worker failed");
+      }
+    }
+
+    // ================= AUTH =================
+    const user = verifyToken(event);
+    const needsAuth =
+      path === "/create" ||
+      path === "/list" ||
+      path === "/history" ||
+      path === "/delete" ||
+      path.startsWith("/admin");
+
+    if (needsAuth && !user) {
+      return text(401, "Unauthorized");
+    }
+
+    // ================= CREATE =================
+    if (method === "POST" && path === "/create") {
+      const body = getBody(event);
+      const url = String(body.url || "").trim();
+
+      if (!isValidUrl(url)) {
+        return json(400, { message: "Invalid URL" });
+      }
+
+      const slug = String(body.slug || generateSlug()).trim();
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "redirects",
+          Item: {
+            slug: { S: slug },
+            url: { S: url },
+            clicks: { N: "0" },
+            paused: { BOOL: false },
+            user: { S: user },
+            expire:
+              body.expire && !isNaN(body.expire)
+                ? { N: String(body.expire) }
+                : { NULL: true }
+          },
+          ConditionExpression: "attribute_not_exists(slug)"
+        })
+      );
+
+      return json(200, { link: `${BASE_URL}/${slug}` });
+    }
+
+    // ================= LIST =================
+    if (method === "GET" && path === "/list") {
+      const res = await client.send(
+        new ScanCommand({
+          TableName: "redirects"
+        })
+      );
+
+      const items = (res.Items || [])
+        .filter((i) => i.user?.S === user)
+        .map((i) => ({
+          slug: i.slug?.S || "",
+          url: i.url?.S || "",
+          clicks: Number(i.clicks?.N || 0),
+          paused: i.paused?.BOOL || false,
+          user: i.user?.S || "",
+          expire: i.expire?.N ? Number(i.expire.N) : null
+        }));
+
+      return json(200, { items });
+    }
+
+    // ================= HISTORY =================
+    if (method === "GET" && path === "/history") {
+      const rawSlug = event.queryStringParameters?.slug || "";
+      const slug = rawSlug.trim().toLowerCase();
+
+      if (!slug) {
+        return text(400, "Missing slug");
+      }
+
+      const link = await client.send(
+        new GetItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: slug } }
+        })
+      );
+
+      if (!link.Item || link.Item.user?.S !== user) {
+        return text(403, "Forbidden");
+      }
+
+      const allItems = await scanAll("clicks");
+
+      const history = allItems
+        .filter((i) => (i.slug?.S || "").toLowerCase() === slug)
+        .map((i) => ({
+          time: Number(i.time?.N || Date.now()),
+          ip: i.ip?.S || "unknown",
+          vpn: i.vpn?.BOOL || false,
+          bot: i.bot?.BOOL || false,
+          risk: Number(i.risk?.N || 0)
+        }))
+        .sort((a, b) => b.time - a.time);
+
+      return json(200, { history });
+    }
+
+    // ================= DELETE =================
+    if (method === "POST" && path === "/delete") {
+      const body = getBody(event);
+
+      const link = await client.send(
+        new GetItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } }
+        })
+      );
+
+      if (!link.Item || link.Item.user?.S !== user) {
+        return text(403, "Forbidden");
+      }
+
+      await client.send(
+        new DeleteItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } }
+        })
+      );
+
+      return text(200, "deleted");
+    }
+
+    // ================= ADMIN CHECK =================
+    if (path.startsWith("/admin")) {
+      const ok = await isAdmin(user);
+      if (!ok) return text(403, "Admin only");
+    }
+
+    // ================= ADMIN USERS =================
+    if (path === "/admin/users") {
+      const res = await client.send(
+        new ScanCommand({
+          TableName: "users"
+        })
+      );
+
+      const users = (res.Items || []).map((i) => ({
+        username: i.username?.S || "unknown",
+        role: i.role?.S || "user",
+        banned: i.banned?.BOOL ?? false,
+        requests: Number(i.requests?.N || 0)
       }));
 
-      console.log("CLICK STORED:", slug, ip);
+      return json(200, { users });
+    }
 
-    } catch (e){
-      console.error("CLICK STORE ERROR:", e);
+    // ================= ADMIN CREATE USER =================
+    if (path === "/admin/create-user") {
+      const body = getBody(event);
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "users",
+          Item: {
+            username: { S: normalizeEmail(body.username) },
+            password: { S: hash(body.password) },
+            role: { S: body.role || "user" },
+            banned: { BOOL: false },
+            createdAt: { N: String(Date.now()) }
+          }
+        })
+      );
+
+      return text(200, "User created");
+    }
+
+    // ================= ROLE CONTROL =================
+    if (path === "/admin/make-admin") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET #r = :r",
+          ExpressionAttributeNames: { "#r": "role" },
+          ExpressionAttributeValues: { ":r": { S: "admin" } }
+        })
+      );
+
+      return text(200, "ok");
+    }
+
+    if (path === "/admin/remove-admin") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET #r = :r",
+          ExpressionAttributeNames: { "#r": "role" },
+          ExpressionAttributeValues: { ":r": { S: "user" } }
+        })
+      );
+
+      return text(200, "ok");
+    }
+
+    // ================= EMAIL LOGS =================
+    if (path === "/admin/email-logs") {
+      const res = await client.send(
+        new ScanCommand({
+          TableName: "email_logs"
+        })
+      );
+
+      const logs = (res.Items || []).map((i) => ({
+        type: i.type?.S,
+        time: Number(i.time?.N || 0)
+      }));
+
+      return json(200, { logs });
+    }
+
+    // ================= AUDIT =================
+    if (path === "/admin/audit" && method === "POST") {
+      const body = getBody(event);
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "audit_logs",
+          Item: {
+            id: { S: crypto.randomUUID() },
+            action: { S: body.action },
+            target: { S: body.target },
+            time: { N: String(body.time || Date.now()) },
+            admin: { S: body.admin || user }
+          }
+        })
+      );
+
+      return text(200, "ok");
+    }
+
+    if (path === "/admin/audit" && method === "GET") {
+      const res = await client.send(
+        new ScanCommand({
+          TableName: "audit_logs"
+        })
+      );
+
+      const logs = (res.Items || []).map((i) => ({
+        action: i.action?.S,
+        target: i.target?.S,
+        time: Number(i.time?.N || 0)
+      }));
+
+      return json(200, { logs });
+    }
+
+    // ================= ADMIN CONTROL =================
+    if (path === "/admin/ban") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET banned = :b",
+          ExpressionAttributeValues: { ":b": { BOOL: true } }
+        })
+      );
+
+      return text(200, "banned");
+    }
+
+    if (path === "/admin/unban") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET banned = :b",
+          ExpressionAttributeValues: { ":b": { BOOL: false } }
+        })
+      );
+
+      return text(200, "unbanned");
+    }
+
+    if (path === "/admin/geo") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "users",
+          Key: { username: { S: normalizeEmail(body.username) } },
+          UpdateExpression: "SET geoTracking = :g",
+          ExpressionAttributeValues: { ":g": { BOOL: !!body.enabled } }
+        })
+      );
+
+      return text(200, "geo updated");
+    }
+
+    if (path === "/admin/pause") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } },
+          UpdateExpression: "SET paused = :p",
+          ExpressionAttributeValues: { ":p": { BOOL: true } }
+        })
+      );
+
+      return text(200, "paused");
+    }
+
+    if (path === "/admin/resume") {
+      const body = getBody(event);
+
+      await client.send(
+        new UpdateItemCommand({
+          TableName: "redirects",
+          Key: { slug: { S: body.slug } },
+          UpdateExpression: "SET paused = :p",
+          ExpressionAttributeValues: { ":p": { BOOL: false } }
+        })
+      );
+
+      return text(200, "resumed");
+    }
+
+    if (path === "/admin/block-ip") {
+      const body = getBody(event);
+
+      await client.send(
+        new PutItemCommand({
+          TableName: "blocked_ips",
+          Item: { ip: { S: body.ip } }
+        })
+      );
+
+      return text(200, "IP blocked");
+    }
+
+    if (path === "/admin/unblock-ip") {
+      const body = getBody(event);
+
+      await client.send(
+        new DeleteItemCommand({
+          TableName: "blocked_ips",
+          Key: { ip: { S: body.ip } }
+        })
+      );
+
+      return text(200, "IP unblocked");
     }
 
     // ================= REDIRECT =================
-    return {
-      statusCode: 302,
-      headers: {
-        Location: url,
-        ...cors
-      }
-    };
+    if (method === "GET") {
+      const blockedRoutes = new Set([
+        "/login",
+        "/signup",
+        "/reset",
+        "/magic-login",
+        "/magic-request",
+        "/forgot",
+        "/worker/email",
+        "/test-email",
+        "/list",
+        "/history",
+        "/create",
+        "/delete",
+        "/webhook/email"
+      ]);
 
-  } catch (err) {
-    console.error("🔥 REDIRECT ERROR:", err);
+      if (!blockedRoutes.has(path) && !path.startsWith("/admin")) {
+        const parts = path.split("/").filter(Boolean);
+        const slug = parts.length ? parts.pop().trim() : null;
 
-    return {
-      statusCode: 500,
-      headers: cors,
-      body: "Redirect failed"
-    };
-  }
-}
-// ================= FORGOT PASSWORD =================
-if (method === "POST" && path.includes("forgot")) {
-
-  try {
-
-    const body = getBody(event);
-    const username = body.username?.trim().toLowerCase();
-
-    // ================= VALIDATION =================
-    if (!username) {
-      return {
-        statusCode: 400,
-        headers: cors,
-        body: JSON.stringify({ message: "Username required" })
-      };
-    }
-
-    // ================= FIND USER =================
-    const res = await client.send(new GetItemCommand({
-      TableName: "users",
-      Key: { username: { S: username } }
-    }));
-
-    // 🔐 DO NOT reveal user existence
-    if (!res.Item) {
-      return {
-        statusCode: 200,
-        headers: cors,
-        body: JSON.stringify({
-          message: "If account exists, reset link sent"
-        })
-      };
-    }
-
-    // ================= GENERATE TOKEN =================
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const expire = Date.now() + (15 * 60 * 1000); // 15 min
-
-    // ================= STORE TOKEN =================
-    await client.send(new UpdateItemCommand({
-      TableName: "users",
-      Key: { username: { S: username } },
-      UpdateExpression: "SET resetToken = :t, resetExpire = :e",
-      ExpressionAttributeValues: {
-        ":t": { S: resetToken },
-        ":e": { N: String(expire) }
-      }
-    }));
-
-    // ================= RESET LINK =================
-    const resetLink = `${BASE_URL}/reset-password.html?token=${resetToken}`;
-
-    // ================= SEND EMAIL =================
-    console.log("🚀 BEFORE EMAIL");
-
-    const sent = await sendResetEmail(username, resetLink);
-    console.log("🚀 AFTER EMAIL:", sent);
-
-    if (!sent) {
-      return {
-        statusCode: 500,
-        headers: cors,
-        body: JSON.stringify({ message: "Email failed to send" })
-      };
-    }
-
-    // ================= RESPONSE =================
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: JSON.stringify({
-        message: "If account exists, reset link sent"
-      })
-    };
-
-  } catch (err) {
-
-    console.error("🔥 FORGOT ERROR:", err);
-
-    return {
-      statusCode: 500,
-      headers: cors,
-      body: JSON.stringify({
-        message: "Failed to process request"
-      })
-    };
-  }
-}
-// ================= EMAIL WORKER =================
-if (path.includes("worker/email")) {
-
-  try {
-
-    console.log("🚀 Worker started");
-
-    const res = await client.send(new ScanCommand({
-      TableName: "email_queue"
-    }));
-
-    const items = res.Items || [];
-
-    for (const job of items) {
-
-      if (job.status?.S !== "pending") continue;
-
-      const id = job.id.S;
-      const to = job.to.S;
-      const type = job.type.S;
-      const link = job.link?.S || "";
-      const attempts = Number(job.attempts?.N || 0);
-
-      console.log("📨 Processing:", id);
-
-      let success = false;
-
-      try {
-
-        if (type === "reset") {
-          success = await sendResetEmail(to, link);
+        if (!slug) {
+          return text(400, "Invalid slug");
         }
 
-        if (type === "magic") {
-          success = await sendMagicLink(to, link);
+        const headers = event.headers || {};
+        const ip = getIP(event);
+
+        try {
+          const blocked = await client.send(
+            new GetItemCommand({
+              TableName: "blocked_ips",
+              Key: { ip: { S: String(ip || "unknown") } }
+            })
+          );
+
+          if (blocked.Item) {
+            return text(403, "IP blocked");
+          }
+        } catch (e) {
+          console.error("BLOCK CHECK ERROR:", e);
         }
 
-        if (type === "welcome") {
-          success = await sendWelcomeEmail(to);
+        const res = await client.send(
+          new GetItemCommand({
+            TableName: "redirects",
+            Key: { slug: { S: slug } }
+          })
+        );
+
+        if (!res.Item) {
+          return text(404, "Link not found");
         }
 
-      } catch (e) {
-        console.error("❌ Send error:", e);
+        if (res.Item.paused?.BOOL) {
+          return text(403, "Link is paused");
+        }
+
+        if (res.Item.expire?.N) {
+          const expireTime = Number(res.Item.expire.N);
+          if (Date.now() > expireTime) {
+            return text(410, "Link expired");
+          }
+        }
+
+        const url = res.Item.url?.S;
+
+        try {
+          await client.send(
+            new UpdateItemCommand({
+              TableName: "redirects",
+              Key: { slug: { S: slug } },
+              UpdateExpression: "SET clicks = if_not_exists(clicks,:z) + :i",
+              ExpressionAttributeValues: {
+                ":i": { N: "1" },
+                ":z": { N: "0" }
+              }
+            })
+          );
+        } catch (e) {
+          console.error("CLICK UPDATE ERROR:", e);
+        }
+
+        await triggerRealtimeUpdate();
+
+        try {
+          const timestamp = Date.now();
+
+          await client.send(
+            new PutItemCommand({
+              TableName: "clicks",
+              Item: {
+                id: {
+                  S: `${slug}#${timestamp}#${Math.random()
+                    .toString(36)
+                    .slice(2, 6)}`
+                },
+                slug: { S: slug },
+                time: { N: String(timestamp) },
+                ip: { S: String(ip || "unknown") },
+                vpn: { BOOL: isVPN(ip, headers) },
+                bot: { BOOL: isBot(headers) },
+                risk: { N: String(scoreIP(ip, headers)) },
+                ua: {
+                  S:
+                    headers["user-agent"] ||
+                    headers["User-Agent"] ||
+                    "unknown"
+                }
+              }
+            })
+          );
+        } catch (e) {
+          console.error("CLICK STORE ERROR:", e);
+        }
+
+        return {
+          statusCode: 302,
+          headers: {
+            ...cors,
+            Location: url
+          },
+          body: ""
+        };
       }
-
-      // 🔁 RETRY LOGIC
-      let newStatus = "failed";
-
-      if (success) {
-        newStatus = "sent";
-      } else if (attempts < 2) {
-        newStatus = "pending"; // retry later
-      } else {
-        newStatus = "dead"; // give up
-      }
-
-      // ================= UPDATE =================
-      await client.send(new UpdateItemCommand({
-        TableName: "email_queue",
-        Key: { id: { S: id } },
-        UpdateExpression: "SET #s = :s, attempts = :a",
-        ExpressionAttributeNames: {
-          "#s": "status"
-        },
-        ExpressionAttributeValues: {
-          ":s": { S: newStatus },
-          ":a": { N: String(attempts + 1) }
-        }
-      }));
-
-      console.log(`${newStatus.toUpperCase()}:`, id);
     }
 
-    return {
-      statusCode: 200,
-      headers: cors,
-      body: "Worker completed"
-    };
-
+    return text(404, "Route not found");
   } catch (err) {
-
-    console.error("🔥 WORKER ERROR:", err);
-
-    return {
-      statusCode: 500,
-      headers: cors,
-      body: "Worker failed"
-    };
-  }
-}
-  // ================= AUTH =================
-    const user = verifyToken(event);
-    if (!user) return { statusCode: 401, headers: cors, body: "Unauthorized" };
-
-// ================= CREATE =================
-if (method === "POST" && path.includes("create")) {
-  const body = getBody(event);
-
-  const slug = body.slug || generateSlug();
-
-  await client.send(new PutItemCommand({
-    TableName: "redirects",
-    Item: {
-      slug: { S: slug },
-      url: { S: body.url },
-      clicks: { N: "0" },
-      paused: { BOOL: false },
-      user: { S: user },
-
-      // ✅ EXPIRE FIX (ONLY ADDITION)
-      expire: body.expire && !isNaN(body.expire)
-        ? { N: String(body.expire) }
-        : { NULL: true }
-    }
-  }));
-
-  return {
-    statusCode: 200,
-    headers: cors,
-    body: JSON.stringify({ link: `${BASE_URL}/${slug}` })
-  };
-}
-
-// ================= LIST =================
-if (method === "GET" && path.includes("list")) {
-
-  const username = verifyToken(event);
-
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const res = await client.send(new ScanCommand({
-    TableName: "redirects"
-  }));
-
-  const items = (res.Items || [])
-    .filter(i => i.user?.S === username) // 🔥 ONLY THEIR DATA
-    .map(i => ({
-      slug: i.slug?.S || "",
-      url: i.url?.S || "",
-      clicks: Number(i.clicks?.N || 0),
-      paused: i.paused?.BOOL || false,
-      user: i.user?.S || "",
-      expire: i.expire?.N ? Number(i.expire.N) : null
-    }));
-
-  return {
-    statusCode: 200,
-    headers: cors,
-    body: JSON.stringify({ items })
-  };
-}
-// ================= HISTORY (SECURE + FINAL) =================
-if (method === "GET" && path.includes("history")) {
-
-  const username = verifyToken(event);
-
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const rawSlug = event.queryStringParameters?.slug || "";
-  const slug = rawSlug.trim().toLowerCase();
-
-  if (!slug) {
-    return { statusCode: 400, headers: cors, body: "Missing slug" };
-  }
-
-  // 🔒 VERIFY OWNERSHIP
-  const link = await client.send(new GetItemCommand({
-    TableName: "redirects",
-    Key: { slug: { S: slug } }
-  }));
-
-  if (!link.Item || link.Item.user?.S !== username) {
-    return { statusCode: 403, headers: cors, body: "Forbidden" };
-  }
-
-  let allItems = [];
-  let lastKey;
-
-  do {
-    const res = await client.send(new ScanCommand({
-      TableName: "clicks",
-      ExclusiveStartKey: lastKey
-    }));
-
-    if (res.Items) allItems.push(...res.Items);
-    lastKey = res.LastEvaluatedKey;
-
-  } while (lastKey);
-
-  let history = allItems
-    .filter(i => (i.slug?.S || "").toLowerCase() === slug)
-    .map(i => ({
-      time: Number(i.time?.N || Date.now()),
-      ip: i.ip?.S || "unknown",
-      vpn: i.vpn?.BOOL || false,
-      bot: i.bot?.BOOL || false,
-      risk: Number(i.risk?.N || 0)
-    }))
-    .sort((a,b)=>b.time - a.time);
-
-  return {
-    statusCode: 200,
-    headers: cors,
-    body: JSON.stringify({ history })
-  };
-}
-
-
-// ================= DELETE (SECURE) =================
-if (method === "POST" && path.includes("delete")) {
-
-  const username = verifyToken(event);
-
-  if (!username) {
-    return { statusCode: 401, headers: cors, body: "Unauthorized" };
-  }
-
-  const body = getBody(event);
-
-  // 🔒 VERIFY OWNERSHIP
-  const link = await client.send(new GetItemCommand({
-    TableName: "redirects",
-    Key: { slug: { S: body.slug } }
-  }));
-
-  if (!link.Item || link.Item.user?.S !== username) {
-    return { statusCode: 403, headers: cors, body: "Forbidden" };
-  }
-
-  await client.send(new DeleteItemCommand({
-    TableName: "redirects",
-    Key: { slug: { S: body.slug } }
-  }));
-
-  return { statusCode: 200, headers: cors, body: "deleted" };
-}
-
-
-// ================= ADMIN USERS =================
-if (path.includes("admin/users")) {
-
-  const res = await client.send(new ScanCommand({
-    TableName: "users"
-  }));
-
-  const users = (res.Items || []).map(i => ({
-    username: i.username?.S || "unknown",
-    role: i.role?.S || "user",
-    banned: i.banned?.BOOL ?? false,
-    requests: Number(i.requests?.N || 0)
-  }));
-
-  return { statusCode: 200, headers: cors, body: JSON.stringify({ users }) };
-}
-
-
-// ================= CREATE USER =================
-if (path.includes("admin/create-user")) {
-
-  const body = getBody(event);
-
-  await client.send(new PutItemCommand({
-    TableName: "users",
-    Item: {
-      username: { S: body.username },
-      password: { S: hash(body.password) },
-      role: { S: body.role || "user" },
-      banned: { BOOL: false },
-      createdAt: { N: String(Date.now()) }
-    }
-  }));
-
-  return { statusCode: 200, headers: cors, body: "User created" };
-}
-
-
-// ================= ROLE CONTROL =================
-if (path.includes("admin/make-admin")) {
-
-  const body = getBody(event);
-
-  await client.send(new UpdateItemCommand({
-    TableName: "users",
-    Key: { username: { S: body.username } },
-    UpdateExpression: "SET #r = :r",
-    ExpressionAttributeNames: { "#r": "role" },
-    ExpressionAttributeValues: { ":r": { S: "admin" } }
-  }));
-
-  return { statusCode: 200, headers: cors, body: "ok" };
-}
-
-if (path.includes("admin/remove-admin")) {
-
-  const body = getBody(event);
-
-  await client.send(new UpdateItemCommand({
-    TableName: "users",
-    Key: { username: { S: body.username } },
-    UpdateExpression: "SET #r = :r",
-    ExpressionAttributeNames: { "#r": "role" },
-    ExpressionAttributeValues: { ":r": { S: "user" } }
-  }));
-
-  return { statusCode: 200, headers: cors, body: "ok" };
-}
-
-
-// ================= EMAIL LOGS =================
-if (path.includes("admin/email-logs")) {
-
-  const res = await client.send(new ScanCommand({
-    TableName: "email_logs"
-  }));
-
-  const logs = (res.Items || []).map(i => ({
-    type: i.type?.S,
-    time: Number(i.time?.N || 0)
-  }));
-
-  return {
-    statusCode: 200,
-    headers: cors,
-    body: JSON.stringify({ logs })
-  };
-}
-
-
-// ================= AUDIT LOGS =================
-if (path.includes("admin/audit") && method === "POST") {
-
-  const body = getBody(event);
-
-  await client.send(new PutItemCommand({
-    TableName: "audit_logs",
-    Item: {
-      id: { S: crypto.randomUUID() },
-      action: { S: body.action },
-      target: { S: body.target },
-      time: { N: String(body.time) },
-      admin: { S: body.admin }
-    }
-  }));
-
-  return { statusCode: 200, headers: cors, body: "ok" };
-}
-
-if (path.includes("admin/audit") && method === "GET") {
-
-  const res = await client.send(new ScanCommand({
-    TableName: "audit_logs"
-  }));
-
-  const logs = (res.Items || []).map(i => ({
-    action: i.action.S,
-    target: i.target.S,
-    time: Number(i.time.N)
-  }));
-
-  return {
-    statusCode: 200,
-    headers: cors,
-    body: JSON.stringify({ logs })
-  };
-}
-
-    // ================= ADMIN CONTROL =================
-    if (path.includes("admin/ban")) {
-      const body = getBody(event);
-
-      await client.send(new UpdateItemCommand({
-        TableName: "users",
-        Key: { username: { S: body.username } },
-        UpdateExpression: "SET banned = :b",
-        ExpressionAttributeValues: { ":b": { BOOL: true } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "banned" };
-    }
-
-    if (path.includes("admin/unban")) {
-      const body = getBody(event);
-
-      await client.send(new UpdateItemCommand({
-        TableName: "users",
-        Key: { username: { S: body.username } },
-        UpdateExpression: "SET banned = :b",
-        ExpressionAttributeValues: { ":b": { BOOL: false } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "unbanned" };
-    }
-
-    if (path.includes("admin/geo")) {
-      const body = getBody(event);
-
-      await client.send(new UpdateItemCommand({
-        TableName: "users",
-        Key: { username: { S: body.username } },
-        UpdateExpression: "SET geoTracking = :g",
-        ExpressionAttributeValues: { ":g": { BOOL: !!body.enabled } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "geo updated" };
-    }
-
-    if (path.includes("admin/pause")) {
-      const body = getBody(event);
-
-      await client.send(new UpdateItemCommand({
-        TableName: "redirects",
-        Key: { slug: { S: body.slug } },
-        UpdateExpression: "SET paused = :p",
-        ExpressionAttributeValues: { ":p": { BOOL: true } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "paused" };
-    }
-
-    if (path.includes("admin/resume")) {
-      const body = getBody(event);
-
-      await client.send(new UpdateItemCommand({
-        TableName: "redirects",
-        Key: { slug: { S: body.slug } },
-        UpdateExpression: "SET paused = :p",
-        ExpressionAttributeValues: { ":p": { BOOL: false } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "resumed" };
-    }
-
-    // 🔥 BLOCK IP
-    if (path.includes("admin/block-ip")) {
-      const body = getBody(event);
-
-      await client.send(new PutItemCommand({
-        TableName: "blocked_ips",
-        Item: { ip: { S: body.ip } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "IP blocked" };
-    }
-
-    // 🔥 UNBLOCK IP
-    if (path.includes("admin/unblock-ip")) {
-      const body = getBody(event);
-
-      await client.send(new DeleteItemCommand({
-        TableName: "blocked_ips",
-        Key: { ip: { S: body.ip } }
-      }));
-
-      return { statusCode: 200, headers: cors, body: "IP unblocked" };
-    }
-
-    return { statusCode: 404, headers: cors, body: "Route not found" };
-
-  } catch (err) {
-    console.error(err);
-    return { statusCode: 500, headers: cors, body: err.message };
+    console.error("HANDLER ERROR:", err);
+    return json(500, {
+      message: "Internal server error",
+      error: err.message
+    });
   }
 };

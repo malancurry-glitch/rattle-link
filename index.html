@@ -1,945 +1,888 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
- <style>
-
-/* ================= BASE ================= */
-body {
-  margin:0;
-  font-family:Inter, Arial;
-  background:radial-gradient(circle at top, #020617, #000);
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-/* ================= WRAPPER ================= */
-.wrapper {
-  display:flex;
-  width:750px;
-  max-width:95%;
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
-}
-
-/* ================= LEFT PANEL ================= */
-.left {
-  flex:1;
-  background:linear-gradient(135deg,#3b82f6,#06b6d4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:30px;
-  text-align:center;
-}
-
-.left h1{
-  font-size:28px;
-  margin-bottom:10px;
-}
-
-.left p{
-  font-size:14px;
-  opacity:0.8;
-}
-
-/* ================= CARD ================= */
-.card {
-  flex:1;
-  background:rgba(2,6,23,0.9);
-  backdrop-filter:blur(20px);
-  padding:30px;
-  text-align:center;
-  transition:0.3s;
-  border-left:1px solid rgba(0,255,255,0.2);
-}
-
-/* ================= INPUT GROUP ================= */
-.input-group {
-  position:relative;
-  margin-bottom:14px;
-}
-
-.input-group input {
-  width:100%;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid rgba(0,255,255,0.2);
-  background:#000;
-  color:#0ff;
-  outline:none;
-}
-
-.input-group input:focus{
-  box-shadow:0 0 10px #0ff;
-}
-
-.input-group label {
-  position:absolute;
-  left:12px;
-  top:12px;
-  font-size:12px;
-  color:#94a3b8;
-  pointer-events:none;
-  transition:0.2s;
-}
-
-/* FLOAT LABEL */
-.input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
-  top:-8px;
-  font-size:10px;
-  color:#0ff;
-}
-
-/* ================= PASSWORD BOX ================= */
-.password-box {
-  position:relative;
-}
-
-.toggle {
-  position:absolute;
-  right:12px;
-  top:50%;
-  transform:translateY(-50%);
-  cursor:pointer;
-  color:#0ff;
-}
-
-/* ================= PASSWORD STRENGTH ================= */
-.strength {
-  font-size:11px;
-  margin-bottom:8px;
-  text-align:left;
-  color:#94a3b8;
-}
-
-/* ================= BUTTON ================= */
-button {
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-  transition:0.2s;
-}
-
-.primary {
-  background:#0ff;
-  color:#000;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:6px;
-}
-
-.primary:hover {
-  box-shadow:0 0 20px #0ff;
-  transform:scale(1.03);
-}
-
-/* ================= ROW ================= */
-.row {
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
-  margin-top:6px;
-}
-
-.row span{
-  cursor:pointer;
-  color:#60a5fa;
-}
-
-/* ================= SWITCH ================= */
-.switch {
-  margin-top:12px;
-  font-size:12px;
-}
-
-.switch span {
-  color:#0ff;
-  cursor:pointer;
-}
-
-/* ================= ERROR ================= */
-.error {
-  color:#ef4444;
-  font-size:12px;
-  margin-top:10px;
-}
-
-/* ================= LOADING ================= */
-.loading {
-  opacity:0.6;
-  pointer-events:none;
-}
-
-/* ================= ANIMATIONS ================= */
-@keyframes glow {
-  0% { box-shadow:0 0 5px #0ff; }
-  50% { box-shadow:0 0 20px #0ff; }
-  100% { box-shadow:0 0 5px #0ff; }
-}
-
-.card:hover{
-  animation:glow 2s infinite;
-}
-/* SHAKE */
-@keyframes shake {
-  0%{transform:translateX(0);}
-  25%{transform:translateX(-5px);}
-  50%{transform:translateX(5px);}
-  75%{transform:translateX(-5px);}
-  100%{transform:translateX(0);}
-}
-
-.shake{
-  animation:shake 0.3s;
-}
-
-/* SUCCESS */
-@keyframes successGlow {
-  0%{box-shadow:0 0 5px #22c55e;}
-  50%{box-shadow:0 0 25px #22c55e;}
-  100%{box-shadow:0 0 5px #22c55e;}
-}
-
-.success{
-  animation:successGlow 1s;
-}
-/* ===== EXTRA UI UPGRADE ===== */
-
-.auth-header h2{
-  color:#0ff;
-  text-shadow:0 0 10px #0ff;
-}
-
-.sub{
-  font-size:12px;
-  color:#94a3b8;
-  margin-bottom:10px;
-}
-
-/* FEATURE TAGS */
-.features{
-  margin-top:20px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:center;
-}
-
-.features span{
-  background:#000;
-  border:1px solid #0ff;
-  padding:4px 8px;
-  font-size:11px;
-  border-radius:6px;
-}
-
-/* PASSWORD STRENGTH BAR */
-.strength-bar{
-  height:5px;
-  background:#020617;
-  border-radius:6px;
-  overflow:hidden;
-  margin-bottom:6px;
-}
-
-#strengthFill{
-  height:100%;
-  width:0%;
-  transition:0.3s;
-}
-
-/* COLORS */
-.weak{ background:#ef4444; }
-.medium{ background:#f59e0b; }
-.strong{ background:#22c55e; }
-
-/* TEXT */
-.strength-text{
-  font-size:11px;
-  margin-bottom:10px;
-}
-
-/* BUTTON SECONDARY */
-.secondary{
-  background:#020617;
-  border:1px solid #0ff;
-  color:#0ff;
-}
-
-/* SPINNER */
-.spinner{
-  width:14px;
-  height:14px;
-  border:2px solid #000;
-  border-top:2px solid transparent;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-
-@keyframes spin{
-  to{ transform:rotate(360deg); }
-}
-
-/* LINK */
-.link{
-  color:#60a5fa;
-  cursor:pointer;
-}
-
-/* MOBILE */
-@media(max-width:700px){
-  .wrapper{
-    flex-direction:column;
-  }
-}
-/* ================= THEME VARIABLES ================= */
-:root{
-  --bg:#020617;
-  --card:#020617;
-  --text:#0ff;
-  --border:rgba(0,255,255,0.2);
-}
-
-body.light{
-  --bg:#f1f5f9;
-  --card:#ffffff;
-  --text:#020617;
-  --border:rgba(0,0,0,0.1);
-}
-
-/* ================= BASE ================= */
-body {
-  margin:0;
-  font-family:Inter, Arial;
-  background:radial-gradient(circle at top, var(--bg), #000);
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  transition:0.3s;
-}
-
-/* ================= THEME TOGGLE ================= */
-.theme-toggle{
-  position:fixed;
-  top:20px;
-  right:20px;
-  cursor:pointer;
-  font-size:18px;
-  z-index:10;
-}
-
-/* ================= WRAPPER ================= */
-.wrapper {
-  display:flex;
-  width:750px;
-  max-width:95%;
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
-}
-
-/* ================= LEFT PANEL ================= */
-.left {
-  flex:1;
-  background:linear-gradient(135deg,#3b82f6,#06b6d4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:30px;
-  text-align:center;
-}
-
-.left h1{
-  font-size:28px;
-  margin-bottom:10px;
-}
-
-.left p{
-  font-size:14px;
-  opacity:0.85;
-}
-
-/* ================= CARD ================= */
-.card {
-  flex:1;
-  background:var(--card);
-  backdrop-filter:blur(20px);
-  padding:30px;
-  text-align:center;
-  transition:0.3s;
-  border-left:1px solid var(--border);
-  position:relative;
-}
-
-/* ================= INPUT GROUP ================= */
-.input-group {
-  position:relative;
-  margin-bottom:14px;
-}
-
-.input-group input {
-  width:100%;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  background:#000;
-  color:#0ff;
-  outline:none;
-  transition:0.2s;
-}
-
-body.light .input-group input{
-  background:#fff;
-  color:#000;
-}
-
-.input-group input:focus{
-  box-shadow:0 0 10px #0ff;
-  transform:scale(1.01);
-}
-
-.input-group label {
-  position:absolute;
-  left:12px;
-  top:12px;
-  font-size:12px;
-  color:#94a3b8;
-  pointer-events:none;
-  transition:0.2s;
-}
-
-/* FLOAT LABEL */
-.input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
-  top:-8px;
-  font-size:10px;
-  color:#0ff;
-}
-
-/* ================= PASSWORD BOX ================= */
-.password-box {
-  position:relative;
-}
-
-.toggle {
-  position:absolute;
-  right:12px;
-  top:50%;
-  transform:translateY(-50%);
-  cursor:pointer;
-  color:#0ff;
-}
-
-/* ================= PASSWORD STRENGTH ================= */
-.strength-bar{
-  height:5px;
-  background:#020617;
-  border-radius:6px;
-  overflow:hidden;
-  margin-bottom:6px;
-}
-
-#strengthFill{
-  height:100%;
-  width:0%;
-  transition:0.3s;
-}
-
-.weak{ background:#ef4444; }
-.medium{ background:#f59e0b; }
-.strong{ background:#22c55e; }
-
-.strength-text{
-  font-size:11px;
-  margin-bottom:10px;
-}
-
-/* ================= BUTTON ================= */
-button {
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-  transition:0.2s;
-}
-
-.primary {
-  background:#0ff;
-  color:#000;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:6px;
-}
-
-.primary:hover {
-  box-shadow:0 0 25px #0ff;
-  transform:scale(1.05);
-}
-
-/* ================= SECONDARY ================= */
-.secondary{
-  background:#020617;
-  border:1px solid #0ff;
-  color:#0ff;
-}
-
-/* ================= ROW ================= */
-.row {
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
-  margin-top:6px;
-}
-
-.row span{
-  cursor:pointer;
-  color:#60a5fa;
-}
-
-/* ================= SWITCH ================= */
-.switch {
-  margin-top:12px;
-  font-size:12px;
-}
-
-.switch span {
-  color:#0ff;
-  cursor:pointer;
-}
-
-/* ================= ERROR ================= */
-.error {
-  color:#ef4444;
-  font-size:12px;
-  margin-top:10px;
-}
-
-/* ================= LOADING ================= */
-.loading {
-  opacity:0.6;
-  pointer-events:none;
-}
-
-/* ================= SPINNER ================= */
-.spinner{
-  width:14px;
-  height:14px;
-  border:2px solid #000;
-  border-top:2px solid transparent;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-
-@keyframes spin{
-  to{ transform:rotate(360deg); }
-}
-
-/* ================= ANIMATIONS ================= */
-@keyframes glow {
-  0% { box-shadow:0 0 5px #0ff; }
-  50% { box-shadow:0 0 20px #0ff; }
-  100% { box-shadow:0 0 5px #0ff; }
-}
-
-.card:hover{
-  animation:glow 2s infinite;
-}
-
-/* SHAKE */
-@keyframes shake {
-  0%{transform:translateX(0);}
-  25%{transform:translateX(-5px);}
-  50%{transform:translateX(5px);}
-  75%{transform:translateX(-5px);}
-  100%{transform:translateX(0);}
-}
-
-.shake{
-  animation:shake 0.3s;
-}
-
-/* SUCCESS */
-@keyframes successGlow {
-  0%{box-shadow:0 0 5px #22c55e;}
-  50%{box-shadow:0 0 30px #22c55e;}
-  100%{box-shadow:0 0 5px #22c55e;}
-}
-
-.success{
-  animation:successGlow 1s;
-}
-
-/* ================= HEADER ================= */
-.auth-header h2{
-  color:#0ff;
-  text-shadow:0 0 10px #0ff;
-}
-
-.sub{
-  font-size:12px;
-  color:#94a3b8;
-  margin-bottom:10px;
-}
-
-/* ================= FEATURE TAGS ================= */
-.features{
-  margin-top:20px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:center;
-}
-
-.features span{
-  background:#000;
-  border:1px solid #0ff;
-  padding:4px 8px;
-  font-size:11px;
-  border-radius:6px;
-}
-
-/* ================= MOBILE ================= */
-@media(max-width:700px){
-  .wrapper{
-    flex-direction:column;
-  }
-}
-
-</style>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:#020617;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --border:rgba(0,255,255,0.2);
+    }
+
+    body.light{
+      --bg:#e2e8f0;
+      --bg2:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:rgba(15,23,42,0.12);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      padding:20px;
+      transition:.25s ease;
+    }
+
+    .theme-toggle{
+      position:fixed;
+      top:18px;
+      right:18px;
+      width:auto;
+      padding:10px 12px;
+      z-index:50;
+    }
+
+    .wrapper{
+      display:flex;
+      width:860px;
+      max-width:100%;
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+      border:1px solid var(--border);
+      background:var(--card);
+    }
+
+    .left{
+      flex:1;
+      min-height:640px;
+      background:linear-gradient(135deg,#2563eb,#06b6d4);
+      color:#fff;
+      padding:36px 28px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+
+    .left h1{
+      margin:0 0 10px;
+      font-size:34px;
+    }
+
+    .left p{
+      margin:0;
+      opacity:.92;
+      line-height:1.6;
+      max-width:280px;
+    }
+
+    .features{
+      margin-top:24px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:center;
+    }
+
+    .features span{
+      border:1px solid rgba(255,255,255,.4);
+      background:rgba(255,255,255,.12);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+    }
+
+    .card{
+      flex:1;
+      background:var(--card);
+      padding:30px;
+      position:relative;
+    }
+
+    .auth-header h2{
+      margin:0 0 6px;
+      color:var(--cyan);
+      text-shadow:0 0 10px rgba(0,255,255,.35);
+    }
+
+    body.light .auth-header h2{
+      text-shadow:none;
+    }
+
+    .sub{
+      margin:0 0 18px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:18px;
+    }
+
+    .tab{
+      flex:1;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:transparent;
+      color:var(--text);
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .tab.active{
+      background:var(--cyan);
+      color:#000;
+      border-color:var(--cyan);
+    }
+
+    .input-group{
+      position:relative;
+      margin-bottom:14px;
+    }
+
+    .input-group input{
+      width:100%;
+      padding:14px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#000;
+      color:var(--cyan);
+      outline:none;
+      transition:.2s ease;
+    }
+
+    body.light .input-group input{
+      background:#fff;
+      color:#0f172a;
+    }
+
+    .input-group input:focus{
+      box-shadow:0 0 10px rgba(0,255,255,.3);
+      border-color:var(--cyan);
+    }
+
+    .input-group label{
+      position:absolute;
+      left:12px;
+      top:13px;
+      font-size:12px;
+      color:var(--muted);
+      pointer-events:none;
+      transition:.18s ease;
+      background:transparent;
+      padding:0 4px;
+    }
+
+    .input-group input:focus + label,
+    .input-group input:not(:placeholder-shown) + label{
+      top:-8px;
+      font-size:10px;
+      color:var(--cyan);
+      background:var(--card);
+    }
+
+    .password-box{
+      position:relative;
+    }
+
+    .toggle{
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      cursor:pointer;
+      user-select:none;
+      color:var(--cyan);
+      font-size:14px;
+    }
+
+    .strength-bar{
+      height:6px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#111827;
+      margin-bottom:8px;
+    }
+
+    body.light .strength-bar{
+      background:#e2e8f0;
+    }
+
+    #strengthFill{
+      height:100%;
+      width:0%;
+      transition:.25s ease;
+    }
+
+    .weak{ background:#ef4444; }
+    .medium{ background:#f59e0b; }
+    .strong{ background:#22c55e; }
+
+    .strength-text{
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:10px;
+      min-height:16px;
+    }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      margin:10px 0 14px;
+      color:var(--muted);
+      flex-wrap:wrap;
+    }
+
+    .row .link,
+    .link{
+      color:#60a5fa;
+      cursor:pointer;
+      text-decoration:none;
+    }
+
+    .link:hover{
+      text-decoration:underline;
+    }
+
+    .captcha-wrap{
+      margin:12px 0 10px;
+      display:flex;
+      justify-content:center;
+      min-height:78px;
+    }
+
+    button{
+      width:100%;
+      padding:12px 14px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+      transition:.2s ease;
+      margin-top:8px;
+    }
+
+    .primary{
+      background:var(--cyan);
+      color:#000;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+    }
+
+    .primary:hover{
+      box-shadow:0 0 24px rgba(0,255,255,.4);
+      transform:translateY(-1px);
+    }
+
+    .secondary{
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--text);
+    }
+
+    .secondary:hover{
+      border-color:var(--cyan);
+      color:var(--cyan);
+    }
+
+    .switch{
+      margin-top:14px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    .switch span{
+      color:var(--cyan);
+      cursor:pointer;
+      margin-left:4px;
+    }
+
+    .error{
+      color:var(--red);
+      font-size:12px;
+      margin-top:12px;
+      min-height:18px;
+      text-align:center;
+    }
+
+    .success-text{
+      color:var(--green);
+    }
+
+    .helper{
+      margin-top:8px;
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.5;
+    }
+
+    .loading{
+      opacity:.65;
+      pointer-events:none;
+    }
+
+    .spinner{
+      width:14px;
+      height:14px;
+      border:2px solid #000;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+      display:none;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    @keyframes shake {
+      0%{transform:translateX(0);}
+      25%{transform:translateX(-5px);}
+      50%{transform:translateX(5px);}
+      75%{transform:translateX(-5px);}
+      100%{transform:translateX(0);}
+    }
+
+    .shake{
+      animation:shake .3s;
+    }
+
+    @media (max-width: 760px){
+      .wrapper{
+        flex-direction:column;
+      }
+
+      .left{
+        min-height:auto;
+        padding:28px 20px;
+      }
+
+      .card{
+        padding:22px 18px;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <button class="theme-toggle secondary" onclick="toggleTheme()">🌗</button>
 
-<div class="theme-toggle" onclick="toggleTheme()">🌗</div>
+  <div class="wrapper">
+    <div class="left">
+      <h1>🐍 Rattle Link</h1>
+      <p>Shorten links, track performance, and manage your traffic from one place.</p>
 
-<div class="wrapper">
+      <div class="features">
+        <span>⚡ Fast</span>
+        <span>📊 Analytics</span>
+        <span>🔐 Secure</span>
+        <span>🌍 Geo Stats</span>
+      </div>
+    </div>
 
-  <!-- LEFT PANEL -->
-  <div class="left">
-    <h1>🐍 Rattle Link</h1>
-    <p>Shorten links. Track clicks. Grow faster.</p>
+    <div class="card" id="card">
+      <div class="auth-header">
+        <h2 id="title">Login</h2>
+        <p class="sub" id="subText">Welcome back 👋</p>
+      </div>
 
-    <div class="features">
-      <span>⚡ Fast</span>
-      <span>📊 Analytics</span>
-      <span>🔐 Secure</span>
+      <div class="tabs">
+        <button class="tab active" id="loginTab" type="button" onclick="setMode('login')">Login</button>
+        <button class="tab" id="signupTab" type="button" onclick="setMode('signup')">Sign Up</button>
+        <button class="tab" id="magicTab" type="button" onclick="setMode('magic')">Magic Link</button>
+      </div>
+
+      <div class="input-group" id="usernameGroup">
+        <input id="username" placeholder=" " autocomplete="username email" />
+        <label>Email</label>
+      </div>
+
+      <div id="passwordArea">
+        <div class="input-group password-box">
+          <input id="password" type="password" placeholder=" " autocomplete="current-password" oninput="checkStrength()" />
+          <label>Password</label>
+          <span class="toggle" onclick="togglePass('password')">👁</span>
+        </div>
+
+        <div id="confirmWrap" style="display:none;">
+          <div class="input-group password-box">
+            <input id="confirm" type="password" placeholder=" " autocomplete="new-password" />
+            <label>Confirm Password</label>
+            <span class="toggle" onclick="togglePass('confirm')">👁</span>
+          </div>
+        </div>
+
+        <div id="strengthWrap" style="display:none;">
+          <div class="strength-bar">
+            <div id="strengthFill"></div>
+          </div>
+          <div id="strength" class="strength-text"></div>
+        </div>
+      </div>
+
+      <div class="row" id="optionsRow">
+        <label>
+          <input type="checkbox" id="remember" />
+          Remember me
+        </label>
+        <span onclick="goForgot()" class="link">Forgot password?</span>
+      </div>
+
+      <div class="captcha-wrap" id="captchaWrap">
+        <div class="g-recaptcha" data-sitekey="6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS"></div>
+      </div>
+
+      <button class="primary" id="mainBtn" onclick="handleMainAction()">
+        <span id="btnText">Login</span>
+        <span id="spinner" class="spinner"></span>
+      </button>
+
+      <button class="secondary" id="secondaryBtn" onclick="secondaryAction()">
+        🔑 Reset Password
+      </button>
+
+      <div class="switch" id="switchBox">
+        <span id="switchText">Don't have an account?</span>
+        <span id="switchBtn" onclick="toggleLoginSignup()">Sign up</span>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <div class="helper" id="helperText">
+        Use your email and password to access your dashboard.
+      </div>
     </div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="card" id="card">
+  <script>
+    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    <!-- HEADER -->
-    <div class="auth-header">
-      <h2 id="title">Login</h2>
-      <p class="sub">Welcome back 👋</p>
-    </div>
+    // Set false after your reCAPTCHA site key + secret key are correctly paired
+    const CAPTCHA_DEV_BYPASS = true;
 
-    <!-- USERNAME -->
-    <div class="input-group">
-      <input id="username" required placeholder=" ">
-      <label>Email or Username</label>
-    </div>
+    let mode = "login";
 
-    <!-- PASSWORD -->
-    <div class="input-group password-box">
-      <input id="password" type="password" required placeholder=" " oninput="checkStrength()">
-      <label>Password</label>
-      <span class="toggle" onclick="togglePass()">👁</span>
-    </div>
+    const card = document.getElementById("card");
+    const errorBox = document.getElementById("error");
+    const mainBtn = document.getElementById("mainBtn");
+    const btnText = document.getElementById("btnText");
+    const spinner = document.getElementById("spinner");
 
-    <!-- CONFIRM (SIGNUP ONLY) -->
-    <div class="input-group" id="confirmBox" style="display:none;">
-      <input id="confirm" type="password" placeholder=" ">
-      <label>Confirm Password</label>
-    </div>
+    const username = document.getElementById("username");
+    const password = document.getElementById("password");
+    const confirmInput = document.getElementById("confirm");
+    const remember = document.getElementById("remember");
 
-    <!-- PASSWORD STRENGTH -->
-    <div class="strength-bar">
-      <div id="strengthFill"></div>
-    </div>
-    <div id="strength" class="strength-text"></div>
+    const title = document.getElementById("title");
+    const subText = document.getElementById("subText");
+    const helperText = document.getElementById("helperText");
 
-    <!-- OPTIONS -->
-    <div class="row">
-      <label>
-        <input type="checkbox" id="remember"> Remember me
-      </label>
-      <span onclick="forgot()" class="link">Forgot password?</span>
-    </div>
+    const loginTab = document.getElementById("loginTab");
+    const signupTab = document.getElementById("signupTab");
+    const magicTab = document.getElementById("magicTab");
 
-    <!-- CAPTCHA -->
-    <div style="margin:12px 0;">
-      <div class="g-recaptcha" data-sitekey="6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS"></div>
-    </div>
+    const confirmWrap = document.getElementById("confirmWrap");
+    const strengthWrap = document.getElementById("strengthWrap");
+    const captchaWrap = document.getElementById("captchaWrap");
+    const optionsRow = document.getElementById("optionsRow");
+    const switchBox = document.getElementById("switchBox");
+    const switchText = document.getElementById("switchText");
+    const switchBtn = document.getElementById("switchBtn");
+    const secondaryBtn = document.getElementById("secondaryBtn");
 
-    <!-- MAIN BUTTON -->
-    <button class="primary" id="mainBtn" onclick="handleAuth()">
-      <span id="btnText">Login</span>
-      <span id="spinner" class="spinner" style="display:none;"></span>
-    </button>
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+    }
 
-    <!-- SECONDARY ACTION -->
-    <button class="secondary" onclick="forgot()">
-      🔑 Reset Password
-    </button>
+    function loadTheme() {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") {
+        document.body.classList.add("light");
+      }
+    }
 
-    <!-- SWITCH MODE -->
-    <div class="switch">
-      <span id="switchText">Don't have an account?</span>
-      <span onclick="toggleMode()" id="switchBtn">Sign up</span>
-    </div>
+    function showError(msg = "", success = false) {
+      errorBox.textContent = msg;
+      errorBox.className = success ? "error success-text" : "error";
 
-    <!-- ERROR -->
-    <div id="error" class="error"></div>
+      if (msg && !success) {
+        card.classList.remove("shake");
+        void card.offsetWidth;
+        card.classList.add("shake");
+      }
+    }
 
-  </div>
+    function setLoading(state) {
+      mainBtn.disabled = state;
+      card.classList.toggle("loading", state);
+      btnText.style.display = state ? "none" : "inline";
+      spinner.style.display = state ? "inline-block" : "none";
+    }
 
-</div>
+    function togglePass(id) {
+      const input = document.getElementById(id);
+      input.type = input.type === "password" ? "text" : "password";
+    }
 
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    function setMode(nextMode) {
+      mode = nextMode;
 
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+      loginTab.classList.toggle("active", mode === "login");
+      signupTab.classList.toggle("active", mode === "signup");
+      magicTab.classList.toggle("active", mode === "magic");
 
-let isSignup = false;
+      confirmWrap.style.display = mode === "signup" ? "block" : "none";
+      strengthWrap.style.display = mode === "signup" ? "block" : "none";
+      optionsRow.style.display = mode === "login" ? "flex" : "none";
+      switchBox.style.display = mode === "magic" ? "none" : "block";
+      secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+      password.parentElement.parentElement.style.display = mode === "magic" ? "none" : "block";
+      captchaWrap.style.display = mode === "magic" ? "none" : "flex";
 
-// ================= DOM =================
-const card = document.getElementById("card");
-const errorBox = document.getElementById("error");
-const mainBtn = document.getElementById("mainBtn");
-const btnText = document.getElementById("btnText");
-const spinner = document.getElementById("spinner");
+      if (mode === "login") {
+        title.textContent = "Login";
+        subText.textContent = "Welcome back 👋";
+        btnText.textContent = "Login";
+        switchText.textContent = "Don't have an account?";
+        switchBtn.textContent = "Sign up";
+        helperText.textContent = "Use your email and password to access your dashboard.";
+        secondaryBtn.textContent = "🔑 Reset Password";
+      } else if (mode === "signup") {
+        title.textContent = "Create Account";
+        subText.textContent = "Start using Rattle Link 🚀";
+        btnText.textContent = "Create Account";
+        switchText.textContent = "Already have an account?";
+        switchBtn.textContent = "Login";
+        helperText.textContent = "Create your account with email and password.";
+        secondaryBtn.textContent = "🔑 Reset Password";
+      } else {
+        title.textContent = "Magic Link Login";
+        subText.textContent = "Passwordless access ✨";
+        btnText.textContent = "Send Magic Link";
+        helperText.textContent = "Enter your email and we will send you a secure login link.";
+      }
 
-const username = document.getElementById("username");
-const password = document.getElementById("password");
-const confirmBox = document.getElementById("confirmBox");
-const remember = document.getElementById("remember");
+      showError("");
+    }
 
-const title = document.getElementById("title");
-const switchText = document.getElementById("switchText");
-const switchBtn = document.getElementById("switchBtn");
+    function toggleLoginSignup() {
+      setMode(mode === "login" ? "signup" : "login");
+    }
 
-// ================= UI =================
-function showError(msg){
-  errorBox.innerText = msg || "";
-  card.classList.remove("shake");
-  void card.offsetWidth;
-  card.classList.add("shake");
-}
+    function getCaptchaToken() {
+      try {
+        const token = window.grecaptcha ? grecaptcha.getResponse() : "";
+        if (token) return token;
+      } catch (e) {}
 
-function setLoading(state){
-  mainBtn.disabled = state;
-  btnText.style.display = state ? "none" : "inline";
-  spinner.style.display = state ? "inline-block" : "none";
-}
+      return CAPTCHA_DEV_BYPASS ? "bypass" : "";
+    }
 
-function togglePass(){
-  password.type = password.type === "password" ? "text" : "password";
-}
+    function resetCaptcha() {
+      try {
+        if (window.grecaptcha) grecaptcha.reset();
+      } catch (e) {}
+    }
 
-// ================= MODE =================
-function toggleMode(){
-  isSignup = !isSignup;
+    function checkStrength() {
+      const fill = document.getElementById("strengthFill");
+      const text = document.getElementById("strength");
 
-  title.innerText = isSignup ? "Sign Up" : "Login";
-  btnText.innerText = isSignup ? "Create Account" : "Login";
-  switchText.innerText = isSignup ? "Already have an account?" : "Don't have an account?";
-  switchBtn.innerText = isSignup ? "Login" : "Sign up";
+      if (mode !== "signup") {
+        fill.style.width = "0%";
+        fill.className = "";
+        text.textContent = "";
+        return;
+      }
 
-  confirmBox.style.display = isSignup ? "block" : "none";
-  showError("");
-}
+      const value = password.value || "";
+      let score = 0;
 
-// ================= MAIN =================
-async function handleAuth(){
-  if(mainBtn.disabled) return;
-  if(isSignup) await signup();
-  else await login();
-}
+      if (value.length >= 6) score++;
+      if (value.length >= 8) score++;
+      if (/[A-Z]/.test(value)) score++;
+      if (/[0-9]/.test(value)) score++;
+      if (/[^A-Za-z0-9]/.test(value)) score++;
 
-// ================= SAFE CAPTCHA =================
-function getCaptcha(){
-  try {
-    const token = grecaptcha.getResponse();
-    return token || null;
-  } catch {
-    return null;
-  }
-}
+      if (!value) {
+        fill.style.width = "0%";
+        fill.className = "";
+        text.textContent = "";
+        return;
+      }
 
-// ================= SIGNUP =================
-async function signup(){
+      if (score <= 2) {
+        fill.style.width = "33%";
+        fill.className = "weak";
+        text.textContent = "Weak password";
+      } else if (score <= 4) {
+        fill.style.width = "66%";
+        fill.className = "medium";
+        text.textContent = "Medium password";
+      } else {
+        fill.style.width = "100%";
+        fill.className = "strong";
+        text.textContent = "Strong password";
+      }
+    }
 
-  showError("");
-  setLoading(true);
+    async function safeJson(res) {
+      try {
+        return await res.json();
+      } catch {
+        return {};
+      }
+    }
 
-  const user = username.value.trim().toLowerCase();
-  const pass = password.value;
-  const confirm = document.getElementById("confirm").value;
-  const captcha = getCaptcha();
+    async function login() {
+      showError("");
+      setLoading(true);
 
-  if(!user){
-    showError("Enter email ❌");
-    return setLoading(false);
-  }
+      const user = username.value.trim().toLowerCase();
+      const pass = password.value;
+      const captcha = getCaptchaToken();
 
-  if(pass.length < 6){
-    showError("Password must be 6+ characters ❌");
-    return setLoading(false);
-  }
+      if (!user) {
+        showError("Enter email ❌");
+        setLoading(false);
+        return;
+      }
 
-  if(pass !== confirm){
-    showError("Passwords do not match ❌");
-    return setLoading(false);
-  }
+      if (!pass) {
+        showError("Enter password ❌");
+        setLoading(false);
+        return;
+      }
 
-  if(!captcha){
-    showError("Complete CAPTCHA ❌");
-    return setLoading(false);
-  }
+      if (!captcha) {
+        showError("Complete CAPTCHA ❌");
+        setLoading(false);
+        return;
+      }
 
-  try {
+      try {
+        const res = await fetch(API + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: user,
+            password: pass,
+            captcha
+          })
+        });
 
-    const res = await fetch(API + "/signup", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ username:user, password:pass, captcha })
+        const data = await safeJson(res);
+
+        if (!res.ok || !data.token) {
+          showError(data.message || "Invalid login ❌");
+          resetCaptcha();
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role || "user");
+        localStorage.setItem("lastUser", user);
+
+        if (remember.checked) {
+          localStorage.setItem("rememberUser", user);
+        } else {
+          localStorage.removeItem("rememberUser");
+        }
+
+        showError("Login successful ✅", true);
+
+        setTimeout(() => {
+          window.location.href = (data.role === "admin") ? "admin.html" : "dashboard.html";
+        }, 500);
+      } catch (e) {
+        console.error("LOGIN ERROR:", e);
+        showError("Server error ❌");
+      }
+
+      resetCaptcha();
+      setLoading(false);
+    }
+
+    async function signup() {
+      showError("");
+      setLoading(true);
+
+      const user = username.value.trim().toLowerCase();
+      const pass = password.value;
+      const confirm = confirmInput.value;
+      const captcha = getCaptchaToken();
+
+      if (!user) {
+        showError("Enter email ❌");
+        setLoading(false);
+        return;
+      }
+
+      if (pass.length < 6) {
+        showError("Password must be at least 6 characters ❌");
+        setLoading(false);
+        return;
+      }
+
+      if (pass !== confirm) {
+        showError("Passwords do not match ❌");
+        setLoading(false);
+        return;
+      }
+
+      if (!captcha) {
+        showError("Complete CAPTCHA ❌");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(API + "/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: user,
+            password: pass,
+            captcha
+          })
+        });
+
+        const data = await safeJson(res);
+
+        if (!res.ok) {
+          showError(data.message || "Signup failed ❌");
+          resetCaptcha();
+          setLoading(false);
+          return;
+        }
+
+        showError("Account created successfully ✅", true);
+        password.value = "";
+        confirmInput.value = "";
+        checkStrength();
+
+        setTimeout(() => {
+          setMode("login");
+        }, 900);
+      } catch (e) {
+        console.error("SIGNUP ERROR:", e);
+        showError("Signup failed ❌");
+      }
+
+      resetCaptcha();
+      setLoading(false);
+    }
+
+    async function magicRequest() {
+      showError("");
+      setLoading(true);
+
+      const user = username.value.trim().toLowerCase();
+
+      if (!user) {
+        showError("Enter email ❌");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(API + "/magic-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user })
+        });
+
+        const rawText = await res.text();
+        let data = {};
+        try { data = rawText ? JSON.parse(rawText) : {}; } catch { data = { message: rawText }; }
+
+        if (!res.ok) {
+          showError(data.message || "Failed to send magic link ❌");
+          setLoading(false);
+          return;
+        }
+
+        showError(data.message || "Magic link sent ✅", true);
+      } catch (e) {
+        console.error("MAGIC LINK ERROR:", e);
+        showError("Failed to send magic link ❌");
+      }
+
+      setLoading(false);
+    }
+
+    async function handleMainAction() {
+      if (mainBtn.disabled) return;
+
+      if (mode === "login") {
+        await login();
+      } else if (mode === "signup") {
+        await signup();
+      } else {
+        await magicRequest();
+      }
+    }
+
+    function secondaryAction() {
+      goForgot();
+    }
+
+    function goForgot() {
+      window.location.href = "forgot.html";
+    }
+
+    function loadRememberedUser() {
+      const saved = localStorage.getItem("rememberUser");
+      if (saved) {
+        username.value = saved;
+        remember.checked = true;
+      }
+    }
+
+    username.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleMainAction();
     });
 
-    const data = await res.json().catch(()=>({}));
-
-    if(!res.ok){
-      showError(data.message || "Signup failed ❌");
-      grecaptcha.reset();
-      return setLoading(false);
-    }
-
-    showError("Account created ✅");
-    card.classList.add("success");
-
-    setTimeout(()=>toggleMode(),800);
-
-  } catch (e){
-    console.error(e);
-    showError("Signup failed ❌");
-  }
-
-  setLoading(false);
-  grecaptcha.reset();
-}
-
-// ================= LOGIN =================
-async function login(){
-
-  showError("");
-  setLoading(true);
-
-  const user = username.value.trim().toLowerCase();
-  const pass = password.value;
-  let captcha = getCaptcha();
-
-  console.log("LOGIN ATTEMPT:", user);
-
-  if(!user){
-    showError("Enter username ❌");
-    return setLoading(false);
-  }
-
-  if(!pass){
-    showError("Enter password ❌");
-    return setLoading(false);
-  }
-
-  // 🔥 TEMP DEV BYPASS (REMOVE LATER)
-  if(!captcha){
-    captcha = "bypass";
-    console.warn("⚠️ CAPTCHA BYPASSED");
-  }
-
-  try {
-
-    const res = await fetch(API + "/login", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        username:user,
-        password:pass,
-        captcha
-      })
+    password.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleMainAction();
     });
 
-    const data = await res.json().catch(()=>({}));
-
-    console.log("LOGIN RESPONSE:", res.status, data);
-
-    if(!res.ok || !data.token){
-      showError(data.message || "Invalid login ❌");
-      grecaptcha.reset();
-      return setLoading(false);
+    if (confirmInput) {
+      confirmInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleMainAction();
+      });
     }
 
-    // ✅ SAVE SESSION
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.role);
-    localStorage.setItem("lastUser", user);
-
-    if(remember.checked){
-      localStorage.setItem("rememberUser", user);
-    }
-
-    card.classList.add("success");
-
-    setTimeout(()=>{
-      window.location.href = data.role === "admin"
-        ? "admin.html"
-        : "dashboard.html";
-    },500);
-
-  } catch (e){
-    console.error("LOGIN ERROR:", e);
-    showError("Server error ❌");
-  }
-
-  setLoading(false);
-  grecaptcha.reset();
-}
-
-// ================= FORGOT =================
-function forgot(){
-  window.location.href = "forgot.html";
-}
-
-// ================= REMEMBER =================
-window.onload = () => {
-  const saved = localStorage.getItem("rememberUser");
-  if(saved){
-    username.value = saved;
-    remember.checked = true;
-  }
-};
-</script>
+    loadTheme();
+    loadRememberedUser();
+    setMode("login");
+  </script>
 </body>
 </html>
