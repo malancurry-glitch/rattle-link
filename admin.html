@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>👑 Admin Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Admin Dashboard</title>
 
   <script>
     const token = localStorage.getItem("token");
@@ -12,286 +14,705 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
     :root{
       --bg:#020617;
       --bg2:#0f172a;
-      --card:#020617;
+      --card:rgba(2,6,23,.88);
       --text:#e2e8f0;
-      --primary:#0ff;
-      --border:rgba(0,255,255,0.15);
+      --muted:#94a3b8;
+      --primary:#00ffff;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --purple:#8b5cf6;
+      --border:rgba(0,255,255,.15);
+      --shadow:0 0 18px rgba(0,255,255,.10);
     }
+
+    *{ box-sizing:border-box; }
+
     body{
       margin:0;
-      font-family:Inter, Arial;
-      background: radial-gradient(circle at top, var(--bg2), #000);
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg2), #000);
       color:var(--text);
       display:flex;
+      min-height:100vh;
     }
+
     body::before{
       content:"";
       position:fixed;
-      width:100%;
-      height:100%;
+      inset:0;
       background-image:
         linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
       background-size:40px 40px;
       pointer-events:none;
     }
+
     .sidebar{
-      width:220px;
-      height:100vh;
+      width:250px;
+      min-height:100vh;
       background:#020617;
-      padding:20px;
       border-right:1px solid var(--border);
+      padding:18px;
+      position:sticky;
+      top:0;
+      align-self:flex-start;
     }
-    .sidebar h2{
+
+    .brand{
+      margin-bottom:18px;
+      padding-bottom:12px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .brand h2{
+      margin:0;
       color:var(--primary);
+      text-shadow:0 0 10px var(--primary);
+      font-size:22px;
     }
+
+    .brand p{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .nav-btn,
     .sidebar button{
       width:100%;
       margin:8px 0;
-      padding:10px;
-      background:rgba(30,41,59,0.6);
+      padding:11px 12px;
+      background:rgba(30,41,59,.6);
       border:1px solid var(--border);
-      border-radius:8px;
+      border-radius:10px;
       color:var(--primary);
       cursor:pointer;
+      text-align:left;
+      transition:.2s;
     }
+
+    .nav-btn:hover,
+    .sidebar button:hover{
+      transform:translateX(4px);
+      box-shadow:0 0 12px rgba(0,255,255,.18);
+    }
+
+    .sidebar-section{
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+
+    .sidebar-section h4{
+      margin:0 0 8px;
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
     .main{
       flex:1;
       padding:20px;
+      position:relative;
+      z-index:1;
+      min-width:0;
     }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:flex-start;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+
+    .header h1{
+      margin:0;
+      color:var(--primary);
+      text-shadow:0 0 10px var(--primary);
+      font-size:28px;
+    }
+
+    .sub{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .header-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:18px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:20px;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:16px;
     }
-    .card{
-      background:rgba(2,6,23,0.85);
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:16px;
-      margin-bottom:20px;
+
+    .stat{
+      min-height:120px;
     }
-    h2,h3{
+
+    .stat .label{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+    }
+
+    .stat .value{
+      font-size:30px;
+      color:var(--primary);
+      font-weight:700;
+    }
+
+    .stat .delta{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    h2,h3,h4{
+      margin-top:0;
       color:var(--primary);
     }
-    table{
-      width:100%;
-      border-collapse:collapse;
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      align-items:center;
     }
-    td,th{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,0.08);
-      font-size:13px;
-      text-align:left;
+
+    .toolbar input,
+    .toolbar select,
+    .toolbar button,
+    input,
+    select,
+    textarea{
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#020617;
+      color:var(--text);
+      padding:10px 12px;
     }
+
+    input::placeholder,
+    textarea::placeholder{
+      color:var(--muted);
+    }
+
     button{
-      padding:6px 10px;
-      border-radius:6px;
-      font-size:11px;
+      border-radius:10px;
       border:1px solid var(--border);
       background:#020617;
       color:var(--primary);
+      padding:9px 12px;
       cursor:pointer;
-      margin:2px;
+      transition:.2s;
     }
+
+    button:hover{
+      box-shadow:0 0 12px rgba(0,255,255,.18);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .btn-primary{ color:#fff; background:var(--blue); border-color:var(--blue); }
+    .btn-green{ color:var(--green); border-color:var(--green); }
+    .btn-red{ color:var(--red); border-color:var(--red); }
+    .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
+    .btn-purple{ color:var(--purple); border-color:var(--purple); }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:900px;
+    }
+
+    th,td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      font-size:13px;
+      text-align:left;
+      vertical-align:top;
+    }
+
+    tr:hover{
+      background:#020617;
+    }
+
     .badge{
+      display:inline-block;
       padding:4px 8px;
-      border-radius:6px;
+      border-radius:999px;
       font-size:11px;
-      border:1px solid rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,.12);
+      white-space:nowrap;
     }
-    .active{
-      background:#022c22;
-      color:#22c55e;
+
+    .active{ background:#022c22; color:var(--green); }
+    .banned{ background:#2b0000; color:var(--red); }
+    .paused{ background:#2b1a00; color:var(--yellow); }
+    .admin{ background:#1e1b4b; color:#c4b5fd; }
+
+    .muted{ color:var(--muted); }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
     }
-    .banned{
-      background:#2b0000;
-      color:#ef4444;
+
+    .actions button{
+      padding:6px 9px;
+      font-size:11px;
+      margin:0;
     }
-    .paused{
-      background:#2b1a00;
-      color:#f59e0b;
-    }
-    a{
-      color:var(--primary);
-      text-decoration:none;
-    }
+
     .panel{
       position:fixed;
       right:0;
       top:0;
-      width:400px;
+      width:460px;
+      max-width:100%;
       height:100%;
       background:#000;
-      padding:20px;
+      border-left:1px solid var(--border);
+      box-shadow:-12px 0 30px rgba(0,255,255,.16);
+      padding:18px;
       display:none;
       overflow:auto;
-      border-left:1px solid var(--border);
+      z-index:50;
     }
+
     #map{
-      height:300px;
-      border-radius:10px;
+      height:280px;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      margin-top:12px;
     }
-    #terminal{
+
+    .toast{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      background:var(--primary);
+      color:#000;
+      padding:12px 14px;
+      border-radius:12px;
+      display:none;
+      z-index:100;
+      font-weight:700;
+      box-shadow:0 0 14px rgba(0,255,255,.25);
+    }
+
+    .terminal{
       background:#000;
-      color:#0f0;
-      padding:10px;
-      font-size:12px;
-      height:200px;
+      color:#22c55e;
+      padding:12px;
+      min-height:180px;
+      max-height:220px;
       overflow:auto;
+      border-radius:12px;
+      border:1px solid rgba(34,197,94,.22);
+      font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size:12px;
     }
-    #radarCanvas{
-      background:#000;
-      border-radius:10px;
+
+    .mini-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+    }
+
+    .list-box{
+      max-height:220px;
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:#010816;
+    }
+
+    .list-box > div{
+      padding:8px 0;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .list-box > div:last-child{
+      border-bottom:none;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    @media (max-width: 1000px){
+      body{ display:block; }
+      .sidebar{
+        width:100%;
+        min-height:auto;
+        position:static;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h2>👑 Admin</h2>
-    <button onclick="loadAdmin()">📊 Dashboard</button>
-    <button onclick="openCreateUser()">➕ Create User</button>
-    <button onclick="logout()">🚪 Logout</button>
-  </div>
+  <aside class="sidebar">
+    <div class="brand">
+      <h2>👑 Admin</h2>
+      <p>Rattle Link Control Center</p>
+    </div>
 
-  <div class="main">
-    <h2>📊 Enterprise Control Center</h2>
+    <button class="nav-btn" id="navOverview">📊 Overview</button>
+    <button class="nav-btn" id="navUsers">👥 Users</button>
+    <button class="nav-btn" id="navLinks">🔗 Links</button>
+    <button class="nav-btn" id="navSecurity">🛡️ Security</button>
+    <button class="nav-btn" id="navAudit">📜 Audit</button>
 
-    <div class="grid">
-      <div class="card">
-        <h3>📊 System Stats</h3>
-        <div id="stats"></div>
-        <div id="liveStatus">🟢 Live</div>
+    <div class="sidebar-section">
+      <h4>Quick Actions</h4>
+      <button id="refreshAllBtn">🔄 Refresh Now</button>
+      <button id="createUserBtn">➕ Create User</button>
+      <button id="exportUsersBtn">⬇️ Export Users</button>
+      <button id="exportLinksBtn">⬇️ Export Links</button>
+      <button id="logoutBtn" class="btn-red">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <div>
+        <h1>📊 Enterprise Control Center</h1>
+        <div class="sub">Manage users, links, analytics, security, and audits in one place.</div>
+      </div>
+
+      <div class="header-actions">
+        <button id="autoRefreshBtn">⏱️ Auto Refresh: ON</button>
+        <button id="refreshBtn" class="btn-primary">Refresh</button>
+      </div>
+    </div>
+
+    <section id="overviewSection">
+      <div class="grid">
+        <div class="card stat">
+          <div class="label">Total Users</div>
+          <div class="value" id="statUsers">0</div>
+          <div class="delta" id="statUsersMeta">Accounts in system</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Total Links</div>
+          <div class="value" id="statLinks">0</div>
+          <div class="delta" id="statLinksMeta">Short links created</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Total Clicks</div>
+          <div class="value" id="statClicks">0</div>
+          <div class="delta" id="statClicksMeta">Tracked visits</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Flagged Threats</div>
+          <div class="value" id="statThreats">0</div>
+          <div class="delta" id="statThreatsMeta">Suspicious items</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>📧 Email Analytics</h3>
+          <div id="emailStats"></div>
+        </div>
+
+        <div class="card">
+          <h3>🤖 Threat Detection</h3>
+          <div id="aiThreats"></div>
+        </div>
+
+        <div class="card">
+          <h3>🟢 Live Status</h3>
+          <div id="liveStatus">System healthy</div>
+          <div class="muted" id="lastRefreshText" style="margin-top:8px;">Not refreshed yet</div>
+        </div>
       </div>
 
       <div class="card">
-        <h3>📧 Email Analytics</h3>
-        <div id="emailStats"></div>
+        <h3>📈 Click Analytics</h3>
+        <canvas id="chart"></canvas>
       </div>
 
+      <div class="grid">
+        <div class="card">
+          <h3>🚨 Live Attack Monitor</h3>
+          <div id="attackFeed" class="list-box"></div>
+        </div>
+
+        <div class="card">
+          <h3>🧠 Threat Intelligence</h3>
+          <div id="threatList" class="list-box"></div>
+        </div>
+
+        <div class="card">
+          <h3>🖥️ Terminal Logs</h3>
+          <div id="terminal" class="terminal"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="usersSection">
       <div class="card">
-        <h3>🤖 AI Threat Detection</h3>
-        <div id="aiThreats"></div>
+        <div class="toolbar">
+          <input id="userSearch" placeholder="Search users..." />
+          <select id="userFilterRole">
+            <option value="">All roles</option>
+            <option value="admin">Admins</option>
+            <option value="user">Users</option>
+          </select>
+          <select id="userFilterStatus">
+            <option value="">All status</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Status</th>
+                <th>Role</th>
+                <th>Requests</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h3>📜 Audit Logs</h3>
-      <div id="auditLogs" style="max-height:200px;overflow:auto;"></div>
-    </div>
+    <section id="linksSection">
+      <div class="card">
+        <div class="toolbar">
+          <input id="linkSearch" placeholder="Search slug, url, user..." />
+          <select id="linkFilterStatus">
+            <option value="">All link status</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+          </select>
+          <select id="linkSort">
+            <option value="clicks_desc">Sort: Clicks high to low</option>
+            <option value="clicks_asc">Sort: Clicks low to high</option>
+            <option value="slug_asc">Sort: Slug A-Z</option>
+            <option value="user_asc">Sort: User A-Z</option>
+          </select>
+        </div>
 
-    <div class="card">
-      <h3>👥 Users</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Status</th>
-            <th>Role</th>
-            <th>Requests</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users"></tbody>
-      </table>
-    </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Slug</th>
+                <th>URL</th>
+                <th>Clicks</th>
+                <th>Status</th>
+                <th>Expire</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="links"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h3>🔗 Links</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Slug</th>
-            <th>URL</th>
-            <th>Clicks</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="links"></tbody>
-      </table>
-    </div>
+    <section id="securitySection">
+      <div class="grid">
+        <div class="card">
+          <h3>🔎 Most Clicked Links</h3>
+          <div id="topLinks" class="list-box"></div>
+        </div>
 
-    <div class="card">
-      <h3>📈 Click Analytics</h3>
-      <canvas id="chart"></canvas>
-    </div>
+        <div class="card">
+          <h3>👑 Admin Accounts</h3>
+          <div id="adminList" class="list-box"></div>
+        </div>
 
-    <div class="card">
-      <h3>🖥️ Terminal Logs</h3>
-      <div id="terminal"></div>
-    </div>
+        <div class="card">
+          <h3>🚫 Banned Accounts</h3>
+          <div id="bannedList" class="list-box"></div>
+        </div>
+      </div>
+    </section>
 
-    <div class="card">
-      <h3>🚨 Live Attack Monitor</h3>
-      <div id="attackFeed"></div>
-    </div>
-
-    <div class="card">
-      <h3>🛰️ Radar Monitor</h3>
-      <canvas id="radarCanvas" height="200"></canvas>
-    </div>
-
-    <div class="card">
-      <h3>🧠 Threat Intelligence</h3>
-      <div id="threatList"></div>
-    </div>
-  </div>
+    <section id="auditSection">
+      <div class="card">
+        <h3>📜 Audit Logs</h3>
+        <div id="auditLogs" class="list-box" style="max-height:420px;"></div>
+      </div>
+    </section>
+  </main>
 
   <div class="panel" id="panel">
-    <h3>📊 Details</h3>
+    <h3 id="panelTitle">Details</h3>
     <div id="panelContent"></div>
     <h4>🌍 Geo Map</h4>
     <div id="map"></div>
-    <button onclick="closePanel()">Close</button>
+    <div style="margin-top:12px;">
+      <button id="closePanelBtn">Close</button>
+    </div>
   </div>
+
+  <div class="toast" id="toast">Done</div>
 
   <script>
     const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const SHORT_BASE = API;
+    const WS_URL = "wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
     let usersData = [];
     let linksData = [];
-    let chart;
-    let map;
+    let auditData = [];
+    let emailLogs = [];
+    let chart = null;
+    let map = null;
+    let autoRefresh = true;
+    let refreshTimer = null;
+    let ws = null;
     let lastClicks = {};
 
-    const panel = document.getElementById("panel");
-    const panelContent = document.getElementById("panelContent");
-    const stats = document.getElementById("stats");
+    const statUsers = document.getElementById("statUsers");
+    const statLinks = document.getElementById("statLinks");
+    const statClicks = document.getElementById("statClicks");
+    const statThreats = document.getElementById("statThreats");
     const emailStats = document.getElementById("emailStats");
     const aiThreats = document.getElementById("aiThreats");
-    const auditLogs = document.getElementById("auditLogs");
-    const usersEl = document.getElementById("users");
-    const linksEl = document.getElementById("links");
-    const terminal = document.getElementById("terminal");
+    const liveStatus = document.getElementById("liveStatus");
+    const lastRefreshText = document.getElementById("lastRefreshText");
     const attackFeed = document.getElementById("attackFeed");
     const threatList = document.getElementById("threatList");
+    const terminal = document.getElementById("terminal");
+    const usersEl = document.getElementById("users");
+    const linksEl = document.getElementById("links");
+    const auditLogsEl = document.getElementById("auditLogs");
+    const topLinks = document.getElementById("topLinks");
+    const adminList = document.getElementById("adminList");
+    const bannedList = document.getElementById("bannedList");
+    const panel = document.getElementById("panel");
+    const panelTitle = document.getElementById("panelTitle");
+    const panelContent = document.getElementById("panelContent");
+    const toast = document.getElementById("toast");
 
-    async function safeFetch(url, method="GET", body=null){
-      const res = await fetch(url,{
-        method,
-        headers:{
-          "Content-Type":"application/json",
-          Authorization: localStorage.getItem("token")
-        },
-        body: body ? JSON.stringify(body) : null
-      });
+    const overviewSection = document.getElementById("overviewSection");
+    const usersSection = document.getElementById("usersSection");
+    const linksSection = document.getElementById("linksSection");
+    const securitySection = document.getElementById("securitySection");
+    const auditSection = document.getElementById("auditSection");
 
-      const text = await res.text();
-      try { return JSON.parse(text); }
-      catch { return { message: text }; }
+    const userSearch = document.getElementById("userSearch");
+    const userFilterRole = document.getElementById("userFilterRole");
+    const userFilterStatus = document.getElementById("userFilterStatus");
+    const linkSearch = document.getElementById("linkSearch");
+    const linkFilterStatus = document.getElementById("linkFilterStatus");
+    const linkSort = document.getElementById("linkSort");
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token") || ""
+      };
     }
 
-    async function logAudit(action, target){
-      await safeFetch(API + "/admin/audit","POST",{
+    function showToast(message) {
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
+    }
+
+    function addTerminal(message) {
+      const line = `[${new Date().toLocaleTimeString()}] ${message}`;
+      terminal.innerHTML = `${escapeHtml(line)}<br>${terminal.innerHTML}`;
+    }
+
+    async function safeFetch(url, method = "GET", body = null) {
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: authHeaders(),
+          body: body ? JSON.stringify(body) : null
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = { message: text };
+        }
+
+        if (res.status === 401) {
+          logout();
+          return { ok: false, status: 401, data };
+        }
+
+        return { ok: res.ok, status: res.status, data };
+      } catch (e) {
+        console.error(e);
+        return { ok: false, status: 0, data: { message: "Network error" } };
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    async function logAudit(action, target) {
+      await safeFetch(`${API}/admin/audit`, "POST", {
         action,
         target,
         time: Date.now(),
@@ -299,349 +720,812 @@
       });
     }
 
-    function addTerminal(msg) {
-      terminal.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + terminal.innerHTML;
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
-    async function loadAdmin(){
-      const usersJson = await safeFetch(API + "/admin/users");
-      const linksJson = await safeFetch(API + "/admin/links");
-
-      usersData = usersJson.users || [];
-      linksData = linksJson.items || [];
-
-      renderUsers();
-      renderLinks();
-      renderStats();
-      drawChart();
-      detectThreats();
-      loadEmailAnalytics();
-      loadAuditLogs();
-      trackRealtime();
-      addTerminal("Dashboard refreshed");
+    function buildShortLink(slug) {
+      return `${SHORT_BASE}/${slug}`;
     }
 
-    function renderUsers(){
-      usersEl.innerHTML = "";
+    function showSection(sectionName) {
+      overviewSection.classList.add("hidden");
+      usersSection.classList.add("hidden");
+      linksSection.classList.add("hidden");
+      securitySection.classList.add("hidden");
+      auditSection.classList.add("hidden");
 
-      usersData.forEach(u => {
-        usersEl.innerHTML += `
-          <tr>
-            <td>${u.username}</td>
-            <td><span class="badge ${u.banned ? "banned" : "active"}">${u.banned ? "BANNED" : "ACTIVE"}</span></td>
-            <td>${u.role || "user"}</td>
-            <td>${u.requests || 0}</td>
-            <td>
-              <button onclick="openUser('${u.username}')">View</button>
-              <button onclick="viewIP('${u.username}')">IP</button>
-              ${u.banned
-                ? `<button onclick="unban('${u.username}')">Enable</button>`
-                : `<button onclick="ban('${u.username}')">Disable</button>`}
-              <button onclick="makeAdmin('${u.username}')">Admin</button>
-              <button onclick="removeAdmin('${u.username}')">User</button>
-            </td>
-          </tr>
-        `;
-      });
+      if (sectionName === "overview") overviewSection.classList.remove("hidden");
+      if (sectionName === "users") usersSection.classList.remove("hidden");
+      if (sectionName === "links") linksSection.classList.remove("hidden");
+      if (sectionName === "security") securitySection.classList.remove("hidden");
+      if (sectionName === "audit") auditSection.classList.remove("hidden");
     }
 
-    function renderLinks(){
-      linksEl.innerHTML = "";
-
-      linksData.forEach(l => {
-        const full = `${API}/${l.slug}`;
-
-        linksEl.innerHTML += `
-          <tr data-slug="${l.slug}">
-            <td>${l.user}</td>
-            <td>${l.slug}</td>
-            <td><a href="${full}" target="_blank">${full}</a></td>
-            <td>${l.clicks}</td>
-            <td><span class="badge ${l.paused ? "paused" : "active"}">${l.paused ? "PAUSED" : "ACTIVE"}</span></td>
-            <td>
-              <button onclick="pause('${l.slug}')">Pause</button>
-              <button onclick="resume('${l.slug}')">Resume</button>
-              <button onclick="openAnalytics('${l.slug}')">Analytics</button>
-              <button onclick="delLink('${l.slug}')">Delete</button>
-            </td>
-          </tr>
-        `;
-      });
+    function closePanel() {
+      panel.style.display = "none";
+      panelContent.innerHTML = "";
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      document.getElementById("map").innerHTML = "";
     }
 
-    function renderStats(){
-      const totalUsers = usersData.length;
-      const totalLinks = linksData.length;
-      const totalClicks = linksData.reduce((a,b)=>a + Number(b.clicks || 0),0);
+    async function getGeo(ip) {
+      if (!ip || ip === "unknown") {
+        return {
+          country_name: "Unknown",
+          city: "",
+          latitude: 20,
+          longitude: 0
+        };
+      }
 
-      stats.innerHTML = `
-        <div>👥 Users: ${totalUsers}</div>
-        <div>🔗 Links: ${totalLinks}</div>
-        <div>📈 Clicks: ${totalClicks}</div>
+      try {
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+        const data = await res.json();
+
+        return {
+          country_name: data.country_name || "Unknown",
+          city: data.city || "",
+          latitude: Number(data.latitude || 20),
+          longitude: Number(data.longitude || 0)
+        };
+      } catch {
+        return {
+          country_name: "Unknown",
+          city: "",
+          latitude: 20,
+          longitude: 0
+        };
+      }
+    }
+
+    function computeThreatScore(link) {
+      let score = 0;
+      const clicks = Number(link.clicks || 0);
+
+      if (clicks > 100) score += 30;
+      if (clicks > 300) score += 30;
+      if (clicks > 500) score += 30;
+      if ((link.slug || "").includes("admin")) score += 20;
+      if ((link.url || "").includes("login")) score += 10;
+      if (link.paused) score -= 10;
+
+      return Math.max(0, Math.min(score, 100));
+    }
+
+    function getThreatItems() {
+      return linksData
+        .map(link => ({ ...link, threatScore: computeThreatScore(link) }))
+        .filter(link => link.threatScore >= 50)
+        .sort((a, b) => b.threatScore - a.threatScore);
+    }
+
+    function getLinkStatusBadge(link) {
+      return link.paused
+        ? `<span class="badge paused">PAUSED</span>`
+        : `<span class="badge active">ACTIVE</span>`;
+    }
+
+    function getUserStatusBadge(user) {
+      return user.banned
+        ? `<span class="badge banned">BANNED</span>`
+        : `<span class="badge active">ACTIVE</span>`;
+    }
+
+    function getRoleBadge(role) {
+      return role === "admin"
+        ? `<span class="badge admin">ADMIN</span>`
+        : `<span class="badge">USER</span>`;
+    }
+
+    function formatExpire(expire) {
+      if (!expire) return `<span class="muted">No expiry</span>`;
+      const n = Number(expire);
+      if (!Number.isFinite(n)) return `<span class="muted">No expiry</span>`;
+      const left = n - Date.now();
+      if (left <= 0) return `<span class="badge banned">Expired</span>`;
+      return `
+        <div>${new Date(n).toLocaleString()}</div>
+        <div class="muted">${Math.floor(left / 3600000)}h left</div>
       `;
     }
 
-    async function loadEmailAnalytics(){
-      const res = await safeFetch(API + "/admin/email-logs");
-      const logs = res.logs || [];
+    function renderStats() {
+      const totalUsers = usersData.length;
+      const totalLinks = linksData.length;
+      const totalClicks = linksData.reduce((sum, link) => sum + Number(link.clicks || 0), 0);
+      const threatItems = getThreatItems();
 
-      let sent = 0, opened = 0, clicked = 0;
-      logs.forEach(l=>{
-        if(l.type === "sent") sent++;
-        if(l.type === "opened") opened++;
-        if(l.type === "clicked") clicked++;
+      statUsers.textContent = totalUsers;
+      statLinks.textContent = totalLinks;
+      statClicks.textContent = totalClicks;
+      statThreats.textContent = threatItems.length;
+
+      document.getElementById("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
+      document.getElementById("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
+      document.getElementById("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
+      document.getElementById("statThreatsMeta").textContent = threatItems.length ? "Needs review" : "No major flags";
+
+      liveStatus.innerHTML = threatItems.length
+        ? `🟡 Live • ${threatItems.length} flagged item(s)`
+        : `🟢 Live • All systems normal`;
+
+      lastRefreshText.textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
+    }
+
+    function renderEmailStats() {
+      let sent = 0;
+      let opened = 0;
+      let clicked = 0;
+
+      emailLogs.forEach(l => {
+        if (l.type === "sent") sent++;
+        if (l.type === "opened") opened++;
+        if (l.type === "clicked") clicked++;
       });
 
       emailStats.innerHTML = `
         <div>📨 Sent: ${sent}</div>
         <div>👁️ Opens: ${opened}</div>
         <div>🔗 Clicks: ${clicked}</div>
-        <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
+        <div>📈 Open Rate: ${sent ? Math.round((opened / sent) * 100) : 0}%</div>
       `;
     }
 
-    async function loadAuditLogs(){
-      const res = await safeFetch(API + "/admin/audit");
-      const logs = res.logs || [];
+    function renderThreats() {
+      const threatItems = getThreatItems();
 
-      auditLogs.innerHTML = logs.slice(-20).reverse().map(l => `
-        <div>
-          <b>${l.action}</b> → ${l.target}
-          <br>
-          <small>${new Date(l.time).toLocaleString()}</small>
-        </div>
-      `).join("");
+      aiThreats.innerHTML = threatItems.length
+        ? threatItems.slice(0, 8).map(t => `
+            <div>⚠️ <b>${escapeHtml(t.slug)}</b> → score ${t.threatScore}</div>
+          `).join("")
+        : `<div>No threats detected</div>`;
+
+      threatList.innerHTML = threatItems.length
+        ? threatItems.map(t => `
+            <div>
+              <b>${escapeHtml(t.slug)}</b>
+              <br>
+              <span class="muted">${escapeHtml(t.user || "unknown")}</span>
+              <br>
+              Score: ${t.threatScore}
+            </div>
+          `).join("")
+        : `<div>No threat intel</div>`;
+
+      attackFeed.innerHTML = threatItems.length
+        ? threatItems.map(t => `
+            <div>🚨 ${escapeHtml(t.slug)} spike detected (${t.clicks} clicks)</div>
+          `).join("")
+        : `<div>No active attacks</div>`;
     }
 
-    function detectThreats(){
-      let threats = [];
+    function renderSideLists() {
+      const top = [...linksData]
+        .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+        .slice(0, 10);
 
-      linksData.forEach(l => {
-        let score = 0;
-        if (l.clicks > 100) score += 40;
-        if (l.clicks > 500) score += 60;
-        if ((l.slug || "").includes("admin")) score += 30;
+      topLinks.innerHTML = top.length
+        ? top.map(link => `
+            <div>
+              <b>${escapeHtml(link.slug)}</b>
+              <br>
+              <span class="muted">${escapeHtml(link.user || "")}</span>
+              <br>
+              ${link.clicks} clicks
+            </div>
+          `).join("")
+        : `<div>No links</div>`;
 
-        if (score > 50) {
-          threats.push({ slug: l.slug, score });
-        }
-      });
+      const admins = usersData.filter(u => u.role === "admin");
+      adminList.innerHTML = admins.length
+        ? admins.map(u => `
+            <div>
+              <b>${escapeHtml(u.username)}</b>
+              <br>
+              ${u.banned ? `<span class="badge banned">BANNED</span>` : `<span class="badge admin">ADMIN</span>`}
+            </div>
+          `).join("")
+        : `<div>No admins found</div>`;
 
-      aiThreats.innerHTML = threats.map(t => `
-        <div style="color:#ef4444">⚠️ ${t.slug} → Threat Score: ${t.score}</div>
-      `).join("") || "<div>No threats detected</div>";
-
-      threatList.innerHTML = threats.map(t => `
-        <div>⚠️ ${t.slug} (${t.score})</div>
-      `).join("") || "<div>No threat intel</div>";
-
-      attackFeed.innerHTML = threats.map(t => `
-        <div>🚨 ${t.slug} spike detected</div>
-      `).join("") || "<div>No active attacks</div>";
+      const banned = usersData.filter(u => u.banned);
+      bannedList.innerHTML = banned.length
+        ? banned.map(u => `
+            <div>
+              <b>${escapeHtml(u.username)}</b>
+              <br>
+              <span class="badge banned">BANNED</span>
+            </div>
+          `).join("")
+        : `<div>No banned users</div>`;
     }
 
-    function drawChart(){
+    function drawChart() {
       const canvas = document.getElementById("chart");
       if (!canvas) return;
 
       if (chart) chart.destroy();
 
-      chart = new Chart(canvas,{
-        type:"bar",
-        data:{
-          labels:linksData.map(i=>i.slug),
-          datasets:[{
-            label:"Clicks",
-            data:linksData.map(i=>i.clicks)
+      const sorted = [...linksData]
+        .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+        .slice(0, 15);
+
+      chart = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: sorted.map(i => i.slug),
+          datasets: [{
+            label: "Clicks",
+            data: sorted.map(i => Number(i.clicks || 0))
           }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: { color: "#e2e8f0" }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.08)" }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#94a3b8" },
+              grid: { color: "rgba(148,163,184,0.08)" }
+            }
+          }
         }
       });
     }
 
-    function trackRealtime(){
+    function renderAuditLogs() {
+      auditLogsEl.innerHTML = auditData.length
+        ? [...auditData]
+            .sort((a, b) => Number(b.time || 0) - Number(a.time || 0))
+            .slice(0, 100)
+            .map(log => `
+              <div>
+                <b>${escapeHtml(log.action || "UNKNOWN")}</b> → ${escapeHtml(log.target || "UNKNOWN")}
+                <br>
+                <small>${new Date(Number(log.time || Date.now())).toLocaleString()}</small>
+              </div>
+            `).join("")
+        : `<div>No audit logs</div>`;
+    }
+
+    function getFilteredUsers() {
+      const q = userSearch.value.trim().toLowerCase();
+      const role = userFilterRole.value;
+      const status = userFilterStatus.value;
+
+      return usersData.filter(u => {
+        const matchesQ = !q || String(u.username || "").toLowerCase().includes(q);
+        const matchesRole = !role || (u.role || "user") === role;
+        const matchesStatus =
+          !status ||
+          (status === "active" && !u.banned) ||
+          (status === "banned" && !!u.banned);
+
+        return matchesQ && matchesRole && matchesStatus;
+      });
+    }
+
+    function renderUsers() {
+      const list = getFilteredUsers();
+
+      usersEl.innerHTML = list.length ? list.map(u => `
+        <tr data-username="${escapeHtml(u.username)}">
+          <td>${escapeHtml(u.username)}</td>
+          <td>${getUserStatusBadge(u)}</td>
+          <td>${getRoleBadge(u.role || "user")}</td>
+          <td>${Number(u.requests || 0)}</td>
+          <td>
+            <div class="actions">
+              <button data-action="view-user" data-username="${escapeHtml(u.username)}">View</button>
+              <button data-action="view-user-links" data-username="${escapeHtml(u.username)}">Links</button>
+              ${u.banned
+                ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}">Enable</button>`
+                : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}">Disable</button>`
+              }
+              <button class="btn-purple" data-action="make-admin" data-username="${escapeHtml(u.username)}">Make Admin</button>
+              <button class="btn-yellow" data-action="remove-admin" data-username="${escapeHtml(u.username)}">Make User</button>
+            </div>
+          </td>
+        </tr>
+      `).join("") : `
+        <tr>
+          <td colspan="5" class="muted">No users found</td>
+        </tr>
+      `;
+    }
+
+    function getFilteredLinks() {
+      const q = linkSearch.value.trim().toLowerCase();
+      const status = linkFilterStatus.value;
+      const sort = linkSort.value;
+
+      let list = linksData.filter(l => {
+        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || ""}`.toLowerCase();
+        const matchesQ = !q || blob.includes(q);
+        const matchesStatus =
+          !status ||
+          (status === "active" && !l.paused) ||
+          (status === "paused" && !!l.paused);
+
+        return matchesQ && matchesStatus;
+      });
+
+      if (sort === "clicks_desc") list.sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (sort === "clicks_asc") list.sort((a,b) => Number(a.clicks || 0) - Number(b.clicks || 0));
+      if (sort === "slug_asc") list.sort((a,b) => String(a.slug || "").localeCompare(String(b.slug || "")));
+      if (sort === "user_asc") list.sort((a,b) => String(a.user || "").localeCompare(String(b.user || "")));
+
+      return list;
+    }
+
+    function renderLinks() {
+      const list = getFilteredLinks();
+
+      linksEl.innerHTML = list.length ? list.map(l => {
+        const full = buildShortLink(l.slug);
+        return `
+          <tr data-slug="${escapeHtml(l.slug)}">
+            <td>${escapeHtml(l.user || "")}</td>
+            <td>${escapeHtml(l.slug || "")}</td>
+            <td>
+              <a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a>
+              <div class="muted">${escapeHtml(l.url || "")}</div>
+            </td>
+            <td>${Number(l.clicks || 0)}</td>
+            <td>${getLinkStatusBadge(l)}</td>
+            <td>${formatExpire(l.expire)}</td>
+            <td>
+              <div class="actions">
+                <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
+                <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
+                <button class="btn-purple" data-action="analytics-link" data-slug="${escapeHtml(l.slug)}">Analytics</button>
+                ${l.paused
+                  ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}">Resume</button>`
+                  : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}">Pause</button>`
+                }
+                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("") : `
+        <tr>
+          <td colspan="7" class="muted">No links found</td>
+        </tr>
+      `;
+
+      trackRealtime();
+    }
+
+    function trackRealtime() {
       linksData.forEach(l => {
-        if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-          const row = document.querySelector(`[data-slug="${l.slug}"]`);
-          if(row){
-            row.style.background="#065f46";
-            setTimeout(()=>row.style.background="",1500);
+        if (lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks) {
+          const row = document.querySelector(`[data-slug="${CSS.escape(l.slug)}"]`);
+          if (row) {
+            row.style.background = "#065f46";
+            setTimeout(() => { row.style.background = ""; }, 1500);
           }
         }
         lastClicks[l.slug] = l.clicks;
       });
     }
 
-    async function getGeo(ip){
-      if(!ip || ip==="unknown"){
-        return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
-      }
-
-      try{
-        const res = await fetch(`https://ipapi.co/${ip}/json/`);
-        const data = await res.json();
-
-        return {
-          country_name: data.country_name || "Unknown",
-          city: data.city || "Unknown",
-          latitude: data.latitude || 20,
-          longitude: data.longitude || 0
-        };
-      } catch {
-        return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
-      }
+    async function openUser(username) {
+      const u = usersData.find(x => x.username === username);
+      panel.style.display = "block";
+      panelTitle.textContent = "User Details";
+      panelContent.innerHTML = `
+        <div><b>Email:</b> ${escapeHtml(u?.username || username)}</div>
+        <div><b>Role:</b> ${escapeHtml(u?.role || "user")}</div>
+        <div><b>Status:</b> ${u?.banned ? "Banned" : "Active"}</div>
+        <div><b>Requests:</b> ${Number(u?.requests || 0)}</div>
+        <div style="margin-top:12px;">
+          <button data-action="make-admin" data-username="${escapeHtml(username)}">Make Admin</button>
+          <button data-action="remove-admin" data-username="${escapeHtml(username)}">Make User</button>
+        </div>
+      `;
+      if (map) { map.remove(); map = null; }
+      document.getElementById("map").innerHTML = "";
     }
 
-    async function openAnalytics(slug){
+    async function viewUserLinks(username) {
+      const userLinks = linksData.filter(l => l.user === username);
+
       panel.style.display = "block";
+      panelTitle.textContent = "User Links";
+      panelContent.innerHTML = userLinks.length ? userLinks.map(l => `
+        <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+          <b>${escapeHtml(l.slug)}</b>
+          <br>
+          <span class="muted">${escapeHtml(l.url || "")}</span>
+          <br>
+          Clicks: ${Number(l.clicks || 0)}
+        </div>
+      `).join("") : "<div>No links</div>";
+
+      if (map) { map.remove(); map = null; }
+      document.getElementById("map").innerHTML = "";
+    }
+
+    async function openAnalytics(slug) {
+      panel.style.display = "block";
+      panelTitle.textContent = `Analytics: ${slug}`;
       panelContent.innerHTML = "Loading...";
 
-      const data = await safeFetch(API + "/history?slug=" + encodeURIComponent(slug));
-      const history = data.history || [];
+      const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`);
+      const history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+      if (!history.length) {
+        panelContent.innerHTML = "<div>No history</div>";
+        if (map) { map.remove(); map = null; }
+        document.getElementById("map").innerHTML = "";
+        return;
+      }
 
       panelContent.innerHTML = history.map(h => `
-        <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
-      `).join("") || "<div>No history</div>";
+        <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+          <b>${escapeHtml(h.ip || "unknown")}</b>
+          <br>
+          <span class="muted">${new Date(Number(h.time || Date.now())).toLocaleString()}</span>
+          <br>
+          Risk: ${Number(h.risk || 0)} ${h.vpn ? " • VPN" : ""} ${h.bot ? " • BOT" : ""}
+        </div>
+      `).join("");
 
       if (map) map.remove();
       map = L.map("map").setView([20, 0], 2);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
 
+      let offset = 0;
       for (const h of history) {
         const geo = await getGeo(h.ip);
-        L.circle([geo.latitude || 20, geo.longitude || 0], {
+        let lat = Number(geo.latitude || 20);
+        let lng = Number(geo.longitude || 0);
+
+        lat += offset * 0.25;
+        lng += offset * 0.25;
+        offset++;
+
+        L.circle([lat, lng], {
           radius: 40000,
-          color: h.risk > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(map).bindPopup(`${geo.country_name}<br>${h.ip}`);
+          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`${escapeHtml(geo.country_name || "Unknown")}<br>${escapeHtml(h.ip || "unknown")}`);
       }
     }
 
-    async function openUser(username){
-      const u = usersData.find(x => x.username === username);
+    async function banUser(username) {
+      const res = await safeFetch(`${API}/admin/ban`, "POST", { username });
+      if (res.ok) {
+        await logAudit("BAN USER", username);
+        showToast("User banned");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Ban failed");
+      }
+    }
+
+    async function unbanUser(username) {
+      const res = await safeFetch(`${API}/admin/unban`, "POST", { username });
+      if (res.ok) {
+        await logAudit("UNBAN USER", username);
+        showToast("User enabled");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Enable failed");
+      }
+    }
+
+    async function makeAdmin(username) {
+      const res = await safeFetch(`${API}/admin/make-admin`, "POST", { username });
+      if (res.ok) {
+        await logAudit("PROMOTE ADMIN", username);
+        showToast("User promoted");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Promote failed");
+      }
+    }
+
+    async function removeAdmin(username) {
+      const res = await safeFetch(`${API}/admin/remove-admin`, "POST", { username });
+      if (res.ok) {
+        await logAudit("REMOVE ADMIN", username);
+        showToast("Role changed");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Role update failed");
+      }
+    }
+
+    async function pauseLink(slug) {
+      const res = await safeFetch(`${API}/admin/pause`, "POST", { slug });
+      if (res.ok) {
+        await logAudit("PAUSE LINK", slug);
+        showToast("Link paused");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Pause failed");
+      }
+    }
+
+    async function resumeLink(slug) {
+      const res = await safeFetch(`${API}/admin/resume`, "POST", { slug });
+      if (res.ok) {
+        await logAudit("RESUME LINK", slug);
+        showToast("Link resumed");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Resume failed");
+      }
+    }
+
+    async function deleteLink(slug) {
+      if (!confirm(`Delete ${slug}?`)) return;
+
+      const res = await safeFetch(`${API}/delete`, "POST", { slug });
+      if (res.ok) {
+        await logAudit("DELETE LINK", slug);
+        showToast("Link deleted");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Delete failed");
+      }
+    }
+
+    async function copyLink(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const input = document.createElement("input");
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+      showToast("Copied");
+    }
+
+    function openLink(link) {
+      const a = document.createElement("a");
+      a.href = link;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function exportJson(filename, data) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function openCreateUser() {
       panel.style.display = "block";
+      panelTitle.textContent = "Create User";
       panelContent.innerHTML = `
-        <h3>User Details</h3>
-        <div><b>Email:</b> ${u?.username || username}</div>
-        <div><b>Role:</b> ${u?.role || "user"}</div>
-        <div><b>Status:</b> ${u?.banned ? "Banned" : "Active"}</div>
-        <div><b>Requests:</b> ${u?.requests || 0}</div>
+        <div class="mini-grid">
+          <input id="newUser" placeholder="Email" />
+          <input id="newPass" type="password" placeholder="Password" />
+          <select id="newRole">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button id="submitCreateUserBtn" class="btn-primary">Create User</button>
+        </div>
       `;
-      if (map) {
-        map.remove();
-        map = null;
-      }
+
+      if (map) { map.remove(); map = null; }
       document.getElementById("map").innerHTML = "";
+
+      document.getElementById("submitCreateUserBtn").onclick = createUser;
     }
 
-    async function viewIP(username){
-      const userLinks = linksData.filter(l => l.user === username);
-      panel.style.display = "block";
-      panelContent.innerHTML = `
-        <h3>User Links</h3>
-        ${userLinks.map(l => `<div>${l.slug} - ${l.clicks} clicks</div>`).join("") || "<div>No links</div>"}
-      `;
-      if (map) {
-        map.remove();
-        map = null;
-      }
-      document.getElementById("map").innerHTML = "";
-    }
-
-    function closePanel(){
-      panel.style.display = "none";
-      panelContent.innerHTML = "";
-      if(map){
-        map.remove();
-        map = null;
-      }
-      document.getElementById("map").innerHTML = "";
-    }
-
-    async function ban(u){
-      await safeFetch(API + "/admin/ban","POST",{username:u});
-      await logAudit("BAN USER", u);
-      await loadAdmin();
-    }
-
-    async function unban(u){
-      await safeFetch(API + "/admin/unban","POST",{username:u});
-      await logAudit("UNBAN USER", u);
-      await loadAdmin();
-    }
-
-    async function makeAdmin(u){
-      await safeFetch(API + "/admin/make-admin","POST",{username:u});
-      await logAudit("PROMOTE ADMIN", u);
-      await loadAdmin();
-    }
-
-    async function removeAdmin(u){
-      await safeFetch(API + "/admin/remove-admin","POST",{username:u});
-      await logAudit("REMOVE ADMIN", u);
-      await loadAdmin();
-    }
-
-    async function pause(s){
-      await safeFetch(API + "/admin/pause","POST",{slug:s});
-      await logAudit("PAUSE LINK", s);
-      await loadAdmin();
-    }
-
-    async function resume(s){
-      await safeFetch(API + "/admin/resume","POST",{slug:s});
-      await logAudit("RESUME LINK", s);
-      await loadAdmin();
-    }
-
-    async function delLink(s){
-      await safeFetch(API + "/delete","POST",{slug:s});
-      await logAudit("DELETE LINK", s);
-      await loadAdmin();
-    }
-
-    function openCreateUser(){
-      panel.style.display = "block";
-      panelContent.innerHTML = `
-        <h3>Create User</h3>
-        <input id="newUser" placeholder="Email"><br><br>
-        <input id="newPass" placeholder="Password" type="password"><br><br>
-        <select id="newRole">
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select><br><br>
-        <button onclick="createUser()">Create</button>
-      `;
-      document.getElementById("map").innerHTML = "";
-      if (map) {
-        map.remove();
-        map = null;
-      }
-    }
-
-    async function createUser(){
+    async function createUser() {
       const username = document.getElementById("newUser").value.trim();
       const password = document.getElementById("newPass").value;
       const role = document.getElementById("newRole").value;
 
-      await safeFetch(API + "/admin/create-user","POST",{username,password,role});
-      await logAudit("CREATE USER", username);
+      if (!username || !password) {
+        showToast("Missing fields");
+        return;
+      }
+
+      const res = await safeFetch(`${API}/admin/create-user`, "POST", {
+        username,
+        password,
+        role
+      });
+
+      if (res.ok) {
+        await logAudit("CREATE USER", username);
+        showToast("User created");
+        await loadAdmin();
+      } else {
+        showToast(res.data?.message || "Create failed");
+      }
+    }
+
+    async function loadAdmin() {
+      const [usersRes, linksRes, emailRes, auditRes] = await Promise.all([
+        safeFetch(`${API}/admin/users`),
+        safeFetch(`${API}/admin/links`),
+        safeFetch(`${API}/admin/email-logs`),
+        safeFetch(`${API}/admin/audit`)
+      ]);
+
+      usersData = Array.isArray(usersRes.data?.users) ? usersRes.data.users : [];
+      linksData = Array.isArray(linksRes.data?.items) ? linksRes.data.items : [];
+      emailLogs = Array.isArray(emailRes.data?.logs) ? emailRes.data.logs : [];
+      auditData = Array.isArray(auditRes.data?.logs) ? auditRes.data.logs : [];
+
+      renderStats();
+      renderEmailStats();
+      renderThreats();
+      renderSideLists();
+      renderUsers();
+      renderLinks();
+      renderAuditLogs();
+      drawChart();
+
+      addTerminal("Dashboard refreshed");
+    }
+
+    function setupFilters() {
+      userSearch.addEventListener("input", renderUsers);
+      userFilterRole.addEventListener("change", renderUsers);
+      userFilterStatus.addEventListener("change", renderUsers);
+
+      linkSearch.addEventListener("input", renderLinks);
+      linkFilterStatus.addEventListener("change", renderLinks);
+      linkSort.addEventListener("change", renderLinks);
+    }
+
+    function setupNavigation() {
+      document.getElementById("navOverview").onclick = () => showSection("overview");
+      document.getElementById("navUsers").onclick = () => showSection("users");
+      document.getElementById("navLinks").onclick = () => showSection("links");
+      document.getElementById("navSecurity").onclick = () => showSection("security");
+      document.getElementById("navAudit").onclick = () => showSection("audit");
+    }
+
+    function setupTopButtons() {
+      document.getElementById("refreshBtn").onclick = async () => {
+        await loadAdmin();
+        showToast("Refreshed");
+      };
+
+      document.getElementById("refreshAllBtn").onclick = async () => {
+        await loadAdmin();
+        showToast("Refreshed");
+      };
+
+      document.getElementById("createUserBtn").onclick = openCreateUser;
+      document.getElementById("closePanelBtn").onclick = closePanel;
+      document.getElementById("logoutBtn").onclick = logout;
+
+      document.getElementById("exportUsersBtn").onclick = () => {
+        exportJson("users.json", usersData);
+        showToast("Users exported");
+      };
+
+      document.getElementById("exportLinksBtn").onclick = () => {
+        exportJson("links.json", linksData);
+        showToast("Links exported");
+      };
+
+      document.getElementById("autoRefreshBtn").onclick = () => {
+        autoRefresh = !autoRefresh;
+        document.getElementById("autoRefreshBtn").textContent = `⏱️ Auto Refresh: ${autoRefresh ? "ON" : "OFF"}`;
+        showToast(`Auto Refresh ${autoRefresh ? "ON" : "OFF"}`);
+      };
+    }
+
+    function setupEventDelegation() {
+      usersEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const username = btn.dataset.username;
+
+        if (action === "view-user") return openUser(username);
+        if (action === "view-user-links") return viewUserLinks(username);
+        if (action === "ban-user") return banUser(username);
+        if (action === "unban-user") return unbanUser(username);
+        if (action === "make-admin") return makeAdmin(username);
+        if (action === "remove-admin") return removeAdmin(username);
+      });
+
+      linksEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const slug = btn.dataset.slug;
+        const link = btn.dataset.link;
+
+        if (action === "copy-link") return copyLink(link);
+        if (action === "open-link") return openLink(link);
+        if (action === "analytics-link") return openAnalytics(slug);
+        if (action === "pause-link") return pauseLink(slug);
+        if (action === "resume-link") return resumeLink(slug);
+        if (action === "delete-link") return deleteLink(slug);
+      });
+
+      panelContent.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const username = btn.dataset.username;
+
+        if (action === "make-admin") return makeAdmin(username);
+        if (action === "remove-admin") return removeAdmin(username);
+      });
+    }
+
+    function setupWebSocket() {
+      try {
+        ws = new WebSocket(WS_URL);
+
+        ws.onopen = () => addTerminal("WebSocket connected");
+        ws.onmessage = async () => {
+          addTerminal("Realtime update received");
+          await loadAdmin();
+        };
+        ws.onerror = () => addTerminal("WebSocket error");
+        ws.onclose = () => addTerminal("WebSocket disconnected");
+      } catch {
+        addTerminal("WebSocket unavailable");
+      }
+    }
+
+    function startAutoRefresh() {
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (!autoRefresh || document.hidden) return;
+        loadAdmin();
+      }, 5000);
+    }
+
+    (async function init() {
+      showSection("overview");
+      setupNavigation();
+      setupTopButtons();
+      setupFilters();
+      setupEventDelegation();
+      setupWebSocket();
+      startAutoRefresh();
       await loadAdmin();
-      alert("User created");
-    }
-
-    function logout(){
-      localStorage.clear();
-      window.location.href = "index.html";
-    }
-
-    const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
-
-    socket.onmessage = () => {
-      loadAdmin();
-    };
-
-    loadAdmin();
-    setInterval(loadAdmin, 5000);
+    })();
   </script>
 </body>
 </html>
