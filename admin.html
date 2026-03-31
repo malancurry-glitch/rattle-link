@@ -1,798 +1,647 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>👑 Admin Dashboard ENTERPRISE+</title>
+  <title>👑 Admin Dashboard</title>
 
-<script>
-const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
+  <script>
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (!token || role !== "admin") {
+      window.location.href = "index.html";
+    }
+  </script>
 
-if(!token || role !== "admin"){
-  window.location.href = "index.html";
-}
-</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    /* ================= ROOT ================= */
-:root{
-  --bg:#020617;
-  --bg2:#0f172a;
-  --card:#020617;
-  --text:#e2e8f0;
-  --primary:#0ff;
-  --border:rgba(0,255,255,0.15);
-}
-
-/* ================= BASE ================= */
-body {
-  margin:0;
-  font-family:Inter, Arial;
-  background: radial-gradient(circle at top, var(--bg2), #000);
-  color:var(--text);
-  display:flex;
-}
-
-/* subtle grid */
-body::before{
-  content:"";
-  position:fixed;
-  width:100%;
-  height:100%;
-  background-image:
-    linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-}
-
-/* ================= SIDEBAR ================= */
-.sidebar {
-  width:220px;
-  height:100vh;
-  background:#020617;
-  padding:20px;
-  border-right:1px solid var(--border);
-  box-shadow:0 0 30px rgba(0,255,255,0.1);
-}
-
-.sidebar h2{
-  color:var(--primary);
-  text-shadow:0 0 10px var(--primary);
-}
-
-.sidebar button{
-  width:100%;
-  margin:8px 0;
-  padding:10px;
-  background:rgba(30,41,59,0.6);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--primary);
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.sidebar button:hover{
-  transform:translateX(6px);
-  box-shadow:0 0 10px var(--primary);
-}
-
-/* ================= MAIN ================= */
-.main{
-  flex:1;
-  padding:20px;
-}
-
-/* ================= GRID ================= */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:20px;
-}
-
-/* ================= CARDS ================= */
-.card{
-  background:rgba(2,6,23,0.85);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:20px;
-  backdrop-filter:blur(12px);
-  box-shadow:
-    0 0 10px rgba(0,255,255,0.1),
-    inset 0 0 20px rgba(0,255,255,0.05);
-  transition:0.25s;
-}
-
-.card:hover{
-  transform:translateY(-3px) scale(1.01);
-  box-shadow:
-    0 0 20px rgba(0,255,255,0.3),
-    0 0 40px rgba(139,92,246,0.2);
-}
-
-/* ================= HEADINGS ================= */
-h2,h3{
-  color:var(--primary);
-  text-shadow:0 0 6px var(--primary);
-}
-
-/* ================= TABLE ================= */
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-td,th{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  font-size:13px;
-}
-
-tr{
-  transition:0.2s;
-}
-
-tr:hover{
-  background:#020617;
-  box-shadow: inset 0 0 10px rgba(0,255,255,0.2);
-}
-
-/* ================= BUTTONS ================= */
-button{
-  padding:6px 10px;
-  border-radius:6px;
-  font-size:11px;
-  border:1px solid var(--border);
-  background:#020617;
-  color:var(--primary);
-  cursor:pointer;
-  transition:0.2s;
-  position:relative;
-  overflow:hidden;
-}
-
-/* hover glow */
-button:hover{
-  transform:translateY(-2px);
-  box-shadow:
-    0 0 10px var(--primary),
-    0 0 20px var(--primary);
-}
-
-/* shine effect */
-button::after{
-  content:"";
-  position:absolute;
-  top:0;
-  left:-100%;
-  width:100%;
-  height:100%;
-  background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
-  transition:0.4s;
-}
-button:hover::after{
-  left:100%;
-}
-
-/* ================= COLORS ================= */
-.ban{ border-color:#ef4444; color:#ef4444; }
-.unban{ border-color:#22c55e; color:#22c55e; }
-.pause{ border-color:#f59e0b; color:#f59e0b; }
-.resume{ border-color:#22c55e; color:#22c55e; }
-.delete{ border-color:#f97316; color:#f97316; }
-.view{ border-color:#8b5cf6; color:#8b5cf6; }
-
-/* ================= BADGES ================= */
-.badge{
-  padding:4px 8px;
-  border-radius:6px;
-  font-size:11px;
-  border:1px solid rgba(255,255,255,0.1);
-}
-
-.active{
-  background:#022c22;
-  color:#22c55e;
-  box-shadow:0 0 8px #22c55e;
-}
-
-.banned{
-  background:#2b0000;
-  color:#ef4444;
-  box-shadow:0 0 8px #ef4444;
-}
-
-.paused{
-  background:#2b1a00;
-  color:#f59e0b;
-  box-shadow:0 0 8px #f59e0b;
-}
-
-/* ================= LINKS ================= */
-a{
-  color:var(--primary);
-  text-decoration:none;
-}
-
-a:hover{
-  color:#fff;
-}
-
-/* ================= PANEL ================= */
-.panel{
-  position:fixed;
-  right:0;
-  top:0;
-  width:380px;
-  height:100%;
-  background:#000;
-  padding:20px;
-  display:none;
-  overflow:auto;
-  border-left:1px solid var(--border);
-  box-shadow:-10px 0 40px rgba(0,255,255,0.2);
-}
-
-/* ================= MAP ================= */
-#map{
-  height:300px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  box-shadow:0 0 20px rgba(0,255,255,0.2);
-}
-
-/* ================= TERMINAL ================= */
-#terminal{
-  background:#000;
-  color:#0f0;
-  padding:10px;
-  font-size:12px;
-  height:200px;
-  overflow:auto;
-  box-shadow: inset 0 0 20px rgba(0,255,0,0.3);
-}
-
-/* ================= RADAR ================= */
-#radarCanvas{
-  background:#000;
-  border-radius:10px;
-  box-shadow:0 0 20px #0f0;
-}
-
-/* ================= THREATS ================= */
-#threatList div{
-  margin-bottom:6px;
-  font-size:12px;
-}
-
-.threat-low{ color:#22c55e; }
-.threat-mid{ color:#f59e0b; }
-.threat-high{ color:#ef4444; }
-
-/* ================= SCROLL ================= */
-::-webkit-scrollbar{
-  width:6px;
-}
-::-webkit-scrollbar-thumb{
-  background:#334155;
-  border-radius:10px;
-}
-
-/* ================= ANIMATION ================= */
-@keyframes flicker{
-  0%{opacity:1;}
-  50%{opacity:0.9;}
-  100%{opacity:1;}
-}
-
-.card,button{
-  animation:flicker 3s infinite;
-}
-
+    :root{
+      --bg:#020617;
+      --bg2:#0f172a;
+      --card:#020617;
+      --text:#e2e8f0;
+      --primary:#0ff;
+      --border:rgba(0,255,255,0.15);
+    }
+    body{
+      margin:0;
+      font-family:Inter, Arial;
+      background: radial-gradient(circle at top, var(--bg2), #000);
+      color:var(--text);
+      display:flex;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      width:100%;
+      height:100%;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+      background-size:40px 40px;
+      pointer-events:none;
+    }
+    .sidebar{
+      width:220px;
+      height:100vh;
+      background:#020617;
+      padding:20px;
+      border-right:1px solid var(--border);
+    }
+    .sidebar h2{
+      color:var(--primary);
+    }
+    .sidebar button{
+      width:100%;
+      margin:8px 0;
+      padding:10px;
+      background:rgba(30,41,59,0.6);
+      border:1px solid var(--border);
+      border-radius:8px;
+      color:var(--primary);
+      cursor:pointer;
+    }
+    .main{
+      flex:1;
+      padding:20px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:20px;
+    }
+    .card{
+      background:rgba(2,6,23,0.85);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:20px;
+    }
+    h2,h3{
+      color:var(--primary);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    td,th{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      font-size:13px;
+      text-align:left;
+    }
+    button{
+      padding:6px 10px;
+      border-radius:6px;
+      font-size:11px;
+      border:1px solid var(--border);
+      background:#020617;
+      color:var(--primary);
+      cursor:pointer;
+      margin:2px;
+    }
+    .badge{
+      padding:4px 8px;
+      border-radius:6px;
+      font-size:11px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    .active{
+      background:#022c22;
+      color:#22c55e;
+    }
+    .banned{
+      background:#2b0000;
+      color:#ef4444;
+    }
+    .paused{
+      background:#2b1a00;
+      color:#f59e0b;
+    }
+    a{
+      color:var(--primary);
+      text-decoration:none;
+    }
+    .panel{
+      position:fixed;
+      right:0;
+      top:0;
+      width:400px;
+      height:100%;
+      background:#000;
+      padding:20px;
+      display:none;
+      overflow:auto;
+      border-left:1px solid var(--border);
+    }
+    #map{
+      height:300px;
+      border-radius:10px;
+    }
+    #terminal{
+      background:#000;
+      color:#0f0;
+      padding:10px;
+      font-size:12px;
+      height:200px;
+      overflow:auto;
+    }
+    #radarCanvas{
+      background:#000;
+      border-radius:10px;
+    }
   </style>
 </head>
-
 <body>
+  <div class="sidebar">
+    <h2>👑 Admin</h2>
+    <button onclick="loadAdmin()">📊 Dashboard</button>
+    <button onclick="openCreateUser()">➕ Create User</button>
+    <button onclick="logout()">🚪 Logout</button>
+  </div>
 
-<div class="sidebar">
-  <h2>👑 Admin</h2>
-  <button onclick="loadAdmin()">📊 Dashboard</button>
-  <button onclick="openCreateUser()">➕ Create User</button>
-  <button onclick="logout()">🚪 Logout</button>
-</div>
+  <div class="main">
+    <h2>📊 Enterprise Control Center</h2>
 
-<div class="main" id="app">
+    <div class="grid">
+      <div class="card">
+        <h3>📊 System Stats</h3>
+        <div id="stats"></div>
+        <div id="liveStatus">🟢 Live</div>
+      </div>
 
-  <!-- HEADER -->
-  <h2>📊 Enterprise Control Center</h2>
+      <div class="card">
+        <h3>📧 Email Analytics</h3>
+        <div id="emailStats"></div>
+      </div>
 
-  <!-- ================= TOP GRID ================= -->
-  <div class="grid">
-
-    <!-- SYSTEM STATS -->
-    <div class="card">
-      <h3>📊 System Stats</h3>
-      <div id="stats"></div>
-      <div id="liveStatus">🟢 Live</div>
+      <div class="card">
+        <h3>🤖 AI Threat Detection</h3>
+        <div id="aiThreats"></div>
+      </div>
     </div>
 
-    <!-- EMAIL ANALYTICS -->
     <div class="card">
-      <h3>📧 Email Analytics</h3>
-      <div id="emailStats"></div>
+      <h3>📜 Audit Logs</h3>
+      <div id="auditLogs" style="max-height:200px;overflow:auto;"></div>
     </div>
 
-    <!-- AI THREAT -->
     <div class="card">
-      <h3>🤖 AI Threat Detection</h3>
-      <div id="aiThreats"></div>
+      <h3>👥 Users</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Status</th>
+            <th>Role</th>
+            <th>Requests</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users"></tbody>
+      </table>
     </div>
 
+    <div class="card">
+      <h3>🔗 Links</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Slug</th>
+            <th>URL</th>
+            <th>Clicks</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="links"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>📈 Click Analytics</h3>
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>🖥️ Terminal Logs</h3>
+      <div id="terminal"></div>
+    </div>
+
+    <div class="card">
+      <h3>🚨 Live Attack Monitor</h3>
+      <div id="attackFeed"></div>
+    </div>
+
+    <div class="card">
+      <h3>🛰️ Radar Monitor</h3>
+      <canvas id="radarCanvas" height="200"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>🧠 Threat Intelligence</h3>
+      <div id="threatList"></div>
+    </div>
   </div>
 
-  <!-- ================= AUDIT ================= -->
-  <div class="card">
-    <h3>📜 Audit Logs</h3>
-    <div id="auditLogs" style="max-height:200px;overflow:auto;"></div>
+  <div class="panel" id="panel">
+    <h3>📊 Details</h3>
+    <div id="panelContent"></div>
+    <h4>🌍 Geo Map</h4>
+    <div id="map"></div>
+    <button onclick="closePanel()">Close</button>
   </div>
 
-  <!-- ================= USERS ================= -->
-  <div class="card">
-    <h3>👥 Users</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Status</th>
-          <th>Requests</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="users"></tbody>
-    </table>
-  </div>
-
-  <!-- ================= LINKS ================= -->
-  <div class="card">
-    <h3>🔗 Links</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Slug</th>
-          <th>URL</th>
-          <th>Clicks</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="links"></tbody>
-    </table>
-  </div>
-
-  <!-- ================= CHART ================= -->
-  <div class="card">
-    <h3>📈 Click Analytics</h3>
-    <canvas id="chart"></canvas>
-  </div>
-
-  <!-- ================= TERMINAL ================= -->
-  <div class="card">
-    <h3>🖥️ Terminal Logs</h3>
-    <div id="terminal" class="terminal"></div>
-  </div>
-
-  <!-- ================= ATTACK MONITOR ================= -->
-  <div class="card">
-    <h3>🚨 Live Attack Monitor</h3>
-    <div id="attackFeed"></div>
-  </div>
-
-  <!-- ================= RADAR ================= -->
-  <div class="card">
-    <h3>🛰️ Radar Monitor</h3>
-    <canvas id="radarCanvas" height="200"></canvas>
-  </div>
-
-  <!-- ================= THREAT LIST ================= -->
-  <div class="card">
-    <h3>🧠 Threat Intelligence</h3>
-    <div id="threatList"></div>
-  </div>
-
-</div>
-
-<!-- ================= CREATE USER PANEL ================= -->
-<div id="createUserForm" style="display:none;">
-  <h3>➕ Create User</h3>
-
-  <input id="newUser" placeholder="Email">
-  <input id="newPass" placeholder="Password" type="password">
-
-  <select id="newRole">
-    <option value="user">User</option>
-    <option value="admin">Admin</option>
-  </select>
-
-  <button onclick="createUser()">Create</button>
-</div>
-
-<!-- ================= SIDE PANEL ================= -->
-<div class="panel" id="panel">
-  <h3>📊 Details</h3>
-  <div id="panelContent"></div>
-
-  <h4>🌍 Geo Map</h4>
-  <div id="map"></div>
-
-  <button onclick="closePanel()">Close</button>
-</div>
-
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com";
-
-// ================= STATE =================
-let usersData = [];
-let linksData = [];
-let chart;
-let geoCache = {};
-let lastClicks = {};
-let lastRenderHash = "";
-
-// 🔒 ADMIN GUARD
-if(localStorage.getItem("role") !== "admin"){
-  window.location.href = "index.html";
-}
-
-// ================= FETCH =================
-async function safeFetch(url, method="GET", body=null){
-  const res = await fetch(url,{
-    method,
-    headers:{
-      "Content-Type":"application/json",
-      Authorization: localStorage.getItem("token")
-    },
-    body: body ? JSON.stringify(body) : null
-  });
-
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch { return {}; }
-}
-
-// ================= LOAD =================
-async function loadAdmin(){
-
-  const usersJson = await safeFetch(API+"/admin/users");
-  const linksJson = await safeFetch(API+"/list");
-
-  const newHash = JSON.stringify(linksJson);
-  if(newHash === lastRenderHash) return;
-  lastRenderHash = newHash;
-
-  usersData = usersJson.users || [];
-  linksData = linksJson.items || [];
-
-  renderUsers();
-  renderLinks();
-  renderStats();
-  drawChart();
-  trackRealtime();
-}
-
-// ================= USERS =================
-function renderUsers(){
-  const el = document.getElementById("users");
-  if(!el) return;
-
-  el.innerHTML="";
-
-  usersData.forEach(u=>{
-    el.innerHTML += `
-      <tr>
-        <td>${u.username}</td>
-        <td><span class="badge ${u.banned?"banned":"active"}">${u.banned?"BANNED":"ACTIVE"}</span></td>
-        <td>${u.requests || 0}</td>
-        <td>
-
-          <button onclick="openUser('${u.username}')">View</button>
-          <button onclick="viewIP('${u.username}')">IP</button>
-
-          ${u.banned
-            ? `<button onclick="unban('${u.username}')">Enable</button>`
-            : `<button onclick="ban('${u.username}')">Disable</button>`}
-
-          <button onclick="makeAdmin('${u.username}')">Admin</button>
-          <button onclick="removeAdmin('${u.username}')">User</button>
-
-        </td>
-      </tr>`;
-  });
-}
-
-// ================= LINKS =================
-function renderLinks(){
-  const el = document.getElementById("links");
-  if(!el) return;
-
-  el.innerHTML="";
-
-  linksData.forEach(l=>{
-    const full = API + "/" + l.slug;
-
-    el.innerHTML += `
-      <tr data-slug="${l.slug}">
-        <td>${l.user}</td>
-        <td>${l.slug}</td>
-        <td><a href="${full}" target="_blank">${full}</a></td>
-        <td>${l.clicks}</td>
-        <td><span class="badge ${l.paused?"paused":"active"}">${l.paused?"PAUSED":"ACTIVE"}</span></td>
-        <td>
-          <button onclick="pause('${l.slug}')">Pause</button>
-          <button onclick="resume('${l.slug}')">Resume</button>
-          <button onclick="openAnalytics('${l.slug}')">Analytics</button>
-          <button onclick="del('${l.slug}')">Delete</button>
-        </td>
-      </tr>`;
-  });
-}
-
-// ================= STATS =================
-function renderStats(){
-  const el = document.getElementById("stats");
-  if(!el) return;
-
-  const totalUsers = usersData.length;
-  const totalLinks = linksData.length;
-  const totalClicks = linksData.reduce((a,b)=>a+b.clicks,0);
-
-  el.innerHTML = `
-    <div>👥 Users: ${totalUsers}</div>
-    <div>🔗 Links: ${totalLinks}</div>
-    <div>📈 Clicks: ${totalClicks}</div>
-  `;
-}
-
-// ================= GEO =================
-async function getGeo(ip){
-
-  if(!ip || ip==="unknown"){
-    return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
-  }
-
-  if(geoCache[ip]) return geoCache[ip];
-
-  try{
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await res.json();
-
-    const geo = {
-      country_name: data.country_name || "Unknown",
-      city: data.city || "Unknown",
-      latitude: data.latitude || 20,
-      longitude: data.longitude || 0
-    };
-
-    geoCache[ip] = geo;
-    return geo;
-
-  } catch {
-    return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
-  }
-}
-
-// ================= ANALYTICS =================
-async function openAnalytics(slug){
-
-  panel.style.display="block";
-  panelContent.innerHTML="Loading...";
-
-  const data = await safeFetch(API+"/history?slug="+slug);
-  const history = data.history || [];
-
-  panelContent.innerHTML = history.map(h=>`
-    <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
-  `).join("");
-}
-
-// ================= ADMIN ACTIONS =================
-async function ban(u){ await safeFetch(API+"/admin/ban","POST",{username:u}); loadAdmin(); }
-async function unban(u){ await safeFetch(API+"/admin/unban","POST",{username:u}); loadAdmin(); }
-
-async function makeAdmin(u){ await safeFetch(API+"/admin/make-admin","POST",{username:u}); loadAdmin(); }
-async function removeAdmin(u){ await safeFetch(API+"/admin/remove-admin","POST",{username:u}); loadAdmin(); }
-
-async function pause(s){ await safeFetch(API+"/admin/pause","POST",{slug:s}); loadAdmin(); }
-async function resume(s){ await safeFetch(API+"/admin/resume","POST",{slug:s}); loadAdmin(); }
-async function del(s){ await safeFetch(API+"/delete","POST",{slug:s}); loadAdmin(); }
-
-// ================= CREATE USER =================
-function openCreateUser(){
-  panel.style.display="block";
-  panelContent.innerHTML=`
-    <h3>Create User</h3>
-    <input id="newUser" placeholder="Email"><br><br>
-    <input id="newPass" placeholder="Password"><br><br>
-    <select id="newRole">
-      <option value="user">User</option>
-      <option value="admin">Admin</option>
-    </select><br><br>
-    <button onclick="createUser()">Create</button>
-  `;
-}
-
-async function createUser(){
-
-  const username = document.getElementById("newUser").value.trim();
-  const password = document.getElementById("newPass").value;
-  const role = document.getElementById("newRole").value;
-
-  await safeFetch(API+"/admin/create-user","POST",{username,password,role});
-
-  alert("User created");
-  loadAdmin();
-}
-
-// ================= LOGOUT =================
-function logout(){
-  localStorage.clear();
-  window.location.href="index.html";
-}
-const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
-
-socket.onopen = () => {
-  console.log("🟢 WebSocket connected");
-};
-
-socket.onmessage = (event) => {
-  console.log("📡 Update received", event.data);
-  loadAdmin(); // 🔥 REAL-TIME UPDATE
-};
-
-// ================= CHART =================
-function drawChart(){
-
-  const canvas = document.getElementById("chart");
-  if(!canvas) return;
-
-  if(chart) chart.destroy();
-
-  chart = new Chart(canvas,{
-    type:"bar",
-    data:{
-      labels:linksData.map(i=>i.slug),
-      datasets:[{
-        label:"Clicks",
-        data:linksData.map(i=>i.clicks)
-      }]
+  <script>
+    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    let usersData = [];
+    let linksData = [];
+    let chart;
+    let map;
+    let lastClicks = {};
+
+    const panel = document.getElementById("panel");
+    const panelContent = document.getElementById("panelContent");
+    const stats = document.getElementById("stats");
+    const emailStats = document.getElementById("emailStats");
+    const aiThreats = document.getElementById("aiThreats");
+    const auditLogs = document.getElementById("auditLogs");
+    const usersEl = document.getElementById("users");
+    const linksEl = document.getElementById("links");
+    const terminal = document.getElementById("terminal");
+    const attackFeed = document.getElementById("attackFeed");
+    const threatList = document.getElementById("threatList");
+
+    async function safeFetch(url, method="GET", body=null){
+      const res = await fetch(url,{
+        method,
+        headers:{
+          "Content-Type":"application/json",
+          Authorization: localStorage.getItem("token")
+        },
+        body: body ? JSON.stringify(body) : null
+      });
+
+      const text = await res.text();
+      try { return JSON.parse(text); }
+      catch { return { message: text }; }
     }
-  });
-}
-// ================= EMAIL ANALYTICS =================
-async function loadEmailAnalytics(){
 
-  const res = await safeFetch(API + "/admin/email-logs");
-  const logs = res.logs || [];
-
-  let sent = 0, opened = 0, clicked = 0;
-
-  logs.forEach(l=>{
-    if(l.type === "sent") sent++;
-    if(l.type === "opened") opened++;
-    if(l.type === "clicked") clicked++;
-  });
-
-  emailStats.innerHTML = `
-    <div>📨 Sent: ${sent}</div>
-    <div>👁️ Opens: ${opened}</div>
-    <div>🔗 Clicks: ${clicked}</div>
-    <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
-  `;
-}
-
-// ================= AUDIT LOGGING =================
-async function logAudit(action, target){
-
-  await safeFetch(API + "/admin/audit","POST",{
-    action,
-    target,
-    time: Date.now(),
-    admin: localStorage.getItem("lastUser")
-  });
-}
-
-async function loadAuditLogs(){
-
-  const res = await safeFetch(API + "/admin/audit");
-  const logs = res.logs || [];
-
-  auditLogs.innerHTML = logs.slice(-20).reverse().map(l=>`
-    <div>
-      <b>${l.action}</b> → ${l.target}
-      <br>
-      <small>${new Date(l.time).toLocaleString()}</small>
-    </div>
-  `).join("");
-}
-
-// 🔥 Hook audit into actions
-async function ban(u){
-  await safeFetch(API+"/admin/ban","POST",{username:u});
-  logAudit("BAN USER", u);
-  loadAdmin();
-}
-
-async function unban(u){
-  await safeFetch(API+"/admin/unban","POST",{username:u});
-  logAudit("UNBAN USER", u);
-  loadAdmin();
-}
-
-async function makeAdmin(u){
-  await safeFetch(API+"/admin/make-admin","POST",{username:u});
-  logAudit("PROMOTE ADMIN", u);
-  loadAdmin();
-}
-
-// ================= AI THREAT DETECTION =================
-function detectThreats(){
-
-  let threats = [];
-
-  linksData.forEach(l=>{
-
-    let score = 0;
-
-    // 🚨 heuristic scoring
-    if(l.clicks > 100) score += 40;
-    if(l.clicks > 500) score += 60;
-
-    if(l.slug.includes("admin")) score += 30;
-
-    if(score > 50){
-      threats.push({
-        slug: l.slug,
-        score
+    async function logAudit(action, target){
+      await safeFetch(API + "/admin/audit","POST",{
+        action,
+        target,
+        time: Date.now(),
+        admin: localStorage.getItem("lastUser") || "admin"
       });
     }
-  });
 
-  aiThreats.innerHTML = threats.map(t=>`
-    <div style="color:#ef4444">
-      ⚠️ ${t.slug} → Threat Score: ${t.score}
-    </div>
-  `).join("") || "<div>No threats detected</div>";
-}
+    function addTerminal(msg) {
+      terminal.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + terminal.innerHTML;
+    }
 
-// ================= AUTO REFRESH =================
-setInterval(()=>{
-  loadEmailAnalytics();
-  loadAuditLogs();
-  detectThreats();
-},3000);
+    async function loadAdmin(){
+      const usersJson = await safeFetch(API + "/admin/users");
+      const linksJson = await safeFetch(API + "/admin/links");
 
-// ================= REALTIME =================
-function trackRealtime(){
-  linksData.forEach(l=>{
-    if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
-      const row = document.querySelector(`[data-slug="${l.slug}"]`);
-      if(row){
-        row.style.background="#065f46";
-        setTimeout(()=>row.style.background="",1500);
+      usersData = usersJson.users || [];
+      linksData = linksJson.items || [];
+
+      renderUsers();
+      renderLinks();
+      renderStats();
+      drawChart();
+      detectThreats();
+      loadEmailAnalytics();
+      loadAuditLogs();
+      trackRealtime();
+      addTerminal("Dashboard refreshed");
+    }
+
+    function renderUsers(){
+      usersEl.innerHTML = "";
+
+      usersData.forEach(u => {
+        usersEl.innerHTML += `
+          <tr>
+            <td>${u.username}</td>
+            <td><span class="badge ${u.banned ? "banned" : "active"}">${u.banned ? "BANNED" : "ACTIVE"}</span></td>
+            <td>${u.role || "user"}</td>
+            <td>${u.requests || 0}</td>
+            <td>
+              <button onclick="openUser('${u.username}')">View</button>
+              <button onclick="viewIP('${u.username}')">IP</button>
+              ${u.banned
+                ? `<button onclick="unban('${u.username}')">Enable</button>`
+                : `<button onclick="ban('${u.username}')">Disable</button>`}
+              <button onclick="makeAdmin('${u.username}')">Admin</button>
+              <button onclick="removeAdmin('${u.username}')">User</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderLinks(){
+      linksEl.innerHTML = "";
+
+      linksData.forEach(l => {
+        const full = `${API}/${l.slug}`;
+
+        linksEl.innerHTML += `
+          <tr data-slug="${l.slug}">
+            <td>${l.user}</td>
+            <td>${l.slug}</td>
+            <td><a href="${full}" target="_blank">${full}</a></td>
+            <td>${l.clicks}</td>
+            <td><span class="badge ${l.paused ? "paused" : "active"}">${l.paused ? "PAUSED" : "ACTIVE"}</span></td>
+            <td>
+              <button onclick="pause('${l.slug}')">Pause</button>
+              <button onclick="resume('${l.slug}')">Resume</button>
+              <button onclick="openAnalytics('${l.slug}')">Analytics</button>
+              <button onclick="delLink('${l.slug}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderStats(){
+      const totalUsers = usersData.length;
+      const totalLinks = linksData.length;
+      const totalClicks = linksData.reduce((a,b)=>a + Number(b.clicks || 0),0);
+
+      stats.innerHTML = `
+        <div>👥 Users: ${totalUsers}</div>
+        <div>🔗 Links: ${totalLinks}</div>
+        <div>📈 Clicks: ${totalClicks}</div>
+      `;
+    }
+
+    async function loadEmailAnalytics(){
+      const res = await safeFetch(API + "/admin/email-logs");
+      const logs = res.logs || [];
+
+      let sent = 0, opened = 0, clicked = 0;
+      logs.forEach(l=>{
+        if(l.type === "sent") sent++;
+        if(l.type === "opened") opened++;
+        if(l.type === "clicked") clicked++;
+      });
+
+      emailStats.innerHTML = `
+        <div>📨 Sent: ${sent}</div>
+        <div>👁️ Opens: ${opened}</div>
+        <div>🔗 Clicks: ${clicked}</div>
+        <div>📈 Open Rate: ${sent ? Math.round((opened/sent)*100) : 0}%</div>
+      `;
+    }
+
+    async function loadAuditLogs(){
+      const res = await safeFetch(API + "/admin/audit");
+      const logs = res.logs || [];
+
+      auditLogs.innerHTML = logs.slice(-20).reverse().map(l => `
+        <div>
+          <b>${l.action}</b> → ${l.target}
+          <br>
+          <small>${new Date(l.time).toLocaleString()}</small>
+        </div>
+      `).join("");
+    }
+
+    function detectThreats(){
+      let threats = [];
+
+      linksData.forEach(l => {
+        let score = 0;
+        if (l.clicks > 100) score += 40;
+        if (l.clicks > 500) score += 60;
+        if ((l.slug || "").includes("admin")) score += 30;
+
+        if (score > 50) {
+          threats.push({ slug: l.slug, score });
+        }
+      });
+
+      aiThreats.innerHTML = threats.map(t => `
+        <div style="color:#ef4444">⚠️ ${t.slug} → Threat Score: ${t.score}</div>
+      `).join("") || "<div>No threats detected</div>";
+
+      threatList.innerHTML = threats.map(t => `
+        <div>⚠️ ${t.slug} (${t.score})</div>
+      `).join("") || "<div>No threat intel</div>";
+
+      attackFeed.innerHTML = threats.map(t => `
+        <div>🚨 ${t.slug} spike detected</div>
+      `).join("") || "<div>No active attacks</div>";
+    }
+
+    function drawChart(){
+      const canvas = document.getElementById("chart");
+      if (!canvas) return;
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(canvas,{
+        type:"bar",
+        data:{
+          labels:linksData.map(i=>i.slug),
+          datasets:[{
+            label:"Clicks",
+            data:linksData.map(i=>i.clicks)
+          }]
+        }
+      });
+    }
+
+    function trackRealtime(){
+      linksData.forEach(l => {
+        if(lastClicks[l.slug] !== undefined && lastClicks[l.slug] !== l.clicks){
+          const row = document.querySelector(`[data-slug="${l.slug}"]`);
+          if(row){
+            row.style.background="#065f46";
+            setTimeout(()=>row.style.background="",1500);
+          }
+        }
+        lastClicks[l.slug] = l.clicks;
+      });
+    }
+
+    async function getGeo(ip){
+      if(!ip || ip==="unknown"){
+        return { country_name:"Unknown", city:"Unknown", latitude:20, longitude:0 };
+      }
+
+      try{
+        const res = await fetch(`https://ipapi.co/${ip}/json/`);
+        const data = await res.json();
+
+        return {
+          country_name: data.country_name || "Unknown",
+          city: data.city || "Unknown",
+          latitude: data.latitude || 20,
+          longitude: data.longitude || 0
+        };
+      } catch {
+        return { country_name:"Error", city:"Lookup failed", latitude:20, longitude:0 };
       }
     }
-    lastClicks[l.slug] = l.clicks;
-  });
-}
 
-// ================= INIT =================
-loadAdmin();
-setInterval(loadAdmin,2000);
-</script>
+    async function openAnalytics(slug){
+      panel.style.display = "block";
+      panelContent.innerHTML = "Loading...";
+
+      const data = await safeFetch(API + "/history?slug=" + encodeURIComponent(slug));
+      const history = data.history || [];
+
+      panelContent.innerHTML = history.map(h => `
+        <div>${h.ip} - ${new Date(h.time).toLocaleString()}</div>
+      `).join("") || "<div>No history</div>";
+
+      if (map) map.remove();
+      map = L.map("map").setView([20, 0], 2);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
+        L.circle([geo.latitude || 20, geo.longitude || 0], {
+          radius: 40000,
+          color: h.risk > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`${geo.country_name}<br>${h.ip}`);
+      }
+    }
+
+    async function openUser(username){
+      const u = usersData.find(x => x.username === username);
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>User Details</h3>
+        <div><b>Email:</b> ${u?.username || username}</div>
+        <div><b>Role:</b> ${u?.role || "user"}</div>
+        <div><b>Status:</b> ${u?.banned ? "Banned" : "Active"}</div>
+        <div><b>Requests:</b> ${u?.requests || 0}</div>
+      `;
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      document.getElementById("map").innerHTML = "";
+    }
+
+    async function viewIP(username){
+      const userLinks = linksData.filter(l => l.user === username);
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>User Links</h3>
+        ${userLinks.map(l => `<div>${l.slug} - ${l.clicks} clicks</div>`).join("") || "<div>No links</div>"}
+      `;
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      document.getElementById("map").innerHTML = "";
+    }
+
+    function closePanel(){
+      panel.style.display = "none";
+      panelContent.innerHTML = "";
+      if(map){
+        map.remove();
+        map = null;
+      }
+      document.getElementById("map").innerHTML = "";
+    }
+
+    async function ban(u){
+      await safeFetch(API + "/admin/ban","POST",{username:u});
+      await logAudit("BAN USER", u);
+      await loadAdmin();
+    }
+
+    async function unban(u){
+      await safeFetch(API + "/admin/unban","POST",{username:u});
+      await logAudit("UNBAN USER", u);
+      await loadAdmin();
+    }
+
+    async function makeAdmin(u){
+      await safeFetch(API + "/admin/make-admin","POST",{username:u});
+      await logAudit("PROMOTE ADMIN", u);
+      await loadAdmin();
+    }
+
+    async function removeAdmin(u){
+      await safeFetch(API + "/admin/remove-admin","POST",{username:u});
+      await logAudit("REMOVE ADMIN", u);
+      await loadAdmin();
+    }
+
+    async function pause(s){
+      await safeFetch(API + "/admin/pause","POST",{slug:s});
+      await logAudit("PAUSE LINK", s);
+      await loadAdmin();
+    }
+
+    async function resume(s){
+      await safeFetch(API + "/admin/resume","POST",{slug:s});
+      await logAudit("RESUME LINK", s);
+      await loadAdmin();
+    }
+
+    async function delLink(s){
+      await safeFetch(API + "/delete","POST",{slug:s});
+      await logAudit("DELETE LINK", s);
+      await loadAdmin();
+    }
+
+    function openCreateUser(){
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>Create User</h3>
+        <input id="newUser" placeholder="Email"><br><br>
+        <input id="newPass" placeholder="Password" type="password"><br><br>
+        <select id="newRole">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select><br><br>
+        <button onclick="createUser()">Create</button>
+      `;
+      document.getElementById("map").innerHTML = "";
+      if (map) {
+        map.remove();
+        map = null;
+      }
+    }
+
+    async function createUser(){
+      const username = document.getElementById("newUser").value.trim();
+      const password = document.getElementById("newPass").value;
+      const role = document.getElementById("newRole").value;
+
+      await safeFetch(API + "/admin/create-user","POST",{username,password,role});
+      await logAudit("CREATE USER", username);
+      await loadAdmin();
+      alert("User created");
+    }
+
+    function logout(){
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    const socket = new WebSocket("wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production");
+
+    socket.onmessage = () => {
+      loadAdmin();
+    };
+
+    loadAdmin();
+    setInterval(loadAdmin, 5000);
+  </script>
 </body>
 </html>
