@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
   <style>
     :root{
       --bg:#020617;
@@ -273,6 +270,17 @@
       min-height:78px;
     }
 
+    .captcha-dev{
+      width:100%;
+      padding:12px;
+      border:1px dashed var(--yellow);
+      border-radius:10px;
+      color:var(--yellow);
+      text-align:center;
+      font-size:12px;
+      background:rgba(245,158,11,.08);
+    }
+
     button{
       width:100%;
       padding:12px 14px;
@@ -417,7 +425,7 @@
         <button class="tab" id="magicTab" type="button" onclick="setMode('magic')">Magic Link</button>
       </div>
 
-      <div class="input-group" id="usernameGroup">
+      <div class="input-group">
         <input id="username" placeholder=" " autocomplete="username email" />
         <label>Email</label>
       </div>
@@ -453,9 +461,7 @@
         <span onclick="goForgot()" class="link">Forgot password?</span>
       </div>
 
-      <div class="captcha-wrap" id="captchaWrap">
-        <div class="g-recaptcha" data-sitekey="6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS"></div>
-      </div>
+      <div class="captcha-wrap" id="captchaWrap"></div>
 
       <button class="primary" id="mainBtn" onclick="handleMainAction()">
         <span id="btnText">Login</span>
@@ -482,7 +488,10 @@
   <script>
     const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // Set false after your reCAPTCHA site key + secret key are correctly paired
+    // You only gave the SECRET key, not the SITE key.
+    // A real frontend captcha cannot work without the SITE key.
+    // So for now this page uses backend-supported bypass mode.
+    const RECAPTCHA_SITE_KEY = "";
     const CAPTCHA_DEV_BYPASS = true;
 
     let mode = "login";
@@ -515,6 +524,9 @@
     const switchBtn = document.getElementById("switchBtn");
     const secondaryBtn = document.getElementById("secondaryBtn");
 
+    let captchaRendered = false;
+    let captchaWidgetId = null;
+
     function toggleTheme() {
       document.body.classList.toggle("light");
       localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
@@ -522,9 +534,7 @@
 
     function loadTheme() {
       const theme = localStorage.getItem("theme");
-      if (theme === "light") {
-        document.body.classList.add("light");
-      }
+      if (theme === "light") document.body.classList.add("light");
     }
 
     function showError(msg = "", success = false) {
@@ -550,6 +560,30 @@
       input.type = input.type === "password" ? "text" : "password";
     }
 
+    function renderCaptchaArea() {
+      if (mode === "magic") {
+        captchaWrap.innerHTML = "";
+        return;
+      }
+
+      if (RECAPTCHA_SITE_KEY) {
+        captchaWrap.innerHTML = '<div id="recaptchaBox"></div>';
+
+        if (window.grecaptcha && !captchaRendered) {
+          captchaWidgetId = grecaptcha.render("recaptchaBox", {
+            sitekey: RECAPTCHA_SITE_KEY
+          });
+          captchaRendered = true;
+        }
+      } else {
+        captchaWrap.innerHTML = `
+          <div class="captcha-dev">
+            CAPTCHA dev bypass is enabled because no frontend site key is configured.
+          </div>
+        `;
+      }
+    }
+
     function setMode(nextMode) {
       mode = nextMode;
 
@@ -562,7 +596,7 @@
       optionsRow.style.display = mode === "login" ? "flex" : "none";
       switchBox.style.display = mode === "magic" ? "none" : "block";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
-      password.parentElement.parentElement.style.display = mode === "magic" ? "none" : "block";
+      passwordArea.style.display = mode === "magic" ? "none" : "block";
       captchaWrap.style.display = mode === "magic" ? "none" : "flex";
 
       if (mode === "login") {
@@ -588,6 +622,7 @@
         helperText.textContent = "Enter your email and we will send you a secure login link.";
       }
 
+      renderCaptchaArea();
       showError("");
     }
 
@@ -596,18 +631,27 @@
     }
 
     function getCaptchaToken() {
-      try {
-        const token = window.grecaptcha ? grecaptcha.getResponse() : "";
-        if (token) return token;
-      } catch (e) {}
+      if (mode === "magic") return "bypass";
 
-      return CAPTCHA_DEV_BYPASS ? "bypass" : "";
+      if (!RECAPTCHA_SITE_KEY) {
+        return CAPTCHA_DEV_BYPASS ? "bypass" : "";
+      }
+
+      try {
+        const token = window.grecaptcha ? grecaptcha.getResponse(captchaWidgetId) : "";
+        return token || "";
+      } catch {
+        return "";
+      }
     }
 
     function resetCaptcha() {
+      if (!RECAPTCHA_SITE_KEY) return;
       try {
-        if (window.grecaptcha) grecaptcha.reset();
-      } catch (e) {}
+        if (window.grecaptcha && captchaWidgetId !== null) {
+          grecaptcha.reset(captchaWidgetId);
+        }
+      } catch {}
     }
 
     function checkStrength() {
@@ -821,7 +865,11 @@
 
         const rawText = await res.text();
         let data = {};
-        try { data = rawText ? JSON.parse(rawText) : {}; } catch { data = { message: rawText }; }
+        try {
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          data = { message: rawText };
+        }
 
         if (!res.ok) {
           showError(data.message || "Failed to send magic link ❌");
@@ -841,13 +889,9 @@
     async function handleMainAction() {
       if (mainBtn.disabled) return;
 
-      if (mode === "login") {
-        await login();
-      } else if (mode === "signup") {
-        await signup();
-      } else {
-        await magicRequest();
-      }
+      if (mode === "login") await login();
+      else if (mode === "signup") await signup();
+      else await magicRequest();
     }
 
     function secondaryAction() {
@@ -874,11 +918,9 @@
       if (e.key === "Enter") handleMainAction();
     });
 
-    if (confirmInput) {
-      confirmInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") handleMainAction();
-      });
-    }
+    confirmInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleMainAction();
+    });
 
     loadTheme();
     loadRememberedUser();
