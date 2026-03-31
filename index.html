@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
   <style>
@@ -58,7 +57,7 @@
 
     .wrapper{
       display:flex;
-      width:860px;
+      width:960px;
       max-width:100%;
       border-radius:18px;
       overflow:hidden;
@@ -69,7 +68,7 @@
 
     .left{
       flex:1;
-      min-height:640px;
+      min-height:700px;
       background:linear-gradient(135deg,#2563eb,#06b6d4);
       color:#fff;
       padding:36px 28px;
@@ -89,7 +88,7 @@
       margin:0;
       opacity:.92;
       line-height:1.6;
-      max-width:280px;
+      max-width:300px;
     }
 
     .features{
@@ -129,12 +128,14 @@
       margin:0 0 18px;
       font-size:12px;
       color:var(--muted);
+      line-height:1.5;
     }
 
     .tabs{
       display:flex;
       gap:8px;
       margin-bottom:18px;
+      flex-wrap:wrap;
     }
 
     .tab{
@@ -146,6 +147,7 @@
       color:var(--text);
       cursor:pointer;
       font-weight:600;
+      min-width:110px;
     }
 
     .tab.active{
@@ -329,10 +331,15 @@
       margin-top:12px;
       min-height:18px;
       text-align:center;
+      line-height:1.5;
     }
 
     .success-text{
       color:var(--green);
+    }
+
+    .warn-text{
+      color:var(--yellow);
     }
 
     .helper{
@@ -340,7 +347,7 @@
       font-size:11px;
       color:var(--muted);
       text-align:center;
-      line-height:1.5;
+      line-height:1.6;
     }
 
     .loading{
@@ -356,6 +363,52 @@
       border-radius:50%;
       animation:spin 1s linear infinite;
       display:none;
+    }
+
+    .status-card{
+      margin-top:14px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,255,255,.04);
+      display:none;
+    }
+
+    .status-card h3{
+      margin:0 0 8px;
+      font-size:14px;
+      color:var(--cyan);
+    }
+
+    .status-card p{
+      margin:0 0 10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .status-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .status-actions button{
+      margin-top:0;
+      flex:1;
+      min-width:120px;
+    }
+
+    .timer{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--yellow);
+      text-align:center;
+      min-height:16px;
+    }
+
+    .hidden{
+      display:none !important;
     }
 
     @keyframes spin{
@@ -387,6 +440,10 @@
       .card{
         padding:22px 18px;
       }
+
+      .status-actions{
+        flex-direction:column;
+      }
     }
   </style>
 </head>
@@ -403,6 +460,7 @@
         <span>📊 Analytics</span>
         <span>🔐 Secure</span>
         <span>🌍 Geo Stats</span>
+        <span>✨ Magic Login</span>
       </div>
     </div>
 
@@ -430,7 +488,7 @@
           <span class="toggle" onclick="togglePass('password')">👁</span>
         </div>
 
-        <div id="confirmWrap" style="display:none;">
+        <div id="confirmWrap" class="hidden">
           <div class="input-group password-box">
             <input id="confirm" type="password" placeholder=" " autocomplete="new-password" />
             <label>Confirm Password</label>
@@ -438,7 +496,7 @@
           </div>
         </div>
 
-        <div id="strengthWrap" style="display:none;">
+        <div id="strengthWrap" class="hidden">
           <div class="strength-bar">
             <div id="strengthFill"></div>
           </div>
@@ -467,6 +525,19 @@
         🔑 Reset Password
       </button>
 
+      <div id="approvalBox" class="status-card">
+        <h3>Login approval required</h3>
+        <p id="approvalText">
+          Check your email and approve this sign-in. This page will keep checking until approval is complete.
+        </p>
+        <div class="status-actions">
+          <button class="secondary" type="button" id="checkStatusBtn" onclick="checkMagicStatus(true)">Check Status</button>
+          <button class="secondary" type="button" onclick="openMagicPage()">Open Magic Page</button>
+          <button class="secondary" type="button" onclick="clearPendingMagic()">Clear Pending</button>
+        </div>
+        <div id="statusTimer" class="timer"></div>
+      </div>
+
       <div class="switch" id="switchBox">
         <span id="switchText">Don't have an account?</span>
         <span id="switchBtn" onclick="toggleLoginSignup()">Sign up</span>
@@ -482,13 +553,14 @@
 
   <script>
     const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-
-    // Replace this with your real SITE key only
     const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
 
     let mode = "login";
     let captchaWidgetId = null;
-    let captchaReady = false;
+    let pendingMagicRequestId = null;
+    let pendingMagicExpiresAt = null;
+    let pollInterval = null;
+    let timerInterval = null;
 
     const card = document.getElementById("card");
     const errorBox = document.getElementById("error");
@@ -519,6 +591,11 @@
     const secondaryBtn = document.getElementById("secondaryBtn");
     const passwordArea = document.getElementById("passwordArea");
 
+    const approvalBox = document.getElementById("approvalBox");
+    const approvalText = document.getElementById("approvalText");
+    const statusTimer = document.getElementById("statusTimer");
+    const checkStatusBtn = document.getElementById("checkStatusBtn");
+
     function toggleTheme() {
       document.body.classList.toggle("light");
       localStorage.setItem(
@@ -532,11 +609,17 @@
       if (theme === "light") document.body.classList.add("light");
     }
 
-    function showError(msg = "", success = false) {
+    function showError(msg = "", type = "error") {
       errorBox.textContent = msg;
-      errorBox.className = success ? "error success-text" : "error";
+      errorBox.className = "error";
 
-      if (msg && !success) {
+      if (type === "success") {
+        errorBox.classList.add("success-text");
+      } else if (type === "warn") {
+        errorBox.classList.add("warn-text");
+      }
+
+      if (msg && type === "error") {
         card.classList.remove("shake");
         void card.offsetWidth;
         card.classList.add("shake");
@@ -548,6 +631,18 @@
       card.classList.toggle("loading", state);
       btnText.style.display = state ? "none" : "inline";
       spinner.style.display = state ? "inline-block" : "none";
+    }
+
+    function setMiniLoading(button, loading) {
+      if (!button) return;
+      if (loading) {
+        button.dataset.originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = "Checking...";
+      } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalText || "Check Status";
+      }
     }
 
     function togglePass(id) {
@@ -566,7 +661,6 @@
         captchaWidgetId = grecaptcha.render("recaptchaBox", {
           sitekey: RECAPTCHA_SITE_KEY
         });
-        captchaReady = true;
       } catch (e) {
         console.error("reCAPTCHA render error:", e);
       }
@@ -593,8 +687,8 @@
       signupTab.classList.toggle("active", mode === "signup");
       magicTab.classList.toggle("active", mode === "magic");
 
-      confirmWrap.style.display = mode === "signup" ? "block" : "none";
-      strengthWrap.style.display = mode === "signup" ? "block" : "none";
+      confirmWrap.classList.toggle("hidden", mode !== "signup");
+      strengthWrap.classList.toggle("hidden", mode !== "signup");
       optionsRow.style.display = mode === "login" ? "flex" : "none";
       switchBox.style.display = mode === "magic" ? "none" : "block";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
@@ -615,13 +709,13 @@
         btnText.textContent = "Create Account";
         switchText.textContent = "Already have an account?";
         switchBtn.textContent = "Login";
-        helperText.textContent = "Create your account with email and password.";
+        helperText.textContent = "Sign up first, then verify your email before your first login.";
         secondaryBtn.textContent = "🔑 Reset Password";
       } else {
         title.textContent = "Magic Link Login";
         subText.textContent = "Passwordless access ✨";
-        btnText.textContent = "Send Magic Link";
-        helperText.textContent = "Enter your email and we will send you a secure login link.";
+        btnText.textContent = "Send Magic Login";
+        helperText.textContent = "We email you a login approval first, then you finish sign-in securely.";
       }
 
       showError("");
@@ -704,6 +798,217 @@
       }
     }
 
+    function getDeviceInfo() {
+      return {
+        ua: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screen: `${screen.width}x${screen.height}`,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
+      };
+    }
+
+    function savePendingMagic(requestId, expiresAt) {
+      pendingMagicRequestId = requestId || null;
+      pendingMagicExpiresAt = expiresAt || null;
+
+      if (requestId) {
+        localStorage.setItem("magicRequestId", requestId);
+      }
+      if (expiresAt) {
+        localStorage.setItem("magicExpiresAt", String(expiresAt));
+      }
+
+      approvalBox.style.display = "block";
+      approvalText.textContent =
+        "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
+      startMagicTimer(expiresAt);
+      startMagicPolling();
+    }
+
+    function clearPendingMagic() {
+      pendingMagicRequestId = null;
+      pendingMagicExpiresAt = null;
+      localStorage.removeItem("magicRequestId");
+      localStorage.removeItem("magicExpiresAt");
+      approvalBox.style.display = "none";
+      statusTimer.textContent = "";
+      stopMagicPolling();
+      stopMagicTimer();
+      showError("Pending login cleared.", "warn");
+    }
+
+    function restorePendingMagic() {
+      const requestId = localStorage.getItem("magicRequestId");
+      const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
+
+      if (requestId) {
+        pendingMagicRequestId = requestId;
+        pendingMagicExpiresAt = expiresAt || null;
+        approvalBox.style.display = "block";
+        startMagicTimer(expiresAt || null);
+        startMagicPolling();
+      }
+    }
+
+    function stopMagicPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    function startMagicPolling() {
+      stopMagicPolling();
+      if (!pendingMagicRequestId) return;
+
+      pollInterval = setInterval(() => {
+        checkMagicStatus(false);
+      }, 3000);
+    }
+
+    function stopMagicTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function startMagicTimer(expiresAt) {
+      stopMagicTimer();
+
+      if (!expiresAt) {
+        statusTimer.textContent = "";
+        return;
+      }
+
+      pendingMagicExpiresAt = Number(expiresAt);
+
+      timerInterval = setInterval(() => {
+        const left = pendingMagicExpiresAt - Date.now();
+        if (left <= 0) {
+          statusTimer.textContent = "⛔ Approval request expired";
+          stopMagicTimer();
+          stopMagicPolling();
+          return;
+        }
+
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        statusTimer.textContent = `⏱ Expires in ${m}:${String(s).padStart(2, "0")}`;
+      }, 1000);
+    }
+
+    async function finishMagicLogin(requestId) {
+      try {
+        const res = await fetch(API + "/magic-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requestId,
+            device: getDeviceInfo()
+          })
+        });
+
+        const data = await safeJson(res);
+
+        if (!res.ok || !data.token) {
+          if (data.status === "pending") {
+            showError("Approval is still pending ⏳", "warn");
+            return;
+          }
+
+          if (data.requiresEmailVerification) {
+            showError("Verify your email first before login ✅", "warn");
+            setTimeout(() => {
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(username.value.trim().toLowerCase());
+            }, 1200);
+            return;
+          }
+
+          showError(data.message || "Could not complete login ❌");
+          return;
+        }
+
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role || "user");
+        localStorage.setItem("lastUser", username.value.trim().toLowerCase());
+        clearPendingMagic();
+        showError("Login successful ✅", "success");
+
+        setTimeout(() => {
+          window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
+        }, 500);
+      } catch (e) {
+        console.error("MAGIC FINISH ERROR:", e);
+        showError("Could not complete login ❌");
+      }
+    }
+
+    async function checkMagicStatus(showFeedback = true) {
+      const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+
+      if (!requestId) {
+        if (showFeedback) showError("No pending approval request found ❌");
+        return;
+      }
+
+      pendingMagicRequestId = requestId;
+      if (showFeedback) setMiniLoading(checkStatusBtn, true);
+
+      try {
+        const res = await fetch(API + "/magic-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestId })
+        });
+
+        const data = await safeJson(res);
+
+        if (!res.ok) {
+          if (showFeedback) showError(data.message || "Could not check status ❌");
+          return;
+        }
+
+        if (data.expiresAt) {
+          localStorage.setItem("magicExpiresAt", String(data.expiresAt));
+          startMagicTimer(data.expiresAt);
+        }
+
+        if (data.status === "approved") {
+          approvalText.textContent = "Login approved. Finishing sign-in now.";
+          showError("Login approved ✅ Finishing sign in...", "success");
+          stopMagicPolling();
+          await finishMagicLogin(requestId);
+          return;
+        }
+
+        if (data.status === "expired") {
+          showError("Approval request expired. Start again ⛔", "warn");
+          clearPendingMagic();
+          return;
+        }
+
+        if (showFeedback) {
+          showError("Still waiting for email approval ⏳", "warn");
+        }
+      } catch (e) {
+        console.error("STATUS ERROR:", e);
+        if (showFeedback) showError("Status check failed ❌");
+      } finally {
+        if (showFeedback) setMiniLoading(checkStatusBtn, false);
+      }
+    }
+
+    function openMagicPage() {
+      const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+      const url = requestId
+        ? `magic-login.html?requestId=${encodeURIComponent(requestId)}`
+        : "magic-login.html";
+
+      window.location.href = url;
+    }
+
     async function login() {
       showError("");
       setLoading(true);
@@ -737,14 +1042,37 @@
           body: JSON.stringify({
             username: user,
             password: pass,
-            captcha
+            captcha,
+            device: getDeviceInfo()
           })
         });
 
         const data = await safeJson(res);
 
-        if (!res.ok || !data.token) {
-          showError(data.message || "Invalid login ❌");
+        if (!res.ok) {
+          if (data.requiresEmailVerification) {
+            showError("Check your email and verify your account first ✅", "warn");
+            setTimeout(() => {
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+            }, 1200);
+          } else {
+            showError(data.message || "Invalid login ❌");
+          }
+          resetCaptcha();
+          setLoading(false);
+          return;
+        }
+
+        if (data.requiresApproval && data.requestId) {
+          savePendingMagic(data.requestId, data.expiresAt);
+          showError("Approval email sent ✅ Please approve this login from your inbox.", "warn");
+          resetCaptcha();
+          setLoading(false);
+          return;
+        }
+
+        if (!data.token) {
+          showError(data.message || "Login failed ❌");
           resetCaptcha();
           setLoading(false);
           return;
@@ -760,7 +1088,7 @@
           localStorage.removeItem("rememberUser");
         }
 
-        showError("Login successful ✅", true);
+        showError("Login successful ✅", "success");
 
         setTimeout(() => {
           window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
@@ -785,6 +1113,12 @@
 
       if (!user) {
         showError("Enter email ❌");
+        setLoading(false);
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+        showError("Enter a valid email ❌");
         setLoading(false);
         return;
       }
@@ -827,14 +1161,18 @@
           return;
         }
 
-        showError("Account created successfully ✅", true);
+        showError(
+          data.message || "Account created ✅ Verify your email before first login.",
+          "success"
+        );
+
         password.value = "";
         confirmInput.value = "";
         checkStrength();
 
         setTimeout(() => {
-          setMode("login");
-        }, 900);
+          window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+        }, 1200);
       } catch (e) {
         console.error("SIGNUP ERROR:", e);
         showError("Signup failed ❌");
@@ -860,30 +1198,69 @@
         const res = await fetch(API + "/magic-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: user })
+          body: JSON.stringify({
+            username: user,
+            device: getDeviceInfo()
+          })
         });
 
-        const rawText = await res.text();
-        let data = {};
-        try {
-          data = rawText ? JSON.parse(rawText) : {};
-        } catch {
-          data = { message: rawText };
-        }
+        const data = await safeJson(res);
 
         if (!res.ok) {
-          showError(data.message || "Failed to send magic link ❌");
+          if (data.requiresEmailVerification) {
+            showError("Verify your email first before magic login ✅", "warn");
+            setTimeout(() => {
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+            }, 1200);
+          } else {
+            showError(data.message || "Failed to send magic login ❌");
+          }
           setLoading(false);
           return;
         }
 
-        showError(data.message || "Magic link sent ✅", true);
+        if (data.requestId) {
+          savePendingMagic(data.requestId, data.expiresAt);
+        }
+
+        showError(data.message || "Magic approval email sent ✅", "success");
       } catch (e) {
         console.error("MAGIC LINK ERROR:", e);
-        showError("Failed to send magic link ❌");
+        showError("Failed to send magic login ❌");
       }
 
       setLoading(false);
+    }
+
+    async function resendVerify() {
+      const user = username.value.trim().toLowerCase();
+
+      if (!user) {
+        showError("Enter your email first ❌");
+        return;
+      }
+
+      showError("Sending verification email... ⏳", "warn");
+
+      try {
+        const res = await fetch(API + "/resend-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: user })
+        });
+
+        const data = await safeJson(res);
+
+        if (!res.ok) {
+          showError(data.message || "Could not resend verification ❌");
+          return;
+        }
+
+        showError(data.message || "Verification email sent ✅", "success");
+      } catch (e) {
+        console.error("RESEND VERIFY ERROR:", e);
+        showError("Could not resend verification ❌");
+      }
     }
 
     async function handleMainAction() {
@@ -895,6 +1272,10 @@
     }
 
     function secondaryAction() {
+      if (mode === "signup") {
+        resendVerify();
+        return;
+      }
       goForgot();
     }
 
@@ -907,6 +1288,21 @@
       if (saved) {
         username.value = saved;
         remember.checked = true;
+      }
+    }
+
+    function maybeRestoreFromParams() {
+      const params = new URLSearchParams(window.location.search);
+      const email = (params.get("email") || "").trim().toLowerCase();
+      const requestId = (params.get("requestId") || "").trim();
+
+      if (email) {
+        username.value = email;
+      }
+
+      if (requestId) {
+        savePendingMagic(requestId, Number(localStorage.getItem("magicExpiresAt") || 0) || null);
+        showError("Resuming pending login approval ⏳", "warn");
       }
     }
 
@@ -926,6 +1322,8 @@
     loadRememberedUser();
     setMode("login");
     waitForCaptchaAndMount();
+    restorePendingMagic();
+    maybeRestoreFromParams();
   </script>
 </body>
 </html>

@@ -1,275 +1,606 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Magic Login - Rattle Link</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Magic Login - Rattle Link</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-body{
-  margin:0;
-  font-family:Inter, Arial;
-  background:radial-gradient(circle at top,#020617,#000);
-  color:#e2e8f0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:radial-gradient(circle at top,#020617,#000);
+      color:#e2e8f0;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+    }
 
-.card{
-  width:380px;
-  background:#020617;
-  padding:28px;
-  border-radius:14px;
-  border:1px solid rgba(0,255,255,0.2);
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.6);
-}
+    .card{
+      width:100%;
+      max-width:420px;
+      background:#020617;
+      padding:28px;
+      border-radius:16px;
+      border:1px solid rgba(0,255,255,0.18);
+      text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+    }
 
-h2{ color:#00ffff; margin-bottom:10px; }
+    h2{
+      color:#00ffff;
+      margin:0 0 10px;
+    }
 
-.sub{
-  font-size:12px;
-  color:#94a3b8;
-  margin-bottom:18px;
-}
+    .sub{
+      font-size:13px;
+      color:#94a3b8;
+      margin-bottom:18px;
+      line-height:1.5;
+    }
 
-input{
-  width:100%;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid rgba(0,255,255,0.2);
-  background:#000;
-  color:#0ff;
-  margin-bottom:12px;
-}
+    input{
+      width:100%;
+      padding:13px 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.2);
+      background:#000;
+      color:#0ff;
+      margin-bottom:12px;
+      outline:none;
+    }
 
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#0ff;
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:6px;
-}
+    input:focus{
+      box-shadow:0 0 0 2px rgba(0,255,255,0.12);
+    }
 
-button:hover{
-  box-shadow:0 0 20px #0ff;
-}
+    button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#0ff;
+      color:#000;
+      font-weight:700;
+      cursor:pointer;
+      margin-top:8px;
+      transition:.2s ease;
+    }
 
-.secondary{
-  background:#020617;
-  color:#0ff;
-  border:1px solid #0ff;
-}
+    button:hover{
+      box-shadow:0 0 20px rgba(0,255,255,.35);
+      transform:translateY(-1px);
+    }
 
-.error{ color:#ef4444; font-size:12px; margin-top:10px; }
-.success{ color:#22c55e; font-size:12px; margin-top:10px; }
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
 
-.spinner{
-  width:14px;
-  height:14px;
-  border:2px solid #000;
-  border-top:2px solid transparent;
-  border-radius:50%;
-  display:inline-block;
-  animation:spin 1s linear infinite;
-  margin-left:6px;
-}
+    .secondary{
+      background:#020617;
+      color:#0ff;
+      border:1px solid #0ff;
+    }
 
-@keyframes spin{ to{ transform:rotate(360deg);} }
+    .muted{
+      font-size:12px;
+      color:#94a3b8;
+      margin-top:14px;
+      line-height:1.5;
+    }
 
-.timer{
-  margin-top:10px;
-  font-size:12px;
-  color:#f59e0b;
-}
+    .error{
+      color:#ef4444;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
 
-.qr{
-  margin-top:12px;
-}
-</style>
+    .success{
+      color:#22c55e;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .warn{
+      color:#f59e0b;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .spinner{
+      width:14px;
+      height:14px;
+      border:2px solid #000;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      margin-left:6px;
+      vertical-align:middle;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    .timer{
+      margin-top:12px;
+      font-size:12px;
+      color:#f59e0b;
+    }
+
+    .qr{
+      margin-top:14px;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .divider{
+      height:1px;
+      background:rgba(148,163,184,.15);
+      margin:18px 0;
+    }
+
+    .small-btn{
+      padding:10px 12px;
+      font-size:13px;
+    }
+  </style>
 </head>
 
 <body>
+  <div class="card">
+    <h2>🔑 Magic Login</h2>
+    <div class="sub">
+      Passwordless secure access with email approval.
+    </div>
 
-<div class="card">
+    <div id="requestSection">
+      <input id="email" type="email" placeholder="Enter your email" autocomplete="email" />
+      <button id="sendBtn" onclick="sendMagic()">Send Magic Login</button>
+      <button class="secondary" onclick="generateQR()">📱 Generate QR</button>
 
-  <h2>🔑 Magic Login</h2>
-  <div class="sub">Passwordless secure access</div>
+      <div id="qr" class="qr"></div>
+      <div class="timer" id="timer"></div>
+    </div>
 
-  <input id="email" placeholder="Enter your email">
+    <div id="statusSection" class="hidden">
+      <div class="sub">
+        We sent a login approval email. Approve it from your inbox, then this page will finish login automatically.
+      </div>
+      <button id="checkBtn" class="secondary small-btn" onclick="checkStatus(true)">Check Status Now</button>
+    </div>
 
-  <button id="btn" onclick="sendMagic()">Send Magic Link</button>
-  <button class="secondary" onclick="generateQR()">📱 QR Login</button>
+    <div id="approveSection" class="hidden">
+      <div class="sub">
+        Approve this login request to continue.
+      </div>
+      <button id="approveBtn" onclick="approveLogin()">Approve Login</button>
+    </div>
 
-  <div id="timer" class="timer"></div>
-  <div id="qr" class="qr"></div>
-  <div id="msg"></div>
+    <div class="divider"></div>
 
-</div>
+    <div id="msg"></div>
+    <div class="muted">
+      First login requires email verification. If your last login was more than 5 hours ago, email approval is required before sign-in.
+    </div>
+  </div>
 
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  <script>
+    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-const emailInput = document.getElementById("email");
-const btn = document.getElementById("btn");
-const msg = document.getElementById("msg");
-const timerEl = document.getElementById("timer");
-const qrBox = document.getElementById("qr");
+    const emailInput = document.getElementById("email");
+    const sendBtn = document.getElementById("sendBtn");
+    const checkBtn = document.getElementById("checkBtn");
+    const approveBtn = document.getElementById("approveBtn");
+    const msg = document.getElementById("msg");
+    const timerEl = document.getElementById("timer");
+    const qrBox = document.getElementById("qr");
 
-let expiryTime = null;
+    const requestSection = document.getElementById("requestSection");
+    const statusSection = document.getElementById("statusSection");
+    const approveSection = document.getElementById("approveSection");
 
-// ================= DEVICE TRACK =================
-function getDeviceInfo(){
-  return {
-    ua: navigator.userAgent,
-    platform: navigator.platform,
-    screen: `${screen.width}x${screen.height}`
-  };
-}
+    let pollInterval = null;
+    let countdownInterval = null;
+    let expiryTime = null;
+    let currentRequestId = null;
+    let currentApproveToken = null;
 
-// ================= MESSAGE =================
-function showMessage(text, type="error"){
-  msg.innerHTML = text;
-  msg.className = type === "success" ? "success" : "error";
-}
-
-// ================= TIMER =================
-function startTimer(minutes = 10){
-  expiryTime = Date.now() + minutes * 60 * 1000;
-
-  const interval = setInterval(()=>{
-    const left = expiryTime - Date.now();
-
-    if(left <= 0){
-      timerEl.innerText = "⛔ Link expired";
-      clearInterval(interval);
-      return;
+    function getParams(){
+      return new URLSearchParams(window.location.search);
     }
 
-    const m = Math.floor(left/60000);
-    const s = Math.floor((left%60000)/1000);
-
-    timerEl.innerText = `⏱ Expires in ${m}:${s.toString().padStart(2,'0')}`;
-  },1000);
-}
-
-// ================= SEND MAGIC =================
-async function sendMagic(){
-
-  const email = emailInput.value.trim().toLowerCase();
-
-  if(!email){
-    return showMessage("Enter email ❌");
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = 'Sending <span class="spinner"></span>';
-
-  try{
-
-    const res = await fetch(API + "/magic-request", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        username: email,
-        device: getDeviceInfo()
-      })
-    });
-
-    const data = await res.json().catch(()=>({}));
-
-    if(!res.ok){
-      showMessage(data.message || "Failed ❌");
-      btn.disabled = false;
-      btn.innerText = "Send Magic Link";
-      return;
+    function getDeviceInfo(){
+      return {
+        ua: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screen: `${screen.width}x${screen.height}`,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
+      };
     }
 
-    showMessage("Magic link sent ✅", "success");
-    startTimer(10);
-
-  }catch(e){
-    console.error(e);
-    showMessage("Server error ❌");
-  }
-
-  btn.disabled = false;
-  btn.innerText = "Send Magic Link";
-}
-
-// ================= QR LOGIN =================
-function generateQR(){
-
-  const email = emailInput.value.trim();
-
-  if(!email){
-    return showMessage("Enter email first ❌");
-  }
-
-  const qrUrl = `${API}/magic-request?username=${encodeURIComponent(email)}`;
-
-  qrBox.innerHTML = `
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}">
-  `;
-}
-
-// ================= AUTO LOGIN =================
-async function autoLogin(){
-
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-
-  if(!token) return;
-
-  showMessage("Logging in... ⏳", "success");
-
-  try{
-
-    const res = await fetch(API + "/magic-login", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ 
-        token,
-        device: getDeviceInfo()
-      })
-    });
-
-    const data = await res.json().catch(()=>({}));
-
-    if(!res.ok || !data.token){
-      showMessage("❌ Invalid or expired link");
-      return;
+    function showMessage(text, type = "error"){
+      msg.innerHTML = text;
+      msg.className = type;
     }
 
-    // 🔐 one-time use UX
-    window.history.replaceState({}, "", "/magic-login.html");
+    function setLoading(button, loadingText){
+      button.disabled = true;
+      button.innerHTML = `${loadingText} <span class="spinner"></span>`;
+    }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.role);
+    function resetButton(button, text){
+      button.disabled = false;
+      button.innerHTML = text;
+    }
 
-    showMessage("Login successful ✅", "success");
+    function startTimerFromExpiry(expiresAt){
+      clearInterval(countdownInterval);
 
-    setTimeout(()=>{
-      window.location.href = data.role === "admin"
-        ? "admin.html"
-        : "dashboard.html";
-    },800);
+      if(!expiresAt){
+        timerEl.innerText = "";
+        return;
+      }
 
-  }catch(e){
-    console.error(e);
-    showMessage("Login failed ❌");
-  }
-}
+      expiryTime = Number(expiresAt);
 
-// ================= INIT =================
-autoLogin();
-</script>
+      countdownInterval = setInterval(() => {
+        const left = expiryTime - Date.now();
 
+        if(left <= 0){
+          clearInterval(countdownInterval);
+          timerEl.innerText = "⛔ Request expired";
+          stopPolling();
+          return;
+        }
+
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        timerEl.innerText = `⏱ Expires in ${m}:${String(s).padStart(2,"0")}`;
+      }, 1000);
+    }
+
+    function stopPolling(){
+      if(pollInterval){
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    function startPolling(){
+      stopPolling();
+      pollInterval = setInterval(() => {
+        checkStatus(false);
+      }, 3000);
+    }
+
+    function saveAuth(data){
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role || "user");
+    }
+
+    function redirectByRole(role){
+      setTimeout(() => {
+        window.location.href = role === "admin" ? "admin.html" : "dashboard.html";
+      }, 800);
+    }
+
+    async function sendMagic(){
+      const email = emailInput.value.trim().toLowerCase();
+
+      if(!email){
+        return showMessage("Enter email ❌", "error");
+      }
+
+      setLoading(sendBtn, "Sending");
+
+      try{
+        const res = await fetch(API + "/magic-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: email,
+            device: getDeviceInfo()
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok){
+          if(data.requiresEmailVerification){
+            showMessage("Your email is not verified yet. Check your inbox and verify first ✅", "warn");
+          } else {
+            showMessage(data.message || "Failed to send magic login ❌", "error");
+          }
+          resetButton(sendBtn, "Send Magic Login");
+          return;
+        }
+
+        currentRequestId = data.requestId || null;
+
+        if(currentRequestId){
+          localStorage.setItem("magicRequestId", currentRequestId);
+        }
+
+        startTimerFromExpiry(data.expiresAt);
+        statusSection.classList.remove("hidden");
+        showMessage("Approval email sent ✅ Check your inbox now.", "success");
+
+        if(currentRequestId){
+          startPolling();
+        }
+
+      } catch (e){
+        console.error(e);
+        showMessage("Server error ❌", "error");
+      }
+
+      resetButton(sendBtn, "Send Magic Login");
+    }
+
+    async function checkStatus(showFeedback = false){
+      const requestId = currentRequestId || localStorage.getItem("magicRequestId");
+
+      if(!requestId){
+        if(showFeedback){
+          showMessage("No pending login request found ❌", "error");
+        }
+        return;
+      }
+
+      currentRequestId = requestId;
+
+      if(showFeedback){
+        setLoading(checkBtn, "Checking");
+      }
+
+      try{
+        const res = await fetch(API + "/magic-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestId })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok){
+          if(showFeedback){
+            showMessage(data.message || "Could not check status ❌", "error");
+          }
+          return;
+        }
+
+        if(data.expiresAt){
+          startTimerFromExpiry(data.expiresAt);
+        }
+
+        if(data.status === "approved"){
+          stopPolling();
+          showMessage("Login approved ✅ Finishing sign in...", "success");
+          await finishMagicLogin(requestId);
+          return;
+        }
+
+        if(data.status === "expired"){
+          stopPolling();
+          localStorage.removeItem("magicRequestId");
+          showMessage("Magic login expired ⛔ Request a new one.", "warn");
+          return;
+        }
+
+        if(showFeedback){
+          showMessage("Still waiting for email approval ⏳", "warn");
+        }
+      } catch (e){
+        console.error(e);
+        if(showFeedback){
+          showMessage("Status check failed ❌", "error");
+        }
+      } finally {
+        if(showFeedback){
+          resetButton(checkBtn, "Check Status Now");
+        }
+      }
+    }
+
+    async function finishMagicLogin(requestId){
+      try{
+        const res = await fetch(API + "/magic-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requestId,
+            device: getDeviceInfo()
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok || !data.token){
+          if(data.requiresEmailVerification){
+            showMessage("Please verify your email before first login ✅", "warn");
+            return;
+          }
+
+          if(data.status === "pending"){
+            showMessage("Approval still pending ⏳", "warn");
+            return;
+          }
+
+          showMessage(data.message || "Login failed ❌", "error");
+          return;
+        }
+
+        localStorage.removeItem("magicRequestId");
+        saveAuth(data);
+
+        showMessage("Login successful ✅", "success");
+
+        window.history.replaceState({}, "", "/magic-login.html");
+        redirectByRole(data.role);
+      } catch (e){
+        console.error(e);
+        showMessage("Login failed ❌", "error");
+      }
+    }
+
+    async function approveLogin(){
+      if(!currentApproveToken){
+        return showMessage("Missing approval token ❌", "error");
+      }
+
+      setLoading(approveBtn, "Approving");
+
+      try{
+        const res = await fetch(API + "/magic-approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: currentApproveToken })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok){
+          showMessage(data.message || "Approval failed ❌", "error");
+          resetButton(approveBtn, "Approve Login");
+          return;
+        }
+
+        if(data.requestId){
+          currentRequestId = data.requestId;
+          localStorage.setItem("magicRequestId", currentRequestId);
+        }
+
+        showMessage("Login approved ✅ You can close this page or wait to continue.", "success");
+        statusSection.classList.remove("hidden");
+        stopPolling();
+        startPolling();
+      } catch (e){
+        console.error(e);
+        showMessage("Approval failed ❌", "error");
+      }
+
+      resetButton(approveBtn, "Approve Login");
+    }
+
+    function generateQR(){
+      const email = emailInput.value.trim().toLowerCase();
+
+      if(!email){
+        return showMessage("Enter email first ❌", "error");
+      }
+
+      const qrUrl = `${window.location.origin}/magic-login.html?email=${encodeURIComponent(email)}`;
+
+      qrBox.innerHTML = `
+        <img
+          alt="QR Code"
+          style="border-radius:12px;border:1px solid rgba(0,255,255,.18);background:#fff;padding:8px;"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}"
+        />
+      `;
+
+      showMessage("QR generated ✅ Scan it to open magic login.", "success");
+    }
+
+    async function handleAutoActions(){
+      const params = getParams();
+
+      const email = (params.get("email") || "").trim().toLowerCase();
+      const requestId = (params.get("requestId") || "").trim();
+      const approve = (params.get("approve") || "").trim();
+      const token = (params.get("token") || "").trim();
+
+      if(email){
+        emailInput.value = email;
+      }
+
+      if(approve){
+        currentApproveToken = approve;
+        approveSection.classList.remove("hidden");
+        showMessage("This page can approve your login request.", "warn");
+
+        if(requestId){
+          currentRequestId = requestId;
+          localStorage.setItem("magicRequestId", requestId);
+        }
+
+        return;
+      }
+
+      if(requestId){
+        currentRequestId = requestId;
+        localStorage.setItem("magicRequestId", requestId);
+        statusSection.classList.remove("hidden");
+        showMessage("Checking login approval status ⏳", "warn");
+        await checkStatus(false);
+        startPolling();
+        return;
+      }
+
+      if(token){
+        showMessage("Finishing magic login... ⏳", "warn");
+        try{
+          const res = await fetch(API + "/magic-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token,
+              device: getDeviceInfo()
+            })
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if(!res.ok || !data.token){
+            if(data.status === "pending"){
+              showMessage("This login is waiting for approval ⏳", "warn");
+              return;
+            }
+
+            if(data.requiresEmailVerification){
+              showMessage("Please verify your email before first login ✅", "warn");
+              return;
+            }
+
+            showMessage(data.message || "Invalid or expired link ❌", "error");
+            return;
+          }
+
+          saveAuth(data);
+          showMessage("Login successful ✅", "success");
+          window.history.replaceState({}, "", "/magic-login.html");
+          redirectByRole(data.role);
+        } catch (e){
+          console.error(e);
+          showMessage("Login failed ❌", "error");
+        }
+        return;
+      }
+
+      const savedRequestId = localStorage.getItem("magicRequestId");
+      if(savedRequestId){
+        currentRequestId = savedRequestId;
+        statusSection.classList.remove("hidden");
+        checkStatus(false);
+        startPolling();
+      }
+    }
+
+    handleAutoActions();
+  </script>
 </body>
 </html>

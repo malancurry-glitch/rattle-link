@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verify Email - Rattle Link</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:radial-gradient(circle at top,#020617,#000);
+      color:#e2e8f0;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:430px;
+      background:#020617;
+      padding:30px;
+      border-radius:16px;
+      border:1px solid rgba(0,255,255,0.18);
+      text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+    }
+
+    h2{
+      color:#00ffff;
+      margin:0 0 10px;
+    }
+
+    .sub{
+      font-size:13px;
+      color:#94a3b8;
+      margin-bottom:18px;
+      line-height:1.6;
+    }
+
+    input{
+      width:100%;
+      padding:13px 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.2);
+      background:#000;
+      color:#0ff;
+      margin-bottom:12px;
+      outline:none;
+    }
+
+    input:focus{
+      box-shadow:0 0 0 2px rgba(0,255,255,0.12);
+    }
+
+    button, a.btn{
+      width:100%;
+      display:block;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#0ff;
+      color:#000;
+      font-weight:700;
+      cursor:pointer;
+      margin-top:8px;
+      text-decoration:none;
+      transition:.2s ease;
+    }
+
+    button:hover, a.btn:hover{
+      box-shadow:0 0 20px rgba(0,255,255,.35);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .secondary{
+      background:#020617;
+      color:#0ff;
+      border:1px solid #0ff;
+    }
+
+    .error{
+      color:#ef4444;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .success{
+      color:#22c55e;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .warn{
+      color:#f59e0b;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
+    }
+
+    .spinner{
+      width:14px;
+      height:14px;
+      border:2px solid #000;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      margin-left:6px;
+      vertical-align:middle;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .divider{
+      height:1px;
+      background:rgba(148,163,184,.15);
+      margin:18px 0;
+    }
+
+    .muted{
+      font-size:12px;
+      color:#94a3b8;
+      margin-top:14px;
+      line-height:1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>✅ Verify Email</h2>
+    <div class="sub">
+      Verify your email before your first login.
+    </div>
+
+    <div id="autoVerifyBox" class="sub">
+      If you opened this page from your email, verification will run automatically.
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="manualSection">
+      <input id="tokenInput" placeholder="Paste verification token" />
+      <button id="verifyBtn" onclick="verifyToken()">Verify Email</button>
+
+      <div class="divider"></div>
+
+      <input id="emailInput" type="email" placeholder="Enter your email to resend verification" />
+      <button id="resendBtn" class="secondary" onclick="resendVerification()">Resend Verification Email</button>
+    </div>
+
+    <a id="loginLink" class="btn hidden" href="index.html">Go to Login</a>
+
+    <div id="msg"></div>
+
+    <div class="muted">
+      After verifying, you can sign in normally or use magic login.
+    </div>
+  </div>
+
+  <script>
+    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    const tokenInput = document.getElementById("tokenInput");
+    const emailInput = document.getElementById("emailInput");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const resendBtn = document.getElementById("resendBtn");
+    const msg = document.getElementById("msg");
+    const loginLink = document.getElementById("loginLink");
+
+    function params(){
+      return new URLSearchParams(window.location.search);
+    }
+
+    function showMessage(text, type = "error"){
+      msg.innerHTML = text;
+      msg.className = type;
+    }
+
+    function setLoading(button, text){
+      button.disabled = true;
+      button.innerHTML = `${text} <span class="spinner"></span>`;
+    }
+
+    function resetButton(button, text){
+      button.disabled = false;
+      button.innerHTML = text;
+    }
+
+    async function verifyToken(tokenFromArg){
+      const token = (tokenFromArg || tokenInput.value || "").trim();
+
+      if(!token){
+        return showMessage("Missing verification token ❌", "error");
+      }
+
+      setLoading(verifyBtn, "Verifying");
+
+      try{
+        const res = await fetch(API + "/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok){
+          showMessage(data.message || "Verification failed ❌", "error");
+          resetButton(verifyBtn, "Verify Email");
+          return;
+        }
+
+        showMessage("Email verified successfully ✅ You can now log in.", "success");
+        loginLink.classList.remove("hidden");
+
+        window.history.replaceState({}, "", "/verify-email.html");
+      } catch (e){
+        console.error(e);
+        showMessage("Server error ❌", "error");
+      }
+
+      resetButton(verifyBtn, "Verify Email");
+    }
+
+    async function resendVerification(){
+      const email = (emailInput.value || "").trim().toLowerCase();
+
+      if(!email){
+        return showMessage("Enter your email first ❌", "error");
+      }
+
+      setLoading(resendBtn, "Sending");
+
+      try{
+        const res = await fetch(API + "/resend-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: email })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok){
+          showMessage(data.message || "Could not resend verification ❌", "error");
+          resetButton(resendBtn, "Resend Verification Email");
+          return;
+        }
+
+        showMessage(data.message || "Verification email sent ✅", "success");
+      } catch (e){
+        console.error(e);
+        showMessage("Server error ❌", "error");
+      }
+
+      resetButton(resendBtn, "Resend Verification Email");
+    }
+
+    async function autoVerify(){
+      const token = (params().get("token") || "").trim();
+      const email = (params().get("email") || "").trim().toLowerCase();
+
+      if(email){
+        emailInput.value = email;
+      }
+
+      if(!token) return;
+
+      tokenInput.value = token;
+      showMessage("Verifying your email... ⏳", "warn");
+      await verifyToken(token);
+    }
+
+    autoVerify();
+  </script>
+</body>
+</html>
