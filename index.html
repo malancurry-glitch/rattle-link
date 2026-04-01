@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
-  <meta name="description" content="Login or sign up for Rattle Link" />
 
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
@@ -19,9 +18,7 @@
       --green:#22c55e;
       --red:#ef4444;
       --yellow:#f59e0b;
-      --blue:#3b82f6;
       --border:rgba(0,255,255,0.2);
-      --shadow:0 20px 60px rgba(0,0,0,.45);
     }
 
     body.light{
@@ -31,15 +28,9 @@
       --text:#0f172a;
       --muted:#64748b;
       --border:rgba(15,23,42,0.12);
-      --shadow:0 18px 50px rgba(15,23,42,.12);
     }
 
     *{ box-sizing:border-box; }
-
-    html, body{
-      width:100%;
-      overflow-x:hidden;
-    }
 
     body{
       margin:0;
@@ -52,25 +43,6 @@
       min-height:100vh;
       padding:20px;
       transition:.25s ease;
-      position:relative;
-    }
-
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background-image:
-        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
-      background-size:40px 40px;
-      pointer-events:none;
-      z-index:0;
-    }
-
-    body.light::before{
-      background-image:
-        linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
     }
 
     .theme-toggle{
@@ -88,11 +60,9 @@
       max-width:100%;
       border-radius:18px;
       overflow:hidden;
-      box-shadow:var(--shadow);
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
       border:1px solid var(--border);
       background:var(--card);
-      position:relative;
-      z-index:1;
     }
 
     .left{
@@ -117,7 +87,7 @@
       margin:0;
       opacity:.92;
       line-height:1.6;
-      max-width:320px;
+      max-width:300px;
     }
 
     .features{
@@ -129,12 +99,11 @@
     }
 
     .features span{
-      border:1px solid rgba(255,255,255,.35);
+      border:1px solid rgba(255,255,255,.4);
       background:rgba(255,255,255,.12);
       padding:6px 10px;
       border-radius:999px;
       font-size:12px;
-      white-space:nowrap;
     }
 
     .card{
@@ -200,7 +169,6 @@
       color:var(--cyan);
       outline:none;
       transition:.2s ease;
-      font-size:14px;
     }
 
     body.light .input-group input{
@@ -316,7 +284,6 @@
       font-weight:700;
       transition:.2s ease;
       margin-top:8px;
-      font-size:14px;
     }
 
     .primary{
@@ -364,7 +331,6 @@
       min-height:18px;
       text-align:center;
       line-height:1.5;
-      white-space:pre-line;
     }
 
     .success-text{
@@ -381,7 +347,6 @@
       color:var(--muted);
       text-align:center;
       line-height:1.6;
-      white-space:pre-line;
     }
 
     .loading{
@@ -446,7 +411,6 @@
       font-size:11px;
       color:var(--muted);
       text-align:center;
-      white-space:pre-line;
     }
 
     .hidden{
@@ -595,7 +559,7 @@
   </div>
 
   <script>
-    // ================= CONFIG =================
+    // ================= HYBRID CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
     const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
@@ -791,7 +755,6 @@
     function checkStrength() {
       const fill = document.getElementById("strengthFill");
       const text = document.getElementById("strength");
-
       if (mode !== "signup") {
         fill.style.width = "0%";
         fill.className = "";
@@ -904,7 +867,6 @@
 
       try {
         const first = await callApi(primary, path, options);
-
         if (first.res.ok) {
           return {
             ok: true,
@@ -952,11 +914,6 @@
       }
     }
 
-    function goToVerifyPage(email) {
-      const safeEmail = encodeURIComponent((email || "").trim().toLowerCase());
-      window.location.href = `verify-email.html?email=${safeEmail}`;
-    }
-
     // ================= MAGIC PENDING STATE =================
     function savePendingMagic(requestId, expiresAt, backend) {
       pendingMagicRequestId = requestId || null;
@@ -971,7 +928,6 @@
       backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
       approvalText.textContent =
         "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
-
       startMagicTimer(expiresAt);
       startMagicPolling();
     }
@@ -1032,7 +988,6 @@
 
     function startMagicTimer(expiresAt) {
       stopMagicTimer();
-
       if (!expiresAt) {
         statusTimer.textContent = "";
         return;
@@ -1042,7 +997,6 @@
 
       timerInterval = setInterval(() => {
         const left = pendingMagicExpiresAt - Date.now();
-
         if (left <= 0) {
           statusTimer.textContent = "⛔ Approval request expired";
           stopMagicTimer();
@@ -1084,7 +1038,7 @@
           if (data.requiresEmailVerification) {
             showError("Verify your email first before login ✅", "warn");
             setTimeout(() => {
-              goToVerifyPage(username.value);
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(username.value.trim().toLowerCase());
             }, 1200);
             return;
           }
@@ -1116,14 +1070,12 @@
 
     async function checkMagicStatus(showFeedback = true) {
       const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
-
       if (!requestId) {
         if (showFeedback) showError("No pending approval request found ❌");
         return;
       }
 
       pendingMagicRequestId = requestId;
-
       if (showFeedback) setMiniLoading(checkStatusBtn, true);
 
       try {
@@ -1182,7 +1134,6 @@
     function openMagicPage() {
       const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
       const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || "primary";
-
       const url = requestId
         ? `magic-login.html?requestId=${encodeURIComponent(requestId)}&backend=${encodeURIComponent(backend)}`
         : "magic-login.html";
@@ -1239,12 +1190,11 @@
           if (data.requiresEmailVerification) {
             showError("Check your email and verify your account first ✅", "warn");
             setTimeout(() => {
-              goToVerifyPage(user);
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
             }, 1200);
           } else {
             showError(data.message || "Invalid login ❌");
           }
-
           resetCaptcha();
           setLoading(false);
           return;
@@ -1363,7 +1313,7 @@
         checkStrength();
 
         setTimeout(() => {
-          goToVerifyPage(user);
+          window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
         }, 1200);
       } catch (e) {
         console.error("SIGNUP ERROR:", e);
@@ -1406,7 +1356,7 @@
           if (data.requiresEmailVerification) {
             showError("Verify your email first before magic login ✅", "warn");
             setTimeout(() => {
-              goToVerifyPage(user);
+              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
             }, 1200);
           } else {
             showError(data.message || "Failed to send magic login ❌");
@@ -1419,10 +1369,7 @@
           savePendingMagic(data.requestId, data.expiresAt, result.backend);
         }
 
-        showError(
-          `${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)} ✅`,
-          "success"
-        );
+        showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)} ✅`, "success");
       } catch (e) {
         console.error("MAGIC LINK ERROR:", e);
         showError("Failed to send magic login ❌");
@@ -1453,16 +1400,12 @@
         );
 
         const data = result.data || {};
-
         if (!result.ok) {
           showError(data.message || "Could not resend verification ❌");
           return;
         }
 
-        showError(
-          `${data.message || "Verification email sent"} via ${backendLabel(result.backend)} ✅`,
-          "success"
-        );
+        showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)} ✅`, "success");
       } catch (e) {
         console.error("RESEND VERIFY ERROR:", e);
         showError("Could not resend verification ❌");
@@ -1517,15 +1460,6 @@
       }
     }
 
-    function autoRedirectIfLoggedIn() {
-      const token = localStorage.getItem("token");
-      const role = localStorage.getItem("role");
-      if (!token) return;
-
-      const target = role === "admin" ? "admin.html" : "dashboard.html";
-      window.location.href = target;
-    }
-
     username.addEventListener("keydown", (e) => {
       if (e.key === "Enter") handleMainAction();
     });
@@ -1539,7 +1473,6 @@
     });
 
     loadTheme();
-    autoRedirectIfLoggedIn();
     loadRememberedUser();
     setMode("login");
     waitForCaptchaAndMount();

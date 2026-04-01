@@ -81,6 +81,7 @@
       display:flex;
       gap:8px;
       flex-wrap:wrap;
+      align-items:center;
     }
 
     .card{
@@ -510,6 +511,7 @@
         <span id="backendBadgeTop" class="backend-badge">Backend</span>
         <button id="refreshBtn" type="button">Refresh</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
+        <a class="btn" href="billing.html">Billing</a>
         <button class="danger-btn" type="button" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -807,6 +809,14 @@
         .replaceAll("'", "&#39;");
     }
 
+    function escapeForJs(str) {
+      return String(str ?? "")
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'")
+        .replaceAll("\n", "\\n")
+        .replaceAll("\r", "");
+    }
+
     function fmtDate(ts) {
       const n = Number(ts || 0);
       if (!n) return "-";
@@ -1023,6 +1033,11 @@
       }
 
       plansState = res.data || {};
+      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+      if (plans.length && !plans.some(p => p.code === selectedPlan)) {
+        selectedPlan = plans[0].code;
+      }
+
       renderPlans();
       renderCryptoOptions();
       if (showMessage) setResult("Plans loaded", false, upgradeResult);
@@ -1074,8 +1089,8 @@
             <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
             <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
             <div style="margin-top:10px;">
-              <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
-              <button type="button" onclick="showPaymentDetails('${escapeHtml(payment.id)}')">Details</button>
+              <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+              <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}')">Details</button>
             </div>
           </div>
         </div>
@@ -1099,8 +1114,8 @@
           <td>${fmtDate(p.createdAt)}</td>
           <td>${fmtDate(p.expiresAt)}</td>
           <td>
-            <button type="button" class="copy" onclick="copyLink('${escapeHtml(p.address)}')">Copy Address</button>
-            <button type="button" class="qr" onclick="showPaymentDetails('${escapeHtml(p.id)}')">View</button>
+            <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
+            <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}')">View</button>
           </td>
         </tr>
       `).join("");
@@ -1176,8 +1191,8 @@
               <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
               <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
               <div style="margin-top:10px;">
-                <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
-                <button type="button" onclick="copyLink('${escapeHtml(payment.id)}')">Copy Payment ID</button>
+                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
               </div>
             </div>
           </div>
@@ -1217,8 +1232,8 @@
               <div class="muted small">Created: ${fmtDate(payment.createdAt)}</div>
               <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
               <div style="margin-top:10px;">
-                <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
-                <button type="button" onclick="copyLink('${escapeHtml(payment.id)}')">Copy Payment ID</button>
+                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
               </div>
             </div>
           </div>
