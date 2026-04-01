@@ -58,7 +58,7 @@
       box-shadow:0 0 0 2px rgba(0,255,255,0.12);
     }
 
-    button{
+    button, a.btn{
       width:100%;
       padding:12px;
       border:none;
@@ -69,9 +69,11 @@
       cursor:pointer;
       margin-top:8px;
       transition:.2s ease;
+      text-decoration:none;
+      display:block;
     }
 
-    button:hover{
+    button:hover, a.btn:hover{
       box-shadow:0 0 20px rgba(0,255,255,.35);
       transform:translateY(-1px);
     }
@@ -190,6 +192,19 @@
       color:#00ffff;
       margin-top:4px;
     }
+
+    .back-link{
+      display:block;
+      margin-top:14px;
+      color:#60a5fa;
+      font-size:12px;
+      text-decoration:none;
+      cursor:pointer;
+    }
+
+    .back-link:hover{
+      text-decoration:underline;
+    }
   </style>
 </head>
 
@@ -202,8 +217,8 @@
 
     <div id="requestSection">
       <input id="email" type="email" placeholder="Enter your email" autocomplete="email" />
-      <button id="sendBtn" onclick="sendMagic()">Send Magic Login</button>
-      <button class="secondary" onclick="generateQR()">📱 Generate QR</button>
+      <button id="sendBtn" type="button" onclick="sendMagic()">Send Magic Login</button>
+      <button class="secondary" type="button" onclick="generateQR()">📱 Generate QR</button>
 
       <div id="qr" class="qr"></div>
       <div class="timer" id="timer"></div>
@@ -217,8 +232,8 @@
         </p>
         <div id="backendBadge" class="backend-badge hidden"></div>
       </div>
-      <button id="checkBtn" class="secondary small-btn" onclick="checkStatus(true)">Check Status Now</button>
-      <button class="secondary small-btn" onclick="clearPending()">Clear Pending</button>
+      <button id="checkBtn" class="secondary small-btn" type="button" onclick="checkStatus(true)">Check Status Now</button>
+      <button class="secondary small-btn" type="button" onclick="clearPending()">Clear Pending</button>
     </div>
 
     <div id="approveSection" class="hidden">
@@ -229,12 +244,15 @@
         </p>
         <div id="approveBackendBadge" class="backend-badge hidden"></div>
       </div>
-      <button id="approveBtn" onclick="approveLogin()">Approve Login</button>
+      <button id="approveBtn" type="button" onclick="approveLogin()">Approve Login</button>
     </div>
 
     <div class="divider"></div>
 
     <div id="msg"></div>
+
+    <a id="backToIndex" class="back-link" href="index.html">← Back to Login</a>
+
     <div class="muted">
       First login requires email verification. If your last login was more than 5 hours ago, email approval is required before sign-in.
     </div>
@@ -253,6 +271,7 @@
     const msg = document.getElementById("msg");
     const timerEl = document.getElementById("timer");
     const qrBox = document.getElementById("qr");
+    const backToIndex = document.getElementById("backToIndex");
 
     const requestSection = document.getElementById("requestSection");
     const statusSection = document.getElementById("statusSection");
@@ -268,9 +287,16 @@
     let currentApproveToken = null;
     let currentBackend = null;
 
-    // ================= GENERAL =================
+    // ================= HELPERS =================
     function normalizeApiUrl(url){
       return String(url || "").replace(/\/+$/, "");
+    }
+
+    function isUsableApiUrl(url){
+      const clean = normalizeApiUrl(url);
+      if(!clean) return false;
+      if(clean.includes("your-backend2-domain.com")) return false;
+      return /^https?:\/\//i.test(clean);
     }
 
     function getParams(){
@@ -302,7 +328,7 @@
     }
 
     function showMessage(text, type = "error"){
-      msg.innerHTML = text;
+      msg.textContent = text;
       msg.className = type;
     }
 
@@ -313,46 +339,110 @@
 
     function resetButton(button, text){
       button.disabled = false;
-      button.innerHTML = text;
+      button.textContent = text;
     }
 
-    async function safeJson(res){
+    function safeText(value){
+      return String(value || "").trim();
+    }
+
+    function isEmail(value){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
+
+    function buildIndexHref(email = "", backend = ""){
+      const query = [];
+      if(email) query.push(`email=${encodeURIComponent(email)}`);
+      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
+      return `index.html${query.length ? `?${query.join("&")}` : ""}`;
+    }
+
+    function updateBackLink(){
+      const email = safeText(emailInput.value).toLowerCase();
+      backToIndex.href = buildIndexHref(email, currentBackend || "");
+    }
+
+    async function safeBody(res){
+      const text = await res.text();
+      if(!text) return {};
       try{
-        return await res.json();
+        return JSON.parse(text);
       }catch{
-        return {};
+        return { message: text };
       }
     }
 
     async function callApi(baseUrl, path, options = {}){
-      const res = await fetch(normalizeApiUrl(baseUrl) + path, options);
-      const data = await safeJson(res);
-      return { res, data };
+      const url = normalizeApiUrl(baseUrl);
+
+      if(!isUsableApiUrl(url)){
+        return {
+          ok: false,
+          status: 0,
+          data: { message: "Backend URL not configured" },
+          networkError: true
+        };
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      try{
+        const res = await fetch(url + path, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const data = await safeBody(res);
+        return {
+          ok: res.ok,
+          status: res.status,
+          data,
+          networkError: false
+        };
+      }catch(error){
+        clearTimeout(timeout);
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Network request failed" },
+          networkError: true
+        };
+      }
     }
 
-    function shouldFallbackToLegacy(path, data, status){
-      if(path === "/magic-request"){
-        if(status >= 500 || status === 404) return true;
+    function shouldFallbackToLegacy(path, result){
+      const status = Number(result?.status || 0);
+      const networkError = !!result?.networkError;
+      const msgText = String(result?.data?.message || "").toLowerCase();
 
-        const msg = String(data?.message || "").toLowerCase();
+      if(networkError) return true;
+      if(status === 404 || status >= 500) return true;
+
+      if(
+        msgText.includes("backend url not configured") ||
+        msgText.includes("network request failed") ||
+        msgText.includes("failed to fetch")
+      ){
+        return true;
+      }
+
+      if(path === "/magic-request"){
         if(
-          msg.includes("invalid email") ||
-          msg.includes("invalid credentials") ||
-          msg.includes("username required") ||
-          msg.includes("user not found")
+          msgText.includes("invalid email") ||
+          msgText.includes("username required") ||
+          msgText.includes("user not found")
         ){
           return true;
         }
       }
 
       if(path === "/magic-status" || path === "/magic-login" || path === "/magic-approve"){
-        if(status >= 500 || status === 404) return true;
-
-        const msg = String(data?.message || "").toLowerCase();
         if(
-          msg.includes("magic request not found") ||
-          msg.includes("invalid magic request") ||
-          msg.includes("invalid approval token")
+          msgText.includes("magic request not found") ||
+          msgText.includes("invalid magic request") ||
+          msgText.includes("invalid approval token")
         ){
           return true;
         }
@@ -366,54 +456,36 @@
       const legacy = normalizeApiUrl(LEGACY_API);
 
       if(behavior === "primaryOnly"){
-        const first = await callApi(primary, path, options);
-        return { ok: first.res.ok, status: first.res.status, data: first.data, backend: "primary" };
+        const result = await callApi(primary, path, options);
+        return { ...result, backend: "primary" };
       }
 
       if(behavior === "legacyOnly"){
-        const only = await callApi(legacy, path, options);
-        return { ok: only.res.ok, status: only.res.status, data: only.data, backend: "legacy" };
+        const result = await callApi(legacy, path, options);
+        return { ...result, backend: "legacy" };
       }
 
-      let firstError = null;
+      const first = await callApi(primary, path, options);
 
-      try{
-        const first = await callApi(primary, path, options);
+      if(first.ok){
+        return { ...first, backend: "primary" };
+      }
 
-        if(first.res.ok){
-          return {
-            ok: true,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
-
-        if(!shouldFallbackToLegacy(path, first.data, first.res.status)){
-          return {
-            ok: false,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
-
-        firstError = first;
-      }catch(error){
-        firstError = { error };
+      if(!shouldFallbackToLegacy(path, first)){
+        return { ...first, backend: "primary" };
       }
 
       const second = await callApi(legacy, path, options);
-      return {
-        ok: second.res.ok,
-        status: second.res.status,
-        data: second.data,
-        backend: "legacy",
-        firstError
-      };
+      return { ...second, backend: "legacy", firstAttempt: first };
     }
 
-    // ================= PERSISTENCE =================
+    function friendlyError(result){
+      const message = safeText(result?.data?.message);
+      if(message) return message;
+      if(result?.networkError) return "Could not reach server";
+      return "Request failed";
+    }
+
     function savePendingState(){
       if(currentRequestId){
         localStorage.setItem("magicRequestId", currentRequestId);
@@ -434,47 +506,25 @@
       }
     }
 
+    function clearStoredPending(){
+      localStorage.removeItem("magicRequestId");
+      localStorage.removeItem("magicBackend");
+      localStorage.removeItem("magicExpiresAt");
+    }
+
     function clearPending(){
       currentRequestId = null;
       currentBackend = null;
       expiryTime = null;
-      localStorage.removeItem("magicRequestId");
-      localStorage.removeItem("magicBackend");
-      localStorage.removeItem("magicExpiresAt");
+      clearStoredPending();
       statusSection.classList.add("hidden");
-      timerEl.innerText = "";
+      timerEl.textContent = "";
       stopPolling();
       clearInterval(countdownInterval);
+      qrBox.innerHTML = "";
       showBackendBadge(backendBadge, null);
       showMessage("Pending request cleared.", "warn");
-    }
-
-    // ================= TIMER / POLL =================
-    function startTimerFromExpiry(expiresAt){
-      clearInterval(countdownInterval);
-
-      if(!expiresAt){
-        timerEl.innerText = "";
-        return;
-      }
-
-      expiryTime = Number(expiresAt);
-      savePendingState();
-
-      countdownInterval = setInterval(() => {
-        const left = expiryTime - Date.now();
-
-        if(left <= 0){
-          clearInterval(countdownInterval);
-          timerEl.innerText = "⛔ Request expired";
-          stopPolling();
-          return;
-        }
-
-        const m = Math.floor(left / 60000);
-        const s = Math.floor((left % 60000) / 1000);
-        timerEl.innerText = `⏱ Expires in ${m}:${String(s).padStart(2,"0")}`;
-      }, 1000);
+      updateBackLink();
     }
 
     function stopPolling(){
@@ -486,12 +536,49 @@
 
     function startPolling(){
       stopPolling();
+      if(!currentRequestId) return;
       pollInterval = setInterval(() => {
         checkStatus(false);
       }, 3000);
     }
 
-    // ================= AUTH =================
+    function stopTimer(){
+      if(countdownInterval){
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    function startTimerFromExpiry(expiresAt){
+      stopTimer();
+
+      if(!expiresAt){
+        timerEl.textContent = "";
+        return;
+      }
+
+      expiryTime = Number(expiresAt);
+      savePendingState();
+
+      const tick = () => {
+        const left = expiryTime - Date.now();
+
+        if(left <= 0){
+          stopTimer();
+          timerEl.textContent = "⛔ Request expired";
+          stopPolling();
+          return;
+        }
+
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        timerEl.textContent = `⏱ Expires in ${m}:${String(s).padStart(2,"0")}`;
+      };
+
+      tick();
+      countdownInterval = setInterval(tick, 1000);
+    }
+
     function saveAuth(data, backend){
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role || "user");
@@ -504,15 +591,26 @@
       }, 800);
     }
 
+    function chooseBehaviorForCurrentBackend(){
+      if(currentBackend === "legacy") return "legacyOnly";
+      if(currentBackend === "primary") return "primaryOnly";
+      return "primaryThenLegacy";
+    }
+
     // ================= ACTIONS =================
     async function sendMagic(){
-      const email = emailInput.value.trim().toLowerCase();
+      const email = safeText(emailInput.value).toLowerCase();
 
       if(!email){
         return showMessage("Enter email ❌", "error");
       }
 
+      if(!isEmail(email)){
+        return showMessage("Enter a valid email ❌", "error");
+      }
+
       setLoading(sendBtn, "Sending");
+      updateBackLink();
 
       try{
         const result = await apiHybrid(
@@ -534,19 +632,20 @@
           if(data.requiresEmailVerification){
             showMessage("Your email is not verified yet. Check your inbox and verify first ✅", "warn");
           } else {
-            showMessage(data.message || "Failed to send magic login ❌", "error");
+            showMessage(friendlyError(result) + " ❌", "error");
           }
           resetButton(sendBtn, "Send Magic Login");
           return;
         }
 
-        currentRequestId = data.requestId || null;
+        currentRequestId = safeText(data.requestId) || null;
         currentBackend = result.backend || "primary";
+        showBackendBadge(backendBadge, currentBackend);
+        updateBackLink();
         savePendingState();
 
         startTimerFromExpiry(data.expiresAt);
         statusSection.classList.remove("hidden");
-        showBackendBadge(backendBadge, currentBackend);
         showMessage(`Approval email sent from ${backendLabel(currentBackend)} ✅ Check your inbox now.`, "success");
 
         if(currentRequestId){
@@ -572,16 +671,15 @@
       }
 
       currentRequestId = requestId;
-      currentBackend = rememberedBackend || "primary";
-      showBackendBadge(backendBadge, currentBackend);
+      currentBackend = rememberedBackend || null;
+      showBackendBadge(backendBadge, currentBackend || "primary");
+      updateBackLink();
 
       if(showFeedback){
         setLoading(checkBtn, "Checking");
       }
 
       try{
-        const behavior = currentBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-
         const result = await apiHybrid(
           "/magic-status",
           {
@@ -589,17 +687,18 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ requestId })
           },
-          behavior
+          chooseBehaviorForCurrentBackend()
         );
 
         const data = result.data || {};
         currentBackend = result.backend || currentBackend || "primary";
         savePendingState();
         showBackendBadge(backendBadge, currentBackend);
+        updateBackLink();
 
         if(!result.ok){
           if(showFeedback){
-            showMessage(data.message || "Could not check status ❌", "error");
+            showMessage(friendlyError(result) + " ❌", "error");
           }
           return;
         }
@@ -617,9 +716,7 @@
 
         if(data.status === "expired"){
           stopPolling();
-          localStorage.removeItem("magicRequestId");
-          localStorage.removeItem("magicBackend");
-          localStorage.removeItem("magicExpiresAt");
+          clearStoredPending();
           showMessage("Magic login expired ⛔ Request a new one.", "warn");
           return;
         }
@@ -641,8 +738,6 @@
 
     async function finishMagicLogin(requestId){
       try{
-        const behavior = currentBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-
         const result = await apiHybrid(
           "/magic-login",
           {
@@ -653,7 +748,7 @@
               device: getDeviceInfo()
             })
           },
-          behavior
+          chooseBehaviorForCurrentBackend()
         );
 
         const data = result.data || {};
@@ -669,17 +764,13 @@
             return;
           }
 
-          showMessage(data.message || "Login failed ❌", "error");
+          showMessage(friendlyError(result) + " ❌", "error");
           return;
         }
 
-        localStorage.removeItem("magicRequestId");
-        localStorage.removeItem("magicBackend");
-        localStorage.removeItem("magicExpiresAt");
+        clearStoredPending();
         saveAuth(data, result.backend || currentBackend);
-
         showMessage(`Login successful via ${backendLabel(result.backend || currentBackend)} ✅`, "success");
-
         window.history.replaceState({}, "", "/magic-login.html");
         redirectByRole(data.role);
       }catch(e){
@@ -696,8 +787,6 @@
       setLoading(approveBtn, "Approving");
 
       try{
-        const behavior = currentBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-
         const result = await apiHybrid(
           "/magic-approve",
           {
@@ -705,21 +794,22 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: currentApproveToken })
           },
-          behavior
+          chooseBehaviorForCurrentBackend()
         );
 
         const data = result.data || {};
         currentBackend = result.backend || currentBackend || "primary";
         showBackendBadge(approveBackendBadge, currentBackend);
+        updateBackLink();
 
         if(!result.ok){
-          showMessage(data.message || "Approval failed ❌", "error");
+          showMessage(friendlyError(result) + " ❌", "error");
           resetButton(approveBtn, "Approve Login");
           return;
         }
 
         if(data.requestId){
-          currentRequestId = data.requestId;
+          currentRequestId = safeText(data.requestId);
           savePendingState();
         }
 
@@ -737,13 +827,22 @@
     }
 
     function generateQR(){
-      const email = emailInput.value.trim().toLowerCase();
+      const email = safeText(emailInput.value).toLowerCase();
 
       if(!email){
         return showMessage("Enter email first ❌", "error");
       }
 
-      const qrUrl = `${window.location.origin}/magic-login.html?email=${encodeURIComponent(email)}`;
+      if(!isEmail(email)){
+        return showMessage("Enter a valid email ❌", "error");
+      }
+
+      const query = [`email=${encodeURIComponent(email)}`];
+      if(currentBackend){
+        query.push(`backend=${encodeURIComponent(currentBackend)}`);
+      }
+
+      const qrUrl = `${window.location.origin}/magic-login.html?${query.join("&")}`;
 
       qrBox.innerHTML = `
         <img
@@ -760,19 +859,21 @@
     async function handleAutoActions(){
       const params = getParams();
 
-      const email = (params.get("email") || "").trim().toLowerCase();
-      const requestId = (params.get("requestId") || "").trim();
-      const approve = (params.get("approve") || "").trim();
-      const token = (params.get("token") || "").trim();
-      const backend = (params.get("backend") || "").trim();
+      const email = safeText(params.get("email")).toLowerCase();
+      const requestId = safeText(params.get("requestId"));
+      const approve = safeText(params.get("approve"));
+      const token = safeText(params.get("token"));
+      const backend = safeText(params.get("backend")).toLowerCase();
 
       if(email){
         emailInput.value = email;
       }
 
-      if(backend){
-        currentBackend = backend === "legacy" ? "legacy" : "primary";
+      if(backend === "legacy" || backend === "primary"){
+        currentBackend = backend;
       }
+
+      updateBackLink();
 
       if(approve){
         currentApproveToken = approve;
@@ -803,8 +904,6 @@
         showMessage("Finishing magic login... ⏳", "warn");
 
         try{
-          const behavior = currentBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-
           const result = await apiHybrid(
             "/magic-login",
             {
@@ -815,7 +914,7 @@
                 device: getDeviceInfo()
               })
             },
-            behavior
+            chooseBehaviorForCurrentBackend()
           );
 
           const data = result.data || {};
@@ -831,7 +930,7 @@
               return;
             }
 
-            showMessage(data.message || "Invalid or expired link ❌", "error");
+            showMessage(friendlyError(result) + " ❌", "error");
             return;
           }
 
@@ -854,6 +953,8 @@
         currentBackend = savedBackend;
       }
 
+      updateBackLink();
+
       if(savedRequestId){
         currentRequestId = savedRequestId;
         statusSection.classList.remove("hidden");
@@ -863,10 +964,16 @@
           startTimerFromExpiry(Number(savedExpiresAt));
         }
 
-        checkStatus(false);
+        await checkStatus(false);
         startPolling();
       }
     }
+
+    emailInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        sendMagic();
+      }
+    });
 
     handleAutoActions();
   </script>
