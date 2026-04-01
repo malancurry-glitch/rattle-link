@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Rattle Link</title>
 
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
 
   <style>
     :root{
@@ -562,11 +562,18 @@
     // ================= HYBRID CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    // IMPORTANT:
+    // Put the real site key that matches the secret in your backends
     const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
+
+    // If you want to test without captcha temporarily, set this to false
+    const CAPTCHA_ENABLED = true;
 
     // ================= STATE =================
     let mode = "login";
     let captchaWidgetId = null;
+    let captchaReady = false;
     let pendingMagicRequestId = null;
     let pendingMagicExpiresAt = null;
     let pendingMagicBackend = null;
@@ -660,24 +667,33 @@
       input.type = input.type === "password" ? "text" : "password";
     }
 
+    function shouldUseCaptcha() {
+      return CAPTCHA_ENABLED && mode !== "magic";
+    }
+
     function mountCaptcha() {
-      if (!RECAPTCHA_SITE_KEY || !window.grecaptcha) return;
+      if (!shouldUseCaptcha()) return;
+      if (!RECAPTCHA_SITE_KEY || RECAPTCHA_SITE_KEY.includes("PUT_YOUR_REAL")) return;
+      if (!window.grecaptcha || typeof window.grecaptcha.render !== "function") return;
       if (captchaWidgetId !== null) return;
 
       try {
-        captchaWidgetId = grecaptcha.render("recaptchaBox", {
+        captchaWidgetId = window.grecaptcha.render("recaptchaBox", {
           sitekey: RECAPTCHA_SITE_KEY
         });
+        captchaReady = true;
       } catch (e) {
         console.error("reCAPTCHA render error:", e);
       }
     }
 
     function waitForCaptchaAndMount() {
+      if (!shouldUseCaptcha()) return;
       let tries = 0;
+
       const timer = setInterval(() => {
         tries++;
-        if (window.grecaptcha && typeof grecaptcha.render === "function") {
+        if (window.grecaptcha && typeof window.grecaptcha.render === "function") {
           clearInterval(timer);
           mountCaptcha();
         }
@@ -698,7 +714,7 @@
       switchBox.style.display = mode === "magic" ? "none" : "block";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
       passwordArea.style.display = mode === "magic" ? "none" : "block";
-      captchaWrap.style.display = mode === "magic" ? "none" : "flex";
+      captchaWrap.style.display = shouldUseCaptcha() ? "flex" : "none";
 
       if (mode === "login") {
         title.textContent = "Login";
@@ -723,6 +739,10 @@
         helperText.textContent = "Magic login tries Backend 2 first, then legacy AWS if needed.";
       }
 
+      if (shouldUseCaptcha()) {
+        waitForCaptchaAndMount();
+      }
+
       showError("");
     }
 
@@ -731,22 +751,22 @@
     }
 
     function getCaptchaToken() {
-      if (mode === "magic") return "bypass";
-      if (!RECAPTCHA_SITE_KEY) return "";
-      if (!window.grecaptcha || captchaWidgetId === null) return "";
+      if (!shouldUseCaptcha()) return null;
+      if (!RECAPTCHA_SITE_KEY || RECAPTCHA_SITE_KEY.includes("PUT_YOUR_REAL")) return "";
+      if (!window.grecaptcha || captchaWidgetId === null || !captchaReady) return "";
 
       try {
-        return grecaptcha.getResponse(captchaWidgetId) || "";
+        return window.grecaptcha.getResponse(captchaWidgetId) || "";
       } catch {
         return "";
       }
     }
 
     function resetCaptcha() {
-      if (mode === "magic") return;
+      if (!shouldUseCaptcha()) return;
       if (!window.grecaptcha || captchaWidgetId === null) return;
       try {
-        grecaptcha.reset(captchaWidgetId);
+        window.grecaptcha.reset(captchaWidgetId);
       } catch (e) {
         console.error("reCAPTCHA reset error:", e);
       }
@@ -914,6 +934,20 @@
       }
     }
 
+    function buildAuthPayload(user, pass, captchaToken) {
+      const payload = {
+        username: user,
+        password: pass,
+        device: getDeviceInfo()
+      };
+
+      if (shouldUseCaptcha()) {
+        payload.captcha = captchaToken;
+      }
+
+      return payload;
+    }
+
     // ================= MAGIC PENDING STATE =================
     function savePendingMagic(requestId, expiresAt, backend) {
       pendingMagicRequestId = requestId || null;
@@ -995,7 +1029,7 @@
 
       pendingMagicExpiresAt = Number(expiresAt);
 
-      timerInterval = setInterval(() => {
+      const tick = () => {
         const left = pendingMagicExpiresAt - Date.now();
         if (left <= 0) {
           statusTimer.textContent = "⛔ Approval request expired";
@@ -1007,7 +1041,10 @@
         const m = Math.floor(left / 60000);
         const s = Math.floor((left % 60000) / 1000);
         statusTimer.textContent = `⏱ Expires in ${m}:${String(s).padStart(2, "0")}`;
-      }, 1000);
+      };
+
+      tick();
+      timerInterval = setInterval(tick, 1000);
     }
 
     async function finishMagicLogin(requestId) {
@@ -1148,7 +1185,7 @@
 
       const user = username.value.trim().toLowerCase();
       const pass = password.value;
-      const captcha = getCaptchaToken();
+      const captchaToken = getCaptchaToken();
 
       if (!user) {
         showError("Enter email ❌");
@@ -1162,7 +1199,7 @@
         return;
       }
 
-      if (!captcha) {
+      if (shouldUseCaptcha() && !captchaToken) {
         showError("Complete CAPTCHA ❌");
         setLoading(false);
         return;
@@ -1174,12 +1211,7 @@
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: user,
-              password: pass,
-              captcha,
-              device: getDeviceInfo()
-            })
+            body: JSON.stringify(buildAuthPayload(user, pass, captchaToken))
           },
           "primaryThenLegacy"
         );
@@ -1247,7 +1279,7 @@
       const user = username.value.trim().toLowerCase();
       const pass = password.value;
       const confirm = confirmInput.value;
-      const captcha = getCaptchaToken();
+      const captchaToken = getCaptchaToken();
 
       if (!user) {
         showError("Enter email ❌");
@@ -1273,23 +1305,25 @@
         return;
       }
 
-      if (!captcha) {
+      if (shouldUseCaptcha() && !captchaToken) {
         showError("Complete CAPTCHA ❌");
         setLoading(false);
         return;
       }
 
       try {
+        const payload = {
+          username: user,
+          password: pass
+        };
+        if (shouldUseCaptcha()) payload.captcha = captchaToken;
+
         const result = await apiHybrid(
           "/signup",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: user,
-              password: pass,
-              captcha
-            })
+            body: JSON.stringify(payload)
           },
           "primaryOnly"
         );
