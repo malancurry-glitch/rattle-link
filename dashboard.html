@@ -13,16 +13,16 @@
     :root{
       --bg:#020617;
       --bg2:#000000;
-      --card:rgba(2,6,23,0.82);
+      --card:rgba(2,6,23,0.84);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
       --blue:#3b82f6;
       --green:#22c55e;
       --red:#ef4444;
+      --yellow:#f59e0b;
       --purple:#a855f7;
       --border:rgba(0,255,255,0.18);
-      --yellow:#f59e0b;
     }
 
     *{ box-sizing:border-box; }
@@ -41,23 +41,9 @@
       position:fixed;
       inset:0;
       background-image:
-        linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
-      background-size:40px 40px;
-      pointer-events:none;
-      z-index:0;
-    }
-
-    body::after{
-      content:"";
-      position:fixed;
-      inset:0;
-      background:repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent 2px,
-        rgba(0,255,255,0.03) 3px
-      );
+        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+      background-size:38px 38px;
       pointer-events:none;
       z-index:0;
     }
@@ -65,9 +51,9 @@
     .container{
       position:relative;
       z-index:1;
-      padding:20px;
-      max-width:1400px;
+      max-width:1450px;
       margin:0 auto;
+      padding:20px;
     }
 
     .header{
@@ -75,44 +61,49 @@
       justify-content:space-between;
       align-items:flex-start;
       gap:16px;
-      margin-bottom:20px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
     }
 
     .header h2{
       margin:0 0 6px;
       color:var(--cyan);
-      text-shadow:0 0 10px var(--cyan);
+      text-shadow:0 0 10px rgba(0,255,255,0.5);
     }
 
     .sub{
       color:var(--muted);
       font-size:12px;
+      line-height:1.6;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
 
     .card{
       background:var(--card);
       border:1px solid var(--border);
       backdrop-filter:blur(12px);
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.12),
-        inset 0 0 20px rgba(0,255,255,0.04);
-      border-radius:14px;
+      border-radius:16px;
       padding:16px;
       margin-bottom:18px;
-      transition:.25s ease;
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.10),
+        inset 0 0 15px rgba(0,255,255,0.03);
     }
 
-    .card:hover{
-      box-shadow:
-        0 0 20px rgba(0,255,255,0.35),
-        0 0 40px rgba(139,92,246,0.15);
-      transform:translateY(-2px);
+    .card h3{
+      margin:0 0 12px;
+      color:var(--cyan);
     }
 
     .grid{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:15px;
+      gap:14px;
     }
 
     .stat-card{
@@ -131,19 +122,26 @@
       font-size:13px;
     }
 
+    .two-col{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
+    }
+
+    .three-col{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
+    }
+
     .form-row{
       display:flex;
       gap:10px;
-      margin-bottom:10px;
       flex-wrap:wrap;
+      margin-bottom:10px;
     }
 
-    .form-row input{
-      flex:1;
-      min-width:180px;
-    }
-
-    input{
+    input, select{
       width:100%;
       padding:12px;
       border-radius:10px;
@@ -157,35 +155,35 @@
       color:var(--muted);
     }
 
-    input:focus{
-      box-shadow:0 0 10px var(--cyan);
+    input:focus, select:focus{
+      box-shadow:0 0 10px rgba(0,255,255,0.4);
     }
 
-    button{
-      padding:10px 14px;
+    button, .btn{
+      padding:11px 14px;
       border:none;
       border-radius:10px;
       cursor:pointer;
-      margin:2px;
       font-size:12px;
       background:#020617;
       color:var(--cyan);
       border:1px solid rgba(0,255,255,0.28);
       transition:.2s ease;
+      text-decoration:none;
+      display:inline-block;
     }
 
-    button:hover{
+    button:hover, .btn:hover{
       color:#fff;
       border-color:var(--cyan);
       box-shadow:
-        0 0 10px var(--cyan),
-        0 0 20px var(--cyan),
-        0 0 35px rgba(0,255,255,0.35);
-      transform:scale(1.04);
+        0 0 10px rgba(0,255,255,0.4),
+        0 0 24px rgba(0,255,255,0.15);
+      transform:translateY(-1px);
     }
 
     button:disabled{
-      opacity:.5;
+      opacity:.55;
       cursor:not-allowed;
       transform:none;
       box-shadow:none;
@@ -197,39 +195,78 @@
       border-color:var(--blue);
     }
 
-    .copy{ color:var(--green); border-color:var(--green); }
-    .copy:hover{ box-shadow:0 0 15px var(--green); }
+    .success-btn{
+      background:var(--green);
+      color:#000;
+      border-color:var(--green);
+    }
 
-    .open{ color:var(--blue); border-color:var(--blue); }
-    .open:hover{ box-shadow:0 0 15px var(--blue); }
-
-    .qr{ color:#06b6d4; border-color:#06b6d4; }
-    .qr:hover{ box-shadow:0 0 15px #06b6d4; }
-
-    .delete{ color:var(--red); border-color:var(--red); }
-    .delete:hover{ box-shadow:0 0 15px var(--red); }
-
-    .bulk{ color:var(--purple); border-color:var(--purple); }
-    .bulk:hover{ box-shadow:0 0 15px var(--purple); }
-
-    .logout-btn{
+    .danger-btn{
       background:var(--red);
       color:#fff;
       border-color:var(--red);
     }
 
-    .links-header{
+    .warn-btn{
+      background:var(--yellow);
+      color:#000;
+      border-color:var(--yellow);
+    }
+
+    .purple-btn{
+      background:var(--purple);
+      color:#fff;
+      border-color:var(--purple);
+    }
+
+    .copy{ color:var(--green); border-color:var(--green); }
+    .open{ color:var(--blue); border-color:var(--blue); }
+    .qr{ color:#06b6d4; border-color:#06b6d4; }
+    .delete{ color:var(--red); border-color:var(--red); }
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+    }
+
+    .live{ color:var(--green); }
+    .paused{ color:var(--yellow); }
+    .expired{ color:var(--red); }
+    .trial{ color:var(--cyan); }
+    .pending{ color:var(--yellow); }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .small{
+      font-size:12px;
+    }
+
+    .result{
+      margin-top:10px;
+      font-size:13px;
+      min-height:20px;
+      line-height:1.5;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+    .warn{ color:var(--yellow); }
+
+    .links-header,
+    .section-head{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:12px;
-      margin-bottom:10px;
+      gap:10px;
       flex-wrap:wrap;
-    }
-
-    .links-header input{
-      width:260px;
-      max-width:100%;
+      margin-bottom:10px;
     }
 
     .table-wrap{
@@ -240,7 +277,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:950px;
+      min-width:980px;
     }
 
     th, td{
@@ -258,36 +295,59 @@
 
     tr:hover{
       background:#020617;
-      box-shadow:inset 0 0 10px rgba(0,255,255,0.15);
     }
 
-    .badge{
-      background:#020617;
-      border:1px solid var(--cyan);
-      color:var(--cyan);
-      box-shadow:0 0 10px var(--cyan);
+    .pill{
+      display:inline-block;
       padding:4px 8px;
       border-radius:999px;
       font-size:11px;
-      display:inline-block;
+      border:1px solid currentColor;
+      margin-right:6px;
+      margin-bottom:4px;
     }
 
-    .muted{
-      color:var(--muted);
-      font-size:12px;
+    .plan-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+      margin-top:8px;
     }
 
-    .result{
-      margin-top:10px;
-      font-size:13px;
-      color:var(--green);
-      word-break:break-word;
-      min-height:20px;
+    .plan-card{
+      border:1px solid rgba(0,255,255,0.16);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .plan-card:hover{
+      border-color:var(--cyan);
+      box-shadow:0 0 16px rgba(0,255,255,0.12);
+    }
+
+    .plan-card.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 16px rgba(0,255,255,0.22);
+      background:rgba(0,255,255,0.05);
+    }
+
+    .plan-card h4{
+      margin:0 0 8px;
+      color:var(--cyan);
+    }
+
+    .plan-price{
+      font-size:26px;
+      font-weight:700;
+      margin-bottom:6px;
     }
 
     .drop-zone{
-      border:2px dashed rgba(0,255,255,0.25);
-      padding:15px;
+      border:2px dashed rgba(0,255,255,0.24);
+      padding:14px;
       text-align:center;
       margin-top:10px;
       border-radius:12px;
@@ -296,37 +356,24 @@
 
     .drop-zone.dragover{
       background:#020617;
-      box-shadow:0 0 15px var(--cyan) inset;
       border-color:var(--cyan);
-    }
-
-    .drop-zone input[type="file"]{
-      background:transparent;
-      border:none;
-      color:var(--muted);
-      margin:10px auto;
-      display:block;
+      box-shadow:0 0 15px rgba(0,255,255,0.2) inset;
     }
 
     .panel{
       position:fixed;
       right:0;
       top:0;
-      width:420px;
+      width:430px;
       max-width:100%;
       height:100%;
       background:#000;
       border-left:1px solid rgba(0,255,255,0.3);
-      box-shadow:-10px 0 40px rgba(0,255,255,0.22);
+      box-shadow:-10px 0 40px rgba(0,255,255,0.18);
       padding:20px;
       display:none;
       overflow:auto;
       z-index:1000;
-    }
-
-    .panel h3, .panel h4{
-      color:var(--cyan);
-      margin-top:0;
     }
 
     .toast{
@@ -335,12 +382,44 @@
       right:20px;
       background:var(--cyan);
       color:#000;
-      box-shadow:0 0 15px var(--cyan);
       padding:12px 14px;
       border-radius:10px;
       display:none;
       z-index:2000;
-      font-weight:600;
+      font-weight:700;
+      box-shadow:0 0 15px rgba(0,255,255,0.4);
+    }
+
+    .payment-box{
+      display:grid;
+      grid-template-columns:220px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+
+    .payment-qr{
+      background:#fff;
+      border-radius:12px;
+      padding:10px;
+      width:100%;
+      max-width:220px;
+    }
+
+    .payment-qr img{
+      width:100%;
+      display:block;
+      border-radius:8px;
+    }
+
+    .address-box{
+      word-break:break-all;
+      background:#000;
+      border:1px solid rgba(0,255,255,0.2);
+      border-radius:12px;
+      padding:12px;
+      margin:8px 0;
+      color:var(--cyan);
+      font-size:13px;
     }
 
     .ranking-item{
@@ -351,58 +430,68 @@
       border:1px solid rgba(0,255,255,0.12);
     }
 
-    .danger{
-      color:var(--red);
-    }
-
-    .success{
-      color:var(--green);
-    }
-
-    .warn{
-      color:var(--yellow);
-    }
-
-    .pill{
+    .backend-badge{
       display:inline-block;
-      padding:3px 8px;
+      padding:5px 10px;
       border-radius:999px;
       font-size:11px;
-      margin-right:6px;
-      border:1px solid currentColor;
+      border:1px solid rgba(0,255,255,0.25);
+      color:var(--cyan);
     }
 
-    .status-paused{
-      color:var(--yellow);
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.65);
+      display:none;
+      z-index:999;
     }
 
-    .status-live{
-      color:var(--green);
+    .upgrade-modal{
+      position:fixed;
+      inset:50% auto auto 50%;
+      transform:translate(-50%,-50%);
+      width:min(760px,92vw);
+      max-height:88vh;
+      overflow:auto;
+      background:#000;
+      border:1px solid rgba(0,255,255,0.28);
+      border-radius:18px;
+      padding:18px;
+      display:none;
+      z-index:1001;
+      box-shadow:0 0 40px rgba(0,255,255,0.18);
     }
 
-    .status-expired{
-      color:var(--red);
+    .upgrade-modal h3{
+      margin-top:0;
+      color:var(--cyan);
     }
 
-    .small-actions button{
-      margin-top:6px;
+    .notice{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(245,158,11,0.08);
+      border:1px solid rgba(245,158,11,0.25);
+      color:#fcd34d;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
     }
 
     canvas{
       max-width:100%;
-      filter:
-        drop-shadow(0 0 10px #0ff)
-        drop-shadow(0 0 20px rgba(139,92,246,0.3));
     }
 
-    @media (max-width: 900px){
-      .header{
-        flex-direction:column;
-        align-items:stretch;
+    @media (max-width: 980px){
+      .two-col,
+      .three-col,
+      .payment-box{
+        grid-template-columns:1fr;
       }
 
-      .panel{
-        width:100%;
+      .payment-qr{
+        max-width:260px;
       }
     }
   </style>
@@ -411,12 +500,17 @@
   <div class="container">
     <div class="header">
       <div>
-        <h2>📊 User Dashboard</h2>
-        <small class="sub">Manage links • Track performance • Analyze traffic</small>
+        <h2>📊 Rattle Link Dashboard</h2>
+        <div class="sub">
+          Manage links • Track traffic • Monitor trial/subscription • Create crypto payment requests
+        </div>
       </div>
-      <div>
-        <button id="refreshBtn" onclick="refreshNow()">Refresh</button>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+
+      <div class="top-actions">
+        <span id="backendBadgeTop" class="backend-badge">Backend</span>
+        <button id="refreshBtn" type="button">Refresh</button>
+        <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
+        <button class="danger-btn" type="button" onclick="logout()">Logout</button>
       </div>
     </div>
 
@@ -433,6 +527,55 @@
         <h3 id="avgClicks">0</h3>
         <p>Avg Clicks</p>
       </div>
+      <div class="card stat-card">
+        <h3 id="trialRemaining">0</h3>
+        <p>Trial Links Remaining</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="section-head">
+          <h3>👤 Account Access</h3>
+          <span id="subscriptionBadge" class="badge trial">Trial</span>
+        </div>
+
+        <div class="three-col">
+          <div>
+            <div class="muted">Email</div>
+            <div id="meEmail">-</div>
+          </div>
+          <div>
+            <div class="muted">Plan</div>
+            <div id="mePlan">Free Trial</div>
+          </div>
+          <div>
+            <div class="muted">Expires</div>
+            <div id="meExpire">-</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="muted">Access Summary</div>
+          <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
+          <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h3>💳 Latest Payment Request</h3>
+          <button type="button" onclick="loadPayments(true)">Reload</button>
+        </div>
+
+        <div id="latestPaymentBox" class="muted">
+          No payment request yet.
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -445,27 +588,27 @@
 
       <div class="form-row">
         <input id="expire" type="number" min="1" placeholder="Expire in hours" />
-        <button id="createBtn" class="primary" onclick="createLink()">Create</button>
+        <button id="createBtn" class="primary" type="button">Create Link</button>
       </div>
 
       <div class="form-row">
         <input id="bulkCount" type="number" min="1" placeholder="Bulk count" />
-        <button id="bulkBtn" class="bulk" onclick="bulkCreate()">Bulk Create</button>
+        <button id="bulkBtn" type="button">Bulk Create</button>
       </div>
 
       <div class="drop-zone" id="dropZone">
         <p>📂 Upload CSV with one URL per line or a column named <b>url</b></p>
         <input type="file" id="csvFile" accept=".csv,.txt" />
-        <button id="uploadBtn" onclick="uploadCSV()">Upload CSV</button>
+        <button id="uploadBtn" type="button">Upload CSV</button>
       </div>
 
-      <p id="result" class="result"></p>
+      <div id="result" class="result"></div>
     </div>
 
     <div class="card">
       <div class="links-header">
         <h3>🔗 Your Links</h3>
-        <input id="search" placeholder="Search slug or URL..." oninput="renderTable()" />
+        <input id="search" placeholder="Search slug or URL..." />
       </div>
 
       <div class="table-wrap">
@@ -485,44 +628,119 @@
       </div>
     </div>
 
-    <div class="card">
-      <h3>📈 Performance Overview</h3>
-      <canvas id="chart"></canvas>
+    <div class="two-col">
+      <div class="card">
+        <h3>📈 Performance Overview</h3>
+        <canvas id="chart"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>🏆 Top Performing Links</h3>
+        <div id="ranking"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h3>🏆 Top Performing Links</h3>
-      <div id="ranking"></div>
+      <div class="section-head">
+        <h3>🧾 Your Payment History</h3>
+        <button type="button" onclick="openUpgradeModal()">New Payment Request</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Crypto</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTable"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div class="panel" id="panel">
     <div id="panelContent"></div>
-    <button onclick="closePanel()">Close</button>
+    <button type="button" onclick="closePanel()">Close</button>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="closeUpgradeModal()"></div>
+
+  <div class="upgrade-modal" id="upgradeModal">
+    <div class="section-head">
+      <h3>🚀 Upgrade Center</h3>
+      <button type="button" onclick="closeUpgradeModal()">Close</button>
+    </div>
+
+    <div class="notice">
+      Free accounts can create only a limited number of links. Choose a plan, select your crypto network, generate a payment request, then wait for admin verification.
+    </div>
+
+    <div class="plan-grid" id="planGrid"></div>
+
+    <div style="margin-top:14px;">
+      <div class="muted">Crypto Option</div>
+      <select id="cryptoSelect"></select>
+    </div>
+
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="requestPaymentBtn" class="success-btn" type="button">Generate Payment Request</button>
+      <button type="button" onclick="loadPlans(true)">Reload Plans</button>
+    </div>
+
+    <div id="upgradeResult" class="result"></div>
+
+    <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
 
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const SHORT_BASE = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    // ================= CONFIG =================
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
+    // ================= STATE =================
     let dataStore = [];
+    let paymentsStore = [];
     let chart = null;
     let statsChartInstance = null;
     let refreshTimer = null;
     let map = null;
     let loadingLinks = false;
+    let meState = null;
+    let plansState = null;
+    let selectedPlan = "monthly";
+    let activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let shortBase = activeBackend === "legacy" ? LEGACY_API : PRIMARY_API;
 
+    // ================= ELEMENTS =================
     const totalLinks = document.getElementById("totalLinks");
     const totalClicks = document.getElementById("totalClicks");
     const avgClicks = document.getElementById("avgClicks");
+    const trialRemainingEl = document.getElementById("trialRemaining");
     const table = document.getElementById("table");
     const ranking = document.getElementById("ranking");
     const panel = document.getElementById("panel");
     const panelContent = document.getElementById("panelContent");
     const toast = document.getElementById("toast");
     const result = document.getElementById("result");
+    const paymentsTable = document.getElementById("paymentsTable");
+    const backendBadgeTop = document.getElementById("backendBadgeTop");
+
+    const meEmail = document.getElementById("meEmail");
+    const mePlan = document.getElementById("mePlan");
+    const meExpire = document.getElementById("meExpire");
+    const accessSummary = document.getElementById("accessSummary");
+    const subscriptionBadge = document.getElementById("subscriptionBadge");
+    const latestPaymentBox = document.getElementById("latestPaymentBox");
 
     const urlInput = document.getElementById("url");
     const slugInput = document.getElementById("customSlug");
@@ -533,10 +751,20 @@
     const dropZone = document.getElementById("dropZone");
 
     const refreshBtn = document.getElementById("refreshBtn");
+    const upgradeBtn = document.getElementById("upgradeBtn");
     const createBtn = document.getElementById("createBtn");
     const bulkBtn = document.getElementById("bulkBtn");
     const uploadBtn = document.getElementById("uploadBtn");
 
+    const overlay = document.getElementById("overlay");
+    const upgradeModal = document.getElementById("upgradeModal");
+    const planGrid = document.getElementById("planGrid");
+    const cryptoSelect = document.getElementById("cryptoSelect");
+    const requestPaymentBtn = document.getElementById("requestPaymentBtn");
+    const upgradeResult = document.getElementById("upgradeResult");
+    const paymentRequestBox = document.getElementById("paymentRequestBox");
+
+    // ================= HELPERS =================
     function authHeaders() {
       return {
         "Content-Type": "application/json",
@@ -544,11 +772,14 @@
       };
     }
 
+    function setTopBackendBadge() {
+      backendBadgeTop.textContent = activeBackend === "legacy" ? "Using Legacy AWS" : "Using Backend 2";
+      shortBase = activeBackend === "legacy" ? LEGACY_API : PRIMARY_API;
+    }
+
     function setBusy(button, busy, text = "") {
       if (!button) return;
-      if (!button.dataset.originalText) {
-        button.dataset.originalText = button.textContent;
-      }
+      if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
       button.disabled = busy;
       button.textContent = busy ? text : button.dataset.originalText;
     }
@@ -562,107 +793,69 @@
       }, 1600);
     }
 
-    function setResult(message, isError = false) {
-      result.textContent = message;
-      result.style.color = isError ? "#ef4444" : "#22c55e";
+    function setResult(message, isError = false, target = result) {
+      target.textContent = message;
+      target.className = "result " + (isError ? "error" : "success");
     }
 
-    async function safeFetch(url, options = {}) {
-      try {
-        console.log("🌐 FETCH:", url, options);
-        const res = await fetch(url, options);
-        console.log("📡 RESPONSE:", res.status);
-        const raw = await res.text();
-
-        let data = {};
-        try {
-          data = raw ? JSON.parse(raw) : {};
-        } catch {
-          data = { message: raw };
-        }
-
-        if (res.status === 401) {
-          logout();
-          return { ok: false, status: 401, message: "Unauthorized", data: {} };
-        }
-
-        return {
-          ok: res.ok,
-          status: res.status,
-          data,
-          raw
-        };
-      } catch (e) {
-        console.error("Fetch error:", e);
-        return {
-          ok: false,
-          status: 0,
-          data: {},
-          raw: "",
-          message: "Network error"
-        };
-      }
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
-    function ensureAuth() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "index.html";
-        return false;
-      }
-      return true;
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
     }
 
-    function buildPublicLink(slug) {
-      return `${SHORT_BASE}/${slug}`;
+    function fmtMoney(v) {
+      return `$${Number(v || 0).toFixed(2)}`;
     }
 
-    function formatExpire(expire) {
-      if (!expire) {
-        return '<span class="muted">No expiry</span>';
+    function fmtExpire(ts) {
+      const n = Number(ts || 0);
+      if (!n) return '<span class="muted">No expiry</span>';
+
+      if (n <= Date.now()) {
+        return `<span class="expired">Expired</span>`;
       }
 
-      const exp = Number(expire);
-      if (!Number.isFinite(exp)) {
-        return '<span class="muted">No expiry</span>';
-      }
-
-      const now = Date.now();
-      const remaining = exp - now;
-
-      if (remaining <= 0) {
-        return `<span class="status-expired">Expired</span>`;
-      }
-
-      const hrs = Math.floor(remaining / (1000 * 60 * 60));
-      const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const diff = n - Date.now();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
       return `
         <div class="success">
-          ${new Date(exp).toLocaleString()}
-          <br>
-          <small>${hrs}h ${mins}m left</small>
+          ${fmtDate(n)}
+          <br><small>${days}d ${hrs}h left</small>
         </div>
       `;
     }
 
+    function formatPaymentStatus(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "verified") return `<span class="badge live">Verified</span>`;
+      if (s === "pending") return `<span class="badge pending">Pending</span>`;
+      return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
+    }
+
     function getStatus(link) {
-      if (link.paused) {
-        return '<span class="pill status-paused">Paused</span>';
-      }
-
-      if (link.expire && Number(link.expire) <= Date.now()) {
-        return '<span class="pill status-expired">Expired</span>';
-      }
-
-      return '<span class="pill status-live">Live</span>';
+      if (link.paused) return '<span class="pill paused">Paused</span>';
+      if (link.expire && Number(link.expire) <= Date.now()) return '<span class="pill expired">Expired</span>';
+      return '<span class="pill live">Live</span>';
     }
 
     function scoreLink(link) {
       let score = 0;
-      if ((link.clicks || 0) > 20) score += 20;
-      if ((link.clicks || 0) > 50) score += 30;
-      if ((link.clicks || 0) > 100) score += 30;
+      const clicks = Number(link.clicks || 0);
+      if (clicks > 20) score += 20;
+      if (clicks > 50) score += 30;
+      if (clicks > 100) score += 30;
       if (!link.paused) score += 10;
       if (!link.expire || Number(link.expire) > Date.now()) score += 10;
       return Math.min(score, 100);
@@ -675,19 +868,375 @@
       return "✅ Normal";
     }
 
+    function ensureAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    function buildPublicLink(slug) {
+      return `${shortBase}/${slug}`;
+    }
+
+    async function safeFetchRaw(base, path, options = {}) {
+      try {
+        const res = await fetch(base.replace(/\/+$/, "") + path, options);
+        const raw = await res.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; }
+        catch { data = { message: raw }; }
+
+        return {
+          ok: res.ok,
+          status: res.status,
+          data,
+          raw
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: e?.message || "Network error" },
+          raw: ""
+        };
+      }
+    }
+
+    function shouldFallback(result) {
+      return result.status === 0 || result.status === 404 || result.status >= 500;
+    }
+
+    async function hybridFetch(path, options = {}, forceBackend = null) {
+      const preferred = forceBackend || activeBackend;
+
+      if (preferred === "legacy") {
+        const first = await safeFetchRaw(LEGACY_API, path, options);
+        if (first.ok || !shouldFallback(first)) {
+          return { ...first, backend: "legacy" };
+        }
+        const second = await safeFetchRaw(PRIMARY_API, path, options);
+        if (second.ok) {
+          activeBackend = "primary";
+          localStorage.setItem("authBackend", "primary");
+          setTopBackendBadge();
+        }
+        return { ...second, backend: "primary" };
+      }
+
+      const first = await safeFetchRaw(PRIMARY_API, path, options);
+      if (first.ok || !shouldFallback(first)) {
+        return { ...first, backend: "primary" };
+      }
+
+      const second = await safeFetchRaw(LEGACY_API, path, options);
+      if (second.ok) {
+        activeBackend = "legacy";
+        localStorage.setItem("authBackend", "legacy");
+        setTopBackendBadge();
+      }
+      return { ...second, backend: "legacy" };
+    }
+
+    async function authorizedFetch(path, options = {}, forceBackend = null) {
+      const res = await hybridFetch(path, {
+        ...options,
+        headers: {
+          ...authHeaders(),
+          ...(options.headers || {})
+        }
+      }, forceBackend);
+
+      if (res.status === 401) {
+        logout();
+      }
+
+      return res;
+    }
+
+    // ================= ACCOUNT =================
+    function renderMe() {
+      if (!meState) return;
+
+      meEmail.textContent = meState.username || "-";
+      mePlan.textContent =
+        meState.subscriptionPlan
+          ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
+          : "Free Trial";
+
+      meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+      trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
+
+      const status = String(meState.subscriptionStatus || "trial").toLowerCase();
+      const paused = !!meState.subscriptionPaused;
+      let summary = "";
+      let badgeClass = "trial";
+      let badgeText = "Trial";
+
+      if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+        badgeClass = "live";
+        badgeText = "Active";
+        summary = `Your subscription is active. You have full link generation access until ${fmtDate(meState.subscriptionExpiresAt)}.`;
+      } else if (paused) {
+        badgeClass = "paused";
+        badgeText = "Paused";
+        summary = `Your subscription is paused. You can log in and view pages, but you cannot create new links until resumed.`;
+      } else if (status === "expired") {
+        badgeClass = "expired";
+        badgeText = "Expired";
+        summary = `Your subscription is expired. Create a new payment request to renew access.`;
+      } else {
+        badgeClass = "trial";
+        badgeText = "Trial";
+        summary = `Free trial: ${Number(meState.trialLinksRemaining || 0)} of ${Number(meState.trialLinksLimit || 0)} links remaining.`;
+      }
+
+      subscriptionBadge.className = `badge ${badgeClass}`;
+      subscriptionBadge.textContent = badgeText;
+      accessSummary.textContent = summary;
+    }
+
+    async function loadMe(showLoading = false) {
+      if (showLoading) accessSummary.textContent = "Loading account...";
+      const res = await authorizedFetch("/me", { method: "GET" });
+
+      if (!res.ok) {
+        accessSummary.textContent = res.data?.message || "Failed to load account";
+        return;
+      }
+
+      meState = res.data || null;
+      activeBackend = res.backend || activeBackend;
+      localStorage.setItem("authBackend", activeBackend);
+      setTopBackendBadge();
+      renderMe();
+    }
+
+    async function loadPlans(showMessage = false) {
+      const res = await hybridFetch("/plans", { method: "GET" });
+
+      if (!res.ok) {
+        if (showMessage) setResult("Failed to load plans", true, upgradeResult);
+        return;
+      }
+
+      plansState = res.data || {};
+      renderPlans();
+      renderCryptoOptions();
+      if (showMessage) setResult("Plans loaded", false, upgradeResult);
+    }
+
+    function renderPlans() {
+      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+
+      planGrid.innerHTML = plans.map(plan => `
+        <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
+          <h4>${escapeHtml(plan.label)}</h4>
+          <div class="plan-price">${fmtMoney(plan.amountUsd)}</div>
+          <div class="muted">${escapeHtml(plan.code)} billing</div>
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".plan-card").forEach(card => {
+        card.onclick = () => {
+          selectedPlan = card.dataset.plan;
+          renderPlans();
+        };
+      });
+    }
+
+    function renderCryptoOptions() {
+      const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
+      cryptoSelect.innerHTML = options.map(opt => `
+        <option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>
+      `).join("");
+    }
+
+    function renderLatestPayment(payment) {
+      if (!payment) {
+        latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
+        return;
+      }
+
+      latestPaymentBox.innerHTML = `
+        <div class="payment-box">
+          <div class="payment-qr">
+            <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
+          </div>
+          <div>
+            <div><span class="badge pending">${escapeHtml(payment.billingCycle)}</span> ${formatPaymentStatus(payment.status)}</div>
+            <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+            <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+            <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+            <div class="address-box">${escapeHtml(payment.address)}</div>
+            <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
+            <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+            <div style="margin-top:10px;">
+              <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
+              <button type="button" onclick="showPaymentDetails('${escapeHtml(payment.id)}')">Details</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPaymentsTable() {
+      if (!paymentsStore.length) {
+        paymentsTable.innerHTML = `<tr><td colspan="8" class="muted">No payments yet</td></tr>`;
+        renderLatestPayment(null);
+        return;
+      }
+
+      paymentsTable.innerHTML = paymentsStore.map(p => `
+        <tr>
+          <td><code>${escapeHtml(p.id)}</code></td>
+          <td>${escapeHtml(p.billingCycle)}</td>
+          <td>${fmtMoney(p.amountUsd)}</td>
+          <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
+          <td>${formatPaymentStatus(p.status)}</td>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${fmtDate(p.expiresAt)}</td>
+          <td>
+            <button type="button" class="copy" onclick="copyLink('${escapeHtml(p.address)}')">Copy Address</button>
+            <button type="button" class="qr" onclick="showPaymentDetails('${escapeHtml(p.id)}')">View</button>
+          </td>
+        </tr>
+      `).join("");
+
+      const pending = paymentsStore.find(p => String(p.status).toLowerCase() === "pending");
+      renderLatestPayment(pending || paymentsStore[0]);
+    }
+
+    async function loadPayments(showMessage = false) {
+      const res = await authorizedFetch("/payments/me", { method: "GET" });
+
+      if (!res.ok) {
+        if (showMessage) showToast("Failed to load payments");
+        return;
+      }
+
+      paymentsStore = Array.isArray(res.data?.payments) ? res.data.payments : [];
+      renderPaymentsTable();
+
+      if (showMessage) showToast("Payments refreshed");
+    }
+
+    async function createPaymentRequest() {
+      const cryptoCode = cryptoSelect.value;
+
+      if (!selectedPlan) {
+        setResult("Choose a plan first", true, upgradeResult);
+        return;
+      }
+
+      if (!cryptoCode) {
+        setResult("Choose a crypto option", true, upgradeResult);
+        return;
+      }
+
+      setBusy(requestPaymentBtn, true, "Creating...");
+
+      const res = await authorizedFetch("/payment-request", {
+        method: "POST",
+        body: JSON.stringify({
+          billingCycle: selectedPlan,
+          cryptoCode
+        })
+      });
+
+      setBusy(requestPaymentBtn, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Failed to create payment request", true, upgradeResult);
+        return;
+      }
+
+      const payment = res.data?.payment || null;
+      if (!payment) {
+        setResult("Payment request created, but response was empty", true, upgradeResult);
+        return;
+      }
+
+      setResult("Payment request generated. Send the exact amount and wait for admin verification.", false, upgradeResult);
+
+      paymentRequestBox.innerHTML = `
+        <div class="card" style="margin:0;">
+          <div class="payment-box">
+            <div class="payment-qr">
+              <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
+            </div>
+            <div>
+              <div><span class="badge pending">${escapeHtml(payment.billingCycle)}</span></div>
+              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+              <div class="muted" style="margin-top:8px;">Send to:</div>
+              <div class="address-box">${escapeHtml(payment.address)}</div>
+              <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
+              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
+              <div style="margin-top:10px;">
+                <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeHtml(payment.id)}')">Copy Payment ID</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      await loadPayments(false);
+    }
+
+    function openUpgradeModal() {
+      overlay.style.display = "block";
+      upgradeModal.style.display = "block";
+    }
+
+    function closeUpgradeModal() {
+      overlay.style.display = "none";
+      upgradeModal.style.display = "none";
+    }
+
+    function showPaymentDetails(paymentId) {
+      const payment = paymentsStore.find(p => p.id === paymentId);
+      if (!payment) return;
+
+      openUpgradeModal();
+      paymentRequestBox.innerHTML = `
+        <div class="card" style="margin:0;">
+          <div class="payment-box">
+            <div class="payment-qr">
+              <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
+            </div>
+            <div>
+              <div>${formatPaymentStatus(payment.status)} <span class="badge">${escapeHtml(payment.billingCycle)}</span></div>
+              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+              <div class="muted" style="margin-top:8px;">Address:</div>
+              <div class="address-box">${escapeHtml(payment.address)}</div>
+              <div class="muted small">Created: ${fmtDate(payment.createdAt)}</div>
+              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
+              <div style="margin-top:10px;">
+                <button type="button" class="copy" onclick="copyLink('${escapeHtml(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeHtml(payment.id)}')">Copy Payment ID</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ================= LINKS =================
     async function loadLinks(showLoading = false) {
       if (loadingLinks) return;
       loadingLinks = true;
 
       if (showLoading) {
-        setResult("⏳ Loading...", false);
+        setResult("Loading links...", false);
         setBusy(refreshBtn, true, "Loading...");
       }
 
-      const res = await safeFetch(`${API}/list`, {
-        method: "GET",
-        headers: authHeaders()
-      });
+      const res = await authorizedFetch("/list", { method: "GET" });
 
       loadingLinks = false;
       setBusy(refreshBtn, false);
@@ -698,9 +1247,11 @@
       }
 
       dataStore = Array.isArray(res.data?.items) ? res.data.items : [];
+      activeBackend = res.backend || activeBackend;
+      localStorage.setItem("authBackend", activeBackend);
+      setTopBackendBadge();
 
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-
       totalLinks.textContent = dataStore.length;
       totalClicks.textContent = total;
       avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
@@ -709,84 +1260,72 @@
       drawChart();
       renderRanking();
 
-      if (showLoading) setResult("✅ Loaded");
+      if (showLoading) setResult("Loaded", false);
     }
 
     function renderTable() {
+      const q = (searchInput.value || "").trim().toLowerCase();
 
-  const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = dataStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        return !q || slug.includes(q) || url.includes(q);
+      });
 
-  const filtered = dataStore.filter(item => {
-    const slug = String(item.slug || "").toLowerCase();
-    const url = String(item.url || "").toLowerCase();
-    return !q || slug.includes(q) || url.includes(q);
-  });
+      if (!filtered.length) {
+        table.innerHTML = `<tr><td colspan="6" class="muted">No links found</td></tr>`;
+        return;
+      }
 
-  if (!filtered.length) {
-    table.innerHTML = `
-      <tr>
-        <td colspan="6" class="muted">No links found</td>
-      </tr>
-    `;
-    return;
-  }
+      table.innerHTML = filtered.map(item => {
+        const publicLink = buildPublicLink(item.slug);
 
-  // 🔥 CLEAN HTML (NO onclick)
-  table.innerHTML = filtered.map(item => {
-    const publicLink = buildPublicLink(item.slug);
+        return `
+          <tr>
+            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+            <td>
+              <a href="${escapeHtml(publicLink)}" target="_blank">${escapeHtml(publicLink)}</a>
+              <div class="muted">${escapeHtml(item.url || "")}</div>
+            </td>
+            <td>${getStatus(item)}</td>
+            <td>${fmtExpire(item.expire)}</td>
+            <td>
+              <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
+              <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
+              <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
+              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}">Stats</button>
+              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}">Geo</button>
+              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
 
-    return `
-      <tr data-slug="${item.slug}">
-        <td><b>${item.slug}</b></td>
-        <td><span class="badge">${item.clicks}</span></td>
+      document.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.onclick = () => copyLink(btn.dataset.link);
+      });
 
-        <td>
-          <a href="${publicLink}" target="_blank">${publicLink}</a>
-          <div class="muted">${item.url}</div>
-        </td>
+      document.querySelectorAll(".open-btn").forEach(btn => {
+        btn.onclick = () => openLink(btn.dataset.link);
+      });
 
-        <td>${getStatus(item)}</td>
+      document.querySelectorAll(".qr-btn").forEach(btn => {
+        btn.onclick = () => showQR(btn.dataset.link);
+      });
 
-        <td>${formatExpire(item.expire)}</td>
+      document.querySelectorAll(".stats-btn").forEach(btn => {
+        btn.onclick = () => showHistory(btn.dataset.slug);
+      });
 
-        <td class="small-actions">
-          <button class="copy-btn" data-link="${publicLink}">Copy</button>
-          <button class="open-btn" data-link="${publicLink}">Open</button>
-          <button class="qr-btn" data-link="${publicLink}">QR</button>
-          <button class="stats-btn" data-slug="${item.slug}">Stats</button>
-          <button class="geo-btn" data-slug="${item.slug}">🌍</button>
-          <button class="delete-btn" data-slug="${item.slug}">Delete</button>
-        </td>
-      </tr>
-    `;
-  }).join("");
+      document.querySelectorAll(".geo-btn").forEach(btn => {
+        btn.onclick = () => showGeo(btn.dataset.slug);
+      });
 
-  // 🔥 ATTACH EVENTS (THIS FIXES EVERYTHING)
-
-  document.querySelectorAll(".copy-btn").forEach(btn=>{
-    btn.onclick = () => copyLink(btn.dataset.link);
-  });
-
-  document.querySelectorAll(".open-btn").forEach(btn=>{
-    btn.onclick = () => openLink(btn.dataset.link);
-  });
-
-  document.querySelectorAll(".qr-btn").forEach(btn=>{
-    btn.onclick = () => showQR(btn.dataset.link);
-  });
-
-  document.querySelectorAll(".stats-btn").forEach(btn=>{
-    btn.onclick = () => showHistory(btn.dataset.slug);
-  });
-
-  document.querySelectorAll(".geo-btn").forEach(btn=>{
-    btn.onclick = () => showGeo(btn.dataset.slug);
-  });
-
-  document.querySelectorAll(".delete-btn").forEach(btn=>{
-    btn.onclick = () => deleteLink(btn.dataset.slug);
-  });
-}
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.onclick = () => deleteLink(btn.dataset.slug);
+      });
+    }
 
     function drawChart() {
       const canvas = document.getElementById("chart");
@@ -809,9 +1348,7 @@
         options: {
           responsive: true,
           plugins: {
-            legend: {
-              labels: { color: "#e2e8f0" }
-            }
+            legend: { labels: { color: "#e2e8f0" } }
           },
           scales: {
             x: {
@@ -836,19 +1373,14 @@
         return;
       }
 
-      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => {
-        const score = scoreLink(item);
-        const fraud = detectFraud(item);
-
-        return `
-          <div class="ranking-item">
-            <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-            <div>Clicks: ${Number(item.clicks || 0)}</div>
-            <div>Score: ${score}/100</div>
-            <div>${fraud}</div>
-          </div>
-        `;
-      }).join("");
+      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
+        <div class="ranking-item">
+          <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+          <div>Clicks: ${Number(item.clicks || 0)}</div>
+          <div>Score: ${scoreLink(item)}/100</div>
+          <div>${detectFraud(item)}</div>
+        </div>
+      `).join("");
     }
 
     async function createLink() {
@@ -857,47 +1389,55 @@
       const expireHours = expireInput.value.trim();
 
       if (!url) {
-        setResult("❌ Enter URL", true);
+        setResult("Enter URL", true);
         return;
       }
 
       setBusy(createBtn, true, "Creating...");
-      setResult("⏳ Creating...", false);
+      setResult("Creating link...", false);
 
       const body = { url };
-
       if (slug) body.slug = slug;
 
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
           setBusy(createBtn, false);
-          setResult("❌ Expire must be a positive number", true);
+          setResult("Expire must be a positive number", true);
           return;
         }
-        body.expire = Date.now() + (hours * 60 * 60 * 1000);
+        body.expire = Date.now() + hours * 60 * 60 * 1000;
       }
 
-      const res = await safeFetch(`${API}/create`, {
+      const res = await authorizedFetch("/create", {
         method: "POST",
-        headers: authHeaders(),
         body: JSON.stringify(body)
       });
 
       setBusy(createBtn, false);
 
       if (!res.ok) {
-        setResult(`❌ ${res.data?.message || "Failed to create link"}`, true);
+        if (res.status === 402) {
+          await loadMe(false);
+          openUpgradeModal();
+          setResult(res.data?.message || "Upgrade required", true);
+          setResult(res.data?.message || "Upgrade required", true, upgradeResult);
+          return;
+        }
+
+        setResult(res.data?.message || "Failed to create link", true);
         return;
       }
 
-      setResult(`✅ Created: ${res.data?.link || "Success"}`, false);
+      const link = res.data?.link || "Success";
+      const trialAfter = res.data?.trialRemainingAfter;
+      setResult(`Created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
 
       urlInput.value = "";
       slugInput.value = "";
       expireInput.value = "";
 
-      await loadLinks();
+      await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
     async function bulkCreate() {
@@ -906,56 +1446,59 @@
       const expireHours = expireInput.value.trim();
 
       if (!url) {
-        setResult("❌ Enter URL first", true);
+        setResult("Enter URL first", true);
         return;
       }
 
       if (!Number.isFinite(count) || count <= 0) {
-        setResult("❌ Invalid bulk count", true);
+        setResult("Invalid bulk count", true);
         return;
       }
 
-      let expire = undefined;
-
+      let expire;
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
-          setResult("❌ Expire must be a positive number", true);
+          setResult("Expire must be a positive number", true);
           return;
         }
-        expire = Date.now() + (hours * 60 * 60 * 1000);
+        expire = Date.now() + hours * 60 * 60 * 1000;
       }
 
       setBusy(bulkBtn, true, "Creating...");
-      setResult(`⏳ Bulk creating ${count} links...`, false);
+      setResult(`Bulk creating ${count} links...`, false);
 
       let success = 0;
 
       for (let i = 0; i < count; i++) {
-        const res = await safeFetch(`${API}/create`, {
+        const res = await authorizedFetch("/create", {
           method: "POST",
-          headers: authHeaders(),
           body: JSON.stringify({
             url,
             ...(expire ? { expire } : {})
           })
         });
 
-        if (res.ok) success++;
-        setResult(`⏳ Bulk creating... ${success}/${count}`, false);
+        if (res.ok) {
+          success++;
+        } else if (res.status === 402) {
+          openUpgradeModal();
+          setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Upgrade required"}`, true);
+          break;
+        }
+
+        setResult(`Bulk creating... ${success}/${count}`, false);
       }
 
       setBusy(bulkBtn, false);
-      setResult(`✅ Created ${success}/${count} links`, false);
-      await loadLinks();
+      await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
     async function deleteLink(slug) {
       if (!confirm(`Delete ${slug}?`)) return;
 
-      const res = await safeFetch(`${API}/delete`, {
+      const res = await authorizedFetch("/delete", {
         method: "POST",
-        headers: authHeaders(),
         body: JSON.stringify({ slug })
       });
 
@@ -965,7 +1508,7 @@
       }
 
       showToast("Deleted");
-      await loadLinks();
+      await loadLinks(false);
     }
 
     async function copyLink(text) {
@@ -977,14 +1520,14 @@
       }
     }
 
-    function openLink(link){
-  const a = document.createElement("a");
-  a.href = link;
-  a.target = "_blank";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+    function openLink(link) {
+      const a = document.createElement("a");
+      a.href = link;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
 
     function showQR(link) {
       window.open(
@@ -996,18 +1539,12 @@
 
     async function getGeo(ip) {
       if (!ip || ip === "unknown") {
-        return {
-          country_name: "Unknown",
-          city: "",
-          latitude: 20,
-          longitude: 0
-        };
+        return { country_name: "Unknown", city: "", latitude: 20, longitude: 0 };
       }
 
       try {
         const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
         const data = await res.json();
-
         return {
           country_name: data.country_name || "Unknown",
           city: data.city || "",
@@ -1015,12 +1552,7 @@
           longitude: data.longitude || 0
         };
       } catch {
-        return {
-          country_name: "Error",
-          city: "",
-          latitude: 20,
-          longitude: 0
-        };
+        return { country_name: "Error", city: "", latitude: 20, longitude: 0 };
       }
     }
 
@@ -1060,11 +1592,7 @@
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(map);
 
-      const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`, {
-        method: "GET",
-        headers: authHeaders()
-      });
-
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
       if (!history.length) {
@@ -1073,13 +1601,10 @@
       }
 
       let offset = 0;
-
       for (const h of history) {
         const geo = await getGeo(h.ip);
-
         let lat = Number(geo.latitude || 20);
         let lng = Number(geo.longitude || 0);
-
         lat += offset * 0.25;
         lng += offset * 0.25;
         offset++;
@@ -1101,18 +1626,14 @@
         <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
         <canvas id="statsChart" height="120"></canvas>
         <div id="statsBody" style="margin-top:14px;"></div>
-        <h4 style="margin-top:18px;">🌍 Geo Activity</h4>
+        <h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4>
         <div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>
       `;
 
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
 
-      const res = await safeFetch(`${API}/history?slug=${encodeURIComponent(slug)}`, {
-        method: "GET",
-        headers: authHeaders()
-      });
-
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
       const link = dataStore.find(l => l.slug === slug);
 
@@ -1142,9 +1663,7 @@
       const labels = history.map(h => new Date(h.time).toLocaleTimeString());
       const dataPoints = history.map((_, i) => i + 1);
 
-      if (statsChartInstance) {
-        statsChartInstance.destroy();
-      }
+      if (statsChartInstance) statsChartInstance.destroy();
 
       statsChartInstance = new Chart(document.getElementById("statsChart"), {
         type: "line",
@@ -1159,9 +1678,7 @@
         options: {
           responsive: true,
           plugins: {
-            legend: {
-              labels: { color: "#e2e8f0" }
-            }
+            legend: { labels: { color: "#e2e8f0" } }
           },
           scales: {
             x: {
@@ -1203,7 +1720,6 @@
 
       sorted.slice(0, 10).forEach(([ip, data]) => {
         const danger = data.risk > 70;
-
         html += `
           <div style="
             margin-bottom:10px;
@@ -1215,7 +1731,7 @@
             <b>${escapeHtml(ip)}</b>
             ${data.vpn ? "<span class='warn'> 🛰️ VPN</span>" : ""}
             ${data.bot ? "<span class='warn'> 🤖 BOT</span>" : ""}
-            ${danger ? "<span class='danger'> ⚠️ ATTACKER</span>" : ""}
+            ${danger ? "<span class='error'> ⚠️ ATTACKER</span>" : ""}
             <br>
             <small>Clicks: ${data.count}</small>
             <br>
@@ -1234,7 +1750,6 @@
       }).addTo(map);
 
       let offset = 0;
-
       for (const h of history) {
         const geo = await getGeo(h.ip);
 
@@ -1256,9 +1771,10 @@
       }
     }
 
+    // ================= CSV =================
     async function processFile(file) {
       if (!file) {
-        setResult("❌ Choose a CSV file first", true);
+        setResult("Choose a CSV file first", true);
         return;
       }
 
@@ -1266,7 +1782,7 @@
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
       if (!lines.length) {
-        setResult("❌ CSV is empty", true);
+        setResult("CSV is empty", true);
         return;
       }
 
@@ -1275,7 +1791,6 @@
       if (lines[0].toLowerCase().includes("url")) {
         const header = lines[0].split(",").map(h => h.trim().toLowerCase());
         const urlIndex = header.indexOf("url");
-
         if (urlIndex >= 0) {
           urls = lines.slice(1).map(line => {
             const cols = line.split(",");
@@ -1289,30 +1804,35 @@
       urls = urls.filter(Boolean);
 
       if (!urls.length) {
-        setResult("❌ No URLs found in file", true);
+        setResult("No URLs found in file", true);
         return;
       }
 
       setBusy(uploadBtn, true, "Uploading...");
-      setResult(`⏳ Uploading ${urls.length} URLs...`, false);
+      setResult(`Uploading ${urls.length} URLs...`, false);
 
-      let ok = 0;
+      let okCount = 0;
 
       for (const url of urls) {
-        const res = await safeFetch(`${API}/create`, {
+        const res = await authorizedFetch("/create", {
           method: "POST",
-          headers: authHeaders(),
           body: JSON.stringify({ url })
         });
 
-        if (res.ok) ok++;
-        setResult(`⏳ Uploading... ${ok}/${urls.length}`, false);
+        if (res.ok) {
+          okCount++;
+        } else if (res.status === 402) {
+          openUpgradeModal();
+          setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Upgrade required"}`, true);
+          break;
+        }
+
+        setResult(`Uploading... ${okCount}/${urls.length}`, false);
       }
 
       setBusy(uploadBtn, false);
       csvFile.value = "";
-      setResult(`✅ Uploaded ${ok}/${urls.length} links`, false);
-      await loadLinks();
+      await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
     async function uploadCSV() {
@@ -1320,46 +1840,39 @@
       await processFile(file);
     }
 
+    // ================= GENERAL ACTIONS =================
     function refreshNow() {
-      loadLinks(true);
+      Promise.all([
+        loadMe(true),
+        loadLinks(true),
+        loadPayments(false)
+      ]);
     }
 
     function logout() {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
+      localStorage.removeItem("authBackend");
       window.location.href = "index.html";
     }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-
     function setupKeyboardShortcuts() {
-      urlInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") createLink();
+      [urlInput, slugInput, expireInput].forEach(el => {
+        el.addEventListener("keydown", e => {
+          if (e.key === "Enter") createLink();
+        });
       });
 
-      slugInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") createLink();
-      });
-
-      expireInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") createLink();
-      });
-
-      bulkCountInput.addEventListener("keydown", (e) => {
+      bulkCountInput.addEventListener("keydown", e => {
         if (e.key === "Enter") bulkCreate();
       });
+
+      searchInput.addEventListener("input", renderTable);
     }
 
     function setupDragAndDrop() {
       ["dragenter", "dragover"].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => {
+        dropZone.addEventListener(eventName, e => {
           e.preventDefault();
           e.stopPropagation();
           dropZone.classList.add("dragover");
@@ -1367,14 +1880,14 @@
       });
 
       ["dragleave", "dragend", "drop"].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => {
+        dropZone.addEventListener(eventName, e => {
           e.preventDefault();
           e.stopPropagation();
           dropZone.classList.remove("dragover");
         });
       });
 
-      dropZone.addEventListener("drop", async (e) => {
+      dropZone.addEventListener("drop", async e => {
         const file = e.dataTransfer?.files?.[0];
         if (file) {
           csvFile.files = e.dataTransfer.files;
@@ -1383,19 +1896,34 @@
       });
     }
 
+    // ================= INIT =================
+    refreshBtn.addEventListener("click", refreshNow);
+    upgradeBtn.addEventListener("click", openUpgradeModal);
+    createBtn.addEventListener("click", createLink);
+    bulkBtn.addEventListener("click", bulkCreate);
+    uploadBtn.addEventListener("click", uploadCSV);
+    requestPaymentBtn.addEventListener("click", createPaymentRequest);
+
     (async function init() {
       if (!ensureAuth()) return;
 
+      setTopBackendBadge();
       setupKeyboardShortcuts();
       setupDragAndDrop();
 
-      await loadLinks(true);
+      await Promise.all([
+        loadPlans(false),
+        loadMe(true),
+        loadLinks(true),
+        loadPayments(false)
+      ]);
 
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
         if (document.hidden) return;
+        loadMe(false);
         loadLinks(false);
-      }, 5000);
+      }, 12000);
     })();
   </script>
 </body>
