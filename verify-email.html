@@ -212,7 +212,7 @@
     <div id="msg"></div>
 
     <div class="muted">
-      This page tries Backend 2 first, then falls back to legacy AWS when needed.
+      This page uses the correct backend for the verification token and only falls back when a backend is unavailable.
     </div>
   </div>
 
@@ -230,6 +230,9 @@
     const loginLink = document.getElementById("loginLink");
     const magicLink = document.getElementById("magicLink");
     const backendBadge = document.getElementById("backendBadge");
+
+    // ================= STATE =================
+    let forcedBackend = null;
 
     // ================= HELPERS =================
     function params(){
@@ -283,33 +286,8 @@
       return { res, data };
     }
 
-    function shouldFallbackToLegacy(path, data, status){
-      if(path === "/verify-email"){
-        if(status >= 500 || status === 404) return true;
-
-        const msg = String(data?.message || "").toLowerCase();
-        if(
-          msg.includes("invalid verification token") ||
-          msg.includes("verification token expired") ||
-          msg.includes("invalid token")
-        ){
-          return true;
-        }
-      }
-
-      if(path === "/resend-verify"){
-        if(status >= 500 || status === 404) return true;
-
-        const msg = String(data?.message || "").toLowerCase();
-        if(
-          msg.includes("invalid email") ||
-          msg.includes("not found")
-        ){
-          return true;
-        }
-      }
-
-      return false;
+    function isBackendFailure(status){
+      return status === 404 || status >= 500;
     }
 
     async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
@@ -317,16 +295,14 @@
       const legacy = normalizeApiUrl(LEGACY_API);
 
       if(behavior === "primaryOnly"){
-        const first = await callApi(primary, path, options);
-        return { ok: first.res.ok, status: first.res.status, data: first.data, backend: "primary" };
+        const r = await callApi(primary, path, options);
+        return { ok: r.res.ok, status: r.res.status, data: r.data, backend: "primary" };
       }
 
       if(behavior === "legacyOnly"){
-        const only = await callApi(legacy, path, options);
-        return { ok: only.res.ok, status: only.res.status, data: only.data, backend: "legacy" };
+        const r = await callApi(legacy, path, options);
+        return { ok: r.res.ok, status: r.res.status, data: r.data, backend: "legacy" };
       }
-
-      let firstError = null;
 
       try{
         const first = await callApi(primary, path, options);
@@ -340,7 +316,10 @@
           };
         }
 
-        if(!shouldFallbackToLegacy(path, first.data, first.res.status)){
+        // IMPORTANT FIX:
+        // Do NOT fallback on invalid token / expired token for verify-email.
+        // Only fallback when primary is truly unavailable / missing.
+        if(!isBackendFailure(first.res.status)){
           return {
             ok: false,
             status: first.res.status,
@@ -348,10 +327,8 @@
             backend: "primary"
           };
         }
-
-        firstError = first;
       }catch(error){
-        firstError = { error };
+        // ignore and fallback
       }
 
       const second = await callApi(legacy, path, options);
@@ -359,22 +336,33 @@
         ok: second.res.ok,
         status: second.res.status,
         data: second.data,
-        backend: "legacy",
-        firstError
+        backend: "legacy"
       };
     }
 
-    function showPostVerifyActions(email = ""){
+    function showPostVerifyActions(email = "", backend = ""){
       loginLink.classList.remove("hidden");
       magicLink.classList.remove("hidden");
 
-      if(email){
-        loginLink.href = `login.html?email=${encodeURIComponent(email)}`;
-        magicLink.href = `magic-login.html?email=${encodeURIComponent(email)}`;
-      } else {
-        loginLink.href = "login.html";
-        magicLink.href = "magic-login.html";
-      }
+      const query = [];
+      if(email) query.push(`email=${encodeURIComponent(email)}`);
+      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
+      const qs = query.length ? `?${query.join("&")}` : "";
+
+      loginLink.href = `login.html${qs}`;
+      magicLink.href = `magic-login.html${qs}`;
+    }
+
+    function chooseVerifyBehavior(){
+      if(forcedBackend === "primary") return "primaryOnly";
+      if(forcedBackend === "legacy") return "legacyOnly";
+      return "primaryThenLegacy";
+    }
+
+    function chooseResendBehavior(){
+      if(forcedBackend === "primary") return "primaryOnly";
+      if(forcedBackend === "legacy") return "legacyOnly";
+      return "primaryThenLegacy";
     }
 
     // ================= ACTIONS =================
@@ -395,11 +383,12 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token })
           },
-          "primaryThenLegacy"
+          chooseVerifyBehavior()
         );
 
         const data = result.data || {};
-        showBackendBadge(result.backend);
+        forcedBackend = result.backend || forcedBackend || "primary";
+        showBackendBadge(forcedBackend);
 
         if(!result.ok){
           showMessage(data.message || "Verification failed ❌", "error");
@@ -407,10 +396,11 @@
           return;
         }
 
-        showMessage(`Email verified successfully on ${backendLabel(result.backend)} ✅ You can now log in.`, "success");
-        showPostVerifyActions(emailInput.value.trim().toLowerCase());
+        const email = emailInput.value.trim().toLowerCase();
+        showMessage(`Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`, "success");
+        showPostVerifyActions(email, forcedBackend);
 
-        window.history.replaceState({}, "", "/verify-email.html");
+        window.history.replaceState({}, "", `/verify-email.html${email ? `?email=${encodeURIComponent(email)}&backend=${encodeURIComponent(forcedBackend)}` : `?backend=${encodeURIComponent(forcedBackend)}`}`);
       } catch (e){
         console.error(e);
         showMessage("Server error ❌", "error");
@@ -436,11 +426,12 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: email })
           },
-          "primaryThenLegacy"
+          chooseResendBehavior()
         );
 
         const data = result.data || {};
-        showBackendBadge(result.backend);
+        forcedBackend = result.backend || forcedBackend || "primary";
+        showBackendBadge(forcedBackend);
 
         if(!result.ok){
           showMessage(data.message || "Could not resend verification ❌", "error");
@@ -448,7 +439,7 @@
           return;
         }
 
-        showMessage(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)} ✅`, "success");
+        showMessage(`${data.message || "Verification email sent"} via ${backendLabel(forcedBackend)} ✅`, "success");
       } catch (e){
         console.error(e);
         showMessage("Server error ❌", "error");
@@ -460,14 +451,15 @@
     async function autoVerify(){
       const token = (params().get("token") || "").trim();
       const email = (params().get("email") || "").trim().toLowerCase();
-      const backend = (params().get("backend") || "").trim();
+      const backend = (params().get("backend") || "").trim().toLowerCase();
 
       if(email){
         emailInput.value = email;
       }
 
-      if(backend){
-        showBackendBadge(backend === "legacy" ? "legacy" : "primary");
+      if(backend === "primary" || backend === "legacy"){
+        forcedBackend = backend;
+        showBackendBadge(forcedBackend);
       }
 
       if(!token) return;
