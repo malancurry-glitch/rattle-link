@@ -22,7 +22,7 @@
 
     .card{
       width:100%;
-      max-width:460px;
+      max-width:470px;
       background:#020617;
       padding:28px;
       border-radius:16px;
@@ -205,6 +205,19 @@
     .back-link:hover{
       text-decoration:underline;
     }
+
+    .inline-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+
+    .inline-actions button{
+      flex:1;
+      min-width:120px;
+      margin-top:0;
+    }
   </style>
 </head>
 
@@ -232,7 +245,12 @@
         </p>
         <div id="backendBadge" class="backend-badge hidden"></div>
       </div>
-      <button id="checkBtn" class="secondary small-btn" type="button" onclick="checkStatus(true)">Check Status Now</button>
+
+      <div class="inline-actions">
+        <button id="checkBtn" class="secondary small-btn" type="button" onclick="checkStatus(true)">Check Status</button>
+        <button id="resendBtn" class="secondary small-btn" type="button" onclick="resendMagic()">Resend Email</button>
+      </div>
+
       <button class="secondary small-btn" type="button" onclick="clearPending()">Clear Pending</button>
     </div>
 
@@ -259,14 +277,16 @@
   </div>
 
   <script>
-    // ================= HYBRID CONFIG =================
-    const PRIMARY_API = "https://rattle-link.vercel.app";
+    // IMPORTANT:
+    // If this page is on Vercel, DO NOT keep PRIMARY_API as localhost.
+    // Replace it with your real deployed Backend 2 URL.
+    const PRIMARY_API = "http://localhost:4000";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // ================= ELEMENTS =================
     const emailInput = document.getElementById("email");
     const sendBtn = document.getElementById("sendBtn");
     const checkBtn = document.getElementById("checkBtn");
+    const resendBtn = document.getElementById("resendBtn");
     const approveBtn = document.getElementById("approveBtn");
     const msg = document.getElementById("msg");
     const timerEl = document.getElementById("timer");
@@ -279,15 +299,14 @@
     const backendBadge = document.getElementById("backendBadge");
     const approveBackendBadge = document.getElementById("approveBackendBadge");
 
-    // ================= STATE =================
     let pollInterval = null;
     let countdownInterval = null;
     let expiryTime = null;
     let currentRequestId = null;
     let currentApproveToken = null;
     let currentBackend = null;
+    let lastEmailUsed = null;
 
-    // ================= HELPERS =================
     function normalizeApiUrl(url){
       return String(url || "").replace(/\/+$/, "");
     }
@@ -301,6 +320,14 @@
 
     function getParams(){
       return new URLSearchParams(window.location.search);
+    }
+
+    function safeText(value){
+      return String(value || "").trim();
+    }
+
+    function isEmail(value){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
     }
 
     function getDeviceInfo(){
@@ -340,14 +367,6 @@
     function resetButton(button, text){
       button.disabled = false;
       button.textContent = text;
-    }
-
-    function safeText(value){
-      return String(value || "").trim();
-    }
-
-    function isEmail(value){
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
     }
 
     function buildIndexHref(email = "", backend = ""){
@@ -504,23 +523,31 @@
       } else {
         localStorage.removeItem("magicExpiresAt");
       }
+
+      if(lastEmailUsed){
+        localStorage.setItem("magicEmail", lastEmailUsed);
+      } else {
+        localStorage.removeItem("magicEmail");
+      }
     }
 
     function clearStoredPending(){
       localStorage.removeItem("magicRequestId");
       localStorage.removeItem("magicBackend");
       localStorage.removeItem("magicExpiresAt");
+      localStorage.removeItem("magicEmail");
     }
 
     function clearPending(){
       currentRequestId = null;
       currentBackend = null;
       expiryTime = null;
+      lastEmailUsed = null;
       clearStoredPending();
       statusSection.classList.add("hidden");
       timerEl.textContent = "";
       stopPolling();
-      clearInterval(countdownInterval);
+      stopTimer();
       qrBox.innerHTML = "";
       showBackendBadge(backendBadge, null);
       showMessage("Pending request cleared.", "warn");
@@ -597,7 +624,6 @@
       return "primaryThenLegacy";
     }
 
-    // ================= ACTIONS =================
     async function sendMagic(){
       const email = safeText(emailInput.value).toLowerCase();
 
@@ -638,8 +664,10 @@
           return;
         }
 
+        lastEmailUsed = email;
         currentRequestId = safeText(data.requestId) || null;
         currentBackend = result.backend || "primary";
+
         showBackendBadge(backendBadge, currentBackend);
         updateBackLink();
         savePendingState();
@@ -657,6 +685,76 @@
       }
 
       resetButton(sendBtn, "Send Magic Login");
+    }
+
+    async function resendMagic(){
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
+
+      if(!email){
+        return showMessage("Enter email first ❌", "error");
+      }
+
+      emailInput.value = email;
+      lastEmailUsed = email;
+      updateBackLink();
+
+      setLoading(resendBtn, "Resending");
+
+      try{
+        const behavior =
+          currentBackend === "legacy"
+            ? "legacyOnly"
+            : currentBackend === "primary"
+            ? "primaryOnly"
+            : "primaryThenLegacy";
+
+        const result = await apiHybrid(
+          "/magic-request",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: email,
+              device: getDeviceInfo()
+            })
+          },
+          behavior
+        );
+
+        const data = result.data || {};
+
+        if(!result.ok){
+          if(data.requiresEmailVerification){
+            showMessage("Your email is not verified yet. Check your inbox and verify first ✅", "warn");
+          } else {
+            showMessage(friendlyError(result) + " ❌", "error");
+          }
+          resetButton(resendBtn, "Resend Email");
+          return;
+        }
+
+        currentBackend = result.backend || currentBackend || "primary";
+        currentRequestId = safeText(data.requestId) || currentRequestId;
+
+        savePendingState();
+        showBackendBadge(backendBadge, currentBackend);
+
+        if(data.expiresAt){
+          startTimerFromExpiry(data.expiresAt);
+        }
+
+        statusSection.classList.remove("hidden");
+        showMessage(`New approval email sent from ${backendLabel(currentBackend)} ✅`, "success");
+
+        if(currentRequestId){
+          startPolling();
+        }
+      }catch(e){
+        console.error(e);
+        showMessage("Server error ❌", "error");
+      }
+
+      resetButton(resendBtn, "Resend Email");
     }
 
     async function checkStatus(showFeedback = false){
@@ -731,7 +829,7 @@
         }
       }finally{
         if(showFeedback){
-          resetButton(checkBtn, "Check Status Now");
+          resetButton(checkBtn, "Check Status");
         }
       }
     }
@@ -855,7 +953,6 @@
       showMessage("QR generated ✅ Scan it to open magic login.", "success");
     }
 
-    // ================= AUTO ACTIONS =================
     async function handleAutoActions(){
       const params = getParams();
 
@@ -867,6 +964,7 @@
 
       if(email){
         emailInput.value = email;
+        lastEmailUsed = email;
       }
 
       if(backend === "legacy" || backend === "primary"){
@@ -948,6 +1046,12 @@
       const savedRequestId = localStorage.getItem("magicRequestId");
       const savedBackend = localStorage.getItem("magicBackend");
       const savedExpiresAt = localStorage.getItem("magicExpiresAt");
+      const savedEmail = localStorage.getItem("magicEmail");
+
+      if(savedEmail && !safeText(emailInput.value)){
+        emailInput.value = savedEmail;
+        lastEmailUsed = savedEmail;
+      }
 
       if(savedBackend && !currentBackend){
         currentBackend = savedBackend;
