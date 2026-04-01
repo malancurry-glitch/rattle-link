@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billing Center - Rattle Link</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000;
+      --card:rgba(2,6,23,.88);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+      --border:rgba(0,255,255,.18);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:radial-gradient(circle at top,var(--bg),var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      padding:22px;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
+      background-size:40px 40px;
+    }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1200px;
+      margin:0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .topbar h1{
+      margin:0;
+      color:var(--cyan);
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:6px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 0 18px rgba(0,255,255,.08);
+      backdrop-filter:blur(10px);
+      margin-bottom:16px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+    }
+
+    .mini{
+      background:#010816;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+    }
+
+    .mini .v{
+      font-size:24px;
+      color:var(--cyan);
+      font-weight:700;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:5px 9px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(255,255,255,.14);
+      margin-right:6px;
+    }
+
+    .status-active{ color:var(--green); background:#052e16; }
+    .status-paused{ color:var(--yellow); background:#2b1a00; }
+    .status-expired{ color:var(--red); background:#2b0000; }
+    .status-trial{ color:var(--yellow); background:#2b1a00; }
+
+    button, a.btn{
+      background:#020617;
+      color:var(--cyan);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 13px;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+      transition:.2s ease;
+      font-size:13px;
+    }
+
+    button:hover, a.btn:hover{
+      box-shadow:0 0 14px rgba(0,255,255,.18);
+      transform:translateY(-1px);
+    }
+
+    .btn-primary{
+      background:var(--blue);
+      border-color:var(--blue);
+      color:#fff;
+    }
+
+    .message{
+      min-height:22px;
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+    .warn{ color:var(--yellow); }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:900px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    .address{
+      word-break:break-all;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>🧾 Billing Center</h1>
+        <div class="sub">View your plan, pending requests, verified payments, and renewal history.</div>
+      </div>
+
+      <div class="row">
+        <a class="btn" href="dashboard.html">← Dashboard</a>
+        <a class="btn btn-primary" href="upgrade.html">Upgrade / Renew</a>
+        <button id="refreshBtn" type="button">Refresh</button>
+        <button id="logoutBtn" type="button">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color:#00ffff;margin-top:0;">Subscription Overview</h2>
+      <div class="grid">
+        <div class="mini">
+          <div class="muted">User</div>
+          <div class="v" id="userName" style="font-size:18px;">-</div>
+        </div>
+        <div class="mini">
+          <div class="muted">Status</div>
+          <div id="userStatus">-</div>
+        </div>
+        <div class="mini">
+          <div class="muted">Plan</div>
+          <div class="v" id="userPlan" style="font-size:18px;">-</div>
+        </div>
+        <div class="mini">
+          <div class="muted">Expires</div>
+          <div class="v" id="userExpires" style="font-size:16px;">-</div>
+        </div>
+        <div class="mini">
+          <div class="muted">Trial Remaining</div>
+          <div class="v" id="trialRemaining">0</div>
+        </div>
+        <div class="mini">
+          <div class="muted">Can Generate</div>
+          <div class="v" id="canGenerate" style="font-size:18px;">-</div>
+        </div>
+      </div>
+
+      <div id="billingMsg" class="message"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="color:#00ffff;margin-top:0;">Payment History</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Asset</th>
+              <th>Network</th>
+              <th>Address</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Verified</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://rattleshortapi.it.com";
+
+    const userName = document.getElementById("userName");
+    const userStatus = document.getElementById("userStatus");
+    const userPlan = document.getElementById("userPlan");
+    const userExpires = document.getElementById("userExpires");
+    const trialRemaining = document.getElementById("trialRemaining");
+    const canGenerate = document.getElementById("canGenerate");
+    const billingMsg = document.getElementById("billingMsg");
+    const paymentsBody = document.getElementById("paymentsBody");
+
+    function authHeaders(){
+      return {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token") || ""
+      };
+    }
+
+    function ensureAuth(){
+      const token = localStorage.getItem("token");
+      if(!token){
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    async function safeFetch(url, method = "GET", body = null){
+      try{
+        const res = await fetch(url, {
+          method,
+          headers: authHeaders(),
+          body: body ? JSON.stringify(body) : null
+        });
+
+        const text = await res.text();
+        let data = {};
+        try{
+          data = text ? JSON.parse(text) : {};
+        }catch{
+          data = { message:text };
+        }
+
+        if(res.status === 401){
+          logout();
+          return { ok:false, status:401, data };
+        }
+
+        return { ok:res.ok, status:res.status, data };
+      }catch(error){
+        return {
+          ok:false,
+          status:0,
+          data:{ message:error?.message || "Network error" }
+        };
+      }
+    }
+
+    function logout(){
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    function showMsg(text, type = "warn"){
+      billingMsg.textContent = text;
+      billingMsg.className = "message " + type;
+    }
+
+    function formatDate(ts){
+      const n = Number(ts || 0);
+      if(!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function statusBadge(status){
+      const s = String(status || "").toLowerCase();
+      if(s === "active") return `<span class="badge status-active">ACTIVE</span>`;
+      if(s === "paused") return `<span class="badge status-paused">PAUSED</span>`;
+      if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
+      return `<span class="badge status-trial">${(s || "trial").toUpperCase()}</span>`;
+    }
+
+    function paymentBadge(status){
+      const s = String(status || "").toLowerCase();
+      if(s === "verified") return `<span class="badge status-active">VERIFIED</span>`;
+      if(s === "pending") return `<span class="badge status-paused">PENDING</span>`;
+      return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
+    }
+
+    async function loadMe(){
+      const res = await safeFetch(`${API}/me`);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load account", "error");
+        return;
+      }
+
+      const me = res.data || {};
+      userName.textContent = me.username || "-";
+      userStatus.innerHTML = statusBadge(me.subscriptionStatus || "trial");
+      userPlan.textContent = me.subscriptionPlan || "Trial";
+      userExpires.textContent = me.subscriptionExpiresAt ? formatDate(me.subscriptionExpiresAt) : "No active paid plan";
+      trialRemaining.textContent = Number(me.trialLinksRemaining || 0);
+      canGenerate.innerHTML = me.canGenerateLinks
+        ? `<span class="success">YES ✅</span>`
+        : `<span class="error">NO ❌</span>`;
+    }
+
+    async function loadPayments(){
+      const res = await safeFetch(`${API}/payments/me`);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load payments", "error");
+        return;
+      }
+
+      const payments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+
+      if(!payments.length){
+        paymentsBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="muted">No payments yet</td>
+          </tr>
+        `;
+        return;
+      }
+
+      paymentsBody.innerHTML = payments.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.billingCycle}</td>
+          <td>$${Number(p.amountUsd || 0)}</td>
+          <td>${p.cryptoCode}</td>
+          <td>${p.networkCode}</td>
+          <td class="address">${p.address || "-"}</td>
+          <td>${paymentBadge(p.status)}</td>
+          <td>${formatDate(p.createdAt)}</td>
+          <td>${formatDate(p.verifiedAt)}</td>
+        </tr>
+      `).join("");
+    }
+
+    document.getElementById("refreshBtn").onclick = async () => {
+      await loadMe();
+      await loadPayments();
+      showMsg("Billing refreshed", "success");
+    };
+
+    document.getElementById("logoutBtn").onclick = logout;
+
+    (async function init(){
+      if(!ensureAuth()) return;
+      await loadMe();
+      await loadPayments();
+    })();
+  </script>
+</body>
+</html>

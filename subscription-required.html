@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subscription Required - Rattle Link</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000;
+      --card:rgba(2,6,23,.9);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --border:rgba(0,255,255,.18);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:radial-gradient(circle at top,var(--bg),var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:580px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:24px;
+      text-align:center;
+      box-shadow:0 0 20px rgba(0,255,255,.12);
+    }
+
+    h1{
+      margin:0 0 10px;
+      color:var(--cyan);
+    }
+
+    .sub{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:16px;
+    }
+
+    .warn{
+      color:var(--yellow);
+      margin-bottom:14px;
+      font-weight:700;
+    }
+
+    .error{
+      color:var(--red);
+      margin-bottom:14px;
+      font-size:14px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    a{
+      text-decoration:none;
+      padding:12px 16px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      color:var(--cyan);
+      display:inline-block;
+    }
+
+    a:hover{
+      box-shadow:0 0 14px rgba(0,255,255,.18);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚫 Subscription Required</h1>
+    <div class="warn">Your free trial has finished.</div>
+    <div class="sub">
+      You can still log in and access your pages, but link creation is locked until a payment is created and verified by admin.
+    </div>
+    <div id="reason" class="error"></div>
+
+    <div class="row">
+      <a href="upgrade.html">Upgrade Now</a>
+      <a href="billing.html">Open Billing Center</a>
+      <a href="dashboard.html">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById("reason").textContent = params.get("reason") || "";
+  </script>
+</body>
+</html>

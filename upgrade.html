@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrade - Rattle Link</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000;
+      --card:rgba(2,6,23,.86);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+      --purple:#8b5cf6;
+      --border:rgba(0,255,255,.18);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at top,var(--bg),var(--bg2));
+      min-height:100vh;
+      padding:22px;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
+      background-size:40px 40px;
+    }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1280px;
+      margin:0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .topbar h1{
+      margin:0;
+      color:var(--cyan);
+      text-shadow:0 0 10px rgba(0,255,255,.35);
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:6px;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:16px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 0 18px rgba(0,255,255,.08);
+      backdrop-filter:blur(10px);
+      margin-bottom:16px;
+    }
+
+    .card h2,.card h3{
+      margin-top:0;
+      color:var(--cyan);
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:5px 9px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(255,255,255,.14);
+      margin-right:6px;
+      margin-bottom:6px;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+    .warn{ color:var(--yellow); }
+
+    .status-trial{ color:var(--yellow); background:#2b1a00; }
+    .status-active{ color:var(--green); background:#052e16; }
+    .status-paused{ color:var(--yellow); background:#2b1a00; }
+    .status-expired{ color:var(--red); background:#2b0000; }
+
+    button, a.btn{
+      background:#020617;
+      color:var(--cyan);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 13px;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+      transition:.2s ease;
+      font-size:13px;
+    }
+
+    button:hover, a.btn:hover{
+      box-shadow:0 0 14px rgba(0,255,255,.18);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .btn-primary{
+      background:var(--blue);
+      border-color:var(--blue);
+      color:#fff;
+    }
+
+    .btn-green{
+      color:var(--green);
+      border-color:var(--green);
+    }
+
+    .btn-red{
+      color:var(--red);
+      border-color:var(--red);
+    }
+
+    .btn-purple{
+      color:var(--purple);
+      border-color:var(--purple);
+    }
+
+    .btn-yellow{
+      color:var(--yellow);
+      border-color:var(--yellow);
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .field{
+      margin-bottom:12px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#000;
+      color:var(--text);
+      outline:none;
+    }
+
+    input:focus, select:focus, textarea:focus{
+      box-shadow:0 0 0 2px rgba(0,255,255,.13);
+    }
+
+    .plans{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+    }
+
+    .plan{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      background:#010816;
+      cursor:pointer;
+      transition:.2s ease;
+      position:relative;
+    }
+
+    .plan:hover{
+      transform:translateY(-2px);
+      box-shadow:0 0 16px rgba(0,255,255,.14);
+    }
+
+    .plan.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 18px rgba(0,255,255,.18);
+    }
+
+    .plan .price{
+      font-size:28px;
+      color:var(--cyan);
+      font-weight:700;
+      margin:8px 0;
+    }
+
+    .crypto-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
+
+    .crypto{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      cursor:pointer;
+      background:#010816;
+      transition:.2s ease;
+    }
+
+    .crypto.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 14px rgba(0,255,255,.16);
+    }
+
+    .summary{
+      background:#010816;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      margin-top:12px;
+    }
+
+    .payment-box{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+
+    .qr-box{
+      text-align:center;
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+      min-height:264px;
+    }
+
+    .qr-box img{
+      width:100%;
+      max-width:220px;
+      display:block;
+      margin:0 auto;
+      border-radius:10px;
+    }
+
+    .address-box{
+      background:#000;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      word-break:break-all;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:13px;
+    }
+
+    .kpi{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+    }
+
+    .mini{
+      padding:12px;
+      border-radius:14px;
+      background:#010816;
+      border:1px solid var(--border);
+    }
+
+    .mini .v{
+      font-size:24px;
+      font-weight:700;
+      color:var(--cyan);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    .message{
+      min-height:22px;
+      margin-top:12px;
+      font-size:13px;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .copy-row{
+      display:flex;
+      gap:8px;
+      align-items:stretch;
+      margin-top:10px;
+    }
+
+    .copy-row .address-box{
+      flex:1;
+      margin:0;
+    }
+
+    .timer{
+      font-size:13px;
+      margin-top:10px;
+      color:var(--yellow);
+      font-weight:600;
+    }
+
+    @media (max-width: 980px){
+      .grid-2{
+        grid-template-columns:1fr;
+      }
+      .payment-box{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>💎 Upgrade & Payments</h1>
+        <div class="sub">Start with 3 free trial links, then upgrade with crypto for unlimited access.</div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="dashboard.html">← Back to Dashboard</a>
+        <a class="btn btn-purple" href="billing.html">Billing Center</a>
+        <button id="refreshBtn" class="btn-primary" type="button">Refresh</button>
+        <button id="logoutBtn" class="btn-red" type="button">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <h2>👤 Subscription Status</h2>
+          <div class="kpi">
+            <div class="mini">
+              <div class="muted">Account</div>
+              <div class="v" id="meUser" style="font-size:18px;">-</div>
+            </div>
+            <div class="mini">
+              <div class="muted">Status</div>
+              <div id="meStatusWrap"></div>
+            </div>
+            <div class="mini">
+              <div class="muted">Trial Remaining</div>
+              <div class="v" id="meTrialRemaining">0</div>
+            </div>
+            <div class="mini">
+              <div class="muted">Plan</div>
+              <div class="v" id="mePlan" style="font-size:18px;">-</div>
+            </div>
+          </div>
+
+          <div class="summary" style="margin-top:14px;">
+            <div><b>Subscription Expires:</b> <span id="meExpires">-</span></div>
+            <div style="margin-top:8px;"><b>Can Generate Links:</b> <span id="meCanGenerate">-</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📦 Choose Plan</h2>
+          <div id="plansBox" class="plans"></div>
+
+          <div class="field" style="margin-top:16px;">
+            <label>Select Crypto</label>
+            <div id="cryptoBox" class="crypto-grid"></div>
+          </div>
+
+          <div class="summary">
+            <div><b>Selected Plan:</b> <span id="selectedPlanText">None</span></div>
+            <div style="margin-top:8px;"><b>Selected Crypto:</b> <span id="selectedCryptoText">None</span></div>
+            <div style="margin-top:8px;"><b>Amount:</b> <span id="selectedAmountText">$0</span></div>
+          </div>
+
+          <div class="row" style="margin-top:14px;">
+            <button id="createPaymentBtn" class="btn-primary" type="button">Create Payment Request</button>
+            <button id="loadPendingBtn" class="btn-yellow" type="button">Load Latest Pending</button>
+          </div>
+
+          <div id="upgradeMsg" class="message"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>🪙 Payment Request</h2>
+
+          <div id="emptyPaymentState" class="muted">
+            Choose a plan and crypto option, then create a payment request.  
+            After you pay, the admin verifies it and your subscription becomes active.
+          </div>
+
+          <div id="paymentState" class="hidden">
+            <div class="payment-box">
+              <div class="qr-box">
+                <img id="paymentQr" alt="Payment QR" />
+              </div>
+
+              <div>
+                <div class="summary">
+                  <div><b>Payment ID:</b> <span id="paymentId">-</span></div>
+                  <div style="margin-top:8px;"><b>Plan:</b> <span id="paymentPlan">-</span></div>
+                  <div style="margin-top:8px;"><b>Amount USD:</b> <span id="paymentAmount">-</span></div>
+                  <div style="margin-top:8px;"><b>Asset:</b> <span id="paymentAsset">-</span></div>
+                  <div style="margin-top:8px;"><b>Network:</b> <span id="paymentNetwork">-</span></div>
+                  <div style="margin-top:8px;"><b>Status:</b> <span id="paymentStatus">-</span></div>
+                </div>
+
+                <div class="copy-row">
+                  <div id="paymentAddress" class="address-box">-</div>
+                  <button id="copyAddressBtn" class="btn-green" type="button">Copy</button>
+                </div>
+
+                <div class="copy-row">
+                  <div id="paymentQrText" class="address-box">-</div>
+                  <button id="copyQrTextBtn" class="btn-green" type="button">Copy QR Text</button>
+                </div>
+
+                <div id="paymentTimer" class="timer"></div>
+
+                <div class="row" style="margin-top:12px;">
+                  <button id="openBillingBtn" class="btn-purple" type="button">Open Billing Center</button>
+                  <button id="checkMeBtn" type="button">Check Subscription</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🧾 Latest Payments</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Plan</th>
+                  <th>Amount</th>
+                  <th>Crypto</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://rattleshortapi.it.com";
+
+    const meUser = document.getElementById("meUser");
+    const meStatusWrap = document.getElementById("meStatusWrap");
+    const meTrialRemaining = document.getElementById("meTrialRemaining");
+    const mePlan = document.getElementById("mePlan");
+    const meExpires = document.getElementById("meExpires");
+    const meCanGenerate = document.getElementById("meCanGenerate");
+
+    const plansBox = document.getElementById("plansBox");
+    const cryptoBox = document.getElementById("cryptoBox");
+    const selectedPlanText = document.getElementById("selectedPlanText");
+    const selectedCryptoText = document.getElementById("selectedCryptoText");
+    const selectedAmountText = document.getElementById("selectedAmountText");
+    const upgradeMsg = document.getElementById("upgradeMsg");
+
+    const emptyPaymentState = document.getElementById("emptyPaymentState");
+    const paymentState = document.getElementById("paymentState");
+    const paymentQr = document.getElementById("paymentQr");
+    const paymentId = document.getElementById("paymentId");
+    const paymentPlan = document.getElementById("paymentPlan");
+    const paymentAmount = document.getElementById("paymentAmount");
+    const paymentAsset = document.getElementById("paymentAsset");
+    const paymentNetwork = document.getElementById("paymentNetwork");
+    const paymentStatus = document.getElementById("paymentStatus");
+    const paymentAddress = document.getElementById("paymentAddress");
+    const paymentQrText = document.getElementById("paymentQrText");
+    const paymentTimer = document.getElementById("paymentTimer");
+    const paymentsTable = document.getElementById("paymentsTable");
+
+    let plansData = [];
+    let cryptoData = [];
+    let meData = null;
+    let selectedPlan = null;
+    let selectedCrypto = null;
+    let latestPayment = null;
+    let paymentCountdown = null;
+
+    function authHeaders(){
+      return {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token") || ""
+      };
+    }
+
+    function ensureAuth(){
+      const token = localStorage.getItem("token");
+      if(!token){
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    async function safeFetch(url, method = "GET", body = null){
+      try{
+        const res = await fetch(url, {
+          method,
+          headers: authHeaders(),
+          body: body ? JSON.stringify(body) : null
+        });
+
+        const text = await res.text();
+        let data = {};
+        try{
+          data = text ? JSON.parse(text) : {};
+        }catch{
+          data = { message: text };
+        }
+
+        if(res.status === 401){
+          logout();
+          return { ok:false, status:401, data };
+        }
+
+        return { ok:res.ok, status:res.status, data };
+      }catch(error){
+        return {
+          ok:false,
+          status:0,
+          data:{ message:error?.message || "Network error" }
+        };
+      }
+    }
+
+    function showMsg(text, type = "warn"){
+      upgradeMsg.textContent = text;
+      upgradeMsg.className = "message " + type;
+    }
+
+    function logout(){
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    function formatDate(ts){
+      const n = Number(ts || 0);
+      if(!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function statusBadge(status){
+      const s = String(status || "").toLowerCase();
+      if(s === "active") return `<span class="badge status-active">ACTIVE</span>`;
+      if(s === "paused") return `<span class="badge status-paused">PAUSED</span>`;
+      if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
+      return `<span class="badge status-trial">${(s || "trial").toUpperCase()}</span>`;
+    }
+
+    function paymentStatusBadge(status){
+      const s = String(status || "").toLowerCase();
+      if(s === "verified") return `<span class="badge status-active">VERIFIED</span>`;
+      if(s === "pending") return `<span class="badge status-paused">PENDING</span>`;
+      return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
+    }
+
+    function renderMe(){
+      if(!meData) return;
+
+      meUser.textContent = meData.username || "-";
+      meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || "trial");
+      meTrialRemaining.textContent = Number(meData.trialLinksRemaining || 0);
+      mePlan.textContent = meData.subscriptionPlan || "Trial";
+      meExpires.textContent = meData.subscriptionExpiresAt ? formatDate(meData.subscriptionExpiresAt) : "No active paid plan";
+      meCanGenerate.innerHTML = meData.canGenerateLinks
+        ? `<span class="success">Yes ✅</span>`
+        : `<span class="error">No ❌</span>`;
+    }
+
+    function renderPlans(){
+      plansBox.innerHTML = plansData.map(plan => `
+        <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
+          <div class="muted">${plan.label}</div>
+          <div class="price">$${plan.amountUsd}</div>
+          <div class="muted">Billing cycle: ${plan.code}</div>
+        </div>
+      `).join("");
+
+      plansBox.querySelectorAll(".plan").forEach(el => {
+        el.onclick = () => {
+          selectedPlan = el.dataset.plan;
+          renderPlans();
+          updateSelection();
+        };
+      });
+    }
+
+    function renderCrypto(){
+      cryptoBox.innerHTML = cryptoData.map(item => `
+        <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
+          <div><b>${item.asset}</b></div>
+          <div class="muted">${item.network}</div>
+          <div style="margin-top:6px;">${item.label}</div>
+        </div>
+      `).join("");
+
+      cryptoBox.querySelectorAll(".crypto").forEach(el => {
+        el.onclick = () => {
+          selectedCrypto = el.dataset.code;
+          renderCrypto();
+          updateSelection();
+        };
+      });
+    }
+
+    function updateSelection(){
+      const plan = plansData.find(x => x.code === selectedPlan);
+      const crypto = cryptoData.find(x => x.code === selectedCrypto);
+
+      selectedPlanText.textContent = plan ? `${plan.label} (${plan.code})` : "None";
+      selectedCryptoText.textContent = crypto ? `${crypto.label}` : "None";
+      selectedAmountText.textContent = plan ? `$${plan.amountUsd}` : "$0";
+    }
+
+    function stopPaymentCountdown(){
+      if(paymentCountdown){
+        clearInterval(paymentCountdown);
+        paymentCountdown = null;
+      }
+    }
+
+    function startPaymentCountdown(expiresAt){
+      stopPaymentCountdown();
+
+      const tick = () => {
+        const left = Number(expiresAt || 0) - Date.now();
+        if(left <= 0){
+          paymentTimer.textContent = "⛔ Payment request expired";
+          stopPaymentCountdown();
+          return;
+        }
+        const h = Math.floor(left / 3600000);
+        const m = Math.floor((left % 3600000) / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        paymentTimer.textContent = `⏱ Payment request expires in ${h}h ${m}m ${s}s`;
+      };
+
+      tick();
+      paymentCountdown = setInterval(tick, 1000);
+    }
+
+    function openPayment(payment){
+      latestPayment = payment;
+      emptyPaymentState.classList.add("hidden");
+      paymentState.classList.remove("hidden");
+
+      paymentQr.src = payment.qrImageUrl || "";
+      paymentId.textContent = payment.id || "-";
+      paymentPlan.textContent = payment.billingCycle || "-";
+      paymentAmount.textContent = `$${Number(payment.amountUsd || 0)}`;
+      paymentAsset.textContent = payment.cryptoCode || "-";
+      paymentNetwork.textContent = payment.networkCode || "-";
+      paymentStatus.innerHTML = paymentStatusBadge(payment.status);
+      paymentAddress.textContent = payment.address || "-";
+      paymentQrText.textContent = payment.qrText || "-";
+
+      if(payment.expiresAt){
+        startPaymentCountdown(payment.expiresAt);
+      } else {
+        paymentTimer.textContent = "";
+      }
+    }
+
+    function renderPaymentsTable(list){
+      if(!list.length){
+        paymentsTable.innerHTML = `
+          <tr>
+            <td colspan="6" class="muted">No payments yet</td>
+          </tr>
+        `;
+        return;
+      }
+
+      paymentsTable.innerHTML = list.map(p => `
+        <tr data-id="${p.id}">
+          <td>${p.id}</td>
+          <td>${p.billingCycle}</td>
+          <td>$${Number(p.amountUsd || 0)}</td>
+          <td>${p.cryptoCode} / ${p.networkCode}</td>
+          <td>${paymentStatusBadge(p.status)}</td>
+          <td>${formatDate(p.createdAt)}</td>
+        </tr>
+      `).join("");
+
+      paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
+        row.style.cursor = "pointer";
+        row.onclick = () => {
+          const item = window.__payments.find(x => x.id === row.dataset.id);
+          if(item) openPayment(item);
+        };
+      });
+    }
+
+    async function loadPlans(){
+      const res = await safeFetch(`${API}/plans`);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load plans", "error");
+        return;
+      }
+
+      plansData = Array.isArray(res.data?.plans) ? res.data.plans : [];
+      cryptoData = Array.isArray(res.data?.cryptoOptions) ? res.data.cryptoOptions : [];
+
+      if(!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
+      if(!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
+
+      renderPlans();
+      renderCrypto();
+      updateSelection();
+    }
+
+    async function loadMe(){
+      const res = await safeFetch(`${API}/me`);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load account", "error");
+        return;
+      }
+      meData = res.data || {};
+      renderMe();
+    }
+
+    async function loadPayments(openLatestPending = false){
+      const res = await safeFetch(`${API}/payments/me`);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load payments", "error");
+        return;
+      }
+
+      const payments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+      window.__payments = payments;
+      renderPaymentsTable(payments);
+
+      if(openLatestPending){
+        const pending = payments.find(x => String(x.status).toLowerCase() === "pending");
+        if(pending) openPayment(pending);
+      }
+    }
+
+    async function createPaymentRequest(){
+      if(!selectedPlan){
+        showMsg("Choose a plan first", "warn");
+        return;
+      }
+      if(!selectedCrypto){
+        showMsg("Choose a crypto option first", "warn");
+        return;
+      }
+
+      const btn = document.getElementById("createPaymentBtn");
+      btn.disabled = true;
+      btn.textContent = "Creating...";
+
+      const res = await safeFetch(`${API}/payment-request`, "POST", {
+        billingCycle: selectedPlan,
+        cryptoCode: selectedCrypto
+      });
+
+      btn.disabled = false;
+      btn.textContent = "Create Payment Request";
+
+      if(!res.ok){
+        showMsg(res.data?.message || "Could not create payment request", "error");
+        return;
+      }
+
+      const payment = res.data?.payment;
+      if(payment){
+        openPayment(payment);
+        showMsg("Payment request created. Send the payment and wait for admin verification.", "success");
+      } else {
+        showMsg("Payment request created", "success");
+      }
+
+      await loadPayments(false);
+      await loadMe();
+    }
+
+    async function loadLatestPending(){
+      await loadPayments(true);
+      showMsg("Latest pending payment loaded", "success");
+    }
+
+    async function copyText(text, okMessage){
+      try{
+        await navigator.clipboard.writeText(text);
+        showMsg(okMessage, "success");
+      }catch{
+        showMsg("Copy failed", "error");
+      }
+    }
+
+    document.getElementById("createPaymentBtn").onclick = createPaymentRequest;
+    document.getElementById("loadPendingBtn").onclick = loadLatestPending;
+    document.getElementById("refreshBtn").onclick = async () => {
+      await loadPlans();
+      await loadMe();
+      await loadPayments(false);
+      showMsg("Refreshed", "success");
+    };
+    document.getElementById("logoutBtn").onclick = logout;
+    document.getElementById("copyAddressBtn").onclick = () => copyText(paymentAddress.textContent, "Address copied");
+    document.getElementById("copyQrTextBtn").onclick = () => copyText(paymentQrText.textContent, "QR text copied");
+    document.getElementById("openBillingBtn").onclick = () => {
+      window.location.href = "billing.html";
+    };
+    document.getElementById("checkMeBtn").onclick = async () => {
+      await loadMe();
+      showMsg("Subscription status checked", "success");
+    };
+
+    (async function init(){
+      if(!ensureAuth()) return;
+      await loadPlans();
+      await loadMe();
+      await loadPayments(true);
+    })();
+  </script>
+</body>
+</html>
