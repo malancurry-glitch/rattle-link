@@ -15,7 +15,6 @@
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
-      --blue:#3b82f6;
       --green:#22c55e;
       --red:#ef4444;
       --yellow:#f59e0b;
@@ -407,6 +406,13 @@
       min-height:16px;
     }
 
+    .small-note{
+      margin-top:8px;
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+    }
+
     .hidden{
       display:none !important;
     }
@@ -536,6 +542,7 @@
           <button class="secondary" type="button" onclick="clearPendingMagic()">Clear Pending</button>
         </div>
         <div id="statusTimer" class="timer"></div>
+        <div id="backendUsedNote" class="small-note"></div>
       </div>
 
       <div class="switch" id="switchBox">
@@ -552,13 +559,17 @@
   </div>
 
   <script>
-    const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    // ================= HYBRID CONFIG =================
+    const PRIMARY_API = "https://your-backend2-domain.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
     const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
 
+    // ================= STATE =================
     let mode = "login";
     let captchaWidgetId = null;
     let pendingMagicRequestId = null;
     let pendingMagicExpiresAt = null;
+    let pendingMagicBackend = null;
     let pollInterval = null;
     let timerInterval = null;
 
@@ -595,7 +606,9 @@
     const approvalText = document.getElementById("approvalText");
     const statusTimer = document.getElementById("statusTimer");
     const checkStatusBtn = document.getElementById("checkStatusBtn");
+    const backendUsedNote = document.getElementById("backendUsedNote");
 
+    // ================= UI =================
     function toggleTheme() {
       document.body.classList.toggle("light");
       localStorage.setItem(
@@ -613,11 +626,8 @@
       errorBox.textContent = msg;
       errorBox.className = "error";
 
-      if (type === "success") {
-        errorBox.classList.add("success-text");
-      } else if (type === "warn") {
-        errorBox.classList.add("warn-text");
-      }
+      if (type === "success") errorBox.classList.add("success-text");
+      else if (type === "warn") errorBox.classList.add("warn-text");
 
       if (msg && type === "error") {
         card.classList.remove("shake");
@@ -654,9 +664,6 @@
       if (!RECAPTCHA_SITE_KEY || !window.grecaptcha) return;
       if (captchaWidgetId !== null) return;
 
-      const box = document.getElementById("recaptchaBox");
-      if (!box) return;
-
       try {
         captchaWidgetId = grecaptcha.render("recaptchaBox", {
           sitekey: RECAPTCHA_SITE_KEY
@@ -674,9 +681,7 @@
           clearInterval(timer);
           mountCaptcha();
         }
-        if (tries > 100) {
-          clearInterval(timer);
-        }
+        if (tries > 100) clearInterval(timer);
       }, 200);
     }
 
@@ -701,7 +706,7 @@
         btnText.textContent = "Login";
         switchText.textContent = "Don't have an account?";
         switchBtn.textContent = "Sign up";
-        helperText.textContent = "Use your email and password to access your dashboard.";
+        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS if needed.";
         secondaryBtn.textContent = "🔑 Reset Password";
       } else if (mode === "signup") {
         title.textContent = "Create Account";
@@ -709,13 +714,13 @@
         btnText.textContent = "Create Account";
         switchText.textContent = "Already have an account?";
         switchBtn.textContent = "Login";
-        helperText.textContent = "Sign up first, then verify your email before your first login.";
-        secondaryBtn.textContent = "🔑 Reset Password";
+        helperText.textContent = "New signups go to Backend 2 only. Then verify your email before first login.";
+        secondaryBtn.textContent = "📩 Resend Verify";
       } else {
         title.textContent = "Magic Link Login";
         subText.textContent = "Passwordless access ✨";
         btnText.textContent = "Send Magic Login";
-        helperText.textContent = "We email you a login approval first, then you finish sign-in securely.";
+        helperText.textContent = "Magic login tries Backend 2 first, then legacy AWS if needed.";
       }
 
       showError("");
@@ -740,7 +745,6 @@
     function resetCaptcha() {
       if (mode === "magic") return;
       if (!window.grecaptcha || captchaWidgetId === null) return;
-
       try {
         grecaptcha.reset(captchaWidgetId);
       } catch (e) {
@@ -751,7 +755,6 @@
     function checkStrength() {
       const fill = document.getElementById("strengthFill");
       const text = document.getElementById("strength");
-
       if (mode !== "signup") {
         fill.style.width = "0%";
         fill.className = "";
@@ -790,6 +793,7 @@
       }
     }
 
+    // ================= HELPERS =================
     async function safeJson(res) {
       try {
         return await res.json();
@@ -808,18 +812,120 @@
       };
     }
 
-    function savePendingMagic(requestId, expiresAt) {
+    function normalizeApiUrl(url) {
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    function backendLabel(name) {
+      return name === "primary" ? "Backend 2" : "Legacy AWS";
+    }
+
+    async function callApi(baseUrl, path, options = {}) {
+      const res = await fetch(normalizeApiUrl(baseUrl) + path, options);
+      const data = await safeJson(res);
+      return { res, data };
+    }
+
+    function shouldFallbackToLegacy(path, data, resStatus) {
+      if (path === "/signup") return false;
+      if (path === "/resend-verify") return false;
+      if (path === "/verify-email") return false;
+
+      if (resStatus >= 500) return true;
+      if (resStatus === 404) return true;
+
+      const msg = String(data?.message || "").toLowerCase();
+      if (
+        msg.includes("invalid credentials") ||
+        msg.includes("username required") ||
+        msg.includes("magic request not found") ||
+        msg.includes("invalid magic request") ||
+        msg.includes("invalid email") ||
+        msg.includes("user not found")
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
+      const primary = normalizeApiUrl(PRIMARY_API);
+      const legacy = normalizeApiUrl(LEGACY_API);
+
+      if (behavior === "primaryOnly") {
+        const { res, data } = await callApi(primary, path, options);
+        return { ok: res.ok, status: res.status, data, backend: "primary" };
+      }
+
+      if (behavior === "legacyOnly") {
+        const { res, data } = await callApi(legacy, path, options);
+        return { ok: res.ok, status: res.status, data, backend: "legacy" };
+      }
+
+      let primaryError = null;
+
+      try {
+        const first = await callApi(primary, path, options);
+        if (first.res.ok) {
+          return {
+            ok: true,
+            status: first.res.status,
+            data: first.data,
+            backend: "primary"
+          };
+        }
+
+        if (!shouldFallbackToLegacy(path, first.data, first.res.status)) {
+          return {
+            ok: false,
+            status: first.res.status,
+            data: first.data,
+            backend: "primary"
+          };
+        }
+
+        primaryError = first;
+      } catch (error) {
+        primaryError = { error };
+      }
+
+      try {
+        const second = await callApi(legacy, path, options);
+        return {
+          ok: second.res.ok,
+          status: second.res.status,
+          data: second.data,
+          backend: "legacy",
+          primaryError
+        };
+      } catch (legacyError) {
+        if (primaryError?.res || primaryError?.error) {
+          if (primaryError.res) {
+            return {
+              ok: false,
+              status: primaryError.res.status,
+              data: primaryError.data || { message: "Request failed" },
+              backend: "primary"
+            };
+          }
+        }
+        throw legacyError;
+      }
+    }
+
+    // ================= MAGIC PENDING STATE =================
+    function savePendingMagic(requestId, expiresAt, backend) {
       pendingMagicRequestId = requestId || null;
       pendingMagicExpiresAt = expiresAt || null;
+      pendingMagicBackend = backend || null;
 
-      if (requestId) {
-        localStorage.setItem("magicRequestId", requestId);
-      }
-      if (expiresAt) {
-        localStorage.setItem("magicExpiresAt", String(expiresAt));
-      }
+      if (requestId) localStorage.setItem("magicRequestId", requestId);
+      if (expiresAt) localStorage.setItem("magicExpiresAt", String(expiresAt));
+      if (backend) localStorage.setItem("magicBackend", backend);
 
       approvalBox.style.display = "block";
+      backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
       approvalText.textContent =
         "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
       startMagicTimer(expiresAt);
@@ -829,9 +935,12 @@
     function clearPendingMagic() {
       pendingMagicRequestId = null;
       pendingMagicExpiresAt = null;
+      pendingMagicBackend = null;
       localStorage.removeItem("magicRequestId");
       localStorage.removeItem("magicExpiresAt");
+      localStorage.removeItem("magicBackend");
       approvalBox.style.display = "none";
+      backendUsedNote.textContent = "";
       statusTimer.textContent = "";
       stopMagicPolling();
       stopMagicTimer();
@@ -841,11 +950,14 @@
     function restorePendingMagic() {
       const requestId = localStorage.getItem("magicRequestId");
       const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
+      const backend = localStorage.getItem("magicBackend");
 
       if (requestId) {
         pendingMagicRequestId = requestId;
         pendingMagicExpiresAt = expiresAt || null;
+        pendingMagicBackend = backend || null;
         approvalBox.style.display = "block";
+        backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
         startMagicTimer(expiresAt || null);
         startMagicPolling();
       }
@@ -876,7 +988,6 @@
 
     function startMagicTimer(expiresAt) {
       stopMagicTimer();
-
       if (!expiresAt) {
         statusTimer.textContent = "";
         return;
@@ -901,18 +1012,24 @@
 
     async function finishMagicLogin(requestId) {
       try {
-        const res = await fetch(API + "/magic-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requestId,
-            device: getDeviceInfo()
-          })
-        });
+        const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
 
-        const data = await safeJson(res);
+        const result = await apiHybrid(
+          "/magic-login",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requestId,
+              device: getDeviceInfo()
+            })
+          },
+          behavior
+        );
 
-        if (!res.ok || !data.token) {
+        const data = result.data || {};
+
+        if (!result.ok || !data.token) {
           if (data.status === "pending") {
             showError("Approval is still pending ⏳", "warn");
             return;
@@ -933,8 +1050,14 @@
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role || "user");
         localStorage.setItem("lastUser", username.value.trim().toLowerCase());
+        localStorage.setItem("authBackend", result.backend || "primary");
+
+        if (remember.checked) {
+          localStorage.setItem("rememberUser", username.value.trim().toLowerCase());
+        }
+
         clearPendingMagic();
-        showError("Login successful ✅", "success");
+        showError(`Login successful via ${backendLabel(result.backend)} ✅`, "success");
 
         setTimeout(() => {
           window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
@@ -947,7 +1070,6 @@
 
     async function checkMagicStatus(showFeedback = true) {
       const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
-
       if (!requestId) {
         if (showFeedback) showError("No pending approval request found ❌");
         return;
@@ -957,15 +1079,24 @@
       if (showFeedback) setMiniLoading(checkStatusBtn, true);
 
       try {
-        const res = await fetch(API + "/magic-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requestId })
-        });
+        const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
 
-        const data = await safeJson(res);
+        const result = await apiHybrid(
+          "/magic-status",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestId })
+          },
+          behavior
+        );
 
-        if (!res.ok) {
+        const data = result.data || {};
+        pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
+        localStorage.setItem("magicBackend", pendingMagicBackend);
+        backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
+
+        if (!result.ok) {
           if (showFeedback) showError(data.message || "Could not check status ❌");
           return;
         }
@@ -977,7 +1108,7 @@
 
         if (data.status === "approved") {
           approvalText.textContent = "Login approved. Finishing sign-in now.";
-          showError("Login approved ✅ Finishing sign in...", "success");
+          showError(`Login approved on ${backendLabel(pendingMagicBackend)} ✅`, "success");
           stopMagicPolling();
           await finishMagicLogin(requestId);
           return;
@@ -990,7 +1121,7 @@
         }
 
         if (showFeedback) {
-          showError("Still waiting for email approval ⏳", "warn");
+          showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)} ⏳`, "warn");
         }
       } catch (e) {
         console.error("STATUS ERROR:", e);
@@ -1002,13 +1133,15 @@
 
     function openMagicPage() {
       const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+      const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || "primary";
       const url = requestId
-        ? `magic-login.html?requestId=${encodeURIComponent(requestId)}`
+        ? `magic-login.html?requestId=${encodeURIComponent(requestId)}&backend=${encodeURIComponent(backend)}`
         : "magic-login.html";
 
       window.location.href = url;
     }
 
+    // ================= ACTIONS =================
     async function login() {
       showError("");
       setLoading(true);
@@ -1036,20 +1169,24 @@
       }
 
       try {
-        const res = await fetch(API + "/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: user,
-            password: pass,
-            captcha,
-            device: getDeviceInfo()
-          })
-        });
+        const result = await apiHybrid(
+          "/login",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: user,
+              password: pass,
+              captcha,
+              device: getDeviceInfo()
+            })
+          },
+          "primaryThenLegacy"
+        );
 
-        const data = await safeJson(res);
+        const data = result.data || {};
 
-        if (!res.ok) {
+        if (!result.ok) {
           if (data.requiresEmailVerification) {
             showError("Check your email and verify your account first ✅", "warn");
             setTimeout(() => {
@@ -1064,8 +1201,8 @@
         }
 
         if (data.requiresApproval && data.requestId) {
-          savePendingMagic(data.requestId, data.expiresAt);
-          showError("Approval email sent ✅ Please approve this login from your inbox.", "warn");
+          savePendingMagic(data.requestId, data.expiresAt, result.backend);
+          showError(`Approval email sent from ${backendLabel(result.backend)} ✅`, "warn");
           resetCaptcha();
           setLoading(false);
           return;
@@ -1081,6 +1218,7 @@
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role || "user");
         localStorage.setItem("lastUser", user);
+        localStorage.setItem("authBackend", result.backend || "primary");
 
         if (remember.checked) {
           localStorage.setItem("rememberUser", user);
@@ -1088,7 +1226,7 @@
           localStorage.removeItem("rememberUser");
         }
 
-        showError("Login successful ✅", "success");
+        showError(`Login successful via ${backendLabel(result.backend)} ✅`, "success");
 
         setTimeout(() => {
           window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
@@ -1142,19 +1280,23 @@
       }
 
       try {
-        const res = await fetch(API + "/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: user,
-            password: pass,
-            captcha
-          })
-        });
+        const result = await apiHybrid(
+          "/signup",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: user,
+              password: pass,
+              captcha
+            })
+          },
+          "primaryOnly"
+        );
 
-        const data = await safeJson(res);
+        const data = result.data || {};
 
-        if (!res.ok) {
+        if (!result.ok) {
           showError(data.message || "Signup failed ❌");
           resetCaptcha();
           setLoading(false);
@@ -1195,18 +1337,22 @@
       }
 
       try {
-        const res = await fetch(API + "/magic-request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: user,
-            device: getDeviceInfo()
-          })
-        });
+        const result = await apiHybrid(
+          "/magic-request",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: user,
+              device: getDeviceInfo()
+            })
+          },
+          "primaryThenLegacy"
+        );
 
-        const data = await safeJson(res);
+        const data = result.data || {};
 
-        if (!res.ok) {
+        if (!result.ok) {
           if (data.requiresEmailVerification) {
             showError("Verify your email first before magic login ✅", "warn");
             setTimeout(() => {
@@ -1220,10 +1366,10 @@
         }
 
         if (data.requestId) {
-          savePendingMagic(data.requestId, data.expiresAt);
+          savePendingMagic(data.requestId, data.expiresAt, result.backend);
         }
 
-        showError(data.message || "Magic approval email sent ✅", "success");
+        showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)} ✅`, "success");
       } catch (e) {
         console.error("MAGIC LINK ERROR:", e);
         showError("Failed to send magic login ❌");
@@ -1243,20 +1389,23 @@
       showError("Sending verification email... ⏳", "warn");
 
       try {
-        const res = await fetch(API + "/resend-verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: user })
-        });
+        const result = await apiHybrid(
+          "/resend-verify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: user })
+          },
+          "primaryThenLegacy"
+        );
 
-        const data = await safeJson(res);
-
-        if (!res.ok) {
+        const data = result.data || {};
+        if (!result.ok) {
           showError(data.message || "Could not resend verification ❌");
           return;
         }
 
-        showError(data.message || "Verification email sent ✅", "success");
+        showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)} ✅`, "success");
       } catch (e) {
         console.error("RESEND VERIFY ERROR:", e);
         showError("Could not resend verification ❌");
@@ -1295,13 +1444,18 @@
       const params = new URLSearchParams(window.location.search);
       const email = (params.get("email") || "").trim().toLowerCase();
       const requestId = (params.get("requestId") || "").trim();
+      const backend = (params.get("backend") || "").trim();
 
       if (email) {
         username.value = email;
       }
 
       if (requestId) {
-        savePendingMagic(requestId, Number(localStorage.getItem("magicExpiresAt") || 0) || null);
+        savePendingMagic(
+          requestId,
+          Number(localStorage.getItem("magicExpiresAt") || 0) || null,
+          backend || localStorage.getItem("magicBackend") || "primary"
+        );
         showError("Resuming pending login approval ⏳", "warn");
       }
     }
