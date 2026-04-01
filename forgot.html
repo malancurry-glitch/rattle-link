@@ -340,7 +340,7 @@
         </div>
 
         <button class="secondary" onclick="sendAgain()">Send Again</button>
-        <a class="btn-link secondary" href="login.html" style="margin-top:10px;">Back to Login</a>
+        <a id="backToIndexBtn" class="btn-link secondary" href="index.html" style="margin-top:10px;">Back to Login</a>
       </div>
     </div>
   </div>
@@ -366,6 +366,7 @@
     const backendBadge = document.getElementById("backendBadge");
     const successBackendBadge = document.getElementById("successBackendBadge");
     const successText = document.getElementById("successText");
+    const backToIndexBtn = document.getElementById("backToIndexBtn");
 
     // ================= UI =================
     function toggleTheme(){
@@ -420,29 +421,83 @@
       return String(url || "").replace(/\/+$/, "");
     }
 
-    async function safeJson(res){
+    function isUsableApiUrl(url){
+      const clean = normalizeApiUrl(url);
+      if(!clean) return false;
+      if(clean.includes("your-backend2-domain.com")) return false;
+      return /^https?:\/\//i.test(clean);
+    }
+
+    function buildIndexHref(email = "", backend = ""){
+      const query = [];
+      if(email) query.push(`email=${encodeURIComponent(email)}`);
+      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
+      return `index.html${query.length ? `?${query.join("&")}` : ""}`;
+    }
+
+    function updateBackLinks(email = "", backend = ""){
+      const href = buildIndexHref(email, backend);
+      backToIndexBtn.href = href;
+    }
+
+    async function safeBody(res){
+      const text = await res.text();
+      if(!text) return {};
       try{
-        return await res.json();
+        return JSON.parse(text);
       }catch{
-        return {};
+        return { message: text };
       }
     }
 
     async function callApi(baseUrl, path, options = {}){
-      const res = await fetch(normalizeApiUrl(baseUrl) + path, options);
-      const data = await safeJson(res);
-      return { res, data };
+      const url = normalizeApiUrl(baseUrl);
+
+      if(!isUsableApiUrl(url)){
+        return {
+          ok: false,
+          status: 0,
+          data: { message: "Backend URL not configured" },
+          networkError: true
+        };
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      try{
+        const res = await fetch(url + path, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const data = await safeBody(res);
+        return { ok: res.ok, status: res.status, data, networkError: false };
+      }catch(error){
+        clearTimeout(timeout);
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Network request failed" },
+          networkError: true
+        };
+      }
     }
 
-    function shouldFallbackToLegacy(path, data, status){
-      if(path === "/forgot"){
-        if(status >= 500 || status === 404) return true;
+    function shouldFallbackToLegacy(path, result){
+      const status = Number(result?.status || 0);
+      const networkError = !!result?.networkError;
+      const msg = String(result?.data?.message || "").toLowerCase();
 
-        const msg = String(data?.message || "").toLowerCase();
+      if(path === "/forgot"){
+        if(networkError) return true;
+        if(status === 404 || status >= 500) return true;
+
         if(
-          msg.includes("invalid email") ||
-          msg.includes("not found") ||
-          msg.includes("user not found")
+          msg.includes("backend url not configured") ||
+          msg.includes("network request failed") ||
+          msg.includes("failed to fetch")
         ){
           return true;
         }
@@ -457,50 +512,33 @@
 
       if(behavior === "primaryOnly"){
         const first = await callApi(primary, path, options);
-        return { ok: first.res.ok, status: first.res.status, data: first.data, backend: "primary" };
+        return { ...first, backend: "primary" };
       }
 
       if(behavior === "legacyOnly"){
         const only = await callApi(legacy, path, options);
-        return { ok: only.res.ok, status: only.res.status, data: only.data, backend: "legacy" };
+        return { ...only, backend: "legacy" };
       }
 
-      let firstError = null;
+      const first = await callApi(primary, path, options);
 
-      try{
-        const first = await callApi(primary, path, options);
+      if(first.ok){
+        return { ...first, backend: "primary" };
+      }
 
-        if(first.res.ok){
-          return {
-            ok: true,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
-
-        if(!shouldFallbackToLegacy(path, first.data, first.res.status)){
-          return {
-            ok: false,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
-
-        firstError = first;
-      }catch(error){
-        firstError = { error };
+      if(!shouldFallbackToLegacy(path, first)){
+        return { ...first, backend: "primary" };
       }
 
       const second = await callApi(legacy, path, options);
-      return {
-        ok: second.res.ok,
-        status: second.res.status,
-        data: second.data,
-        backend: "legacy",
-        firstError
-      };
+      return { ...second, backend: "legacy", firstAttempt: first };
+    }
+
+    function friendlyError(result){
+      const msg = String(result?.data?.message || "").trim();
+      if(msg) return msg;
+      if(result?.networkError) return "Network error";
+      return "Failed";
     }
 
     // ================= COOLDOWN =================
@@ -556,10 +594,8 @@
           "primaryThenLegacy"
         );
 
-        const data = result.data || {};
-
         if(!result.ok){
-          show(data.message || "Failed ❌");
+          show(friendlyError(result) + " ❌");
           setLoading(false);
           return;
         }
@@ -573,6 +609,7 @@
 
         showBackendBadge(successBackendBadge, lastBackend);
         successText.textContent = `Your reset request was accepted by ${backendLabel(lastBackend)}. Check your inbox and spam folder.`;
+        updateBackLinks(lastEmail, lastBackend);
 
         startCooldown(30);
       }catch(e){
@@ -595,6 +632,7 @@
       formBox.classList.remove("hidden");
       successBox.classList.add("hidden");
       card.classList.remove("success");
+      updateBackLinks(lastEmail, lastBackend || "");
 
       if(cooldown > 0){
         show(`Wait ${cooldown}s before sending again ⏳`, "warn");
@@ -605,16 +643,21 @@
     }
 
     function goBack(){
-      window.location.href = "login.html";
+      const email = username.value.trim().toLowerCase() || lastEmail || "";
+      const backend = lastBackend || "";
+      window.location.href = buildIndexHref(email, backend);
     }
 
     function autoFillEmail(){
       const params = new URLSearchParams(window.location.search);
       const email = (params.get("email") || localStorage.getItem("rememberUser") || "").trim().toLowerCase();
+      const backend = (params.get("backend") || "").trim().toLowerCase();
 
       if(email){
         username.value = email;
       }
+
+      updateBackLinks(email, backend);
     }
 
     username.addEventListener("keydown", (e) => {
