@@ -212,7 +212,7 @@
     <div id="msg"></div>
 
     <div class="muted">
-      This page uses the correct backend for the verification token and only falls back when a backend is unavailable.
+      This page uses the email link backend first and falls back only when the other backend is actually unavailable.
     </div>
   </div>
 
@@ -243,6 +243,13 @@
       return String(url || "").replace(/\/+$/, "");
     }
 
+    function isUsableApiUrl(url){
+      const clean = normalizeApiUrl(url);
+      if(!clean) return false;
+      if(clean.includes("your-backend2-domain.com")) return false;
+      return /^https?:\/\//i.test(clean);
+    }
+
     function backendLabel(name){
       return name === "primary" ? "Backend 2" : "Legacy AWS";
     }
@@ -258,7 +265,7 @@
     }
 
     function showMessage(text, type = "error"){
-      msg.innerHTML = text;
+      msg.textContent = text;
       msg.className = type;
     }
 
@@ -269,25 +276,64 @@
 
     function resetButton(button, text){
       button.disabled = false;
-      button.innerHTML = text;
+      button.textContent = text;
     }
 
-    async function safeJson(res){
+    async function safeBody(res){
+      const text = await res.text();
+      if(!text) return {};
       try{
-        return await res.json();
+        return JSON.parse(text);
       }catch{
-        return {};
+        return { message: text };
       }
     }
 
     async function callApi(baseUrl, path, options = {}){
-      const res = await fetch(normalizeApiUrl(baseUrl) + path, options);
-      const data = await safeJson(res);
-      return { res, data };
+      const url = normalizeApiUrl(baseUrl);
+
+      if(!isUsableApiUrl(url)){
+        return {
+          ok: false,
+          status: 0,
+          data: { message: "Backend URL not configured" },
+          networkError: true
+        };
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      try{
+        const res = await fetch(url + path, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const data = await safeBody(res);
+        return {
+          ok: res.ok,
+          status: res.status,
+          data,
+          networkError: false
+        };
+      }catch(error){
+        clearTimeout(timeout);
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Network request failed" },
+          networkError: true
+        };
+      }
     }
 
-    function isBackendFailure(status){
-      return status === 404 || status >= 500;
+    function shouldFallback(status, networkError){
+      if(networkError) return true;
+      if(status === 404) return true;
+      if(status >= 500) return true;
+      return false;
     }
 
     async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
@@ -295,49 +341,27 @@
       const legacy = normalizeApiUrl(LEGACY_API);
 
       if(behavior === "primaryOnly"){
-        const r = await callApi(primary, path, options);
-        return { ok: r.res.ok, status: r.res.status, data: r.data, backend: "primary" };
+        const result = await callApi(primary, path, options);
+        return { ...result, backend: "primary" };
       }
 
       if(behavior === "legacyOnly"){
-        const r = await callApi(legacy, path, options);
-        return { ok: r.res.ok, status: r.res.status, data: r.data, backend: "legacy" };
+        const result = await callApi(legacy, path, options);
+        return { ...result, backend: "legacy" };
       }
 
-      try{
-        const first = await callApi(primary, path, options);
+      const first = await callApi(primary, path, options);
 
-        if(first.res.ok){
-          return {
-            ok: true,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
+      if(first.ok){
+        return { ...first, backend: "primary" };
+      }
 
-        // IMPORTANT FIX:
-        // Do NOT fallback on invalid token / expired token for verify-email.
-        // Only fallback when primary is truly unavailable / missing.
-        if(!isBackendFailure(first.res.status)){
-          return {
-            ok: false,
-            status: first.res.status,
-            data: first.data,
-            backend: "primary"
-          };
-        }
-      }catch(error){
-        // ignore and fallback
+      if(!shouldFallback(first.status, first.networkError)){
+        return { ...first, backend: "primary" };
       }
 
       const second = await callApi(legacy, path, options);
-      return {
-        ok: second.res.ok,
-        status: second.res.status,
-        data: second.data,
-        backend: "legacy"
-      };
+      return { ...second, backend: "legacy", firstAttempt: first };
     }
 
     function showPostVerifyActions(email = "", backend = ""){
@@ -365,6 +389,14 @@
       return "primaryThenLegacy";
     }
 
+    function friendlyError(result){
+      const message = String(result?.data?.message || "").trim();
+
+      if(message) return message;
+      if(result?.networkError) return "Could not reach server";
+      return "Server error";
+    }
+
     // ================= ACTIONS =================
     async function verifyToken(tokenFromArg){
       const token = (tokenFromArg || tokenInput.value || "").trim();
@@ -387,20 +419,36 @@
         );
 
         const data = result.data || {};
-        forcedBackend = result.backend || forcedBackend || "primary";
-        showBackendBadge(forcedBackend);
 
-        if(!result.ok){
-          showMessage(data.message || "Verification failed ❌", "error");
+        if(result.ok){
+          forcedBackend = result.backend || forcedBackend || "primary";
+          showBackendBadge(forcedBackend);
+
+          const email = (emailInput.value || params().get("email") || "").trim().toLowerCase();
+          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`, "success");
+          showPostVerifyActions(email, forcedBackend);
+
+          const newQuery = [];
+          if(email) newQuery.push(`email=${encodeURIComponent(email)}`);
+          if(forcedBackend) newQuery.push(`backend=${encodeURIComponent(forcedBackend)}`);
+          const newUrl = `/verify-email.html${newQuery.length ? `?${newQuery.join("&")}` : ""}`;
+          window.history.replaceState({}, "", newUrl);
+
           resetButton(verifyBtn, "Verify Email");
           return;
         }
 
-        const email = emailInput.value.trim().toLowerCase();
-        showMessage(`Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`, "success");
-        showPostVerifyActions(email, forcedBackend);
+        // If backend was forced by email link, do not switch.
+        if(forcedBackend){
+          showBackendBadge(forcedBackend);
+          showMessage(friendlyError(result) + " ❌", "error");
+          resetButton(verifyBtn, "Verify Email");
+          return;
+        }
 
-        window.history.replaceState({}, "", `/verify-email.html${email ? `?email=${encodeURIComponent(email)}&backend=${encodeURIComponent(forcedBackend)}` : `?backend=${encodeURIComponent(forcedBackend)}`}`);
+        // If no backend forced and primary failed with backend failure, try legacy already handled in apiHybrid.
+        showBackendBadge(result.backend || null);
+        showMessage(friendlyError(result) + " ❌", "error");
       } catch (e){
         console.error(e);
         showMessage("Server error ❌", "error");
@@ -429,17 +477,16 @@
           chooseResendBehavior()
         );
 
-        const data = result.data || {};
-        forcedBackend = result.backend || forcedBackend || "primary";
-        showBackendBadge(forcedBackend);
-
-        if(!result.ok){
-          showMessage(data.message || "Could not resend verification ❌", "error");
+        if(result.ok){
+          forcedBackend = result.backend || forcedBackend || "primary";
+          showBackendBadge(forcedBackend);
+          showMessage(`${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)} ✅`, "success");
           resetButton(resendBtn, "Resend Verification Email");
           return;
         }
 
-        showMessage(`${data.message || "Verification email sent"} via ${backendLabel(forcedBackend)} ✅`, "success");
+        showBackendBadge(result.backend || forcedBackend || null);
+        showMessage(friendlyError(result) + " ❌", "error");
       } catch (e){
         console.error(e);
         showMessage("Server error ❌", "error");
@@ -460,6 +507,12 @@
       if(backend === "primary" || backend === "legacy"){
         forcedBackend = backend;
         showBackendBadge(forcedBackend);
+      } else {
+        if(isUsableApiUrl(PRIMARY_API)) {
+          showBackendBadge("primary");
+        } else {
+          showBackendBadge("legacy");
+        }
       }
 
       if(!token) return;
