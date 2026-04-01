@@ -1,279 +1,631 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Forgot Password - Rattle Link</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-:root{
-  --bg:#020617;
-  --card:#020617;
-  --text:#0ff;
-  --border:rgba(0,255,255,0.2);
-}
-body.light{
-  --bg:#f1f5f9;
-  --card:#ffffff;
-  --text:#020617;
-  --border:rgba(0,0,0,0.1);
-}
-body {
-  margin:0;
-  font-family:Inter, Arial;
-  background:radial-gradient(circle at top, var(--bg), #000);
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.theme-toggle{
-  position:fixed;
-  top:20px;
-  right:20px;
-  cursor:pointer;
-}
-.wrapper {
-  display:flex;
-  width:750px;
-  max-width:95%;
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
-}
-.left {
-  flex:1;
-  background:linear-gradient(135deg,#3b82f6,#06b6d4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:30px;
-  text-align:center;
-}
-.features{
-  margin-top:20px;
-  display:flex;
-  gap:10px;
-}
-.features span{
-  background:#000;
-  border:1px solid #0ff;
-  padding:4px 8px;
-  font-size:11px;
-  border-radius:6px;
-}
-.card {
-  flex:1;
-  background:var(--card);
-  padding:30px;
-  text-align:center;
-  border-left:1px solid var(--border);
-}
-.card.success{
-  box-shadow:0 0 30px #22c55e;
-}
-.input-group {
-  margin-bottom:14px;
-}
-input {
-  width:100%;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  background:#000;
-  color:#0ff;
-}
-body.light input{
-  background:#fff;
-  color:#000;
-}
-button {
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#0ff;
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-}
-button:disabled{
-  opacity:0.5;
-}
-.spinner{
-  width:14px;
-  height:14px;
-  border:2px solid #000;
-  border-top:2px solid transparent;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-  display:none;
-}
-@keyframes spin{
-  to{ transform:rotate(360deg); }
-}
-.msg{ margin-top:10px; }
-.error{ color:#ef4444; }
-.successText{ color:#22c55e; }
-.back{
-  margin-top:12px;
-  font-size:12px;
-  color:#60a5fa;
-  cursor:pointer;
-}
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:#020617;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --border:rgba(0,255,255,0.2);
+    }
+
+    body.light{
+      --bg:#f1f5f9;
+      --bg2:#e2e8f0;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:rgba(0,0,0,0.1);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      padding:20px;
+      transition:.25s ease;
+    }
+
+    .theme-toggle{
+      position:fixed;
+      top:20px;
+      right:20px;
+      cursor:pointer;
+      width:auto;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:transparent;
+      color:var(--text);
+      z-index:20;
+    }
+
+    .wrapper{
+      display:flex;
+      width:820px;
+      max-width:95%;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.7);
+      border:1px solid var(--border);
+      background:var(--card);
+    }
+
+    .left{
+      flex:1;
+      background:linear-gradient(135deg,#3b82f6,#06b6d4);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      padding:30px;
+      text-align:center;
+      color:#fff;
+    }
+
+    .left h1{
+      margin:0 0 10px;
+    }
+
+    .left p{
+      margin:0;
+      line-height:1.6;
+      opacity:.95;
+      max-width:280px;
+    }
+
+    .features{
+      margin-top:20px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+
+    .features span{
+      background:rgba(0,0,0,.32);
+      border:1px solid rgba(255,255,255,.35);
+      padding:6px 10px;
+      font-size:11px;
+      border-radius:999px;
+    }
+
+    .card{
+      flex:1;
+      background:var(--card);
+      padding:30px;
+      text-align:center;
+      border-left:1px solid var(--border);
+      transition:.2s ease;
+    }
+
+    .card.success{
+      box-shadow:inset 0 0 0 1px rgba(34,197,94,.35), 0 0 24px rgba(34,197,94,.15);
+    }
+
+    h2{
+      margin:0 0 10px;
+      color:var(--cyan);
+    }
+
+    body.light h2{
+      text-shadow:none;
+    }
+
+    .sub{
+      margin:0 0 18px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .input-group{
+      margin-bottom:14px;
+    }
+
+    input{
+      width:100%;
+      padding:13px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#000;
+      color:#0ff;
+      outline:none;
+    }
+
+    body.light input{
+      background:#fff;
+      color:#000;
+    }
+
+    input:focus{
+      box-shadow:0 0 0 2px rgba(0,255,255,.12);
+    }
+
+    button, .btn-link{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#0ff;
+      color:#000;
+      font-weight:700;
+      cursor:pointer;
+      text-decoration:none;
+      display:block;
+      margin-top:8px;
+      transition:.2s ease;
+    }
+
+    button:hover, .btn-link:hover{
+      box-shadow:0 0 20px rgba(0,255,255,.25);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .secondary{
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--text);
+    }
+
+    .secondary:hover{
+      color:var(--cyan);
+      border-color:var(--cyan);
+      box-shadow:none;
+    }
+
+    .spinner{
+      width:14px;
+      height:14px;
+      border:2px solid #000;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+      display:none;
+      vertical-align:middle;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    .msg{
+      margin-top:12px;
+      min-height:20px;
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .error{ color:var(--red); }
+    .successText{ color:var(--green); }
+    .warnText{ color:var(--yellow); }
+
+    .back{
+      margin-top:14px;
+      font-size:12px;
+      color:#60a5fa;
+      cursor:pointer;
+    }
+
+    .back:hover{
+      text-decoration:underline;
+    }
+
+    .status-card{
+      margin-top:14px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,0.15);
+      background:rgba(0,255,255,0.04);
+      text-align:left;
+    }
+
+    .status-card h3{
+      margin:0 0 8px;
+      color:var(--cyan);
+      font-size:14px;
+    }
+
+    .status-card p{
+      margin:0 0 8px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .backend-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(0,255,255,0.2);
+      color:var(--cyan);
+      margin-top:4px;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    @media (max-width: 760px){
+      .wrapper{
+        flex-direction:column;
+      }
+
+      .card{
+        border-left:none;
+        border-top:1px solid var(--border);
+      }
+    }
   </style>
 </head>
 
 <body>
 
-<div class="theme-toggle" onclick="toggleTheme()">🌗</div>
+  <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗</button>
 
-<div class="wrapper">
-
-  <div class="left">
-    <h1>🐍 Rattle Link</h1>
-    <p>Password recovery made simple</p>
-    <div class="features">
-      <span>🔐 Secure</span>
-      <span>⚡ Instant</span>
-      <span>📧 Email Reset</span>
+  <div class="wrapper">
+    <div class="left">
+      <h1>🐍 Rattle Link</h1>
+      <p>Password recovery made simple across your hybrid backend setup.</p>
+      <div class="features">
+        <span>🔐 Secure</span>
+        <span>⚡ Instant</span>
+        <span>📧 Email Reset</span>
+        <span>🔁 Hybrid Ready</span>
+      </div>
     </div>
-  </div>
 
-  <div class="card" id="card">
+    <div class="card" id="card">
+      <div id="formBox">
+        <h2>Forgot Password</h2>
+        <p class="sub">Enter your email to receive a reset link.</p>
 
-    <div id="formBox">
-      <h2>Forgot Password</h2>
-      <p>Enter your email to receive reset link</p>
+        <div class="input-group">
+          <input id="username" type="email" placeholder="Email address" autocomplete="email" />
+        </div>
 
-      <div class="input-group">
-        <input id="username" placeholder="Email address">
+        <button id="btn" onclick="sendReset()">
+          <span id="btnText">Send Reset Link</span>
+          <span id="spinner" class="spinner"></span>
+        </button>
+
+        <div class="status-card">
+          <h3>Hybrid reset flow</h3>
+          <p>
+            This page tries Backend 2 first, then falls back to legacy AWS when needed.
+          </p>
+          <div id="backendBadge" class="backend-badge hidden"></div>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <div class="back" onclick="goBack()">← Back to Login</div>
       </div>
 
-      <button id="btn" onclick="sendReset()">
-        <span id="btnText">Send Reset Link</span>
-        <span id="spinner" class="spinner"></span>
-      </button>
+      <div id="successBox" class="hidden">
+        <h2>📧 Email Sent</h2>
+        <p class="sub">Check your inbox and spam folder for your reset link.</p>
 
-      <div id="msg" class="msg"></div>
+        <div class="status-card">
+          <h3>Reset request sent</h3>
+          <p id="successText">
+            Your reset request was accepted.
+          </p>
+          <div id="successBackendBadge" class="backend-badge hidden"></div>
+        </div>
 
-      <div class="back" onclick="goBack()">← Back to Login</div>
+        <button class="secondary" onclick="sendAgain()">Send Again</button>
+        <a class="btn-link secondary" href="login.html" style="margin-top:10px;">Back to Login</a>
+      </div>
     </div>
-
-    <div id="successBox" style="display:none;">
-      <h2>📧 Email Sent</h2>
-      <p>Check your inbox (and spam) for reset link</p>
-      <button onclick="goBack()">Back to Login</button>
-    </div>
-
   </div>
-</div>
 
-<script>
-const API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  <script>
+    // ================= HYBRID CONFIG =================
+    const PRIMARY_API = "https://your-backend2-domain.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-let cooldown = 0;
-let timer = null;
+    let cooldown = 0;
+    let cooldownTimer = null;
+    let lastEmail = "";
+    let lastBackend = null;
 
-const username = document.getElementById("username");
-const msgBox = document.getElementById("msg");
-const btn = document.getElementById("btn");
-const spinner = document.getElementById("spinner");
-const btnText = document.getElementById("btnText");
-const card = document.getElementById("card");
+    const username = document.getElementById("username");
+    const msgBox = document.getElementById("msg");
+    const btn = document.getElementById("btn");
+    const spinner = document.getElementById("spinner");
+    const btnText = document.getElementById("btnText");
+    const card = document.getElementById("card");
+    const formBox = document.getElementById("formBox");
+    const successBox = document.getElementById("successBox");
+    const backendBadge = document.getElementById("backendBadge");
+    const successBackendBadge = document.getElementById("successBackendBadge");
+    const successText = document.getElementById("successText");
 
-function toggleTheme(){
-  document.body.classList.toggle("light");
-}
-
-function show(msg, type="error"){
-  msgBox.innerText = msg;
-  msgBox.className = "msg " + (type === "success" ? "successText" : "error");
-}
-
-function setLoading(state){
-  btn.disabled = state;
-  spinner.style.display = state ? "inline-block" : "none";
-  btnText.style.display = state ? "none" : "inline";
-}
-
-function isEmail(val){
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-}
-
-async function sendReset(){
-
-  if(btn.disabled) return;
-
-  const user = username.value.trim().toLowerCase();
-
-  if(!user){
-    show("Enter email ❌");
-    return;
-  }
-
-  if(!isEmail(user)){
-    show("Invalid email ❌");
-    return;
-  }
-
-  if(cooldown > 0){
-    show(`Wait ${cooldown}s`);
-    return;
-  }
-
-  setLoading(true);
-  show("");
-
-  try {
-
-    const res = await fetch(API + "/forgot", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ username:user })
-    });
-
-    const text = await res.text();
-
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = { message: text }; }
-
-    console.log("FORGOT:", res.status, data);
-
-    if(res.status !== 200){
-      show(data.message || "Failed ❌");
-      setLoading(false);
-      return;
+    // ================= UI =================
+    function toggleTheme(){
+      document.body.classList.toggle("light");
+      localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
+      );
     }
 
-    // SUCCESS UI
-    document.getElementById("formBox").style.display = "none";
-    document.getElementById("successBox").style.display = "block";
-    card.classList.add("success");
-
-    // cooldown
-    cooldown = 30;
-    timer = setInterval(()=>{
-      cooldown--;
-      if(cooldown <= 0){
-        clearInterval(timer);
+    function loadTheme(){
+      const saved = localStorage.getItem("theme");
+      if(saved === "light"){
+        document.body.classList.add("light");
       }
-    },1000);
+    }
 
-  } catch (e){
-    console.error("ERROR:", e);
-    show("Network error ❌");
-  }
+    function show(msg, type = "error"){
+      msgBox.innerText = msg;
+      msgBox.className = "msg";
 
-  setLoading(false);
-}
+      if(type === "success") msgBox.classList.add("successText");
+      else if(type === "warn") msgBox.classList.add("warnText");
+      else msgBox.classList.add("error");
+    }
 
-function goBack(){
-  window.location.href = "index.html";
-}
-</script>
+    function setLoading(state){
+      btn.disabled = state;
+      spinner.style.display = state ? "inline-block" : "none";
+      btnText.style.display = state ? "none" : "inline";
+    }
+
+    function isEmail(val){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    }
+
+    function backendLabel(name){
+      return name === "primary" ? "Backend 2" : "Legacy AWS";
+    }
+
+    function showBackendBadge(target, backend){
+      if(!backend){
+        target.classList.add("hidden");
+        target.textContent = "";
+        return;
+      }
+      target.classList.remove("hidden");
+      target.textContent = `Using ${backendLabel(backend)}`;
+    }
+
+    function normalizeApiUrl(url){
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    async function safeJson(res){
+      try{
+        return await res.json();
+      }catch{
+        return {};
+      }
+    }
+
+    async function callApi(baseUrl, path, options = {}){
+      const res = await fetch(normalizeApiUrl(baseUrl) + path, options);
+      const data = await safeJson(res);
+      return { res, data };
+    }
+
+    function shouldFallbackToLegacy(path, data, status){
+      if(path === "/forgot"){
+        if(status >= 500 || status === 404) return true;
+
+        const msg = String(data?.message || "").toLowerCase();
+        if(
+          msg.includes("invalid email") ||
+          msg.includes("not found") ||
+          msg.includes("user not found")
+        ){
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
+      const primary = normalizeApiUrl(PRIMARY_API);
+      const legacy = normalizeApiUrl(LEGACY_API);
+
+      if(behavior === "primaryOnly"){
+        const first = await callApi(primary, path, options);
+        return { ok: first.res.ok, status: first.res.status, data: first.data, backend: "primary" };
+      }
+
+      if(behavior === "legacyOnly"){
+        const only = await callApi(legacy, path, options);
+        return { ok: only.res.ok, status: only.res.status, data: only.data, backend: "legacy" };
+      }
+
+      let firstError = null;
+
+      try{
+        const first = await callApi(primary, path, options);
+
+        if(first.res.ok){
+          return {
+            ok: true,
+            status: first.res.status,
+            data: first.data,
+            backend: "primary"
+          };
+        }
+
+        if(!shouldFallbackToLegacy(path, first.data, first.res.status)){
+          return {
+            ok: false,
+            status: first.res.status,
+            data: first.data,
+            backend: "primary"
+          };
+        }
+
+        firstError = first;
+      }catch(error){
+        firstError = { error };
+      }
+
+      const second = await callApi(legacy, path, options);
+      return {
+        ok: second.res.ok,
+        status: second.res.status,
+        data: second.data,
+        backend: "legacy",
+        firstError
+      };
+    }
+
+    // ================= COOLDOWN =================
+    function startCooldown(seconds = 30){
+      cooldown = seconds;
+      clearInterval(cooldownTimer);
+
+      cooldownTimer = setInterval(() => {
+        cooldown--;
+        if(cooldown <= 0){
+          clearInterval(cooldownTimer);
+          cooldown = 0;
+          btnText.textContent = "Send Reset Link";
+        } else {
+          btnText.textContent = `Wait ${cooldown}s`;
+        }
+      }, 1000);
+    }
+
+    // ================= ACTIONS =================
+    async function sendReset(){
+      if(btn.disabled) return;
+
+      const user = username.value.trim().toLowerCase();
+
+      if(!user){
+        show("Enter email ❌");
+        return;
+      }
+
+      if(!isEmail(user)){
+        show("Invalid email ❌");
+        return;
+      }
+
+      if(cooldown > 0){
+        show(`Wait ${cooldown}s before sending again ⏳`, "warn");
+        return;
+      }
+
+      setLoading(true);
+      show("");
+      showBackendBadge(backendBadge, null);
+
+      try{
+        const result = await apiHybrid(
+          "/forgot",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: user })
+          },
+          "primaryThenLegacy"
+        );
+
+        const data = result.data || {};
+
+        if(!result.ok){
+          show(data.message || "Failed ❌");
+          setLoading(false);
+          return;
+        }
+
+        lastEmail = user;
+        lastBackend = result.backend || "primary";
+
+        formBox.classList.add("hidden");
+        successBox.classList.remove("hidden");
+        card.classList.add("success");
+
+        showBackendBadge(successBackendBadge, lastBackend);
+        successText.textContent = `Your reset request was accepted by ${backendLabel(lastBackend)}. Check your inbox and spam folder.`;
+
+        startCooldown(30);
+      }catch(e){
+        console.error("ERROR:", e);
+        show("Network error ❌");
+      }
+
+      setLoading(false);
+    }
+
+    async function sendAgain(){
+      if(!lastEmail){
+        formBox.classList.remove("hidden");
+        successBox.classList.add("hidden");
+        card.classList.remove("success");
+        return;
+      }
+
+      username.value = lastEmail;
+      formBox.classList.remove("hidden");
+      successBox.classList.add("hidden");
+      card.classList.remove("success");
+
+      if(cooldown > 0){
+        show(`Wait ${cooldown}s before sending again ⏳`, "warn");
+        return;
+      }
+
+      await sendReset();
+    }
+
+    function goBack(){
+      window.location.href = "login.html";
+    }
+
+    function autoFillEmail(){
+      const params = new URLSearchParams(window.location.search);
+      const email = (params.get("email") || localStorage.getItem("rememberUser") || "").trim().toLowerCase();
+
+      if(email){
+        username.value = email;
+      }
+    }
+
+    username.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        sendReset();
+      }
+    });
+
+    loadTheme();
+    autoFillEmail();
+  </script>
 
 </body>
 </html>
