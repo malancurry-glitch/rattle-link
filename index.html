@@ -331,6 +331,7 @@
       min-height:18px;
       text-align:center;
       line-height:1.5;
+      white-space:pre-wrap;
     }
 
     .success-text{
@@ -661,7 +662,7 @@
     }
 
     function shouldUseCaptcha() {
-      return CAPTCHA_ENABLED && mode !== "magic";
+      return CAPTCHA_ENABLED && (mode === "login" || mode === "signup");
     }
 
     function mountCaptcha() {
@@ -715,7 +716,7 @@
         btnText.textContent = "Login";
         switchText.textContent = "Don't have an account?";
         switchBtn.textContent = "Sign up";
-        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS for old accounts.";
+        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS only when needed.";
         secondaryBtn.textContent = "🔑 Reset Password";
       } else if (mode === "signup") {
         title.textContent = "Create Account";
@@ -723,13 +724,13 @@
         btnText.textContent = "Create Account";
         switchText.textContent = "Already have an account?";
         switchBtn.textContent = "Login";
-        helperText.textContent = "New signups go to Backend 2 only. Verify your email before first login.";
+        helperText.textContent = "New signups go to Backend 2 only. Legacy is not touched during signup.";
         secondaryBtn.textContent = "📩 Resend Verify";
       } else {
         title.textContent = "Magic Link Login";
         subText.textContent = "Passwordless access ✨";
         btnText.textContent = "Send Magic Login";
-        helperText.textContent = "Magic login tries Backend 2 first, then legacy AWS if needed.";
+        helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
       }
 
       if (shouldUseCaptcha()) waitForCaptchaAndMount();
@@ -836,22 +837,35 @@
       return { res, data };
     }
 
+    function buildHeaders(extra = {}) {
+      return {
+        "Content-Type": "application/json",
+        ...extra
+      };
+    }
+
+    function isHardStopStatus(status) {
+      return status === 400 || status === 401 || status === 402 || status === 403 || status === 409;
+    }
+
     function shouldFallbackToLegacy(path, data, resStatus) {
       if (path === "/signup") return false;
-      if (path === "/resend-verify") return false;
       if (path === "/verify-email") return false;
 
       if (resStatus >= 500) return true;
       if (resStatus === 404) return true;
 
-      const msg = String(data?.message || "").toLowerCase();
-      if (
-        msg.includes("invalid credentials") ||
-        msg.includes("user not found") ||
-        msg.includes("magic request not found") ||
-        msg.includes("invalid magic request")
-      ) {
-        return true;
+      if (path === "/login" || path === "/magic-request" || path === "/magic-login" || path === "/magic-status") {
+        const msg = String(data?.message || "").toLowerCase();
+        if (
+          msg.includes("invalid credentials") ||
+          msg.includes("user not found") ||
+          msg.includes("magic request not found") ||
+          msg.includes("invalid magic request") ||
+          msg.includes("not found")
+        ) {
+          return true;
+        }
       }
 
       return false;
@@ -867,7 +881,14 @@
       }
 
       if (behavior === "legacyOnly") {
-        const { res, data } = await callApi(legacy, path, options);
+        const legacyOptions = {
+          ...options,
+          headers: buildHeaders({
+            ...(options.headers || {}),
+            "x-rattle-fallback": "legacy"
+          })
+        };
+        const { res, data } = await callApi(legacy, path, legacyOptions);
         return { ok: res.ok, status: res.status, data, backend: "legacy" };
       }
 
@@ -875,6 +896,7 @@
 
       try {
         const first = await callApi(primary, path, options);
+
         if (first.res.ok) {
           return {
             ok: true,
@@ -899,7 +921,15 @@
       }
 
       try {
-        const second = await callApi(legacy, path, options);
+        const legacyOptions = {
+          ...options,
+          headers: buildHeaders({
+            ...(options.headers || {}),
+            "x-rattle-fallback": "legacy"
+          })
+        };
+
+        const second = await callApi(legacy, path, legacyOptions);
         return {
           ok: second.res.ok,
           status: second.res.status,
@@ -920,6 +950,38 @@
       }
     }
 
+    async function resendVerifyHybrid(user) {
+      const primary = await apiHybrid(
+        "/resend-verify",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify({ username: user })
+        },
+        "primaryOnly"
+      );
+
+      if (primary.ok) {
+        return primary;
+      }
+
+      if (isHardStopStatus(primary.status)) {
+        return primary;
+      }
+
+      const legacy = await apiHybrid(
+        "/resend-verify",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify({ username: user })
+        },
+        "legacyOnly"
+      );
+
+      return legacy.ok ? legacy : primary;
+    }
+
     function buildAuthPayload(user, pass, captchaToken) {
       const payload = {
         username: user,
@@ -931,7 +993,7 @@
       return payload;
     }
 
-    function savePendingMagic(requestId, expiresAt, backend) {
+    function savePendingMagic(requestId, expiresAt, backend, email = "") {
       pendingMagicRequestId = requestId || null;
       pendingMagicExpiresAt = expiresAt || null;
       pendingMagicBackend = backend || null;
@@ -939,6 +1001,7 @@
       if (requestId) localStorage.setItem("magicRequestId", requestId);
       if (expiresAt) localStorage.setItem("magicExpiresAt", String(expiresAt));
       if (backend) localStorage.setItem("magicBackend", backend);
+      if (email) localStorage.setItem("magicEmail", email);
 
       approvalBox.style.display = "block";
       backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
@@ -954,6 +1017,7 @@
       localStorage.removeItem("magicRequestId");
       localStorage.removeItem("magicExpiresAt");
       localStorage.removeItem("magicBackend");
+      localStorage.removeItem("magicEmail");
       approvalBox.style.display = "none";
       backendUsedNote.textContent = "";
       statusTimer.textContent = "";
@@ -966,6 +1030,11 @@
       const requestId = localStorage.getItem("magicRequestId");
       const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
       const backend = localStorage.getItem("magicBackend");
+      const savedEmail = localStorage.getItem("magicEmail") || "";
+
+      if (savedEmail && !username.value.trim()) {
+        username.value = savedEmail;
+      }
 
       if (requestId) {
         pendingMagicRequestId = requestId;
@@ -1036,7 +1105,7 @@
           "/magic-login",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: buildHeaders(),
             body: JSON.stringify({
               requestId,
               device: getDeviceInfo()
@@ -1056,7 +1125,11 @@
           if (data.requiresEmailVerification) {
             showError("Verify your email first before login ✅", "warn");
             setTimeout(() => {
-              window.location.href = "verify-email.html?email=" + encodeURIComponent(username.value.trim().toLowerCase());
+              const qs = new URLSearchParams({
+                email: username.value.trim().toLowerCase(),
+                backend: result.backend || pendingMagicBackend || "primary"
+              });
+              window.location.href = "verify-email.html?" + qs.toString();
             }, 1200);
             return;
           }
@@ -1103,7 +1176,7 @@
           "/magic-status",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: buildHeaders(),
             body: JSON.stringify({ requestId })
           },
           behavior
@@ -1154,7 +1227,7 @@
       const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || "primary";
       const url = requestId
         ? `magic-login.html?requestId=${encodeURIComponent(requestId)}&backend=${encodeURIComponent(backend)}`
-        : "magic-login.html";
+        : `magic-login.html?backend=${encodeURIComponent(backend)}`;
 
       window.location.href = url;
     }
@@ -1190,7 +1263,7 @@
           "/login",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: buildHeaders(),
             body: JSON.stringify(buildAuthPayload(user, pass, captchaToken))
           },
           "primaryThenLegacy"
@@ -1202,7 +1275,11 @@
           if (data.requiresEmailVerification) {
             showError("Check your email and verify your account first ✅", "warn");
             setTimeout(() => {
-              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+              const qs = new URLSearchParams({
+                email: user,
+                backend: result.backend || "primary"
+              });
+              window.location.href = "verify-email.html?" + qs.toString();
             }, 1200);
           } else {
             showError(data.message || "Invalid login ❌");
@@ -1213,7 +1290,7 @@
         }
 
         if (data.requiresApproval && data.requestId) {
-          savePendingMagic(data.requestId, data.expiresAt, result.backend);
+          savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
           showError(`Approval email sent from ${backendLabel(result.backend)} ✅`, "warn");
           resetCaptcha();
           setLoading(false);
@@ -1302,7 +1379,7 @@
           "/signup",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: buildHeaders(),
             body: JSON.stringify(payload)
           },
           "primaryOnly"
@@ -1327,7 +1404,11 @@
         checkStrength();
 
         setTimeout(() => {
-          window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+          const qs = new URLSearchParams({
+            email: user,
+            backend: "primary"
+          });
+          window.location.href = "verify-email.html?" + qs.toString();
         }, 1200);
       } catch (e) {
         console.error("SIGNUP ERROR:", e);
@@ -1355,7 +1436,7 @@
           "/magic-request",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: buildHeaders(),
             body: JSON.stringify({
               username: user,
               device: getDeviceInfo()
@@ -1370,7 +1451,11 @@
           if (data.requiresEmailVerification) {
             showError("Verify your email first before magic login ✅", "warn");
             setTimeout(() => {
-              window.location.href = "verify-email.html?email=" + encodeURIComponent(user);
+              const qs = new URLSearchParams({
+                email: user,
+                backend: result.backend || "primary"
+              });
+              window.location.href = "verify-email.html?" + qs.toString();
             }, 1200);
           } else {
             showError(data.message || "Failed to send magic login ❌");
@@ -1380,7 +1465,7 @@
         }
 
         if (data.requestId) {
-          savePendingMagic(data.requestId, data.expiresAt, result.backend);
+          savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
         }
 
         showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)} ✅`, "success");
@@ -1403,17 +1488,9 @@
       showError("Sending verification email... ⏳", "warn");
 
       try {
-        const result = await apiHybrid(
-          "/resend-verify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: user })
-          },
-          "primaryThenLegacy"
-        );
-
+        const result = await resendVerifyHybrid(user);
         const data = result.data || {};
+
         if (!result.ok) {
           showError(data.message || "Could not resend verification ❌");
           return;
@@ -1468,7 +1545,8 @@
         savePendingMagic(
           requestId,
           Number(localStorage.getItem("magicExpiresAt") || 0) || null,
-          backend || localStorage.getItem("magicBackend") || "primary"
+          backend || localStorage.getItem("magicBackend") || "primary",
+          email || localStorage.getItem("magicEmail") || ""
         );
         showError("Resuming pending login approval ⏳", "warn");
       }
