@@ -559,18 +559,12 @@
   </div>
 
   <script>
-    // ================= HYBRID CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // IMPORTANT:
-    // Put the real site key that matches the secret in your backends
-    const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
-
-    // If you want to test without captcha temporarily, set this to false
+    const RECAPTCHA_SITE_KEY = "PUT_YOUR_REAL_SITE_KEY_HERE";
     const CAPTCHA_ENABLED = true;
 
-    // ================= STATE =================
     let mode = "login";
     let captchaWidgetId = null;
     let captchaReady = false;
@@ -615,7 +609,6 @@
     const checkStatusBtn = document.getElementById("checkStatusBtn");
     const backendUsedNote = document.getElementById("backendUsedNote");
 
-    // ================= UI =================
     function toggleTheme() {
       document.body.classList.toggle("light");
       localStorage.setItem(
@@ -722,7 +715,7 @@
         btnText.textContent = "Login";
         switchText.textContent = "Don't have an account?";
         switchBtn.textContent = "Sign up";
-        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS if needed.";
+        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS for old accounts.";
         secondaryBtn.textContent = "🔑 Reset Password";
       } else if (mode === "signup") {
         title.textContent = "Create Account";
@@ -730,7 +723,7 @@
         btnText.textContent = "Create Account";
         switchText.textContent = "Already have an account?";
         switchBtn.textContent = "Login";
-        helperText.textContent = "New signups go to Backend 2 only. Then verify your email before first login.";
+        helperText.textContent = "New signups go to Backend 2 only. Verify your email before first login.";
         secondaryBtn.textContent = "📩 Resend Verify";
       } else {
         title.textContent = "Magic Link Login";
@@ -739,10 +732,7 @@
         helperText.textContent = "Magic login tries Backend 2 first, then legacy AWS if needed.";
       }
 
-      if (shouldUseCaptcha()) {
-        waitForCaptchaAndMount();
-      }
-
+      if (shouldUseCaptcha()) waitForCaptchaAndMount();
       showError("");
     }
 
@@ -775,6 +765,7 @@
     function checkStrength() {
       const fill = document.getElementById("strengthFill");
       const text = document.getElementById("strength");
+
       if (mode !== "signup") {
         fill.style.width = "0%";
         fill.className = "";
@@ -813,7 +804,6 @@
       }
     }
 
-    // ================= HELPERS =================
     async function safeJson(res) {
       try {
         return await res.json();
@@ -857,11 +847,9 @@
       const msg = String(data?.message || "").toLowerCase();
       if (
         msg.includes("invalid credentials") ||
-        msg.includes("username required") ||
+        msg.includes("user not found") ||
         msg.includes("magic request not found") ||
-        msg.includes("invalid magic request") ||
-        msg.includes("invalid email") ||
-        msg.includes("user not found")
+        msg.includes("invalid magic request")
       ) {
         return true;
       }
@@ -920,15 +908,13 @@
           primaryError
         };
       } catch (legacyError) {
-        if (primaryError?.res || primaryError?.error) {
-          if (primaryError.res) {
-            return {
-              ok: false,
-              status: primaryError.res.status,
-              data: primaryError.data || { message: "Request failed" },
-              backend: "primary"
-            };
-          }
+        if (primaryError?.res) {
+          return {
+            ok: false,
+            status: primaryError.res.status,
+            data: primaryError.data || { message: "Request failed" },
+            backend: "primary"
+          };
         }
         throw legacyError;
       }
@@ -941,14 +927,10 @@
         device: getDeviceInfo()
       };
 
-      if (shouldUseCaptcha()) {
-        payload.captcha = captchaToken;
-      }
-
+      if (shouldUseCaptcha()) payload.captcha = captchaToken;
       return payload;
     }
 
-    // ================= MAGIC PENDING STATE =================
     function savePendingMagic(requestId, expiresAt, backend) {
       pendingMagicRequestId = requestId || null;
       pendingMagicExpiresAt = expiresAt || null;
@@ -960,8 +942,7 @@
 
       approvalBox.style.display = "block";
       backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
-      approvalText.textContent =
-        "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
+      approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
       startMagicTimer(expiresAt);
       startMagicPolling();
     }
@@ -1178,7 +1159,6 @@
       window.location.href = url;
     }
 
-    // ================= ACTIONS =================
     async function login() {
       showError("");
       setLoading(true);
