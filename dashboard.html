@@ -51,7 +51,7 @@
     .container{
       position:relative;
       z-index:1;
-      max-width:1450px;
+      max-width:1500px;
       margin:0 auto;
       padding:20px;
     }
@@ -96,7 +96,8 @@
         inset 0 0 15px rgba(0,255,255,0.03);
     }
 
-    .card h3{
+    .card h3,
+    .card h4{
       margin:0 0 12px;
       color:var(--cyan);
     }
@@ -132,6 +133,12 @@
     .three-col{
       display:grid;
       grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
+    }
+
+    .four-col{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
       gap:14px;
     }
 
@@ -236,6 +243,7 @@
     .open{ color:var(--blue); border-color:var(--blue); }
     .qr{ color:#06b6d4; border-color:#06b6d4; }
     .delete{ color:var(--red); border-color:var(--red); }
+    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
 
     .badge{
       display:inline-block;
@@ -266,6 +274,7 @@
       font-size:13px;
       min-height:20px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
 
     .success{ color:var(--green); }
@@ -290,7 +299,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1080px;
+      min-width:1180px;
     }
 
     th, td{
@@ -401,6 +410,7 @@
       z-index:2000;
       font-weight:700;
       box-shadow:0 0 15px rgba(0,255,255,0.4);
+      max-width:80vw;
     }
 
     .payment-box{
@@ -516,9 +526,39 @@
       background:rgba(15,23,42,0.45);
     }
 
-    .create-box h4{
-      margin:0 0 8px;
-      color:var(--cyan);
+    .health-list{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+
+    .health-item{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,0.14);
+      background:rgba(15,23,42,0.45);
+    }
+
+    .backend-switch{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .chip{
+      display:inline-block;
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid currentColor;
+    }
+
+    .mini-stat{
+      padding:10px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
     }
 
     canvas{
@@ -528,8 +568,10 @@
     @media (max-width: 980px){
       .two-col,
       .three-col,
+      .four-col,
       .payment-box,
-      .split-create{
+      .split-create,
+      .health-list{
         grid-template-columns:1fr;
       }
 
@@ -545,7 +587,7 @@
       <div>
         <h2>📊 Rattle Link Dashboard</h2>
         <div class="sub">
-          Manage links • Track traffic • Monitor trial/subscription • Create crypto payment requests
+          Manage links • Track traffic • Use AWS and Backend2 together • Payment requests • Better session handling
         </div>
       </div>
 
@@ -577,6 +619,25 @@
       </div>
     </div>
 
+    <div class="four-col">
+      <div class="card mini-stat">
+        <div class="muted">Primary Links</div>
+        <div id="primaryLinksCount" style="font-size:24px;color:#22c55e;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">AWS Links</div>
+        <div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">Primary Clicks</div>
+        <div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">AWS Clicks</div>
+        <div id="legacyClicksCount" style="font-size:24px;color:#facc15;">0</div>
+      </div>
+    </div>
+
     <div class="two-col">
       <div class="card">
         <div class="section-head">
@@ -605,6 +666,15 @@
         </div>
 
         <div style="margin-top:14px;">
+          <div class="muted">Session / Preferred backend</div>
+          <div class="backend-switch" style="margin-top:8px;">
+            <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
+            <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
+            <button type="button" id="verifySessionBtn" class="ghost-btn">Verify Session</button>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
           <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
           <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
         </div>
@@ -619,6 +689,31 @@
         <div id="latestPaymentBox" class="muted">
           No payment request yet.
         </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h3>🛰 Backend Health</h3>
+        <div class="health-list">
+          <div class="health-item">
+            <div class="muted">Backend2</div>
+            <div id="primaryHealth" style="margin-top:6px;">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="muted">AWS Legacy</div>
+            <div id="legacyHealth" style="margin-top:6px;">Checking...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🧠 Session Notes</h3>
+        <div class="muted">
+          This dashboard no longer logs you out just because one backend returns 401 while loading the other backend.
+          Logout now happens only when your main session check fails.
+        </div>
+        <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
       </div>
     </div>
 
@@ -637,7 +732,7 @@
       <div class="split-create">
         <div class="create-box">
           <h4>☁️ Create AWS Link</h4>
-          <div class="muted">This creates the short link on the legacy AWS backend.</div>
+          <div class="muted">Creates short links on the legacy AWS backend.</div>
           <div class="form-row" style="margin-top:10px;">
             <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button>
           </div>
@@ -654,7 +749,7 @@
 
         <div class="create-box">
           <h4>🟢 Create Backend2 Link</h4>
-          <div class="muted">This creates the short link on the new backend2 server.</div>
+          <div class="muted">Creates short links on the new Backend2 server.</div>
           <div class="form-row" style="margin-top:10px;">
             <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
           </div>
@@ -676,7 +771,14 @@
     <div class="card">
       <div class="links-header">
         <h3>🔗 Your Links</h3>
-        <input id="search" placeholder="Search slug or URL..." />
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select id="backendFilter" style="max-width:180px;">
+            <option value="all">All backends</option>
+            <option value="primary">Backend2 only</option>
+            <option value="legacy">AWS only</option>
+          </select>
+          <input id="search" placeholder="Search slug or URL..." />
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -689,6 +791,7 @@
               <th>Link</th>
               <th>Status</th>
               <th>Expire</th>
+              <th>Created</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -798,6 +901,14 @@
     const result = document.getElementById("result");
     const paymentsTable = document.getElementById("paymentsTable");
 
+    const primaryLinksCount = document.getElementById("primaryLinksCount");
+    const legacyLinksCount = document.getElementById("legacyLinksCount");
+    const primaryClicksCount = document.getElementById("primaryClicksCount");
+    const legacyClicksCount = document.getElementById("legacyClicksCount");
+    const primaryHealth = document.getElementById("primaryHealth");
+    const legacyHealth = document.getElementById("legacyHealth");
+    const sessionNote = document.getElementById("sessionNote");
+
     const backendBadgeTop = document.getElementById("backendBadgeTop");
     const meEmail = document.getElementById("meEmail");
     const mePlan = document.getElementById("mePlan");
@@ -813,6 +924,7 @@
     const bulkCountLegacy = document.getElementById("bulkCountLegacy");
     const bulkCountPrimary = document.getElementById("bulkCountPrimary");
     const searchInput = document.getElementById("search");
+    const backendFilter = document.getElementById("backendFilter");
 
     const csvFileLegacy = document.getElementById("csvFileLegacy");
     const csvFilePrimary = document.getElementById("csvFilePrimary");
@@ -828,6 +940,9 @@
     const bulkPrimaryBtn = document.getElementById("bulkPrimaryBtn");
     const uploadLegacyBtn = document.getElementById("uploadLegacyBtn");
     const uploadPrimaryBtn = document.getElementById("uploadPrimaryBtn");
+    const preferPrimaryBtn = document.getElementById("preferPrimaryBtn");
+    const preferLegacyBtn = document.getElementById("preferLegacyBtn");
+    const verifySessionBtn = document.getElementById("verifySessionBtn");
 
     const overlay = document.getElementById("overlay");
     const upgradeModal = document.getElementById("upgradeModal");
@@ -862,7 +977,8 @@
 
     function setTopBackendBadge() {
       backendBadgeTop.className = `backend-badge ${backendClass(activeBackend)}`;
-      backendBadgeTop.textContent = activeBackend === "legacy" ? "Using Legacy AWS" : "Using Backend 2";
+      backendBadgeTop.textContent = activeBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+      sessionNote.textContent = `Current preferred backend is ${backendLabel(activeBackend)}. Cross-backend requests no longer force logout.`;
     }
 
     function setBusy(button, busy, text = "") {
@@ -878,7 +994,7 @@
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(() => {
         toast.style.display = "none";
-      }, 1600);
+      }, 1800);
     }
 
     function setResult(message, isError = false, target = result) {
@@ -1035,7 +1151,7 @@
       return second;
     }
 
-    async function authorizedFetch(path, options = {}, forceBackend = null) {
+    async function authorizedFetch(path, options = {}, forceBackend = null, autoLogout = true) {
       const res = await hybridFetch(path, {
         ...options,
         headers: {
@@ -1044,8 +1160,38 @@
         }
       }, forceBackend);
 
-      if (res.status === 401) logout();
+      if (autoLogout && res.status === 401) {
+        logout();
+      }
+
       return res;
+    }
+
+    async function verifyMainSession() {
+      const res = await authorizedFetch("/me", { method: "GET" }, activeBackend, false);
+
+      if (res.ok) {
+        meState = res.data || null;
+        renderMe();
+        showToast(`Session valid on ${backendLabel(activeBackend)}`);
+        return true;
+      }
+
+      const otherBackend = activeBackend === "primary" ? "legacy" : "primary";
+      const fallback = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+
+      if (fallback.ok) {
+        activeBackend = otherBackend;
+        localStorage.setItem("authBackend", otherBackend);
+        meState = fallback.data || null;
+        setTopBackendBadge();
+        renderMe();
+        showToast(`Session switched to ${backendLabel(otherBackend)}`);
+        return true;
+      }
+
+      logout();
+      return false;
     }
 
     function normalizeLinkItem(item, backend) {
@@ -1113,18 +1259,11 @@
 
     async function loadMe(showLoading = false) {
       if (showLoading) accessSummary.textContent = "Loading account...";
-      const res = await authorizedFetch("/me", { method: "GET" });
 
-      if (!res.ok) {
-        accessSummary.textContent = res.data?.message || "Failed to load account";
-        return;
+      const ok = await verifyMainSession();
+      if (!ok) {
+        accessSummary.textContent = "Session expired";
       }
-
-      meState = res.data || null;
-      activeBackend = res.backend || activeBackend;
-      localStorage.setItem("authBackend", activeBackend);
-      setTopBackendBadge();
-      renderMe();
     }
 
     async function loadPlans(showMessage = false) {
@@ -1228,7 +1367,7 @@
     }
 
     async function loadPayments(showMessage = false) {
-      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary");
+      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
 
       if (!res.ok) {
         if (showMessage) showToast("Failed to load payments");
@@ -1262,11 +1401,14 @@
           billingCycle: selectedPlan,
           cryptoCode
         })
-      }, "primary");
+      }, "primary", false);
 
       setBusy(requestPaymentBtn, false);
 
       if (!res.ok) {
+        if (res.status === 401) {
+          await verifyMainSession();
+        }
         setResult(res.data?.message || "Failed to create payment request", true, upgradeResult);
         return;
       }
@@ -1344,6 +1486,31 @@
       `;
     }
 
+    function updateMiniStats() {
+      const primaryLinks = dataStore.filter(x => x.backend === "primary");
+      const legacyLinks = dataStore.filter(x => x.backend === "legacy");
+
+      primaryLinksCount.textContent = primaryLinks.length;
+      legacyLinksCount.textContent = legacyLinks.length;
+      primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+    }
+
+    async function checkBackendHealth() {
+      const [p, l] = await Promise.all([
+        safeFetchRaw(PRIMARY_API, "/", { method: "GET" }),
+        safeFetchRaw(LEGACY_API, "/", { method: "GET" })
+      ]);
+
+      primaryHealth.innerHTML = p.ok
+        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+
+      legacyHealth.innerHTML = l.ok
+        ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "No response")}</span>`;
+    }
+
     async function loadLinks(showLoading = false) {
       if (loadingLinks) return;
       loadingLinks = true;
@@ -1354,8 +1521,8 @@
       }
 
       const [primaryRes, legacyRes] = await Promise.all([
-        authorizedFetch("/list", { method: "GET" }, "primary"),
-        authorizedFetch("/list", { method: "GET" }, "legacy")
+        authorizedFetch("/list", { method: "GET" }, "primary", false),
+        authorizedFetch("/list", { method: "GET" }, "legacy", false)
       ]);
 
       loadingLinks = false;
@@ -1364,6 +1531,10 @@
       const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
       const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
+      if (!primaryRes.ok && !legacyRes.ok && (primaryRes.status === 401 || legacyRes.status === 401)) {
+        await verifyMainSession();
+      }
+
       dataStore = mergeLinks(primaryItems, legacyItems);
 
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
@@ -1371,6 +1542,7 @@
       totalClicks.textContent = total;
       avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
 
+      updateMiniStats();
       renderTable();
       drawChart();
       renderRanking();
@@ -1380,16 +1552,21 @@
 
     function renderTable() {
       const q = (searchInput.value || "").trim().toLowerCase();
+      const backendOnly = backendFilter.value || "all";
 
       const filtered = dataStore.filter(item => {
         const slug = String(item.slug || "").toLowerCase();
         const url = String(item.url || "").toLowerCase();
         const backend = String(item.backend || "").toLowerCase();
-        return !q || slug.includes(q) || url.includes(q) || backend.includes(q);
+
+        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q);
+
+        return backendMatch && queryMatch;
       });
 
       if (!filtered.length) {
-        table.innerHTML = `<tr><td colspan="7" class="muted">No links found</td></tr>`;
+        table.innerHTML = `<tr><td colspan="8" class="muted">No links found</td></tr>`;
         return;
       }
 
@@ -1407,6 +1584,7 @@
             </td>
             <td>${getStatus(item)}</td>
             <td>${fmtExpire(item.expire)}</td>
+            <td>${fmtDate(item.createdAt)}</td>
             <td>
               <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
               <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
@@ -1537,11 +1715,17 @@
       const res = await authorizedFetch("/create", {
         method: "POST",
         body: JSON.stringify(body)
-      }, backend);
+      }, backend, false);
 
       setBusy(button, false);
 
       if (!res.ok) {
+        if (res.status === 401) {
+          await verifyMainSession();
+          setResult(`${backendLabel(backend)} session check refreshed. Try again.`, true);
+          return;
+        }
+
         if (res.status === 402) {
           await loadMe(false);
           openUpgradeModal();
@@ -1585,17 +1769,19 @@
 
       for (let i = 0; i < count; i++) {
         const requestBody = { ...body };
-        if (!requestBody.slug) {
-          delete requestBody.slug;
-        }
+        if (!requestBody.slug) delete requestBody.slug;
 
         const res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify(requestBody)
-        }, backend);
+        }, backend, false);
 
         if (res.ok) {
           success++;
+        } else if (res.status === 401) {
+          await verifyMainSession();
+          setResult(`Stopped at ${success}/${count}. Session refreshed; try again.`, true);
+          break;
         } else if (res.status === 402) {
           openUpgradeModal();
           setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Upgrade required"}`, true);
@@ -1618,9 +1804,14 @@
       const res = await authorizedFetch("/delete", {
         method: "POST",
         body: JSON.stringify({ slug })
-      }, backend);
+      }, backend, false);
 
       if (!res.ok) {
+        if (res.status === 401) {
+          await verifyMainSession();
+          showToast("Session refreshed. Try delete again.");
+          return;
+        }
         showToast("Delete failed");
         return;
       }
@@ -1711,7 +1902,7 @@
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(map);
 
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend);
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
       if (!history.length) {
@@ -1753,7 +1944,7 @@
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
 
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend);
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
       const link = dataStore.find(l => l.slug === slug && l.backend === backend);
 
@@ -1936,10 +2127,14 @@
         const res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify({ url })
-        }, backend);
+        }, backend, false);
 
         if (res.ok) {
           okCount++;
+        } else if (res.status === 401) {
+          await verifyMainSession();
+          setResult(`Stopped at ${okCount}/${urls.length}. Session refreshed; try again.`, true);
+          break;
         } else if (res.status === 402) {
           openUpgradeModal();
           setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Upgrade required"}`, true);
@@ -1969,7 +2164,8 @@
       Promise.all([
         loadMe(true),
         loadLinks(true),
-        loadPayments(false)
+        loadPayments(false),
+        checkBackendHealth()
       ]);
     }
 
@@ -1988,6 +2184,7 @@
       });
 
       searchInput.addEventListener("input", renderTable);
+      backendFilter.addEventListener("change", renderTable);
     }
 
     function wireDropZone(zone, backend) {
@@ -2011,14 +2208,15 @@
         const file = e.dataTransfer?.files?.[0];
         if (!file) return;
 
-        if (backend === "legacy") {
-          csvFileLegacy.files = e.dataTransfer.files;
-        } else {
-          csvFilePrimary.files = e.dataTransfer.files;
-        }
-
         await processFile(file, backend);
       });
+    }
+
+    function setPreferredBackend(next) {
+      activeBackend = next === "legacy" ? "legacy" : "primary";
+      localStorage.setItem("authBackend", activeBackend);
+      setTopBackendBadge();
+      showToast(`Preferred backend set to ${backendLabel(activeBackend)}`);
     }
 
     refreshBtn.addEventListener("click", refreshNow);
@@ -2030,6 +2228,13 @@
     uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
     uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
     requestPaymentBtn.addEventListener("click", createPaymentRequest);
+    preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
+    preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+    verifySessionBtn.addEventListener("click", async () => {
+      setBusy(verifySessionBtn, true, "Checking...");
+      await verifyMainSession();
+      setBusy(verifySessionBtn, false);
+    });
 
     (async function init() {
       if (!ensureAuth()) return;
@@ -2043,7 +2248,8 @@
         loadPlans(false),
         loadMe(true),
         loadLinks(true),
-        loadPayments(false)
+        loadPayments(false),
+        checkBackendHealth()
       ]);
 
       clearInterval(refreshTimer);
@@ -2051,7 +2257,8 @@
         if (document.hidden) return;
         loadMe(false);
         loadLinks(false);
-      }, 12000);
+        checkBackendHealth();
+      }, 15000);
     })();
   </script>
 </body>
