@@ -832,11 +832,20 @@
     const paymentStatusFilter = document.getElementById("paymentStatusFilter");
     const paymentPlanFilter = document.getElementById("paymentPlanFilter");
 
-    function authHeaders() {
-      return {
-        "Content-Type": "application/json",
+    function authHeaders(method = "GET", source = "primary") {
+      const headers = {
         "Authorization": localStorage.getItem("token") || ""
       };
+
+      if (method !== "GET") {
+        headers["Content-Type"] = "application/json";
+      }
+
+      if (source === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
+      return headers;
     }
 
     function setBackendBadge(text = "Merged View: Backend 2 + Legacy AWS") {
@@ -871,11 +880,11 @@
       window.location.href = "index.html";
     }
 
-    async function safeFetchRaw(baseUrl, path, method = "GET", body = null) {
+    async function safeFetchRaw(baseUrl, path, method = "GET", body = null, source = "primary", allowLogout = false) {
       try {
         const res = await fetch(baseUrl.replace(/\/+$/, "") + path, {
           method,
-          headers: authHeaders(),
+          headers: authHeaders(method, source),
           body: body ? JSON.stringify(body) : null
         });
 
@@ -887,7 +896,7 @@
           data = { message: text };
         }
 
-        if (res.status === 401) {
+        if (allowLogout && res.status === 401) {
           logout();
           return { ok: false, status: 401, data };
         }
@@ -899,16 +908,16 @@
       }
     }
 
-    async function fetchBySource(source, path, method = "GET", body = null) {
+    async function fetchBySource(source, path, method = "GET", body = null, allowLogout = false) {
       const base = API_BY_SOURCE[source];
-      const result = await safeFetchRaw(base, path, method, body);
+      const result = await safeFetchRaw(base, path, method, body, source, allowLogout);
       return { ...result, source };
     }
 
     async function fetchBoth(path, method = "GET", body = null) {
       const [primary, legacy] = await Promise.all([
-        fetchBySource("primary", path, method, body),
-        fetchBySource("legacy", path, method, body)
+        fetchBySource("primary", path, method, body, false),
+        fetchBySource("legacy", path, method, body, false)
       ]);
       return { primary, legacy };
     }
@@ -919,7 +928,7 @@
         target,
         time: Date.now(),
         admin: localStorage.getItem("lastUser") || "admin"
-      });
+      }, false);
     }
 
     function buildShortLink(slug, source) {
@@ -1670,7 +1679,7 @@
       panelTitle.textContent = `Analytics: ${slug}`;
       panelContent.innerHTML = "Loading...";
 
-      const res = await fetchBySource(source || "primary", `/history?slug=${encodeURIComponent(slug)}`);
+      const res = await fetchBySource(source || "primary", `/history?slug=${encodeURIComponent(slug)}`, "GET", null, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
       if (!history.length) {
@@ -1715,7 +1724,7 @@
     }
 
     async function banUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/ban`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/ban`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("BAN USER", username);
         showToast("User banned");
@@ -1726,7 +1735,7 @@
     }
 
     async function unbanUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/unban`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/unban`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("UNBAN USER", username);
         showToast("User enabled");
@@ -1737,7 +1746,7 @@
     }
 
     async function makeAdmin(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/make-admin`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/make-admin`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("PROMOTE ADMIN", username);
         showToast("User promoted");
@@ -1748,7 +1757,7 @@
     }
 
     async function removeAdmin(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/remove-admin`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/remove-admin`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("REMOVE ADMIN", username);
         showToast("Role changed");
@@ -1759,7 +1768,7 @@
     }
 
     async function verifyUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/verify-user`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/verify-user`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("VERIFY USER", username);
         showToast("User verified");
@@ -1770,7 +1779,7 @@
     }
 
     async function pauseSubscription(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/subscription-pause`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/subscription-pause`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("PAUSE SUBSCRIPTION", username);
         showToast("Subscription paused");
@@ -1781,7 +1790,7 @@
     }
 
     async function resumeSubscription(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/subscription-resume`, "POST", { username });
+      const res = await fetchBySource(source || "primary", `/admin/subscription-resume`, "POST", { username }, false);
       if (res.ok) {
         await logAudit("RESUME SUBSCRIPTION", username);
         showToast("Subscription resumed");
@@ -1792,7 +1801,7 @@
     }
 
     async function verifyPayment(paymentId, source) {
-      const res = await fetchBySource(source || "primary", `/admin/payment-verify`, "POST", { paymentId });
+      const res = await fetchBySource(source || "primary", `/admin/payment-verify`, "POST", { paymentId }, false);
       if (res.ok) {
         await logAudit("VERIFY PAYMENT", paymentId);
         showToast("Payment verified");
@@ -1803,7 +1812,7 @@
     }
 
     async function pauseLink(slug, source) {
-      const res = await fetchBySource(source || "primary", `/admin/pause`, "POST", { slug });
+      const res = await fetchBySource(source || "primary", `/admin/pause`, "POST", { slug }, false);
       if (res.ok) {
         await logAudit("PAUSE LINK", slug);
         showToast("Link paused");
@@ -1814,7 +1823,7 @@
     }
 
     async function resumeLink(slug, source) {
-      const res = await fetchBySource(source || "primary", `/admin/resume`, "POST", { slug });
+      const res = await fetchBySource(source || "primary", `/admin/resume`, "POST", { slug }, false);
       if (res.ok) {
         await logAudit("RESUME LINK", slug);
         showToast("Link resumed");
@@ -1827,7 +1836,7 @@
     async function deleteLink(slug, source) {
       if (!confirm(`Delete ${slug}?`)) return;
 
-      const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug });
+      const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug }, false);
       if (res.ok) {
         await logAudit("DELETE LINK", slug);
         showToast("Link deleted");
@@ -1956,7 +1965,7 @@
         password,
         role,
         emailVerified
-      });
+      }, false);
 
       if (res.ok) {
         await logAudit("CREATE USER", username);
@@ -1967,11 +1976,31 @@
       }
     }
 
+    async function verifyAdminSession() {
+      const [primary, legacy] = await Promise.all([
+        fetchBySource("primary", "/me", "GET", null, false),
+        fetchBySource("legacy", "/me", "GET", null, false)
+      ]);
+
+      const primaryOk = primary.ok && String(primary.data?.role || "").toLowerCase() === "admin";
+      const legacyOk = legacy.ok && String(legacy.data?.role || "").toLowerCase() === "admin";
+
+      if (!primaryOk && !legacyOk) {
+        logout();
+        return false;
+      }
+
+      return true;
+    }
+
     async function loadAdmin() {
       if (isLoading) return;
       isLoading = true;
 
       try {
+        const sessionOk = await verifyAdminSession();
+        if (!sessionOk) return;
+
         addTerminal("Starting merged refresh...");
 
         const [usersPair, linksPair, emailPair, auditPair, paymentsPair] = await Promise.all([
