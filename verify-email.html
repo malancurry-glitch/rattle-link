@@ -6,188 +6,188 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    *{box-sizing:border-box}
+    * { box-sizing: border-box; }
 
-    body{
-      margin:0;
-      font-family:Inter,Arial,sans-serif;
-      background:radial-gradient(circle at top,#020617,#000);
-      color:#e2e8f0;
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      padding:20px;
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #020617, #000);
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
 
-    .card{
-      width:100%;
-      max-width:460px;
-      background:#020617;
-      padding:30px;
-      border-radius:16px;
-      border:1px solid rgba(0,255,255,0.18);
-      text-align:center;
-      box-shadow:0 20px 60px rgba(0,0,0,.6);
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: #020617;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 255, 255, 0.18);
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     }
 
-    h2{
-      color:#00ffff;
-      margin:0 0 10px;
+    h2 {
+      color: #00ffff;
+      margin: 0 0 10px;
     }
 
-    .sub{
-      font-size:13px;
-      color:#94a3b8;
-      margin-bottom:18px;
-      line-height:1.6;
+    .sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 18px;
+      line-height: 1.6;
     }
 
-    input{
-      width:100%;
-      padding:13px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,255,255,0.2);
-      background:#000;
-      color:#0ff;
-      margin-bottom:12px;
-      outline:none;
+    input {
+      width: 100%;
+      padding: 13px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      background: #000;
+      color: #0ff;
+      margin-bottom: 12px;
+      outline: none;
     }
 
-    input:focus{
-      box-shadow:0 0 0 2px rgba(0,255,255,0.12);
+    input:focus {
+      box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.12);
     }
 
-    button, a.btn{
-      width:100%;
-      display:block;
-      padding:12px;
-      border:none;
-      border-radius:10px;
-      background:#0ff;
-      color:#000;
-      font-weight:700;
-      cursor:pointer;
-      margin-top:8px;
-      text-decoration:none;
-      transition:.2s ease;
+    button, a.btn {
+      width: 100%;
+      display: block;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #0ff;
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      text-decoration: none;
+      transition: 0.2s ease;
     }
 
-    button:hover, a.btn:hover{
-      box-shadow:0 0 20px rgba(0,255,255,.35);
-      transform:translateY(-1px);
+    button:hover, a.btn:hover {
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
+      transform: translateY(-1px);
     }
 
-    button:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
-    .secondary{
-      background:#020617;
-      color:#0ff;
-      border:1px solid #0ff;
+    .secondary {
+      background: #020617;
+      color: #0ff;
+      border: 1px solid #0ff;
     }
 
-    .error{
-      color:#ef4444;
-      font-size:13px;
-      margin-top:14px;
-      line-height:1.5;
+    .error {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.5;
     }
 
-    .success{
-      color:#22c55e;
-      font-size:13px;
-      margin-top:14px;
-      line-height:1.5;
+    .success {
+      color: #22c55e;
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.5;
     }
 
-    .warn{
-      color:#f59e0b;
-      font-size:13px;
-      margin-top:14px;
-      line-height:1.5;
+    .warn {
+      color: #f59e0b;
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.5;
     }
 
-    .spinner{
-      width:14px;
-      height:14px;
-      border:2px solid #000;
-      border-top:2px solid transparent;
-      border-radius:50%;
-      display:inline-block;
-      animation:spin 1s linear infinite;
-      margin-left:6px;
-      vertical-align:middle;
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #000;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: spin 1s linear infinite;
+      margin-left: 6px;
+      vertical-align: middle;
     }
 
-    @keyframes spin{
-      to{ transform:rotate(360deg); }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
-    .hidden{
-      display:none !important;
+    .hidden {
+      display: none !important;
     }
 
-    .divider{
-      height:1px;
-      background:rgba(148,163,184,.15);
-      margin:18px 0;
+    .divider {
+      height: 1px;
+      background: rgba(148, 163, 184, 0.15);
+      margin: 18px 0;
     }
 
-    .muted{
-      font-size:12px;
-      color:#94a3b8;
-      margin-top:14px;
-      line-height:1.6;
+    .muted {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 14px;
+      line-height: 1.6;
     }
 
-    .status-card{
-      margin-top:14px;
-      padding:14px;
-      border-radius:12px;
-      border:1px solid rgba(0,255,255,0.15);
-      background:rgba(0,255,255,0.04);
-      text-align:left;
+    .status-card {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 255, 0.15);
+      background: rgba(0, 255, 255, 0.04);
+      text-align: left;
     }
 
-    .status-card h3{
-      margin:0 0 8px;
-      color:#00ffff;
-      font-size:14px;
+    .status-card h3 {
+      margin: 0 0 8px;
+      color: #00ffff;
+      font-size: 14px;
     }
 
-    .status-card p{
-      margin:0 0 8px;
-      font-size:12px;
-      color:#94a3b8;
-      line-height:1.6;
+    .status-card p {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
     }
 
-    .backend-badge{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid rgba(0,255,255,0.2);
-      color:#00ffff;
-      margin-top:4px;
+    .backend-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      color: #00ffff;
+      margin-top: 4px;
     }
 
-    .back-link{
-      display:block;
-      margin-top:14px;
-      color:#60a5fa;
-      font-size:12px;
-      text-decoration:none;
-      cursor:pointer;
+    .back-link {
+      display: block;
+      margin-top: 14px;
+      color: #60a5fa;
+      font-size: 12px;
+      text-decoration: none;
+      cursor: pointer;
     }
 
-    .back-link:hover{
-      text-decoration:underline;
+    .back-link:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -226,12 +226,12 @@
     <div id="msg"></div>
 
     <div class="muted">
-      This page uses the email link backend first and falls back only when the other backend is actually unavailable.
+      This page uses the selected backend if provided in the email link, otherwise it tries Backend 2 first and only falls back when needed.
     </div>
   </div>
 
   <script>
-    // ================= HYBRID CONFIG =================
+    // ================= API CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
@@ -250,27 +250,27 @@
     let forcedBackend = null;
 
     // ================= HELPERS =================
-    function params(){
+    function params() {
       return new URLSearchParams(window.location.search);
     }
 
-    function normalizeApiUrl(url){
+    function normalizeApiUrl(url) {
       return String(url || "").replace(/\/+$/, "");
     }
 
-    function isUsableApiUrl(url){
+    function isUsableApiUrl(url) {
       const clean = normalizeApiUrl(url);
-      if(!clean) return false;
-      if(clean.includes("your-backend2-domain.com")) return false;
+      if (!clean) return false;
+      if (clean.includes("your-backend2-domain.com")) return false;
       return /^https?:\/\//i.test(clean);
     }
 
-    function backendLabel(name){
+    function backendLabel(name) {
       return name === "primary" ? "Backend 2" : "Legacy AWS";
     }
 
-    function showBackendBadge(backend){
-      if(!backend){
+    function showBackendBadge(backend) {
+      if (!backend) {
         backendBadge.classList.add("hidden");
         backendBadge.textContent = "";
         return;
@@ -279,49 +279,49 @@
       backendBadge.textContent = `Using ${backendLabel(backend)}`;
     }
 
-    function showMessage(text, type = "error"){
+    function showMessage(text, type = "error") {
       msg.textContent = text;
       msg.className = type;
     }
 
-    function setLoading(button, text){
+    function setLoading(button, text) {
       button.disabled = true;
       button.innerHTML = `${text} <span class="spinner"></span>`;
     }
 
-    function resetButton(button, text){
+    function resetButton(button, text) {
       button.disabled = false;
       button.textContent = text;
     }
 
-    function buildIndexHref(email = "", backend = ""){
+    function buildIndexHref(email = "", backend = "") {
       const q = [];
-      if(email) q.push(`email=${encodeURIComponent(email)}`);
-      if(backend) q.push(`backend=${encodeURIComponent(backend)}`);
+      if (email) q.push(`email=${encodeURIComponent(email)}`);
+      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
       return `index.html${q.length ? `?${q.join("&")}` : ""}`;
     }
 
-    function buildMagicHref(email = "", backend = ""){
+    function buildMagicHref(email = "", backend = "") {
       const q = [];
-      if(email) q.push(`email=${encodeURIComponent(email)}`);
-      if(backend) q.push(`backend=${encodeURIComponent(backend)}`);
+      if (email) q.push(`email=${encodeURIComponent(email)}`);
+      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
       return `magic-login.html${q.length ? `?${q.join("&")}` : ""}`;
     }
 
-    async function safeBody(res){
+    async function safeBody(res) {
       const text = await res.text();
-      if(!text) return {};
-      try{
+      if (!text) return {};
+      try {
         return JSON.parse(text);
-      }catch{
+      } catch {
         return { message: text };
       }
     }
 
-    async function callApi(baseUrl, path, options = {}){
+    async function callApi(baseUrl, path, options = {}) {
       const url = normalizeApiUrl(baseUrl);
 
-      if(!isUsableApiUrl(url)){
+      if (!isUsableApiUrl(url)) {
         return {
           ok: false,
           status: 0,
@@ -333,11 +333,12 @@
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
-      try{
+      try {
         const res = await fetch(url + path, {
           ...options,
           signal: controller.signal
         });
+
         clearTimeout(timeout);
 
         const data = await safeBody(res);
@@ -347,7 +348,7 @@
           data,
           networkError: false
         };
-      }catch(error){
+      } catch (error) {
         clearTimeout(timeout);
         return {
           ok: false,
@@ -358,34 +359,33 @@
       }
     }
 
-    function shouldFallback(status, networkError){
-      if(networkError) return true;
-      if(status === 404) return true;
-      if(status >= 500) return true;
+    function shouldFallback(status, networkError) {
+      if (networkError) return true;
+      if (status === 404) return true;
+      if (status >= 500) return true;
       return false;
     }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
       const primary = normalizeApiUrl(PRIMARY_API);
       const legacy = normalizeApiUrl(LEGACY_API);
 
-      if(behavior === "primaryOnly"){
+      if (behavior === "primaryOnly") {
         const result = await callApi(primary, path, options);
         return { ...result, backend: "primary" };
       }
 
-      if(behavior === "legacyOnly"){
+      if (behavior === "legacyOnly") {
         const result = await callApi(legacy, path, options);
         return { ...result, backend: "legacy" };
       }
 
       const first = await callApi(primary, path, options);
-
-      if(first.ok){
+      if (first.ok) {
         return { ...first, backend: "primary" };
       }
 
-      if(!shouldFallback(first.status, first.networkError)){
+      if (!shouldFallback(first.status, first.networkError)) {
         return { ...first, backend: "primary" };
       }
 
@@ -393,46 +393,58 @@
       return { ...second, backend: "legacy", firstAttempt: first };
     }
 
-    function showPostVerifyActions(email = "", backend = ""){
-      loginLink.classList.remove("hidden");
-      magicLink.classList.remove("hidden");
+    function chooseVerifyBehavior() {
+      if (forcedBackend === "primary") return "primaryOnly";
+      if (forcedBackend === "legacy") return "legacyOnly";
+      return "primaryThenLegacy";
+    }
 
+    function chooseResendBehavior() {
+      if (forcedBackend === "primary") return "primaryOnly";
+      if (forcedBackend === "legacy") return "legacyOnly";
+      return "primaryThenLegacy";
+    }
+
+    function friendlyError(result) {
+      const message = String(result?.data?.message || "").trim();
+      if (message) return message;
+      if (result?.networkError) return "Could not reach server";
+      return "Server error";
+    }
+
+    function updateNavigation(email = "", backend = "") {
       loginLink.href = buildIndexHref(email, backend);
       magicLink.href = buildMagicHref(email, backend);
       backToIndexLink.href = buildIndexHref(email, backend);
     }
 
-    function chooseVerifyBehavior(){
-      if(forcedBackend === "primary") return "primaryOnly";
-      if(forcedBackend === "legacy") return "legacyOnly";
-      return "primaryThenLegacy";
+    function showPostVerifyActions(email = "", backend = "") {
+      updateNavigation(email, backend);
+      loginLink.classList.remove("hidden");
+      magicLink.classList.remove("hidden");
     }
 
-    function chooseResendBehavior(){
-      if(forcedBackend === "primary") return "primaryOnly";
-      if(forcedBackend === "legacy") return "legacyOnly";
-      return "primaryThenLegacy";
-    }
-
-    function friendlyError(result){
-      const message = String(result?.data?.message || "").trim();
-
-      if(message) return message;
-      if(result?.networkError) return "Could not reach server";
-      return "Server error";
+    function syncUrl(email = "", backend = "", token = "") {
+      const q = [];
+      if (token) q.push(`token=${encodeURIComponent(token)}`);
+      if (email) q.push(`email=${encodeURIComponent(email)}`);
+      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
+      const newUrl = `verify-email.html${q.length ? `?${q.join("&")}` : ""}`;
+      window.history.replaceState({}, "", newUrl);
     }
 
     // ================= ACTIONS =================
-    async function verifyToken(tokenFromArg){
-      const token = (tokenFromArg || tokenInput.value || "").trim();
+    async function verifyToken(tokenFromArg) {
+      const token = String(tokenFromArg || tokenInput.value || "").trim();
+      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
 
-      if(!token){
+      if (!token) {
         return showMessage("Missing verification token ❌", "error");
       }
 
       setLoading(verifyBtn, "Verifying");
 
-      try{
+      try {
         const result = await apiHybrid(
           "/verify-email",
           {
@@ -443,51 +455,41 @@
           chooseVerifyBehavior()
         );
 
-        if(result.ok){
+        if (result.ok) {
           forcedBackend = result.backend || forcedBackend || "primary";
           showBackendBadge(forcedBackend);
-
-          const email = (emailInput.value || params().get("email") || "").trim().toLowerCase();
-          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`, "success");
           showPostVerifyActions(email, forcedBackend);
+          syncUrl(email, forcedBackend, token);
 
-          const newQuery = [];
-          if(email) newQuery.push(`email=${encodeURIComponent(email)}`);
-          if(forcedBackend) newQuery.push(`backend=${encodeURIComponent(forcedBackend)}`);
-          const newUrl = `/verify-email.html${newQuery.length ? `?${newQuery.join("&")}` : ""}`;
-          window.history.replaceState({}, "", newUrl);
+          showMessage(
+            `Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`,
+            "success"
+          );
 
           resetButton(verifyBtn, "Verify Email");
           return;
         }
 
-        if(forcedBackend){
-          showBackendBadge(forcedBackend);
-          showMessage(friendlyError(result) + " ❌", "error");
-          resetButton(verifyBtn, "Verify Email");
-          return;
-        }
-
-        showBackendBadge(result.backend || null);
-        showMessage(friendlyError(result) + " ❌", "error");
-      } catch (e){
-        console.error(e);
+        showBackendBadge(result.backend || forcedBackend || null);
+        showMessage(`${friendlyError(result)} ❌`, "error");
+      } catch (error) {
+        console.error(error);
         showMessage("Server error ❌", "error");
       }
 
       resetButton(verifyBtn, "Verify Email");
     }
 
-    async function resendVerification(){
-      const email = (emailInput.value || "").trim().toLowerCase();
+    async function resendVerification() {
+      const email = String(emailInput.value || "").trim().toLowerCase();
 
-      if(!email){
+      if (!email) {
         return showMessage("Enter your email first ❌", "error");
       }
 
       setLoading(resendBtn, "Sending");
 
-      try{
+      try {
         const result = await apiHybrid(
           "/resend-verify",
           {
@@ -498,56 +500,51 @@
           chooseResendBehavior()
         );
 
-        if(result.ok){
+        if (result.ok) {
           forcedBackend = result.backend || forcedBackend || "primary";
           showBackendBadge(forcedBackend);
           showPostVerifyActions(email, forcedBackend);
-          showMessage(`${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)} ✅`, "success");
+          syncUrl(email, forcedBackend);
+
+          showMessage(
+            `${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)} ✅`,
+            "success"
+          );
+
           resetButton(resendBtn, "Resend Verification Email");
           return;
         }
 
         showBackendBadge(result.backend || forcedBackend || null);
-        showMessage(friendlyError(result) + " ❌", "error");
-      } catch (e){
-        console.error(e);
+        showMessage(`${friendlyError(result)} ❌`, "error");
+      } catch (error) {
+        console.error(error);
         showMessage("Server error ❌", "error");
       }
 
       resetButton(resendBtn, "Resend Verification Email");
     }
 
-    async function autoVerify(){
-      const token = (params().get("token") || "").trim();
-      const email = (params().get("email") || "").trim().toLowerCase();
-      const backend = (params().get("backend") || "").trim().toLowerCase();
+    // ================= AUTO INIT =================
+    async function autoVerify() {
+      const token = String(params().get("token") || "").trim();
+      const email = String(params().get("email") || "").trim().toLowerCase();
+      const backend = String(params().get("backend") || "").trim().toLowerCase();
 
-      if(email){
+      if (email) {
         emailInput.value = email;
       }
 
-      if(email || backend){
-        loginLink.href = buildIndexHref(email, backend);
-        magicLink.href = buildMagicHref(email, backend);
-        backToIndexLink.href = buildIndexHref(email, backend);
-      } else {
-        loginLink.href = "index.html";
-        magicLink.href = "magic-login.html";
-        backToIndexLink.href = "index.html";
-      }
-
-      if(backend === "primary" || backend === "legacy"){
+      if (backend === "primary" || backend === "legacy") {
         forcedBackend = backend;
         showBackendBadge(forcedBackend);
       } else {
-        if(isUsableApiUrl(PRIMARY_API)) {
-          showBackendBadge("primary");
-        } else {
-          showBackendBadge("legacy");
-        }
+        showBackendBadge("primary");
       }
 
-      if(!token) return;
+      updateNavigation(email, forcedBackend || "");
+
+      if (!token) return;
 
       tokenInput.value = token;
       showMessage("Verifying your email... ⏳", "warn");
