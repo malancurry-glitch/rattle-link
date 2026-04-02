@@ -822,6 +822,7 @@
         <table>
           <thead>
             <tr>
+              <th>Backend</th>
               <th>ID</th>
               <th>Plan</th>
               <th>Amount</th>
@@ -954,7 +955,6 @@
 
     function authHeaders() {
       return {
-        "Content-Type": "application/json",
         "Authorization": localStorage.getItem("token") || ""
       };
     }
@@ -1091,8 +1091,11 @@
         const res = await fetch(base.replace(/\/+$/, "") + path, options);
         const raw = await res.text();
         let data = {};
-        try { data = raw ? JSON.parse(raw) : {}; }
-        catch { data = { message: raw }; }
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
 
         return {
           ok: res.ok,
@@ -1115,7 +1118,19 @@
     }
 
     async function fetchForBackend(backend, path, options = {}) {
-      const res = await safeFetchRaw(apiBaseForBackend(backend), path, options);
+      const headers = {
+        ...(options.headers || {})
+      };
+
+      if (backend === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
+      const res = await safeFetchRaw(apiBaseForBackend(backend), path, {
+        ...options,
+        headers
+      });
+
       return { ...res, backend };
     }
 
@@ -1152,12 +1167,25 @@
     }
 
     async function authorizedFetch(path, options = {}, forceBackend = null, autoLogout = true) {
+      const backend = forceBackend || activeBackend;
+      const method = String(options.method || "GET").toUpperCase();
+
+      const headers = {
+        ...authHeaders(),
+        ...(options.headers || {})
+      };
+
+      if (method !== "GET" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+
+      if (backend === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
       const res = await hybridFetch(path, {
         ...options,
-        headers: {
-          ...authHeaders(),
-          ...(options.headers || {})
-        }
+        headers
       }, forceBackend);
 
       if (autoLogout && res.status === 401) {
@@ -1203,6 +1231,17 @@
         paused: !!item.paused,
         expire: item.expire ? Number(item.expire) : null,
         createdAt: Number(item.createdAt || item.created_at || 0)
+      };
+    }
+
+    function normalizePaymentItem(item, backend) {
+      return {
+        ...item,
+        backend,
+        amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        expiresAt: Number(item.expiresAt || item.expires_at || 0),
+        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null
       };
     }
 
@@ -1259,7 +1298,6 @@
 
     async function loadMe(showLoading = false) {
       if (showLoading) accessSummary.textContent = "Loading account...";
-
       const ok = await verifyMainSession();
       if (!ok) {
         accessSummary.textContent = "Session expired";
@@ -1323,7 +1361,11 @@
             <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
           </div>
           <div>
-            <div><span class="badge pending">${escapeHtml(payment.billingCycle)}</span> ${formatPaymentStatus(payment.status)}</div>
+            <div>
+              <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+              <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              ${formatPaymentStatus(payment.status)}
+            </div>
             <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
             <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
             <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
@@ -1332,7 +1374,7 @@
             <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
             <div style="margin-top:10px;">
               <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-              <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}')">Details</button>
+              <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
             </div>
           </div>
         </div>
@@ -1341,13 +1383,14 @@
 
     function renderPaymentsTable() {
       if (!paymentsStore.length) {
-        paymentsTable.innerHTML = `<tr><td colspan="8" class="muted">No payments yet</td></tr>`;
+        paymentsTable.innerHTML = `<tr><td colspan="9" class="muted">No payments yet</td></tr>`;
         renderLatestPayment(null);
         return;
       }
 
       paymentsTable.innerHTML = paymentsStore.map(p => `
         <tr>
+          <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
           <td><code>${escapeHtml(p.id)}</code></td>
           <td>${escapeHtml(p.billingCycle)}</td>
           <td>${fmtMoney(p.amountUsd)}</td>
@@ -1357,7 +1400,7 @@
           <td>${fmtDate(p.expiresAt)}</td>
           <td>
             <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
-            <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}')">View</button>
+            <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
           </td>
         </tr>
       `).join("");
@@ -1367,14 +1410,22 @@
     }
 
     async function loadPayments(showMessage = false) {
-      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
+        authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
+      ]);
 
-      if (!res.ok) {
-        if (showMessage) showToast("Failed to load payments");
-        return;
-      }
+      const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments)
+        ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
+        : [];
 
-      paymentsStore = Array.isArray(res.data?.payments) ? res.data.payments : [];
+      const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments)
+        ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
+        : [];
+
+      paymentsStore = [...primaryPayments, ...legacyPayments]
+        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
       renderPaymentsTable();
 
       if (showMessage) showToast("Payments refreshed");
@@ -1395,13 +1446,24 @@
 
       setBusy(requestPaymentBtn, true, "Creating...");
 
-      const res = await authorizedFetch("/payment-request", {
+      let res = await authorizedFetch("/payment-request", {
         method: "POST",
         body: JSON.stringify({
           billingCycle: selectedPlan,
           cryptoCode
         })
-      }, "primary", false);
+      }, activeBackend, false);
+
+      if (!res.ok && shouldFallback(res)) {
+        const other = activeBackend === "primary" ? "legacy" : "primary";
+        res = await authorizedFetch("/payment-request", {
+          method: "POST",
+          body: JSON.stringify({
+            billingCycle: selectedPlan,
+            cryptoCode
+          })
+        }, other, false);
+      }
 
       setBusy(requestPaymentBtn, false);
 
@@ -1413,7 +1475,7 @@
         return;
       }
 
-      const payment = res.data?.payment || null;
+      const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend || activeBackend) : null;
       if (!payment) {
         setResult("Payment request created, but response was empty", true, upgradeResult);
         return;
@@ -1428,7 +1490,10 @@
               <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
             </div>
             <div>
-              <div><span class="badge pending">${escapeHtml(payment.billingCycle)}</span></div>
+              <div>
+                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+                <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              </div>
               <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
               <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
               <div class="muted" style="margin-top:8px;">Send to:</div>
@@ -1457,8 +1522,8 @@
       upgradeModal.style.display = "none";
     }
 
-    function showPaymentDetails(paymentId) {
-      const payment = paymentsStore.find(p => p.id === paymentId);
+    function showPaymentDetails(paymentId, backend = "") {
+      const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
       if (!payment) return;
 
       openUpgradeModal();
@@ -1469,7 +1534,11 @@
               <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
             </div>
             <div>
-              <div>${formatPaymentStatus(payment.status)} <span class="badge">${escapeHtml(payment.billingCycle)}</span></div>
+              <div>
+                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+                ${formatPaymentStatus(payment.status)}
+                <span class="badge">${escapeHtml(payment.billingCycle)}</span>
+              </div>
               <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
               <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
               <div class="muted" style="margin-top:8px;">Address:</div>
@@ -1531,7 +1600,10 @@
       const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
       const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
-      if (!primaryRes.ok && !legacyRes.ok && (primaryRes.status === 401 || legacyRes.status === 401)) {
+      if (
+        (primaryRes.status === 401 && legacyRes.status !== 200) ||
+        (legacyRes.status === 401 && primaryRes.status !== 200)
+      ) {
         await verifyMainSession();
       }
 
@@ -2207,7 +2279,6 @@
       zone.addEventListener("drop", async e => {
         const file = e.dataTransfer?.files?.[0];
         if (!file) return;
-
         await processFile(file, backend);
       });
     }
@@ -2257,6 +2328,7 @@
         if (document.hidden) return;
         loadMe(false);
         loadLinks(false);
+        loadPayments(false);
         checkBackendHealth();
       }, 15000);
     })();
