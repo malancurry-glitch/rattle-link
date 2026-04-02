@@ -227,6 +227,12 @@
       border-color:#22c55e;
     }
 
+    .backend-active{
+      box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08);
+      transform:translateY(-1px);
+      font-weight:700;
+    }
+
     .copy{ color:var(--green); border-color:var(--green); }
     .open{ color:var(--blue); border-color:var(--blue); }
     .qr{ color:#06b6d4; border-color:#06b6d4; }
@@ -914,7 +920,7 @@
 
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
-      return token ? { "Authorization": token } : {};
+      return token ? { "Authorization": `Bearer ${token}` } : {};
     }
 
     function apiBaseForBackend(backend) {
@@ -933,10 +939,16 @@
       return `${apiBaseForBackend(backend)}/${slug}`;
     }
 
+    function updatePreferredButtons() {
+      preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
+      preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
+    }
+
     function setTopBackendBadge() {
       backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
       backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
       sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      updatePreferredButtons();
     }
 
     function setBusy(button, busy, text = "") {
@@ -1105,27 +1117,31 @@
       return { ...res, backend: targetBackend };
     }
 
-    async function verifyMainSession() {
+    async function verifyMainSession(showToastMessage = false) {
       const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+
       if (preferredRes.ok) {
         sessionBackend = preferredBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
         meState = preferredRes.data || null;
         renderMe();
         setTopBackendBadge();
-        showToast(`Session valid on ${backendLabel(sessionBackend)}`);
+        if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
         return true;
       }
 
       const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
       const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+
       if (fallbackRes.ok) {
         sessionBackend = otherBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
         meState = fallbackRes.data || null;
         renderMe();
         setTopBackendBadge();
-        showToast(`Session valid on ${backendLabel(sessionBackend)}. Preferred stays ${backendLabel(preferredBackend)}.`);
+        if (showToastMessage) {
+          showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
+        }
         return true;
       }
 
@@ -1206,7 +1222,7 @@
 
     async function loadMe(showLoading = false) {
       if (showLoading) accessSummary.textContent = "Loading account...";
-      const ok = await verifyMainSession();
+      const ok = await verifyMainSession(false);
       if (!ok) accessSummary.textContent = "Session expired";
     }
 
@@ -1348,8 +1364,8 @@
         body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
       }, preferredBackend, false);
 
-      if (!res.ok && res.status === 401) {
-        await verifyMainSession();
+      if (res.status === 401) {
+        await verifyMainSession(false);
         res = await authorizedFetch("/payment-request", {
           method: "POST",
           body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
@@ -1448,10 +1464,16 @@
       legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
     }
 
+    async function checkOneBackendHealth(backend) {
+      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
+      if (health.ok) return health;
+      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
+    }
+
     async function checkBackendHealth() {
       const [p, l] = await Promise.all([
-        safeFetchRaw(PRIMARY_API, "/", { method: "GET" }),
-        safeFetchRaw(LEGACY_API, "/", { method: "GET" })
+        checkOneBackendHealth("primary"),
+        checkOneBackendHealth("legacy")
       ]);
 
       primaryHealth.innerHTML = p.ok
@@ -1531,7 +1553,7 @@
             <td><b>${escapeHtml(item.slug)}</b></td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
             <td>
-              <a href="${escapeHtml(publicLink)}" target="_blank">${escapeHtml(publicLink)}</a>
+              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
               <div class="muted">${escapeHtml(item.url || "")}</div>
             </td>
             <td>${getStatus(item)}</td>
@@ -1642,7 +1664,7 @@
       }, backend, false);
 
       if (res.status === 401) {
-        await verifyMainSession();
+        await verifyMainSession(false);
         res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify(body)
@@ -1693,7 +1715,7 @@
         }, backend, false);
 
         if (res.status === 401) {
-          await verifyMainSession();
+          await verifyMainSession(false);
           res = await authorizedFetch("/create", {
             method: "POST",
             body: JSON.stringify(requestBody)
@@ -1722,7 +1744,7 @@
       }, backend, false);
 
       if (res.status === 401) {
-        await verifyMainSession();
+        await verifyMainSession(false);
         res = await authorizedFetch("/delete", {
           method: "POST",
           body: JSON.stringify({ slug })
@@ -2010,7 +2032,7 @@
         }, backend, false);
 
         if (res.status === 401) {
-          await verifyMainSession();
+          await verifyMainSession(false);
           res = await authorizedFetch("/create", {
             method: "POST",
             body: JSON.stringify({ url })
@@ -2104,7 +2126,7 @@
     preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
     verifySessionBtn.addEventListener("click", async () => {
       setBusy(verifySessionBtn, true, "Checking...");
-      await verifyMainSession();
+      await verifyMainSession(true);
       setBusy(verifySessionBtn, false);
     });
 
