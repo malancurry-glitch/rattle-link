@@ -220,6 +220,18 @@
       border-color:var(--purple);
     }
 
+    .legacy-btn{
+      background:#0f172a;
+      color:#facc15;
+      border-color:#facc15;
+    }
+
+    .backend2-btn{
+      background:#0f172a;
+      color:#22c55e;
+      border-color:#22c55e;
+    }
+
     .copy{ color:var(--green); border-color:var(--green); }
     .open{ color:var(--blue); border-color:var(--blue); }
     .qr{ color:#06b6d4; border-color:#06b6d4; }
@@ -278,7 +290,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:980px;
+      min-width:1080px;
     }
 
     th, td{
@@ -440,6 +452,16 @@
       color:var(--cyan);
     }
 
+    .backend-legacy{
+      color:#facc15;
+      border-color:#facc15;
+    }
+
+    .backend-primary{
+      color:#22c55e;
+      border-color:#22c55e;
+    }
+
     .overlay{
       position:fixed;
       inset:0;
@@ -480,6 +502,25 @@
       margin-bottom:12px;
     }
 
+    .split-create{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      margin-top:10px;
+    }
+
+    .create-box{
+      border:1px solid rgba(0,255,255,0.16);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+    }
+
+    .create-box h4{
+      margin:0 0 8px;
+      color:var(--cyan);
+    }
+
     canvas{
       max-width:100%;
     }
@@ -487,7 +528,8 @@
     @media (max-width: 980px){
       .two-col,
       .three-col,
-      .payment-box{
+      .payment-box,
+      .split-create{
         grid-template-columns:1fr;
       }
 
@@ -590,18 +632,42 @@
 
       <div class="form-row">
         <input id="expire" type="number" min="1" placeholder="Expire in hours" />
-        <button id="createBtn" class="primary" type="button">Create Link</button>
       </div>
 
-      <div class="form-row">
-        <input id="bulkCount" type="number" min="1" placeholder="Bulk count" />
-        <button id="bulkBtn" type="button">Bulk Create</button>
-      </div>
+      <div class="split-create">
+        <div class="create-box">
+          <h4>☁️ Create AWS Link</h4>
+          <div class="muted">This creates the short link on the legacy AWS backend.</div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button>
+          </div>
+          <div class="form-row">
+            <input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button>
+          </div>
+          <div class="drop-zone" id="dropZoneLegacy">
+            <p>📂 Upload CSV for <b>AWS links</b></p>
+            <input type="file" id="csvFileLegacy" accept=".csv,.txt" />
+            <button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button>
+          </div>
+        </div>
 
-      <div class="drop-zone" id="dropZone">
-        <p>📂 Upload CSV with one URL per line or a column named <b>url</b></p>
-        <input type="file" id="csvFile" accept=".csv,.txt" />
-        <button id="uploadBtn" type="button">Upload CSV</button>
+        <div class="create-box">
+          <h4>🟢 Create Backend2 Link</h4>
+          <div class="muted">This creates the short link on the new backend2 server.</div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
+          </div>
+          <div class="form-row">
+            <input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button>
+          </div>
+          <div class="drop-zone" id="dropZonePrimary">
+            <p>📂 Upload CSV for <b>Backend2 links</b></p>
+            <input type="file" id="csvFilePrimary" accept=".csv,.txt" />
+            <button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button>
+          </div>
+        </div>
       </div>
 
       <div id="result" class="result"></div>
@@ -617,6 +683,7 @@
         <table>
           <thead>
             <tr>
+              <th>Backend</th>
               <th>Slug</th>
               <th>Clicks</th>
               <th>Link</th>
@@ -698,18 +765,15 @@
     </div>
 
     <div id="upgradeResult" class="result"></div>
-
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
 
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    // ================= CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // ================= STATE =================
     let dataStore = [];
     let paymentsStore = [];
     let chart = null;
@@ -721,9 +785,7 @@
     let plansState = null;
     let selectedPlan = "monthly";
     let activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
-    let shortBase = activeBackend === "legacy" ? LEGACY_API : PRIMARY_API;
 
-    // ================= ELEMENTS =================
     const totalLinks = document.getElementById("totalLinks");
     const totalClicks = document.getElementById("totalClicks");
     const avgClicks = document.getElementById("avgClicks");
@@ -735,8 +797,8 @@
     const toast = document.getElementById("toast");
     const result = document.getElementById("result");
     const paymentsTable = document.getElementById("paymentsTable");
-    const backendBadgeTop = document.getElementById("backendBadgeTop");
 
+    const backendBadgeTop = document.getElementById("backendBadgeTop");
     const meEmail = document.getElementById("meEmail");
     const mePlan = document.getElementById("mePlan");
     const meExpire = document.getElementById("meExpire");
@@ -747,16 +809,25 @@
     const urlInput = document.getElementById("url");
     const slugInput = document.getElementById("customSlug");
     const expireInput = document.getElementById("expire");
-    const bulkCountInput = document.getElementById("bulkCount");
+
+    const bulkCountLegacy = document.getElementById("bulkCountLegacy");
+    const bulkCountPrimary = document.getElementById("bulkCountPrimary");
     const searchInput = document.getElementById("search");
-    const csvFile = document.getElementById("csvFile");
-    const dropZone = document.getElementById("dropZone");
+
+    const csvFileLegacy = document.getElementById("csvFileLegacy");
+    const csvFilePrimary = document.getElementById("csvFilePrimary");
+
+    const dropZoneLegacy = document.getElementById("dropZoneLegacy");
+    const dropZonePrimary = document.getElementById("dropZonePrimary");
 
     const refreshBtn = document.getElementById("refreshBtn");
     const upgradeBtn = document.getElementById("upgradeBtn");
-    const createBtn = document.getElementById("createBtn");
-    const bulkBtn = document.getElementById("bulkBtn");
-    const uploadBtn = document.getElementById("uploadBtn");
+    const createLegacyBtn = document.getElementById("createLegacyBtn");
+    const createPrimaryBtn = document.getElementById("createPrimaryBtn");
+    const bulkLegacyBtn = document.getElementById("bulkLegacyBtn");
+    const bulkPrimaryBtn = document.getElementById("bulkPrimaryBtn");
+    const uploadLegacyBtn = document.getElementById("uploadLegacyBtn");
+    const uploadPrimaryBtn = document.getElementById("uploadPrimaryBtn");
 
     const overlay = document.getElementById("overlay");
     const upgradeModal = document.getElementById("upgradeModal");
@@ -766,7 +837,6 @@
     const upgradeResult = document.getElementById("upgradeResult");
     const paymentRequestBox = document.getElementById("paymentRequestBox");
 
-    // ================= HELPERS =================
     function authHeaders() {
       return {
         "Content-Type": "application/json",
@@ -774,9 +844,25 @@
       };
     }
 
+    function apiBaseForBackend(backend) {
+      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    }
+
+    function backendLabel(backend) {
+      return backend === "legacy" ? "AWS" : "Backend2";
+    }
+
+    function backendClass(backend) {
+      return backend === "legacy" ? "backend-legacy" : "backend-primary";
+    }
+
+    function buildPublicLink(slug, backend) {
+      return `${apiBaseForBackend(backend)}/${slug}`;
+    }
+
     function setTopBackendBadge() {
+      backendBadgeTop.className = `backend-badge ${backendClass(activeBackend)}`;
       backendBadgeTop.textContent = activeBackend === "legacy" ? "Using Legacy AWS" : "Using Backend 2";
-      shortBase = activeBackend === "legacy" ? LEGACY_API : PRIMARY_API;
     }
 
     function setBusy(button, busy, text = "") {
@@ -830,10 +916,7 @@
     function fmtExpire(ts) {
       const n = Number(ts || 0);
       if (!n) return '<span class="muted">No expiry</span>';
-
-      if (n <= Date.now()) {
-        return `<span class="expired">Expired</span>`;
-      }
+      if (n <= Date.now()) return `<span class="expired">Expired</span>`;
 
       const diff = n - Date.now();
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -887,10 +970,6 @@
       return true;
     }
 
-    function buildPublicLink(slug) {
-      return `${shortBase}/${slug}`;
-    }
-
     async function safeFetchRaw(base, path, options = {}) {
       try {
         const res = await fetch(base.replace(/\/+$/, "") + path, options);
@@ -919,35 +998,41 @@
       return result.status === 0 || result.status === 404 || result.status >= 500;
     }
 
+    async function fetchForBackend(backend, path, options = {}) {
+      const res = await safeFetchRaw(apiBaseForBackend(backend), path, options);
+      return { ...res, backend };
+    }
+
     async function hybridFetch(path, options = {}, forceBackend = null) {
-      const preferred = forceBackend || activeBackend;
+      if (forceBackend) {
+        return fetchForBackend(forceBackend, path, options);
+      }
+
+      const preferred = activeBackend;
 
       if (preferred === "legacy") {
-        const first = await safeFetchRaw(LEGACY_API, path, options);
-        if (first.ok || !shouldFallback(first)) {
-          return { ...first, backend: "legacy" };
-        }
-        const second = await safeFetchRaw(PRIMARY_API, path, options);
+        const first = await fetchForBackend("legacy", path, options);
+        if (first.ok || !shouldFallback(first)) return first;
+
+        const second = await fetchForBackend("primary", path, options);
         if (second.ok) {
           activeBackend = "primary";
           localStorage.setItem("authBackend", "primary");
           setTopBackendBadge();
         }
-        return { ...second, backend: "primary" };
+        return second;
       }
 
-      const first = await safeFetchRaw(PRIMARY_API, path, options);
-      if (first.ok || !shouldFallback(first)) {
-        return { ...first, backend: "primary" };
-      }
+      const first = await fetchForBackend("primary", path, options);
+      if (first.ok || !shouldFallback(first)) return first;
 
-      const second = await safeFetchRaw(LEGACY_API, path, options);
+      const second = await fetchForBackend("legacy", path, options);
       if (second.ok) {
         activeBackend = "legacy";
         localStorage.setItem("authBackend", "legacy");
         setTopBackendBadge();
       }
-      return { ...second, backend: "legacy" };
+      return second;
     }
 
     async function authorizedFetch(path, options = {}, forceBackend = null) {
@@ -959,14 +1044,32 @@
         }
       }, forceBackend);
 
-      if (res.status === 401) {
-        logout();
-      }
-
+      if (res.status === 401) logout();
       return res;
     }
 
-    // ================= ACCOUNT =================
+    function normalizeLinkItem(item, backend) {
+      return {
+        ...item,
+        backend,
+        user: item.user || item.username || "",
+        clicks: Number(item.clicks || 0),
+        paused: !!item.paused,
+        expire: item.expire ? Number(item.expire) : null,
+        createdAt: Number(item.createdAt || item.created_at || 0)
+      };
+    }
+
+    function mergeLinks(primaryItems = [], legacyItems = []) {
+      const merged = [
+        ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
+        ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
+      ];
+
+      merged.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      return merged;
+    }
+
     function renderMe() {
       if (!meState) return;
 
@@ -1125,7 +1228,7 @@
     }
 
     async function loadPayments(showMessage = false) {
-      const res = await authorizedFetch("/payments/me", { method: "GET" });
+      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary");
 
       if (!res.ok) {
         if (showMessage) showToast("Failed to load payments");
@@ -1159,7 +1262,7 @@
           billingCycle: selectedPlan,
           cryptoCode
         })
-      });
+      }, "primary");
 
       setBusy(requestPaymentBtn, false);
 
@@ -1241,7 +1344,6 @@
       `;
     }
 
-    // ================= LINKS =================
     async function loadLinks(showLoading = false) {
       if (loadingLinks) return;
       loadingLinks = true;
@@ -1251,20 +1353,18 @@
         setBusy(refreshBtn, true, "Loading...");
       }
 
-      const res = await authorizedFetch("/list", { method: "GET" });
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/list", { method: "GET" }, "primary"),
+        authorizedFetch("/list", { method: "GET" }, "legacy")
+      ]);
 
       loadingLinks = false;
       setBusy(refreshBtn, false);
 
-      if (!res.ok) {
-        setResult(res.data?.message || "Failed to load links", true);
-        return;
-      }
+      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
-      dataStore = Array.isArray(res.data?.items) ? res.data.items : [];
-      activeBackend = res.backend || activeBackend;
-      localStorage.setItem("authBackend", activeBackend);
-      setTopBackendBadge();
+      dataStore = mergeLinks(primaryItems, legacyItems);
 
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
       totalLinks.textContent = dataStore.length;
@@ -1284,19 +1384,21 @@
       const filtered = dataStore.filter(item => {
         const slug = String(item.slug || "").toLowerCase();
         const url = String(item.url || "").toLowerCase();
-        return !q || slug.includes(q) || url.includes(q);
+        const backend = String(item.backend || "").toLowerCase();
+        return !q || slug.includes(q) || url.includes(q) || backend.includes(q);
       });
 
       if (!filtered.length) {
-        table.innerHTML = `<tr><td colspan="6" class="muted">No links found</td></tr>`;
+        table.innerHTML = `<tr><td colspan="7" class="muted">No links found</td></tr>`;
         return;
       }
 
       table.innerHTML = filtered.map(item => {
-        const publicLink = buildPublicLink(item.slug);
+        const publicLink = buildPublicLink(item.slug, item.backend);
 
         return `
           <tr>
+            <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
             <td><b>${escapeHtml(item.slug)}</b></td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
             <td>
@@ -1309,9 +1411,9 @@
               <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
               <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
               <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
-              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}">Stats</button>
-              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}">Geo</button>
-              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}">Delete</button>
+              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>
+              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>
+              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Delete</button>
             </td>
           </tr>
         `;
@@ -1330,15 +1432,15 @@
       });
 
       document.querySelectorAll(".stats-btn").forEach(btn => {
-        btn.onclick = () => showHistory(btn.dataset.slug);
+        btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend);
       });
 
       document.querySelectorAll(".geo-btn").forEach(btn => {
-        btn.onclick = () => showGeo(btn.dataset.slug);
+        btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend);
       });
 
       document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.onclick = () => deleteLink(btn.dataset.slug);
+        btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend);
       });
     }
 
@@ -1353,7 +1455,7 @@
       chart = new Chart(canvas, {
         type: "line",
         data: {
-          labels: sorted.map(i => i.slug),
+          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
           datasets: [{
             label: "Clicks",
             data: sorted.map(i => Number(i.clicks || 0)),
@@ -1391,6 +1493,7 @@
       ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
         <div class="ranking-item">
           <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
           <div>Clicks: ${Number(item.clicks || 0)}</div>
           <div>Score: ${scoreLink(item)}/100</div>
           <div>${detectFraud(item)}</div>
@@ -1398,18 +1501,15 @@
       `).join("");
     }
 
-    async function createLink() {
+    function getCreatePayload() {
       const url = urlInput.value.trim();
       const slug = slugInput.value.trim();
       const expireHours = expireInput.value.trim();
 
       if (!url) {
         setResult("Enter URL", true);
-        return;
+        return null;
       }
-
-      setBusy(createBtn, true, "Creating...");
-      setResult("Creating link...", false);
 
       const body = { url };
       if (slug) body.slug = slug;
@@ -1417,36 +1517,46 @@
       if (expireHours) {
         const hours = Number(expireHours);
         if (!Number.isFinite(hours) || hours <= 0) {
-          setBusy(createBtn, false);
           setResult("Expire must be a positive number", true);
-          return;
+          return null;
         }
         body.expire = Date.now() + hours * 60 * 60 * 1000;
       }
 
+      return body;
+    }
+
+    async function createLinkForBackend(backend) {
+      const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
+      const body = getCreatePayload();
+      if (!body) return;
+
+      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+      setResult(`Creating ${backendLabel(backend)} link...`, false);
+
       const res = await authorizedFetch("/create", {
         method: "POST",
         body: JSON.stringify(body)
-      });
+      }, backend);
 
-      setBusy(createBtn, false);
+      setBusy(button, false);
 
       if (!res.ok) {
         if (res.status === 402) {
           await loadMe(false);
           openUpgradeModal();
-          setResult(res.data?.message || "Upgrade required", true);
-          setResult(res.data?.message || "Upgrade required", true, upgradeResult);
+          setResult(`${backendLabel(backend)}: ${res.data?.message || "Upgrade required"}`, true);
+          setResult(`${backendLabel(backend)}: ${res.data?.message || "Upgrade required"}`, true, upgradeResult);
           return;
         }
 
-        setResult(res.data?.message || "Failed to create link", true);
+        setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
         return;
       }
 
       const link = res.data?.link || "Success";
       const trialAfter = res.data?.trialRemainingAfter;
-      setResult(`Created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
+      setResult(`${backendLabel(backend)} created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
 
       urlInput.value = "";
       slugInput.value = "";
@@ -1455,44 +1565,34 @@
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    async function bulkCreate() {
-      const count = Number(bulkCountInput.value || 0);
-      const url = urlInput.value.trim();
-      const expireHours = expireInput.value.trim();
+    async function bulkCreateForBackend(backend) {
+      const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
+      const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
 
-      if (!url) {
-        setResult("Enter URL first", true);
-        return;
-      }
+      const count = Number(countInput.value || 0);
+      const body = getCreatePayload();
+      if (!body) return;
 
       if (!Number.isFinite(count) || count <= 0) {
         setResult("Invalid bulk count", true);
         return;
       }
 
-      let expire;
-      if (expireHours) {
-        const hours = Number(expireHours);
-        if (!Number.isFinite(hours) || hours <= 0) {
-          setResult("Expire must be a positive number", true);
-          return;
-        }
-        expire = Date.now() + hours * 60 * 60 * 1000;
-      }
-
-      setBusy(bulkBtn, true, "Creating...");
-      setResult(`Bulk creating ${count} links...`, false);
+      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+      setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
 
       let success = 0;
 
       for (let i = 0; i < count; i++) {
+        const requestBody = { ...body };
+        if (!requestBody.slug) {
+          delete requestBody.slug;
+        }
+
         const res = await authorizedFetch("/create", {
           method: "POST",
-          body: JSON.stringify({
-            url,
-            ...(expire ? { expire } : {})
-          })
-        });
+          body: JSON.stringify(requestBody)
+        }, backend);
 
         if (res.ok) {
           success++;
@@ -1500,29 +1600,32 @@
           openUpgradeModal();
           setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Upgrade required"}`, true);
           break;
+        } else {
+          setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
+          break;
         }
 
-        setResult(`Bulk creating... ${success}/${count}`, false);
+        setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
       }
 
-      setBusy(bulkBtn, false);
+      setBusy(button, false);
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    async function deleteLink(slug) {
-      if (!confirm(`Delete ${slug}?`)) return;
+    async function deleteLink(slug, backend) {
+      if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
 
       const res = await authorizedFetch("/delete", {
         method: "POST",
         body: JSON.stringify({ slug })
-      });
+      }, backend);
 
       if (!res.ok) {
         showToast("Delete failed");
         return;
       }
 
-      showToast("Deleted");
+      showToast(`Deleted from ${backendLabel(backend)}`);
       await loadLinks(false);
     }
 
@@ -1589,10 +1692,11 @@
       }
     }
 
-    async function showGeo(slug) {
+    async function showGeo(slug, backend) {
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
         <div class="muted">Loading location data...</div>
         <div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
       `;
@@ -1607,7 +1711,7 @@
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(map);
 
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
       if (!history.length) {
@@ -1635,10 +1739,11 @@
       }
     }
 
-    async function showHistory(slug) {
+    async function showHistory(slug, backend) {
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
         <canvas id="statsChart" height="120"></canvas>
         <div id="statsBody" style="margin-top:14px;"></div>
         <h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4>
@@ -1648,9 +1753,9 @@
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
 
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
-      const link = dataStore.find(l => l.slug === slug);
+      const link = dataStore.find(l => l.slug === slug && l.backend === backend);
 
       if (!history.length && link && Number(link.clicks || 0) > 0) {
         history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
@@ -1767,7 +1872,6 @@
       let offset = 0;
       for (const h of history) {
         const geo = await getGeo(h.ip);
-
         let lat = Number(geo.latitude || (Math.random() * 140 - 70));
         let lng = Number(geo.longitude || (Math.random() * 360 - 180));
 
@@ -1786,8 +1890,7 @@
       }
     }
 
-    // ================= CSV =================
-    async function processFile(file) {
+    async function processFile(file, backend) {
       if (!file) {
         setResult("Choose a CSV file first", true);
         return;
@@ -1823,8 +1926,9 @@
         return;
       }
 
-      setBusy(uploadBtn, true, "Uploading...");
-      setResult(`Uploading ${urls.length} URLs...`, false);
+      const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
+      setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
+      setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
 
       let okCount = 0;
 
@@ -1832,7 +1936,7 @@
         const res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify({ url })
-        });
+        }, backend);
 
         if (res.ok) {
           okCount++;
@@ -1840,22 +1944,27 @@
           openUpgradeModal();
           setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Upgrade required"}`, true);
           break;
+        } else {
+          setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
+          break;
         }
 
-        setResult(`Uploading... ${okCount}/${urls.length}`, false);
+        setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
       }
 
-      setBusy(uploadBtn, false);
-      csvFile.value = "";
+      setBusy(button, false);
+
+      if (backend === "legacy") csvFileLegacy.value = "";
+      if (backend === "primary") csvFilePrimary.value = "";
+
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    async function uploadCSV() {
-      const file = csvFile.files?.[0];
-      await processFile(file);
+    async function uploadCSVForBackend(backend) {
+      const file = backend === "legacy" ? csvFileLegacy.files?.[0] : csvFilePrimary.files?.[0];
+      await processFile(file, backend);
     }
 
-    // ================= GENERAL ACTIONS =================
     function refreshNow() {
       Promise.all([
         loadMe(true),
@@ -1874,49 +1983,52 @@
     function setupKeyboardShortcuts() {
       [urlInput, slugInput, expireInput].forEach(el => {
         el.addEventListener("keydown", e => {
-          if (e.key === "Enter") createLink();
+          if (e.key === "Enter") createLinkForBackend("primary");
         });
-      });
-
-      bulkCountInput.addEventListener("keydown", e => {
-        if (e.key === "Enter") bulkCreate();
       });
 
       searchInput.addEventListener("input", renderTable);
     }
 
-    function setupDragAndDrop() {
+    function wireDropZone(zone, backend) {
       ["dragenter", "dragover"].forEach(eventName => {
-        dropZone.addEventListener(eventName, e => {
+        zone.addEventListener(eventName, e => {
           e.preventDefault();
           e.stopPropagation();
-          dropZone.classList.add("dragover");
+          zone.classList.add("dragover");
         });
       });
 
       ["dragleave", "dragend", "drop"].forEach(eventName => {
-        dropZone.addEventListener(eventName, e => {
+        zone.addEventListener(eventName, e => {
           e.preventDefault();
           e.stopPropagation();
-          dropZone.classList.remove("dragover");
+          zone.classList.remove("dragover");
         });
       });
 
-      dropZone.addEventListener("drop", async e => {
+      zone.addEventListener("drop", async e => {
         const file = e.dataTransfer?.files?.[0];
-        if (file) {
-          csvFile.files = e.dataTransfer.files;
-          await processFile(file);
+        if (!file) return;
+
+        if (backend === "legacy") {
+          csvFileLegacy.files = e.dataTransfer.files;
+        } else {
+          csvFilePrimary.files = e.dataTransfer.files;
         }
+
+        await processFile(file, backend);
       });
     }
 
-    // ================= INIT =================
     refreshBtn.addEventListener("click", refreshNow);
     upgradeBtn.addEventListener("click", openUpgradeModal);
-    createBtn.addEventListener("click", createLink);
-    bulkBtn.addEventListener("click", bulkCreate);
-    uploadBtn.addEventListener("click", uploadCSV);
+    createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
+    createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
+    bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
+    bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
+    uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
+    uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
     requestPaymentBtn.addEventListener("click", createPaymentRequest);
 
     (async function init() {
@@ -1924,7 +2036,8 @@
 
       setTopBackendBadge();
       setupKeyboardShortcuts();
-      setupDragAndDrop();
+      wireDropZone(dropZoneLegacy, "legacy");
+      wireDropZone(dropZonePrimary, "primary");
 
       await Promise.all([
         loadPlans(false),
