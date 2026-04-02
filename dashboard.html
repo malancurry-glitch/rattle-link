@@ -197,12 +197,6 @@
       box-shadow:none;
     }
 
-    .primary{
-      background:var(--blue);
-      color:#fff;
-      border-color:var(--blue);
-    }
-
     .success-btn{
       background:var(--green);
       color:#000;
@@ -213,12 +207,6 @@
       background:var(--red);
       color:#fff;
       border-color:var(--red);
-    }
-
-    .warn-btn{
-      background:var(--yellow);
-      color:#000;
-      border-color:var(--yellow);
     }
 
     .purple-btn{
@@ -279,7 +267,6 @@
 
     .success{ color:var(--green); }
     .error{ color:var(--red); }
-    .warn{ color:var(--yellow); }
 
     .links-header,
     .section-head{
@@ -345,26 +332,10 @@
       transition:.2s ease;
     }
 
-    .plan-card:hover{
-      border-color:var(--cyan);
-      box-shadow:0 0 16px rgba(0,255,255,0.12);
-    }
-
     .plan-card.active{
       border-color:var(--cyan);
       box-shadow:0 0 16px rgba(0,255,255,0.22);
       background:rgba(0,255,255,0.05);
-    }
-
-    .plan-card h4{
-      margin:0 0 8px;
-      color:var(--cyan);
-    }
-
-    .plan-price{
-      font-size:26px;
-      font-weight:700;
-      margin-bottom:6px;
     }
 
     .drop-zone{
@@ -496,11 +467,6 @@
       box-shadow:0 0 40px rgba(0,255,255,0.18);
     }
 
-    .upgrade-modal h3{
-      margin-top:0;
-      color:var(--cyan);
-    }
-
     .notice{
       padding:12px;
       border-radius:12px;
@@ -561,10 +527,6 @@
       border:1px solid rgba(0,255,255,0.12);
     }
 
-    canvas{
-      max-width:100%;
-    }
-
     @media (max-width: 980px){
       .two-col,
       .three-col,
@@ -573,10 +535,6 @@
       .split-create,
       .health-list{
         grid-template-columns:1fr;
-      }
-
-      .payment-qr{
-        max-width:260px;
       }
     }
   </style>
@@ -587,7 +545,7 @@
       <div>
         <h2>📊 Rattle Link Dashboard</h2>
         <div class="sub">
-          Manage links • Track traffic • Use AWS and Backend2 together • Payment requests • Better session handling
+          Manage links • Track traffic • Use AWS and Backend2 together • Payment requests
         </div>
       </div>
 
@@ -621,7 +579,7 @@
 
     <div class="four-col">
       <div class="card mini-stat">
-        <div class="muted">Primary Links</div>
+        <div class="muted">Backend2 Links</div>
         <div id="primaryLinksCount" style="font-size:24px;color:#22c55e;">0</div>
       </div>
       <div class="card mini-stat">
@@ -629,7 +587,7 @@
         <div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div>
       </div>
       <div class="card mini-stat">
-        <div class="muted">Primary Clicks</div>
+        <div class="muted">Backend2 Clicks</div>
         <div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div>
       </div>
       <div class="card mini-stat">
@@ -666,7 +624,7 @@
         </div>
 
         <div style="margin-top:14px;">
-          <div class="muted">Session / Preferred backend</div>
+          <div class="muted">Preferred backend</div>
           <div class="backend-switch" style="margin-top:8px;">
             <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
             <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
@@ -710,8 +668,7 @@
       <div class="card">
         <h3>🧠 Session Notes</h3>
         <div class="muted">
-          This dashboard no longer logs you out just because one backend returns 401 while loading the other backend.
-          Logout now happens only when your main session check fails.
+          Preferred backend is manual only. This page will not switch your preference automatically anymore.
         </div>
         <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
       </div>
@@ -749,7 +706,7 @@
 
         <div class="create-box">
           <h4>🟢 Create Backend2 Link</h4>
-          <div class="muted">Creates short links on the new Backend2 server.</div>
+          <div class="muted">Creates short links on the Backend2 server.</div>
           <div class="form-row" style="margin-top:10px;">
             <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
           </div>
@@ -888,7 +845,9 @@
     let meState = null;
     let plansState = null;
     let selectedPlan = "monthly";
-    let activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+
+    let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
 
     const totalLinks = document.getElementById("totalLinks");
     const totalClicks = document.getElementById("totalClicks");
@@ -954,9 +913,8 @@
     const paymentRequestBox = document.getElementById("paymentRequestBox");
 
     function authHeaders() {
-      return {
-        "Authorization": localStorage.getItem("token") || ""
-      };
+      const token = localStorage.getItem("token") || "";
+      return token ? { "Authorization": token } : {};
     }
 
     function apiBaseForBackend(backend) {
@@ -976,9 +934,9 @@
     }
 
     function setTopBackendBadge() {
-      backendBadgeTop.className = `backend-badge ${backendClass(activeBackend)}`;
-      backendBadgeTop.textContent = activeBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-      sessionNote.textContent = `Current preferred backend is ${backendLabel(activeBackend)}. Cross-backend requests no longer force logout.`;
+      backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
+      backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+      sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
     }
 
     function setBusy(button, busy, text = "") {
@@ -1038,12 +996,7 @@
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-      return `
-        <div class="success">
-          ${fmtDate(n)}
-          <br><small>${days}d ${hrs}h left</small>
-        </div>
-      `;
+      return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
     }
 
     function formatPaymentStatus(status) {
@@ -1107,17 +1060,13 @@
         return {
           ok: false,
           status: 0,
-          data: { message: e?.message || "Network error" },
+          data: { message: e?.message || "Failed to fetch" },
           raw: ""
         };
       }
     }
 
-    function shouldFallback(result) {
-      return result.status === 0 || result.status === 404 || result.status >= 500;
-    }
-
-    async function fetchForBackend(backend, path, options = {}) {
+    async function callBackend(backend, path, options = {}) {
       const headers = {
         ...(options.headers || {})
       };
@@ -1126,50 +1075,15 @@
         headers["x-rattle-fallback"] = "legacy";
       }
 
-      const res = await safeFetchRaw(apiBaseForBackend(backend), path, {
+      return safeFetchRaw(apiBaseForBackend(backend), path, {
         ...options,
         headers
       });
-
-      return { ...res, backend };
     }
 
-    async function hybridFetch(path, options = {}, forceBackend = null) {
-      if (forceBackend) {
-        return fetchForBackend(forceBackend, path, options);
-      }
-
-      const preferred = activeBackend;
-
-      if (preferred === "legacy") {
-        const first = await fetchForBackend("legacy", path, options);
-        if (first.ok || !shouldFallback(first)) return first;
-
-        const second = await fetchForBackend("primary", path, options);
-        if (second.ok) {
-          activeBackend = "primary";
-          localStorage.setItem("authBackend", "primary");
-          setTopBackendBadge();
-        }
-        return second;
-      }
-
-      const first = await fetchForBackend("primary", path, options);
-      if (first.ok || !shouldFallback(first)) return first;
-
-      const second = await fetchForBackend("legacy", path, options);
-      if (second.ok) {
-        activeBackend = "legacy";
-        localStorage.setItem("authBackend", "legacy");
-        setTopBackendBadge();
-      }
-      return second;
-    }
-
-    async function authorizedFetch(path, options = {}, forceBackend = null, autoLogout = true) {
-      const backend = forceBackend || activeBackend;
+    async function authorizedFetch(path, options = {}, backend, autoLogout = false) {
+      const targetBackend = backend || sessionBackend;
       const method = String(options.method || "GET").toUpperCase();
-
       const headers = {
         ...authHeaders(),
         ...(options.headers || {})
@@ -1179,42 +1093,39 @@
         headers["Content-Type"] = "application/json";
       }
 
-      if (backend === "legacy") {
-        headers["x-rattle-fallback"] = "legacy";
-      }
-
-      const res = await hybridFetch(path, {
+      const res = await callBackend(targetBackend, path, {
         ...options,
         headers
-      }, forceBackend);
+      });
 
       if (autoLogout && res.status === 401) {
         logout();
       }
 
-      return res;
+      return { ...res, backend: targetBackend };
     }
 
     async function verifyMainSession() {
-      const res = await authorizedFetch("/me", { method: "GET" }, activeBackend, false);
-
-      if (res.ok) {
-        meState = res.data || null;
+      const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+      if (preferredRes.ok) {
+        sessionBackend = preferredBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = preferredRes.data || null;
         renderMe();
-        showToast(`Session valid on ${backendLabel(activeBackend)}`);
+        setTopBackendBadge();
+        showToast(`Session valid on ${backendLabel(sessionBackend)}`);
         return true;
       }
 
-      const otherBackend = activeBackend === "primary" ? "legacy" : "primary";
-      const fallback = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
-
-      if (fallback.ok) {
-        activeBackend = otherBackend;
-        localStorage.setItem("authBackend", otherBackend);
-        meState = fallback.data || null;
-        setTopBackendBadge();
+      const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
+      const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+      if (fallbackRes.ok) {
+        sessionBackend = otherBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = fallbackRes.data || null;
         renderMe();
-        showToast(`Session switched to ${backendLabel(otherBackend)}`);
+        setTopBackendBadge();
+        showToast(`Session valid on ${backendLabel(sessionBackend)}. Preferred stays ${backendLabel(preferredBackend)}.`);
         return true;
       }
 
@@ -1246,13 +1157,10 @@
     }
 
     function mergeLinks(primaryItems = [], legacyItems = []) {
-      const merged = [
+      return [
         ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
         ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
-      ];
-
-      merged.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-      return merged;
+      ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
     }
 
     function renderMe() {
@@ -1276,15 +1184,15 @@
       if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
         badgeClass = "live";
         badgeText = "Active";
-        summary = `Your subscription is active. You have full link generation access until ${fmtDate(meState.subscriptionExpiresAt)}.`;
+        summary = `Your subscription is active until ${fmtDate(meState.subscriptionExpiresAt)}.`;
       } else if (paused) {
         badgeClass = "paused";
         badgeText = "Paused";
-        summary = `Your subscription is paused. You can log in and view pages, but you cannot create new links until resumed.`;
+        summary = `Your subscription is paused.`;
       } else if (status === "expired") {
         badgeClass = "expired";
         badgeText = "Expired";
-        summary = `Your subscription is expired. Create a new payment request to renew access.`;
+        summary = `Your subscription is expired.`;
       } else {
         badgeClass = "trial";
         badgeText = "Trial";
@@ -1299,13 +1207,13 @@
     async function loadMe(showLoading = false) {
       if (showLoading) accessSummary.textContent = "Loading account...";
       const ok = await verifyMainSession();
-      if (!ok) {
-        accessSummary.textContent = "Session expired";
-      }
+      if (!ok) accessSummary.textContent = "Session expired";
     }
 
     async function loadPlans(showMessage = false) {
-      const res = await hybridFetch("/plans", { method: "GET" });
+      const primary = await callBackend("primary", "/plans", { method: "GET" });
+      const legacy = await callBackend("legacy", "/plans", { method: "GET" });
+      const res = primary.ok ? primary : legacy;
 
       if (!res.ok) {
         if (showMessage) setResult("Failed to load plans", true, upgradeResult);
@@ -1325,11 +1233,10 @@
 
     function renderPlans() {
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-
       planGrid.innerHTML = plans.map(plan => `
         <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
           <h4>${escapeHtml(plan.label)}</h4>
-          <div class="plan-price">${fmtMoney(plan.amountUsd)}</div>
+          <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
           <div class="muted">${escapeHtml(plan.code)} billing</div>
         </div>
       `).join("");
@@ -1423,9 +1330,7 @@
         ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
         : [];
 
-      paymentsStore = [...primaryPayments, ...legacyPayments]
-        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-
+      paymentsStore = [...primaryPayments, ...legacyPayments].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       renderPaymentsTable();
 
       if (showMessage) showToast("Payments refreshed");
@@ -1433,55 +1338,38 @@
 
     async function createPaymentRequest() {
       const cryptoCode = cryptoSelect.value;
-
-      if (!selectedPlan) {
-        setResult("Choose a plan first", true, upgradeResult);
-        return;
-      }
-
-      if (!cryptoCode) {
-        setResult("Choose a crypto option", true, upgradeResult);
-        return;
-      }
+      if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
+      if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
 
       let res = await authorizedFetch("/payment-request", {
         method: "POST",
-        body: JSON.stringify({
-          billingCycle: selectedPlan,
-          cryptoCode
-        })
-      }, activeBackend, false);
+        body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+      }, preferredBackend, false);
 
-      if (!res.ok && shouldFallback(res)) {
-        const other = activeBackend === "primary" ? "legacy" : "primary";
+      if (!res.ok && res.status === 401) {
+        await verifyMainSession();
         res = await authorizedFetch("/payment-request", {
           method: "POST",
-          body: JSON.stringify({
-            billingCycle: selectedPlan,
-            cryptoCode
-          })
-        }, other, false);
+          body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+        }, preferredBackend, false);
       }
 
       setBusy(requestPaymentBtn, false);
 
       if (!res.ok) {
-        if (res.status === 401) {
-          await verifyMainSession();
-        }
-        setResult(res.data?.message || "Failed to create payment request", true, upgradeResult);
+        setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
         return;
       }
 
-      const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend || activeBackend) : null;
+      const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend) : null;
       if (!payment) {
         setResult("Payment request created, but response was empty", true, upgradeResult);
         return;
       }
 
-      setResult("Payment request generated. Send the exact amount and wait for admin verification.", false, upgradeResult);
+      setResult("Payment request generated.", false, upgradeResult);
 
       paymentRequestBox.innerHTML = `
         <div class="card" style="margin:0;">
@@ -1525,7 +1413,6 @@
     function showPaymentDetails(paymentId, backend = "") {
       const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
       if (!payment) return;
-
       openUpgradeModal();
       paymentRequestBox.innerHTML = `
         <div class="card" style="margin:0;">
@@ -1545,10 +1432,6 @@
               <div class="address-box">${escapeHtml(payment.address)}</div>
               <div class="muted small">Created: ${fmtDate(payment.createdAt)}</div>
               <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-              <div style="margin-top:10px;">
-                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
-              </div>
             </div>
           </div>
         </div>
@@ -1577,7 +1460,7 @@
 
       legacyHealth.innerHTML = l.ok
         ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "No response")}</span>`;
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
     }
 
     async function loadLinks(showLoading = false) {
@@ -1585,8 +1468,8 @@
       loadingLinks = true;
 
       if (showLoading) {
-        setResult("Loading links...", false);
         setBusy(refreshBtn, true, "Loading...");
+        setResult("Loading links...", false);
       }
 
       const [primaryRes, legacyRes] = await Promise.all([
@@ -1600,13 +1483,6 @@
       const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
       const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
-      if (
-        (primaryRes.status === 401 && legacyRes.status !== 200) ||
-        (legacyRes.status === 401 && primaryRes.status !== 200)
-      ) {
-        await verifyMainSession();
-      }
-
       dataStore = mergeLinks(primaryItems, legacyItems);
 
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
@@ -1619,7 +1495,11 @@
       drawChart();
       renderRanking();
 
-      if (showLoading) setResult("Loaded", false);
+      if (showLoading) {
+        const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
+        const primaryMsg = primaryRes.ok ? "Backend2 OK" : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
+        setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
+      }
     }
 
     function renderTable() {
@@ -1669,35 +1549,17 @@
         `;
       }).join("");
 
-      document.querySelectorAll(".copy-btn").forEach(btn => {
-        btn.onclick = () => copyLink(btn.dataset.link);
-      });
-
-      document.querySelectorAll(".open-btn").forEach(btn => {
-        btn.onclick = () => openLink(btn.dataset.link);
-      });
-
-      document.querySelectorAll(".qr-btn").forEach(btn => {
-        btn.onclick = () => showQR(btn.dataset.link);
-      });
-
-      document.querySelectorAll(".stats-btn").forEach(btn => {
-        btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend);
-      });
-
-      document.querySelectorAll(".geo-btn").forEach(btn => {
-        btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend);
-      });
-
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend);
-      });
+      document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
+      document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
+      document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
+      document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend));
     }
 
     function drawChart() {
       const canvas = document.getElementById("chart");
       if (!canvas) return;
-
       if (chart) chart.destroy();
 
       const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
@@ -1714,19 +1576,10 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { labels: { color: "#e2e8f0" } }
-          },
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
           scales: {
-            x: {
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.12)" }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.12)" }
-            }
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
           }
         }
       });
@@ -1734,7 +1587,6 @@
 
     function renderRanking() {
       const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-
       if (!sorted.length) {
         ranking.innerHTML = `<div class="muted">No links yet</div>`;
         return;
@@ -1784,28 +1636,26 @@
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Creating ${backendLabel(backend)} link...`, false);
 
-      const res = await authorizedFetch("/create", {
+      let res = await authorizedFetch("/create", {
         method: "POST",
         body: JSON.stringify(body)
       }, backend, false);
 
+      if (res.status === 401) {
+        await verifyMainSession();
+        res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify(body)
+        }, backend, false);
+      }
+
       setBusy(button, false);
 
       if (!res.ok) {
-        if (res.status === 401) {
-          await verifyMainSession();
-          setResult(`${backendLabel(backend)} session check refreshed. Try again.`, true);
-          return;
-        }
-
         if (res.status === 402) {
           await loadMe(false);
           openUpgradeModal();
-          setResult(`${backendLabel(backend)}: ${res.data?.message || "Upgrade required"}`, true);
-          setResult(`${backendLabel(backend)}: ${res.data?.message || "Upgrade required"}`, true, upgradeResult);
-          return;
         }
-
         setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
         return;
       }
@@ -1824,45 +1674,38 @@
     async function bulkCreateForBackend(backend) {
       const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
       const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
-
       const count = Number(countInput.value || 0);
       const body = getCreatePayload();
       if (!body) return;
-
-      if (!Number.isFinite(count) || count <= 0) {
-        setResult("Invalid bulk count", true);
-        return;
-      }
+      if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
 
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
 
       let success = 0;
-
       for (let i = 0; i < count; i++) {
         const requestBody = { ...body };
         if (!requestBody.slug) delete requestBody.slug;
 
-        const res = await authorizedFetch("/create", {
+        let res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify(requestBody)
         }, backend, false);
 
-        if (res.ok) {
-          success++;
-        } else if (res.status === 401) {
+        if (res.status === 401) {
           await verifyMainSession();
-          setResult(`Stopped at ${success}/${count}. Session refreshed; try again.`, true);
-          break;
-        } else if (res.status === 402) {
-          openUpgradeModal();
-          setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Upgrade required"}`, true);
-          break;
-        } else {
-          setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify(requestBody)
+          }, backend, false);
+        }
+
+        if (!res.ok) {
+          setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
           break;
         }
 
+        success++;
         setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
       }
 
@@ -1873,18 +1716,21 @@
     async function deleteLink(slug, backend) {
       if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
 
-      const res = await authorizedFetch("/delete", {
+      let res = await authorizedFetch("/delete", {
         method: "POST",
         body: JSON.stringify({ slug })
       }, backend, false);
 
+      if (res.status === 401) {
+        await verifyMainSession();
+        res = await authorizedFetch("/delete", {
+          method: "POST",
+          body: JSON.stringify({ slug })
+        }, backend, false);
+      }
+
       if (!res.ok) {
-        if (res.status === 401) {
-          await verifyMainSession();
-          showToast("Session refreshed. Try delete again.");
-          return;
-        }
-        showToast("Delete failed");
+        showToast(`Delete failed on ${backendLabel(backend)}`);
         return;
       }
 
@@ -1902,12 +1748,7 @@
     }
 
     function openLink(link) {
-      const a = document.createElement("a");
-      a.href = link;
-      a.target = "_blank";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      window.open(link, "_blank", "noopener,noreferrer");
     }
 
     function showQR(link) {
@@ -1920,7 +1761,7 @@
 
     async function getGeo(ip) {
       if (!ip || ip === "unknown") {
-        return { country_name: "Unknown", city: "", latitude: 20, longitude: 0 };
+        return { country_name: "Unknown", latitude: 20, longitude: 0 };
       }
 
       try {
@@ -1928,12 +1769,11 @@
         const data = await res.json();
         return {
           country_name: data.country_name || "Unknown",
-          city: data.city || "",
           latitude: data.latitude || 20,
           longitude: data.longitude || 0
         };
       } catch {
-        return { country_name: "Error", city: "", latitude: 20, longitude: 0 };
+        return { country_name: "Error", latitude: 20, longitude: 0 };
       }
     }
 
@@ -1948,7 +1788,6 @@
       panel.style.display = "none";
       panelContent.innerHTML = "";
       destroyMap();
-
       if (statsChartInstance) {
         statsChartInstance.destroy();
         statsChartInstance = null;
@@ -2023,7 +1862,7 @@
       if (!history.length && link && Number(link.clicks || 0) > 0) {
         history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
           ip: "unknown",
-          time: Date.now() - (i * 1000 * 30),
+          time: Date.now() - (i * 30000),
           risk: 0,
           vpn: false,
           bot: false
@@ -2060,34 +1899,18 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { labels: { color: "#e2e8f0" } }
-          },
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
           scales: {
-            x: {
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.12)" }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.12)" }
-            }
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
           }
         }
       });
 
       const stats = {};
-
       for (const h of history) {
         if (!stats[h.ip]) {
-          stats[h.ip] = {
-            count: 0,
-            risk: h.risk,
-            vpn: h.vpn,
-            bot: h.bot,
-            last: h.time
-          };
+          stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
         }
         stats[h.ip].count++;
         stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
@@ -2112,13 +1935,11 @@
             border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};
           ">
             <b>${escapeHtml(ip)}</b>
-            ${data.vpn ? "<span class='warn'> 🛰️ VPN</span>" : ""}
-            ${data.bot ? "<span class='warn'> 🤖 BOT</span>" : ""}
-            ${danger ? "<span class='error'> ⚠️ ATTACKER</span>" : ""}
-            <br>
-            <small>Clicks: ${data.count}</small>
-            <br>
-            <small>Risk: ${data.risk}</small>
+            ${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}
+            ${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}
+            ${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}
+            <br><small>Clicks: ${data.count}</small>
+            <br><small>Risk: ${data.risk}</small>
           </div>
         `;
       });
@@ -2154,21 +1975,13 @@
     }
 
     async function processFile(file, backend) {
-      if (!file) {
-        setResult("Choose a CSV file first", true);
-        return;
-      }
+      if (!file) return setResult("Choose a CSV file first", true);
 
       const text = await file.text();
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
-      if (!lines.length) {
-        setResult("CSV is empty", true);
-        return;
-      }
+      if (!lines.length) return setResult("CSV is empty", true);
 
       let urls = [];
-
       if (lines[0].toLowerCase().includes("url")) {
         const header = lines[0].split(",").map(h => h.trim().toLowerCase());
         const urlIndex = header.indexOf("url");
@@ -2183,47 +1996,39 @@
       }
 
       urls = urls.filter(Boolean);
-
-      if (!urls.length) {
-        setResult("No URLs found in file", true);
-        return;
-      }
+      if (!urls.length) return setResult("No URLs found in file", true);
 
       const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
       setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
       setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
 
       let okCount = 0;
-
       for (const url of urls) {
-        const res = await authorizedFetch("/create", {
+        let res = await authorizedFetch("/create", {
           method: "POST",
           body: JSON.stringify({ url })
         }, backend, false);
 
-        if (res.ok) {
-          okCount++;
-        } else if (res.status === 401) {
+        if (res.status === 401) {
           await verifyMainSession();
-          setResult(`Stopped at ${okCount}/${urls.length}. Session refreshed; try again.`, true);
-          break;
-        } else if (res.status === 402) {
-          openUpgradeModal();
-          setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Upgrade required"}`, true);
-          break;
-        } else {
-          setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify({ url })
+          }, backend, false);
+        }
+
+        if (!res.ok) {
+          setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
           break;
         }
 
+        okCount++;
         setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
       }
 
       setBusy(button, false);
-
       if (backend === "legacy") csvFileLegacy.value = "";
       if (backend === "primary") csvFilePrimary.value = "";
-
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
@@ -2233,25 +2038,21 @@
     }
 
     function refreshNow() {
-      Promise.all([
-        loadMe(true),
-        loadLinks(true),
-        loadPayments(false),
-        checkBackendHealth()
-      ]);
+      Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
     }
 
     function logout() {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
-      localStorage.removeItem("authBackend");
+      localStorage.removeItem("preferredBackend");
+      localStorage.removeItem("sessionBackend");
       window.location.href = "index.html";
     }
 
     function setupKeyboardShortcuts() {
       [urlInput, slugInput, expireInput].forEach(el => {
         el.addEventListener("keydown", e => {
-          if (e.key === "Enter") createLinkForBackend("primary");
+          if (e.key === "Enter") createLinkForBackend(preferredBackend);
         });
       });
 
@@ -2284,10 +2085,10 @@
     }
 
     function setPreferredBackend(next) {
-      activeBackend = next === "legacy" ? "legacy" : "primary";
-      localStorage.setItem("authBackend", activeBackend);
+      preferredBackend = next === "legacy" ? "legacy" : "primary";
+      localStorage.setItem("preferredBackend", preferredBackend);
       setTopBackendBadge();
-      showToast(`Preferred backend set to ${backendLabel(activeBackend)}`);
+      showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
     }
 
     refreshBtn.addEventListener("click", refreshNow);
