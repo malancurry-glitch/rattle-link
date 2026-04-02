@@ -833,20 +833,22 @@
     const paymentPlanFilter = document.getElementById("paymentPlanFilter");
 
     function authHeaders(method = "GET", source = "primary") {
-      const headers = {
-        "Authorization": localStorage.getItem("token") || ""
-      };
+  const token = localStorage.getItem("token") || "";
 
-      if (method !== "GET") {
-        headers["Content-Type"] = "application/json";
-      }
+  const headers = {
+    "Authorization": token ? `Bearer ${token}` : ""
+  };
 
-      if (source === "legacy") {
-        headers["x-rattle-fallback"] = "legacy";
-      }
+  if (method !== "GET") {
+    headers["Content-Type"] = "application/json";
+  }
 
-      return headers;
-    }
+  if (source === "legacy") {
+    headers["x-rattle-fallback"] = "legacy";
+  }
+
+  return headers;
+}
 
     function setBackendBadge(text = "Merged View: Backend 2 + Legacy AWS") {
       backendBadge.textContent = text;
