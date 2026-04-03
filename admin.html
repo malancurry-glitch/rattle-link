@@ -276,7 +276,7 @@
     }
 
     button:disabled{
-      opacity:.6;
+      opacity:.45;
       cursor:not-allowed;
       transform:none;
       box-shadow:none;
@@ -297,7 +297,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1080px;
+      min-width:1180px;
     }
 
     th,td{
@@ -318,6 +318,14 @@
 
     tr.payment-awaiting-row:hover{
       background:rgba(59,130,246,.16);
+    }
+
+    tr.payment-cancelled-row{
+      background:rgba(239,68,68,.06);
+    }
+
+    tr.payment-cancelled-row:hover{
+      background:rgba(239,68,68,.12);
     }
 
     .badge{
@@ -341,6 +349,7 @@
     .needs-action{ background:#431407; color:#fdba74; border-color:rgba(251,146,60,.3); }
     .expired{ background:#3a0b0b; color:#fca5a5; }
     .verified{ background:#052e16; color:#86efac; }
+    .cancelled{ background:#3a0b0b; color:#fca5a5; }
     .legacy-source{ background:#3a2a00; color:#fde047; }
     .primary-source{ background:#062e1d; color:#86efac; }
 
@@ -362,7 +371,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:500px;
+      width:520px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -481,6 +490,14 @@
       margin-bottom:12px;
     }
 
+    .danger-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(239,68,68,.08);
+      border:1px solid rgba(239,68,68,.25);
+      margin-bottom:12px;
+    }
+
     @media (max-width: 1000px){
       body{ display:block; }
       .sidebar{
@@ -513,6 +530,8 @@
       <button id="createUserBtn">➕ Create User</button>
       <button id="openPaymentSearchBtn">🔎 Search Payment</button>
       <button id="showAwaitingBtn">⚡ Awaiting Payments</button>
+      <button id="showPendingBtn">🟡 Pending Payments</button>
+      <button id="showVerifiedBtn">✅ Verified Payments</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Links</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
@@ -524,7 +543,7 @@
     <div class="header">
       <div>
         <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Admin view matched to your current Backend2 + Legacy AWS setup.</div>
+        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control.</div>
       </div>
 
       <div class="header-actions">
@@ -673,6 +692,7 @@
             <option value="pending">Pending</option>
             <option value="awaiting_confirmation">Awaiting confirmation</option>
             <option value="verified">Verified</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <select id="paymentPlanFilter">
             <option value="">All plans</option>
@@ -686,8 +706,12 @@
           <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>. These are the highest priority items to verify.
         </div>
 
+        <div class="danger-box">
+          <b>Payment Controls:</b> You can now <b>verify</b>, <b>cancel</b>, or <b>delete</b> mistaken or unwanted payments directly from the actions column.
+        </div>
+
         <div class="section-note">
-          Payments are merged from both backends. Verify action runs on the payment’s own backend source.
+          Payments are merged from both backends. Every action runs on the payment’s own backend source.
         </div>
 
         <div class="table-wrap">
@@ -984,6 +1008,7 @@
       if (s === "verified") return `<span class="badge verified">VERIFIED</span>`;
       if (s === "awaiting_confirmation") return `<span class="badge awaiting">AWAITING CONFIRMATION</span> <span class="badge needs-action">NEEDS ACTION</span>`;
       if (s === "pending") return `<span class="badge pending">PENDING</span>`;
+      if (s === "cancelled") return `<span class="badge cancelled">CANCELLED</span>`;
       return `<span class="badge">${escapeHtml(payment.status || "unknown")}</span>`;
     }
 
@@ -1091,7 +1116,8 @@
       if (s === "awaiting_confirmation") return 0;
       if (s === "pending") return 1;
       if (s === "verified") return 2;
-      return 3;
+      if (s === "cancelled") return 3;
+      return 4;
     }
 
     function mergePayments(primaryPayments, legacyPayments) {
@@ -1164,17 +1190,25 @@
       const pending = paymentsData.filter(p => String(p.status || "").toLowerCase() === "pending");
       const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
       const verified = paymentsData.filter(p => String(p.status || "").toLowerCase() === "verified");
+      const cancelled = paymentsData.filter(p => String(p.status || "").toLowerCase() === "cancelled");
+
       const weekly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
       const monthly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
       const yearly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "yearly").length;
+
+      const verifiedRevenue = verified.reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
+      const pendingValue = [...pending, ...awaiting].reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
 
       paymentStats.innerHTML = `
         <div><b>Pending:</b> ${pending.length}</div>
         <div><b>Awaiting confirmation:</b> ${awaiting.length}</div>
         <div><b>Verified:</b> ${verified.length}</div>
+        <div><b>Cancelled:</b> ${cancelled.length}</div>
         <div><b>Weekly:</b> ${weekly}</div>
         <div><b>Monthly:</b> ${monthly}</div>
         <div><b>Yearly:</b> ${yearly}</div>
+        <div><b>Verified Revenue:</b> $${verifiedRevenue.toFixed(2)}</div>
+        <div><b>Pending Value:</b> $${pendingValue.toFixed(2)}</div>
       `;
     }
 
@@ -1262,7 +1296,7 @@
       auditLogsEl.innerHTML = auditData.length
         ? [...auditData]
             .sort((a, b) => Number(b.time || 0) - Number(a.time || 0))
-            .slice(0, 100)
+            .slice(0, 120)
             .map(log => `
               <div>
                 <b>${escapeHtml(log.action || "UNKNOWN")}</b> → ${escapeHtml(log.target || "UNKNOWN")}
@@ -1373,9 +1407,14 @@
       const list = getFilteredPayments();
 
       paymentsEl.innerHTML = list.length ? list.map(p => {
-        const isAwaiting = String(p.status || "").toLowerCase() === "awaiting_confirmation";
+        const status = String(p.status || "").toLowerCase();
+        const isAwaiting = status === "awaiting_confirmation";
+        const isCancelled = status === "cancelled";
+        const disableVerify = isCancelled;
+        const disableCancel = ["verified", "cancelled"].includes(status);
+
         return `
-          <tr class="${isAwaiting ? "payment-awaiting-row" : ""}">
+          <tr class="${isAwaiting ? "payment-awaiting-row" : isCancelled ? "payment-cancelled-row" : ""}">
             <td><code>${escapeHtml(p.id)}</code></td>
             <td>${escapeHtml(p.username)}</td>
             <td>
@@ -1399,8 +1438,36 @@
             <td>
               <div class="actions">
                 <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
-                <button class="${isAwaiting ? "btn-action" : "btn-green"}" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}">${isAwaiting ? "Verify Now" : "Verify"}</button>
-                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">Copy Address</button>
+
+                <button
+                  class="${isAwaiting ? "btn-action" : "btn-green"}"
+                  data-action="verify-payment"
+                  data-payment-id="${escapeHtml(p.id)}"
+                  data-source="${escapeHtml(p.source)}"
+                  ${disableVerify ? "disabled" : ""}>
+                  ${isAwaiting ? "Verify Now" : "Verify"}
+                </button>
+
+                <button
+                  class="btn-yellow"
+                  data-action="cancel-payment"
+                  data-payment-id="${escapeHtml(p.id)}"
+                  data-source="${escapeHtml(p.source)}"
+                  ${disableCancel ? "disabled" : ""}>
+                  Cancel
+                </button>
+
+                <button
+                  class="btn-red"
+                  data-action="delete-payment"
+                  data-payment-id="${escapeHtml(p.id)}"
+                  data-source="${escapeHtml(p.source)}">
+                  Delete
+                </button>
+
+                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">
+                  Copy Address
+                </button>
               </div>
             </td>
           </tr>
@@ -1495,7 +1562,11 @@
       const payment = paymentsData.find(p => p.id === paymentId);
       if (!payment) return;
 
-      const isAwaiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
+      const status = String(payment.status || "").toLowerCase();
+      const isAwaiting = status === "awaiting_confirmation";
+      const isCancelled = status === "cancelled";
+      const disableVerify = isCancelled;
+      const disableCancel = ["verified", "cancelled"].includes(status);
 
       panel.style.display = "block";
       panelTitle.textContent = "Payment Details";
@@ -1503,6 +1574,12 @@
         ${isAwaiting ? `
           <div class="highlight-box">
             <b>Needs Action:</b> This payment was marked by the user as sent. Review and verify if received.
+          </div>
+        ` : ""}
+
+        ${isCancelled ? `
+          <div class="danger-box">
+            <b>Cancelled:</b> This payment has been cancelled and should not be verified.
           </div>
         ` : ""}
 
@@ -1522,7 +1599,26 @@
             <img src="${escapeHtml(payment.qrImageUrl || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || "")))}" alt="Payment QR" />
           </div>` : ""}
         <div class="actions" style="margin-top:12px;">
-          <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">${isAwaiting ? "Verify This Payment" : "Verify Payment"}</button>
+          <button
+            class="${isAwaiting ? "btn-action" : "btn-green"}"
+            onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')"
+            ${disableVerify ? "disabled" : ""}>
+            ${isAwaiting ? "Verify This Payment" : "Verify Payment"}
+          </button>
+
+          <button
+            class="btn-yellow"
+            onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')"
+            ${disableCancel ? "disabled" : ""}>
+            Cancel Payment
+          </button>
+
+          <button
+            class="btn-red"
+            onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">
+            Delete Payment
+          </button>
+
           <button onclick="copyText('${escapeHtml(payment.address || "")}')">Copy Address</button>
         </div>
       `;
@@ -1598,6 +1694,28 @@
         showToast("Payment verified");
         await loadAdmin();
       } else showToast(res.data?.message || "Payment verify failed");
+    }
+
+    async function cancelPayment(paymentId, source) {
+      if (!confirm(`Cancel payment ${paymentId}?`)) return;
+
+      const res = await fetchBySource(source || "primary", `/admin/payment-cancel`, "POST", { paymentId }, false);
+      if (res.ok) {
+        await logAudit("CANCEL PAYMENT", paymentId);
+        showToast("Payment cancelled");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Payment cancel failed");
+    }
+
+    async function deletePayment(paymentId, source) {
+      if (!confirm(`Delete payment ${paymentId} permanently?`)) return;
+
+      const res = await fetchBySource(source || "primary", `/admin/payment-delete`, "POST", { paymentId }, false);
+      if (res.ok) {
+        await logAudit("DELETE PAYMENT", paymentId);
+        showToast("Payment deleted");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Payment delete failed");
     }
 
     async function pauseLink(slug, source) {
@@ -1711,14 +1829,36 @@
           resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`;
           return;
         }
-        const isAwaiting = String(p.status || "").toLowerCase() === "awaiting_confirmation";
+        const status = String(p.status || "").toLowerCase();
+        const isAwaiting = status === "awaiting_confirmation";
+        const isCancelled = status === "cancelled";
+        const disableVerify = isCancelled;
+        const disableCancel = ["verified", "cancelled"].includes(status);
+
         resultBox.innerHTML = `
           <div><b>User:</b> ${escapeHtml(p.username || "-")}</div>
           <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
-          <div><b>Status:</b> ${escapeHtml(p.status || "-")}</div>
+          <div><b>Status:</b> ${getPaymentStatusBadge(p)}</div>
           <div><b>Source:</b> ${escapeHtml(p.source || "-")}</div>
           <div class="actions" style="margin-top:10px;">
-            <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">${isAwaiting ? "Verify Now" : "Verify Payment"}</button>
+            <button
+              class="${isAwaiting ? "btn-action" : "btn-green"}"
+              onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')"
+              ${disableVerify ? "disabled" : ""}>
+              ${isAwaiting ? "Verify Now" : "Verify"}
+            </button>
+
+            <button
+              class="btn-yellow"
+              onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')"
+              ${disableCancel ? "disabled" : ""}>
+              Cancel
+            </button>
+
+            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">
+              Delete
+            </button>
+
             <button onclick="copyText('${escapeHtml(p.address || "")}')">Copy Address</button>
           </div>
         `;
@@ -1880,12 +2020,28 @@
 
       document.getElementById("createUserBtn").onclick = openCreateUser;
       document.getElementById("openPaymentSearchBtn").onclick = openPaymentSearch;
+
       document.getElementById("showAwaitingBtn").onclick = () => {
         showSection("payments");
         paymentStatusFilter.value = "awaiting_confirmation";
         renderPayments();
         showToast("Showing awaiting confirmation payments");
       };
+
+      document.getElementById("showPendingBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "pending";
+        renderPayments();
+        showToast("Showing pending payments");
+      };
+
+      document.getElementById("showVerifiedBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "verified";
+        renderPayments();
+        showToast("Showing verified payments");
+      };
+
       document.getElementById("closePanelBtn").onclick = closePanel;
       document.getElementById("logoutBtn").onclick = logout;
 
@@ -1941,6 +2097,8 @@
 
         if (action === "view-payment") return openPayment(paymentId);
         if (action === "verify-payment") return verifyPayment(paymentId, source);
+        if (action === "cancel-payment") return cancelPayment(paymentId, source);
+        if (action === "delete-payment") return deletePayment(paymentId, source);
         if (action === "copy-payment-address") return copyText(address);
       });
 
@@ -1974,6 +2132,8 @@
     });
 
     window.verifyPayment = verifyPayment;
+    window.cancelPayment = cancelPayment;
+    window.deletePayment = deletePayment;
     window.copyText = copyText;
 
     (async function init() {
