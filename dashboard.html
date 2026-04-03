@@ -243,6 +243,7 @@
     .qr{ color:#06b6d4; border-color:#06b6d4; }
     .delete{ color:var(--red); border-color:var(--red); }
     .ghost-btn{ color:#cbd5e1; border-color:#475569; }
+    .warn-btn{ color:#f59e0b; border-color:#f59e0b; }
 
     .badge{
       display:inline-block;
@@ -257,6 +258,7 @@
     .expired{ color:var(--red); }
     .trial{ color:var(--cyan); }
     .pending{ color:var(--yellow); }
+    .awaiting{ color:#60a5fa; }
 
     .muted{
       color:var(--muted);
@@ -466,7 +468,7 @@
       position:fixed;
       inset:50% auto auto 50%;
       transform:translate(-50%,-50%);
-      width:min(760px,92vw);
+      width:min(860px,94vw);
       max-height:88vh;
       overflow:auto;
       background:#000;
@@ -618,6 +620,38 @@
 
     .support-list a:hover{
       text-decoration:underline;
+    }
+
+    .waiting-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(59,130,246,.12);
+      border:1px solid rgba(59,130,246,.35);
+    }
+
+    .confirm-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.35);
+    }
+
+    .spinner{
+      width:18px;
+      height:18px;
+      border:2px solid rgba(255,255,255,.2);
+      border-top:2px solid var(--cyan);
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
     }
 
     @media (max-width: 980px){
@@ -1007,7 +1041,7 @@
     </div>
 
     <div class="notice">
-      Free accounts can create only a limited number of links. Choose a plan, select your crypto network, generate a payment request, then wait for admin verification.
+      Free accounts can create only a limited number of links. Choose a plan, select your crypto network, generate a payment request, then click <b>I Made a Transfer</b> after paying. The system will wait for admin verification.
     </div>
 
     <div class="plan-grid" id="planGrid"></div>
@@ -1049,6 +1083,8 @@
     let meState = null;
     let plansState = null;
     let selectedPlan = "monthly";
+    let paymentPoller = null;
+    let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
 
     let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
     let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
@@ -1212,7 +1248,9 @@
     function formatPaymentStatus(status) {
       const s = String(status || "").toLowerCase();
       if (s === "verified") return `<span class="badge live">Verified</span>`;
+      if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
       if (s === "pending") return `<span class="badge pending">Pending</span>`;
+      if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
       return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
     }
 
@@ -1377,6 +1415,22 @@
       ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
     }
 
+    function sortPayments(payments = []) {
+      return [...payments].sort((a, b) => {
+        const rank = (s) => {
+          s = String(s || "").toLowerCase();
+          if (s === "awaiting_confirmation") return 0;
+          if (s === "pending") return 1;
+          if (s === "verified") return 2;
+          if (s === "cancelled") return 3;
+          return 4;
+        };
+        const diff = rank(a.status) - rank(b.status);
+        if (diff !== 0) return diff;
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+      });
+    }
+
     function renderMe() {
       if (!meState) return;
 
@@ -1470,16 +1524,35 @@
       `).join("");
     }
 
+    function stopPaymentPolling() {
+      if (paymentPoller) {
+        clearInterval(paymentPoller);
+        paymentPoller = null;
+      }
+    }
+
+    function getLatestInterestingPayment() {
+      if (!paymentsStore.length) return null;
+      return paymentsStore.find(p => {
+        const s = String(p.status || "").toLowerCase();
+        return s === "awaiting_confirmation" || s === "pending";
+      }) || paymentsStore[0];
+    }
+
     function renderLatestPayment(payment) {
       if (!payment) {
         latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
         return;
       }
 
+      const status = String(payment.status || "").toLowerCase();
+      const waiting = status === "awaiting_confirmation";
+      const verified = status === "verified";
+
       latestPaymentBox.innerHTML = `
         <div class="payment-box">
           <div class="payment-qr">
-            <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
+            <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
           </div>
           <div>
             <div>
@@ -1493,10 +1566,26 @@
             <div class="address-box">${escapeHtml(payment.address)}</div>
             <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
             <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
-            <div style="margin-top:10px;">
+
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
               <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
               <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+              <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
             </div>
+
+            ${waiting ? `
+              <div class="waiting-box">
+                <div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div>
+                <div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div>
+              </div>
+            ` : ""}
+
+            ${verified ? `
+              <div class="confirm-box">
+                <div><b>✅ Payment confirmed</b></div>
+                <div class="muted" style="margin-top:8px;">Your plan should already be active.</div>
+              </div>
+            ` : ""}
           </div>
         </div>
       `;
@@ -1522,12 +1611,12 @@
           <td>
             <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
             <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
+            <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase()==="verified" ? "disabled" : ""}>I Made a Transfer</button>
           </td>
         </tr>
       `).join("");
 
-      const pending = paymentsStore.find(p => String(p.status).toLowerCase() === "pending");
-      renderLatestPayment(pending || paymentsStore[0]);
+      renderLatestPayment(getLatestInterestingPayment());
     }
 
     async function loadPayments(showMessage = false) {
@@ -1544,10 +1633,72 @@
         ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
         : [];
 
-      paymentsStore = [...primaryPayments, ...legacyPayments].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
       renderPaymentsTable();
 
+      if (waitingPaymentId) {
+        const p = paymentsStore.find(x => x.id === waitingPaymentId);
+        if (p) handleWaitingPaymentState(p);
+        else {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+        }
+      }
+
       if (showMessage) showToast("Payments refreshed");
+    }
+
+    function renderPaymentRequestBox(payment, message = "") {
+      const status = String(payment.status || "").toLowerCase();
+      const waiting = status === "awaiting_confirmation";
+      const verified = status === "verified";
+
+      paymentRequestBox.innerHTML = `
+        <div class="card" style="margin:0;">
+          <div class="payment-box">
+            <div class="payment-qr">
+              <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
+            </div>
+            <div>
+              <div>
+                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+                ${formatPaymentStatus(payment.status)}
+                <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              </div>
+              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+              <div class="muted" style="margin-top:8px;">Send to:</div>
+              <div class="address-box">${escapeHtml(payment.address)}</div>
+              <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
+              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
+
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
+                <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
+              </div>
+
+              ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
+
+              ${waiting ? `
+                <div class="waiting-box">
+                  <div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div>
+                  <div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div>
+                  <div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div>
+                </div>
+              ` : ""}
+
+              ${verified ? `
+                <div class="confirm-box">
+                  <div><b>✅ Payment confirmed and successful</b></div>
+                  <div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div>
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     async function createPaymentRequest() {
@@ -1583,40 +1734,130 @@
         return;
       }
 
-      setResult("Payment request generated.", false, upgradeResult);
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
 
-      paymentRequestBox.innerHTML = `
-        <div class="card" style="margin:0;">
-          <div class="payment-box">
-            <div class="payment-qr">
-              <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
-            </div>
-            <div>
-              <div>
-                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-                <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
-              </div>
-              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-              <div class="muted" style="margin-top:8px;">Send to:</div>
-              <div class="address-box">${escapeHtml(payment.address)}</div>
-              <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
-              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-              <div style="margin-top:10px;">
-                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+      setResult("Payment request generated.", false, upgradeResult);
+      renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
 
       await loadPayments(false);
+    }
+
+    async function markPaymentSent(paymentId, backend) {
+      const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
+      if (!payment) return;
+
+      const status = String(payment.status || "").toLowerCase();
+
+      if (status === "verified") {
+        showToast("This payment is already verified");
+        return;
+      }
+
+      if (status === "awaiting_confirmation") {
+        waitingPaymentId = payment.id;
+        localStorage.setItem("waitingPaymentId", payment.id);
+        renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
+        startPaymentPolling(payment.id, payment.backend);
+        showToast("Already waiting for confirmation");
+        return;
+      }
+
+      const res = await authorizedFetch("/payment-i-made", {
+        method: "POST",
+        body: JSON.stringify({ paymentId })
+      }, backend, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+        return;
+      }
+
+      waitingPaymentId = payment.id;
+      localStorage.setItem("waitingPaymentId", payment.id);
+      showToast("Transfer submitted");
+      await loadPayments(false);
+
+      const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
+      renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
+      startPaymentPolling(updated.id, updated.backend);
+    }
+
+    function handleWaitingPaymentState(payment) {
+      const status = String(payment.status || "").toLowerCase();
+
+      if (status === "verified") {
+        waitingPaymentId = "";
+        localStorage.removeItem("waitingPaymentId");
+        stopPaymentPolling();
+        renderPaymentRequestBox(payment, "Payment confirmed.");
+        loadMe(false);
+        return;
+      }
+
+      if (status === "awaiting_confirmation" || status === "pending") {
+        renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
+        startPaymentPolling(payment.id, payment.backend);
+        return;
+      }
+
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
+    }
+
+    function startPaymentPolling(paymentId, backend) {
+      stopPaymentPolling();
+
+      const run = async () => {
+        const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
+        if (!res.ok) return;
+
+        const incoming = Array.isArray(res.data?.payments)
+          ? res.data.payments.map(p => normalizePaymentItem(p, backend))
+          : [];
+
+        const current = incoming.find(p => p.id === paymentId);
+        if (!current) return;
+
+        const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
+        paymentsStore = sortPayments([...incoming, ...otherPayments]);
+        renderPaymentsTable();
+
+        const status = String(current.status || "").toLowerCase();
+        const pollText = document.getElementById("paymentPollText");
+        if (pollText) {
+          if (status === "awaiting_confirmation") {
+            pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+          } else if (status === "pending") {
+            pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
+          }
+        }
+
+        if (status === "verified") {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          renderPaymentRequestBox(current, "Payment confirmed and successful.");
+          await loadMe(false);
+          showToast("Payment confirmed");
+        }
+      };
+
+      run();
+      paymentPoller = setInterval(run, 5000);
     }
 
     function openUpgradeModal() {
       overlay.style.display = "block";
       upgradeModal.style.display = "block";
+
+      const p = waitingPaymentId
+        ? paymentsStore.find(x => x.id === waitingPaymentId)
+        : getLatestInterestingPayment();
+
+      if (p) renderPaymentRequestBox(p);
     }
 
     function closeUpgradeModal() {
@@ -1628,28 +1869,7 @@
       const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
       if (!payment) return;
       openUpgradeModal();
-      paymentRequestBox.innerHTML = `
-        <div class="card" style="margin:0;">
-          <div class="payment-box">
-            <div class="payment-qr">
-              <img src="${escapeHtml(payment.qrImageUrl)}" alt="QR code">
-            </div>
-            <div>
-              <div>
-                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-                ${formatPaymentStatus(payment.status)}
-                <span class="badge">${escapeHtml(payment.billingCycle)}</span>
-              </div>
-              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-              <div class="muted" style="margin-top:8px;">Address:</div>
-              <div class="address-box">${escapeHtml(payment.address)}</div>
-              <div class="muted small">Created: ${fmtDate(payment.createdAt)}</div>
-              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-            </div>
-          </div>
-        </div>
-      `;
+      renderPaymentRequestBox(payment);
     }
 
     function updateMiniStats() {
@@ -2359,10 +2579,12 @@
     }
 
     function logout() {
+      stopPaymentPolling();
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("preferredBackend");
       localStorage.removeItem("sessionBackend");
+      localStorage.removeItem("waitingPaymentId");
       window.location.href = "index.html";
     }
 
@@ -2450,6 +2672,11 @@
         checkBackendHealth()
       ]);
 
+      if (waitingPaymentId) {
+        const p = paymentsStore.find(x => x.id === waitingPaymentId);
+        if (p) startPaymentPolling(p.id, p.backend);
+      }
+
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
         if (document.hidden) return;
@@ -2470,6 +2697,7 @@
     window.closeUpgradeModal = closeUpgradeModal;
     window.loadPayments = loadPayments;
     window.logout = logout;
+    window.markPaymentSent = markPaymentSent;
   </script>
 </body>
 </html>
