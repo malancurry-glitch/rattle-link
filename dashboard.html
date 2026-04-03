@@ -149,7 +149,7 @@
       margin-bottom:10px;
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
       padding:12px;
       border-radius:10px;
@@ -159,11 +159,16 @@
       outline:none;
     }
 
-    input::placeholder{
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+
+    input::placeholder, textarea::placeholder{
       color:var(--muted);
     }
 
-    input:focus, select:focus{
+    input:focus, select:focus, textarea:focus{
       box-shadow:0 0 10px rgba(0,255,255,0.4);
     }
 
@@ -533,6 +538,88 @@
       border:1px solid rgba(0,255,255,0.12);
     }
 
+    .resource-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:14px;
+    }
+
+    .resource-card{
+      border:1px solid rgba(0,255,255,0.14);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+    }
+
+    .resource-card h4{
+      margin:0 0 8px;
+    }
+
+    .resource-card p{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .faq-item{
+      border:1px solid rgba(0,255,255,0.12);
+      border-radius:12px;
+      margin-bottom:10px;
+      overflow:hidden;
+      background:rgba(15,23,42,0.45);
+    }
+
+    .faq-q{
+      width:100%;
+      text-align:left;
+      background:transparent;
+      border:none;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      padding:14px;
+      color:var(--cyan);
+      font-weight:600;
+    }
+
+    .faq-a{
+      display:none;
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .faq-item.open .faq-a{
+      display:block;
+    }
+
+    .footer-links{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .info-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
+      margin-bottom:10px;
+    }
+
+    .support-list a{
+      display:block;
+      margin-bottom:8px;
+      color:var(--cyan);
+      text-decoration:none;
+      word-break:break-word;
+    }
+
+    .support-list a:hover{
+      text-decoration:underline;
+    }
+
     @media (max-width: 980px){
       .two-col,
       .three-col,
@@ -559,7 +646,7 @@
         <span id="backendBadgeTop" class="backend-badge">Backend</span>
         <button id="refreshBtn" type="button">Refresh</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
-        <a class="btn" href="billing.html">Billing</a>
+        <button class="btn" type="button" onclick="openSupportPanel()">Support</button>
         <button class="danger-btn" type="button" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -800,6 +887,110 @@
         </table>
       </div>
     </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="section-head">
+          <h3>❓ FAQ</h3>
+          <button type="button" onclick="toggleAllFaq(true)">Open All</button>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How many links can I create on free trial?</button>
+          <div class="faq-a">Your free trial limit is controlled by your account settings in the backend. The dashboard shows how many trial links remain in your account access section.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">Why do I see Backend2 and AWS together?</button>
+          <div class="faq-a">Your account can work across both systems. This dashboard merges both sources so you can manage links, payments, and activity from one place.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How do payments get verified?</button>
+          <div class="faq-a">Payments are currently created from the dashboard and then manually verified by admin after checking the wallet/payment details.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">Why can a link show paused or expired?</button>
+          <div class="faq-a">Paused links were disabled manually. Expired links have passed the expiry time set when the link was created.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">What if my session stops working?</button>
+          <div class="faq-a">Use the Verify Session button first. If your token expired or was cleared, log in again from the login page.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📞 Support Center</h3>
+        <div class="support-list">
+          <a href="mailto:support@rattleshort.online">Email: support@rattleshort.online</a>
+          <a href="https://t.me/yourtelegramusername" target="_blank" rel="noopener noreferrer">Telegram: @yourtelegramusername</a>
+          <a href="https://discord.gg/yourdiscordinvite" target="_blank" rel="noopener noreferrer">Discord: Join Discord Server</a>
+          <a href="tel:+10000000000">Phone: +1 000 000 0000</a>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          Replace the Telegram, Discord, and phone placeholders with your real contact details before production.
+        </div>
+
+        <div style="margin-top:14px;">
+          <button type="button" onclick="openSupportPanel()">Open Help Panel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-grid">
+      <div class="card resource-card">
+        <h4>ℹ️ About Rattle Link</h4>
+        <p>Rattle Link helps you create and manage short links, track traffic, and run your link operations from one dashboard across your active backend setup.</p>
+        <button type="button" onclick="openInfoPanel('about')">Read About</button>
+      </div>
+
+      <div class="card resource-card">
+        <h4>📜 Legal</h4>
+        <p>Read policy notes for acceptable use, privacy basics, billing expectations, and account responsibilities.</p>
+        <button type="button" onclick="openInfoPanel('legal')">Read Legal</button>
+      </div>
+
+      <div class="card resource-card">
+        <h4>🆘 Need Help?</h4>
+        <p>Open the support panel for FAQs, contact options, quick guidance, and user help resources.</p>
+        <button type="button" onclick="openSupportPanel()">Open Support</button>
+      </div>
+
+      <div class="card resource-card">
+        <h4>💼 Billing Help</h4>
+        <p>Use the Upgrade Center to generate payment requests, review pending payments, and see your billing status.</p>
+        <button type="button" onclick="openUpgradeModal()">Open Billing</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📝 Legal Summary</h3>
+      <div class="info-box">
+        <b>Acceptable Use:</b>
+        <div class="muted">Do not use Rattle Link for spam, phishing, malware, abuse, illegal content, or harmful redirection activity.</div>
+      </div>
+      <div class="info-box">
+        <b>Privacy:</b>
+        <div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div>
+      </div>
+      <div class="info-box">
+        <b>Billing:</b>
+        <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new link creation.</div>
+      </div>
+      <div class="info-box">
+        <b>Support Response:</b>
+        <div class="muted">Support requests are handled through the listed support channels and may require account/payment details for faster help.</div>
+      </div>
+
+      <div class="footer-links">
+        <button type="button" onclick="openInfoPanel('about')">About</button>
+        <button type="button" onclick="openInfoPanel('legal')">Legal</button>
+        <button type="button" onclick="openSupportPanel()">Support</button>
+      </div>
+    </div>
   </div>
 
   <div class="panel" id="panel">
@@ -840,6 +1031,13 @@
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    const SUPPORT_CONFIG = {
+      telegram: "https://t.me/yourtelegramusername",
+      discord: "https://discord.gg/yourdiscordinvite",
+      email: "support@rattleshort.online",
+      phone: "+1 000 000 0000"
+    };
 
     let dataStore = [];
     let paymentsStore = [];
@@ -1816,6 +2014,103 @@
       }
     }
 
+    function openInfoPanel(type) {
+      panel.style.display = "block";
+
+      if (type === "about") {
+        panelContent.innerHTML = `
+          <h3>ℹ️ About Rattle Link</h3>
+          <div class="muted">
+            Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.
+          </div>
+          <div class="info-box" style="margin-top:12px;">
+            <b>What it does</b>
+            <div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div>
+          </div>
+          <div class="info-box">
+            <b>Why two backends</b>
+            <div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div>
+          </div>
+          <div class="info-box">
+            <b>Main purpose</b>
+            <div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div>
+          </div>
+        `;
+      }
+
+      if (type === "legal") {
+        panelContent.innerHTML = `
+          <h3>📜 Legal</h3>
+          <div class="info-box">
+            <b>Acceptable Use</b>
+            <div class="muted">Do not use Rattle Link for spam, phishing, malware, scams, harmful redirects, or illegal content.</div>
+          </div>
+          <div class="info-box">
+            <b>Privacy</b>
+            <div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div>
+          </div>
+          <div class="info-box">
+            <b>Billing</b>
+            <div class="muted">Paid access activates after payment verification. Subscription status may change when expired, paused, or manually updated by admin.</div>
+          </div>
+          <div class="info-box">
+            <b>User Responsibility</b>
+            <div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div>
+          </div>
+        `;
+      }
+    }
+
+    function openSupportPanel() {
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>🆘 Support Center</h3>
+
+        <div class="info-box">
+          <b>Contact Support</b>
+          <div class="support-list" style="margin-top:8px;">
+            <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
+            <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
+            <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
+            <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g,''))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>Common Help Topics</b>
+          <div class="muted" style="margin-top:8px;">
+            • login/session problems<br>
+            • payment verification delay<br>
+            • link paused or expired<br>
+            • link analytics questions<br>
+            • account verification help
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>Before contacting support</b>
+          <div class="muted" style="margin-top:8px;">
+            Include your email, payment ID if relevant, backend used, and a short explanation of the problem.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>Quick Buttons</b>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn" href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email Support</a>
+            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleAllFaq(open) {
+      document.querySelectorAll(".faq-item").forEach(item => {
+        item.classList.toggle("open", !!open);
+      });
+    }
+
     async function showGeo(slug, backend) {
       panel.style.display = "block";
       panelContent.innerHTML = `
@@ -2113,6 +2408,14 @@
       showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
     }
 
+    function setupFaq() {
+      document.querySelectorAll(".faq-q").forEach(btn => {
+        btn.addEventListener("click", () => {
+          btn.parentElement.classList.toggle("open");
+        });
+      });
+    }
+
     refreshBtn.addEventListener("click", refreshNow);
     upgradeBtn.addEventListener("click", openUpgradeModal);
     createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
@@ -2135,6 +2438,7 @@
 
       setTopBackendBadge();
       setupKeyboardShortcuts();
+      setupFaq();
       wireDropZone(dropZoneLegacy, "legacy");
       wireDropZone(dropZonePrimary, "primary");
 
@@ -2155,6 +2459,17 @@
         checkBackendHealth();
       }, 15000);
     })();
+
+    window.openSupportPanel = openSupportPanel;
+    window.openInfoPanel = openInfoPanel;
+    window.toggleAllFaq = toggleAllFaq;
+    window.copyLink = copyLink;
+    window.showPaymentDetails = showPaymentDetails;
+    window.closePanel = closePanel;
+    window.openUpgradeModal = openUpgradeModal;
+    window.closeUpgradeModal = closeUpgradeModal;
+    window.loadPayments = loadPayments;
+    window.logout = logout;
   </script>
 </body>
 </html>
