@@ -45,6 +45,9 @@
       --red:#ef4444;
       --yellow:#f59e0b;
       --purple:#8b5cf6;
+      --amber:#f59e0b;
+      --orange:#fb923c;
+      --sky:#60a5fa;
       --border:rgba(0,255,255,.15);
       --shadow:0 0 18px rgba(0,255,255,.10);
     }
@@ -284,6 +287,7 @@
     .btn-red{ color:var(--red); border-color:var(--red); }
     .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
     .btn-purple{ color:var(--purple); border-color:var(--purple); }
+    .btn-action{ color:#fff; background:var(--orange); border-color:var(--orange); }
 
     .table-wrap{
       overflow:auto;
@@ -308,6 +312,14 @@
       background:#020617;
     }
 
+    tr.payment-awaiting-row{
+      background:rgba(59,130,246,.08);
+    }
+
+    tr.payment-awaiting-row:hover{
+      background:rgba(59,130,246,.16);
+    }
+
     .badge{
       display:inline-block;
       padding:4px 8px;
@@ -325,6 +337,8 @@
     .admin{ background:#1e1b4b; color:#c4b5fd; }
     .trial{ background:#03263a; color:var(--primary); }
     .pending{ background:#332701; color:#fde68a; }
+    .awaiting{ background:#172554; color:#93c5fd; border-color:rgba(147,197,253,.3); }
+    .needs-action{ background:#431407; color:#fdba74; border-color:rgba(251,146,60,.3); }
     .expired{ background:#3a0b0b; color:#fca5a5; }
     .verified{ background:#052e16; color:#86efac; }
     .legacy-source{ background:#3a2a00; color:#fde047; }
@@ -459,6 +473,14 @@
       margin-top:8px;
     }
 
+    .highlight-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(251,146,60,.1);
+      border:1px solid rgba(251,146,60,.28);
+      margin-bottom:12px;
+    }
+
     @media (max-width: 1000px){
       body{ display:block; }
       .sidebar{
@@ -490,6 +512,7 @@
       <button id="refreshAllBtn">🔄 Refresh Now</button>
       <button id="createUserBtn">➕ Create User</button>
       <button id="openPaymentSearchBtn">🔎 Search Payment</button>
+      <button id="showAwaitingBtn">⚡ Awaiting Payments</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Links</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
@@ -538,6 +561,12 @@
         </div>
 
         <div class="card stat">
+          <div class="label">Needs Action</div>
+          <div class="value" id="statAwaitingPayments">0</div>
+          <div class="delta" id="statAwaitingPaymentsMeta">Users clicked “I Made a Transfer”</div>
+        </div>
+
+        <div class="card stat">
           <div class="label">Active Subscriptions</div>
           <div class="value" id="statActiveSubs">0</div>
           <div class="delta" id="statActiveSubsMeta">Users with full access</div>
@@ -568,6 +597,11 @@
           <div id="liveStatus">System healthy</div>
           <div class="muted" id="lastRefreshText" style="margin-top:8px;">Not refreshed yet</div>
           <div class="muted" id="refreshStateText" style="margin-top:6px;">Waiting for first refresh</div>
+        </div>
+
+        <div class="card">
+          <h3>⚡ Awaiting Confirmation</h3>
+          <div id="awaitingList" class="list-box"></div>
         </div>
 
         <div class="card">
@@ -637,8 +671,8 @@
           <select id="paymentStatusFilter">
             <option value="">All payment status</option>
             <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
             <option value="awaiting_confirmation">Awaiting confirmation</option>
+            <option value="verified">Verified</option>
           </select>
           <select id="paymentPlanFilter">
             <option value="">All plans</option>
@@ -646,6 +680,10 @@
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
           </select>
+        </div>
+
+        <div class="highlight-box">
+          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>. These are the highest priority items to verify.
         </div>
 
         <div class="section-note">
@@ -757,6 +795,7 @@
     const statLinks = document.getElementById("statLinks");
     const statClicks = document.getElementById("statClicks");
     const statPendingPayments = document.getElementById("statPendingPayments");
+    const statAwaitingPayments = document.getElementById("statAwaitingPayments");
     const statActiveSubs = document.getElementById("statActiveSubs");
     const statAdmins = document.getElementById("statAdmins");
 
@@ -767,6 +806,7 @@
     const linksEl = document.getElementById("links");
     const paymentsEl = document.getElementById("payments");
     const auditLogsEl = document.getElementById("auditLogs");
+    const awaitingList = document.getElementById("awaitingList");
     const adminList = document.getElementById("adminList");
     const bannedList = document.getElementById("bannedList");
     const paymentStats = document.getElementById("paymentStats");
@@ -942,8 +982,8 @@
     function getPaymentStatusBadge(payment) {
       const s = String(payment.status || "").toLowerCase();
       if (s === "verified") return `<span class="badge verified">VERIFIED</span>`;
+      if (s === "awaiting_confirmation") return `<span class="badge awaiting">AWAITING CONFIRMATION</span> <span class="badge needs-action">NEEDS ACTION</span>`;
       if (s === "pending") return `<span class="badge pending">PENDING</span>`;
-      if (s === "awaiting_confirmation") return `<span class="badge pending">AWAITING</span>`;
       return `<span class="badge">${escapeHtml(payment.status || "unknown")}</span>`;
     }
 
@@ -1046,6 +1086,14 @@
       return merged;
     }
 
+    function paymentPriorityScore(p) {
+      const s = String(p.status || "").toLowerCase();
+      if (s === "awaiting_confirmation") return 0;
+      if (s === "pending") return 1;
+      if (s === "verified") return 2;
+      return 3;
+    }
+
     function mergePayments(primaryPayments, legacyPayments) {
       const merged = mergeByKey(
         [
@@ -1054,7 +1102,11 @@
         ],
         item => item.id
       );
-      merged.sort((a, b) => Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0));
+      merged.sort((a, b) => {
+        const p = paymentPriorityScore(a) - paymentPriorityScore(b);
+        if (p !== 0) return p;
+        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
+      });
       return merged;
     }
 
@@ -1075,6 +1127,7 @@
       const totalLinks = linksData.length;
       const totalClicks = linksData.reduce((sum, link) => sum + Number(link.clicks || 0), 0);
       const pendingPayments = paymentsData.filter(p => ["pending", "awaiting_confirmation"].includes(String(p.status || "").toLowerCase())).length;
+      const awaitingPayments = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").length;
       const activeSubs = usersData.filter(u => {
         const paused = !!(u.subscriptionPaused || u.subscription_paused);
         const status = String(u.subscriptionStatus || u.subscription_status || "").toLowerCase();
@@ -1087,6 +1140,7 @@
       statLinks.textContent = totalLinks;
       statClicks.textContent = totalClicks;
       statPendingPayments.textContent = pendingPayments;
+      statAwaitingPayments.textContent = awaitingPayments;
       statActiveSubs.textContent = activeSubs;
       statAdmins.textContent = admins;
 
@@ -1094,10 +1148,14 @@
       document.getElementById("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
       document.getElementById("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
       document.getElementById("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
+      document.getElementById("statAwaitingPaymentsMeta").textContent = `${awaitingPayments} submitted by users`;
       document.getElementById("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
       document.getElementById("statAdminsMeta").textContent = `${admins} admin accounts`;
 
-      liveStatus.innerHTML = `🟢 Live • Admin system ready`;
+      liveStatus.innerHTML = awaitingPayments > 0
+        ? `🟠 Action needed • ${awaitingPayments} payment(s) awaiting confirmation`
+        : `🟢 Live • Admin system ready`;
+
       lastRefreshText.textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
       refreshStateText.textContent = refreshSummary || "Merged refresh complete";
     }
@@ -1121,6 +1179,20 @@
     }
 
     function renderSideLists() {
+      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
+      awaitingList.innerHTML = awaiting.length
+        ? awaiting.slice(0, 25).map(p => `
+            <div>
+              <b>${escapeHtml(p.username || "unknown")}</b>
+              <br>
+              <span class="badge awaiting">AWAITING CONFIRMATION</span>
+              ${getSourceBadge(p.source)}
+              <div class="muted">Payment: ${escapeHtml(p.id || "-")}</div>
+              <div class="muted">Plan: ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
+            </div>
+          `).join("")
+        : `<div>No awaiting confirmations</div>`;
+
       const admins = usersData.filter(u => (u.role || "") === "admin");
       adminList.innerHTML = admins.length
         ? admins.map(u => `
@@ -1280,49 +1352,60 @@
       const status = paymentStatusFilter.value;
       const plan = paymentPlanFilter.value;
 
-      return paymentsData.filter(p => {
+      let list = paymentsData.filter(p => {
         const text = `${p.id || ""} ${p.username || ""} ${p.planCode || p.plan_code || ""} ${p.billingCycle || p.billing_cycle || ""} ${p.cryptoCode || p.crypto_code || ""}`.toLowerCase();
         const matchesQ = !q || text.includes(q);
         const matchesStatus = !status || String(p.status || "").toLowerCase() === status;
         const matchesPlan = !plan || String(p.billingCycle || p.billing_cycle || "").toLowerCase() === plan;
         return matchesQ && matchesStatus && matchesPlan;
       });
+
+      list.sort((a, b) => {
+        const p = paymentPriorityScore(a) - paymentPriorityScore(b);
+        if (p !== 0) return p;
+        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
+      });
+
+      return list;
     }
 
     function renderPayments() {
       const list = getFilteredPayments();
 
-      paymentsEl.innerHTML = list.length ? list.map(p => `
-        <tr>
-          <td><code>${escapeHtml(p.id)}</code></td>
-          <td>${escapeHtml(p.username)}</td>
-          <td>
-            <span class="badge">${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</span>
-            <div class="muted">${escapeHtml(p.planCode || p.plan_code || "-")}</div>
-          </td>
-          <td>${Number(p.amountUsd || p.amount_usd || 0).toFixed(2)} USD</td>
-          <td>
-            ${escapeHtml(p.cryptoCode || p.crypto_code || "-")}
-            <div class="muted">${escapeHtml(p.networkCode || p.network_code || "-")}</div>
-          </td>
-          <td>
-            ${getPaymentStatusBadge(p)}
-            <div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || "new")}</div>
-          </td>
-          <td>${getSourceBadge(p.source)}</td>
-          <td>
-            ${fmtDate(p.createdAt || p.created_at)}
-            <div class="muted">Expires: ${fmtDate(p.expiresAt || p.expires_at)}</div>
-          </td>
-          <td>
-            <div class="actions">
-              <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
-              <button class="btn-green" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}">Verify</button>
-              <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">Copy Address</button>
-            </div>
-          </td>
-        </tr>
-      `).join("") : `
+      paymentsEl.innerHTML = list.length ? list.map(p => {
+        const isAwaiting = String(p.status || "").toLowerCase() === "awaiting_confirmation";
+        return `
+          <tr class="${isAwaiting ? "payment-awaiting-row" : ""}">
+            <td><code>${escapeHtml(p.id)}</code></td>
+            <td>${escapeHtml(p.username)}</td>
+            <td>
+              <span class="badge">${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</span>
+              <div class="muted">${escapeHtml(p.planCode || p.plan_code || "-")}</div>
+            </td>
+            <td>${Number(p.amountUsd || p.amount_usd || 0).toFixed(2)} USD</td>
+            <td>
+              ${escapeHtml(p.cryptoCode || p.crypto_code || "-")}
+              <div class="muted">${escapeHtml(p.networkCode || p.network_code || "-")}</div>
+            </td>
+            <td>
+              ${getPaymentStatusBadge(p)}
+              <div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || "new")}</div>
+            </td>
+            <td>${getSourceBadge(p.source)}</td>
+            <td>
+              ${fmtDate(p.createdAt || p.created_at)}
+              <div class="muted">Expires: ${fmtDate(p.expiresAt || p.expires_at)}</div>
+            </td>
+            <td>
+              <div class="actions">
+                <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
+                <button class="${isAwaiting ? "btn-action" : "btn-green"}" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}">${isAwaiting ? "Verify Now" : "Verify"}</button>
+                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">Copy Address</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("") : `
         <tr>
           <td colspan="9" class="muted">No payments found</td>
         </tr>
@@ -1412,15 +1495,23 @@
       const payment = paymentsData.find(p => p.id === paymentId);
       if (!payment) return;
 
+      const isAwaiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
+
       panel.style.display = "block";
       panelTitle.textContent = "Payment Details";
       panelContent.innerHTML = `
+        ${isAwaiting ? `
+          <div class="highlight-box">
+            <b>Needs Action:</b> This payment was marked by the user as sent. Review and verify if received.
+          </div>
+        ` : ""}
+
         <div><b>Payment ID:</b> <code>${escapeHtml(payment.id)}</code></div>
         <div><b>User:</b> ${escapeHtml(payment.username || "-")}</div>
         <div><b>Plan:</b> ${escapeHtml(payment.billingCycle || payment.billing_cycle || "-")}</div>
         <div><b>Amount:</b> ${Number(payment.amountUsd || payment.amount_usd || 0).toFixed(2)} USD</div>
         <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || payment.crypto_code || "-")} (${escapeHtml(payment.networkCode || payment.network_code || "-")})</div>
-        <div><b>Status:</b> ${escapeHtml(payment.status || "-")}</div>
+        <div><b>Status:</b> ${getPaymentStatusBadge(payment)}</div>
         <div><b>Requested From:</b> ${escapeHtml(payment.requestedFrom || payment.requested_from || "-")}</div>
         <div><b>Created:</b> ${fmtDate(payment.createdAt || payment.created_at)}</div>
         <div><b>Expires:</b> ${fmtDate(payment.expiresAt || payment.expires_at)}</div>
@@ -1430,6 +1521,10 @@
           <div class="payment-qr">
             <img src="${escapeHtml(payment.qrImageUrl || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || "")))}" alt="Payment QR" />
           </div>` : ""}
+        <div class="actions" style="margin-top:12px;">
+          <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">${isAwaiting ? "Verify This Payment" : "Verify Payment"}</button>
+          <button onclick="copyText('${escapeHtml(payment.address || "")}')">Copy Address</button>
+        </div>
       `;
     }
 
@@ -1616,13 +1711,14 @@
           resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`;
           return;
         }
+        const isAwaiting = String(p.status || "").toLowerCase() === "awaiting_confirmation";
         resultBox.innerHTML = `
           <div><b>User:</b> ${escapeHtml(p.username || "-")}</div>
           <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
           <div><b>Status:</b> ${escapeHtml(p.status || "-")}</div>
           <div><b>Source:</b> ${escapeHtml(p.source || "-")}</div>
           <div class="actions" style="margin-top:10px;">
-            <button class="btn-green" onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Verify Payment</button>
+            <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">${isAwaiting ? "Verify Now" : "Verify Payment"}</button>
             <button onclick="copyText('${escapeHtml(p.address || "")}')">Copy Address</button>
           </div>
         `;
@@ -1784,6 +1880,12 @@
 
       document.getElementById("createUserBtn").onclick = openCreateUser;
       document.getElementById("openPaymentSearchBtn").onclick = openPaymentSearch;
+      document.getElementById("showAwaitingBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "awaiting_confirmation";
+        renderPayments();
+        showToast("Showing awaiting confirmation payments");
+      };
       document.getElementById("closePanelBtn").onclick = closePanel;
       document.getElementById("logoutBtn").onclick = logout;
 

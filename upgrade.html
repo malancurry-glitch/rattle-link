@@ -481,7 +481,7 @@
           <h2>🪙 Payment Request</h2>
 
           <div id="emptyPaymentState" class="muted">
-            Choose a plan and crypto option, then create a payment request.  
+            Choose a plan and crypto option, then create a payment request.
             After you pay, click <b>I Made a Transfer</b> and this page will wait for admin confirmation.
           </div>
 
@@ -764,6 +764,13 @@
       }
     }
 
+    function resetWaitingState(){
+      waitingBox.classList.add("hidden");
+      confirmedBox.classList.add("hidden");
+      iTransferredBtn.disabled = false;
+      iTransferredBtn.textContent = "I Made a Transfer";
+    }
+
     function startPaymentCountdown(expiresAt){
       stopPaymentCountdown();
 
@@ -788,11 +795,7 @@
       waitingBox.classList.toggle("hidden", !enabled);
       confirmedBox.classList.add("hidden");
       iTransferredBtn.disabled = enabled;
-      if(enabled){
-        iTransferredBtn.textContent = "Waiting for Confirmation...";
-      } else {
-        iTransferredBtn.textContent = "I Made a Transfer";
-      }
+      iTransferredBtn.textContent = enabled ? "Waiting for Confirmation..." : "I Made a Transfer";
     }
 
     function setConfirmedMode(){
@@ -809,16 +812,16 @@
 
       paymentQr.src = payment.qrImageUrl || "";
       paymentId.textContent = payment.id || "-";
-      paymentPlan.textContent = payment.billingCycle || "-";
-      paymentAmount.textContent = `$${Number(payment.amountUsd || 0)}`;
-      paymentAsset.textContent = payment.cryptoCode || "-";
-      paymentNetwork.textContent = payment.networkCode || "-";
+      paymentPlan.textContent = payment.billingCycle || payment.billing_cycle || "-";
+      paymentAmount.textContent = `$${Number(payment.amountUsd || payment.amount_usd || 0)}`;
+      paymentAsset.textContent = payment.cryptoCode || payment.crypto_code || "-";
+      paymentNetwork.textContent = payment.networkCode || payment.network_code || "-";
       paymentStatus.innerHTML = paymentStatusBadge(payment.status);
       paymentAddress.textContent = payment.address || "-";
-      paymentQrText.textContent = payment.qrText || "-";
+      paymentQrText.textContent = payment.qrText || payment.qr_text || "-";
 
-      if(payment.expiresAt){
-        startPaymentCountdown(payment.expiresAt);
+      if(payment.expiresAt || payment.expires_at){
+        startPaymentCountdown(payment.expiresAt || payment.expires_at);
       } else {
         paymentTimer.textContent = "";
       }
@@ -826,14 +829,24 @@
       const waitingPaymentId = localStorage.getItem("waitingPaymentId");
       const paymentStatusValue = String(payment.status || "").toLowerCase();
 
-      if(waitingPaymentId && waitingPaymentId === payment.id && paymentStatusValue !== "verified"){
+      if(paymentStatusValue === "verified"){
+        setConfirmedMode();
+        return;
+      }
+
+      if(waitingPaymentId && waitingPaymentId === payment.id){
         setWaitingMode(true);
         pollStatusText.textContent = `Checking payment ${payment.id}...`;
-      } else if(paymentStatusValue === "verified"){
-        setConfirmedMode();
-      } else {
-        setWaitingMode(false);
+        return;
       }
+
+      if(paymentStatusValue === "awaiting_confirmation"){
+        setWaitingMode(true);
+        pollStatusText.textContent = "Waiting for admin confirmation...";
+        return;
+      }
+
+      resetWaitingState();
     }
 
     function renderPaymentsTable(list){
@@ -849,11 +862,11 @@
       paymentsTable.innerHTML = list.map(p => `
         <tr data-id="${p.id}">
           <td>${p.id}</td>
-          <td>${p.billingCycle}</td>
-          <td>$${Number(p.amountUsd || 0)}</td>
-          <td>${p.cryptoCode} / ${p.networkCode}</td>
+          <td>${p.billingCycle || p.billing_cycle || "-"}</td>
+          <td>$${Number(p.amountUsd || p.amount_usd || 0)}</td>
+          <td>${p.cryptoCode || p.crypto_code || "-"} / ${p.networkCode || p.network_code || "-"}</td>
           <td>${paymentStatusBadge(p.status)}</td>
-          <td>${formatDate(p.createdAt)}</td>
+          <td>${formatDate(p.createdAt || p.created_at)}</td>
         </tr>
       `).join("");
 
@@ -894,6 +907,25 @@
       renderMe();
     }
 
+    function prioritizePayments(payments){
+      return [...payments].sort((a, b) => {
+        const sa = String(a.status || "").toLowerCase();
+        const sb = String(b.status || "").toLowerCase();
+
+        const rank = (s) => {
+          if (s === "awaiting_confirmation") return 0;
+          if (s === "pending") return 1;
+          if (s === "verified") return 2;
+          return 3;
+        };
+
+        const diff = rank(sa) - rank(sb);
+        if(diff !== 0) return diff;
+
+        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
+      });
+    }
+
     async function loadPayments(openLatestPending = false){
       const res = await safeFetch(`${API}/payments/me`);
       if(!res.ok){
@@ -901,7 +933,8 @@
         return;
       }
 
-      const payments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+      const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+      const payments = prioritizePayments(rawPayments);
       window.__payments = payments;
       renderPaymentsTable(payments);
 
@@ -918,7 +951,7 @@
       if(openLatestPending){
         const pending = payments.find(x => {
           const s = String(x.status).toLowerCase();
-          return s === "pending" || s === "awaiting_confirmation";
+          return s === "awaiting_confirmation" || s === "pending";
         });
         if(pending){
           openPayment(pending);
@@ -931,6 +964,9 @@
         return payments[0];
       }
 
+      latestPayment = null;
+      emptyPaymentState.classList.remove("hidden");
+      paymentState.classList.add("hidden");
       return null;
     }
 
@@ -962,9 +998,11 @@
       }
 
       const payment = res.data?.payment;
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
+      resetWaitingState();
+
       if(payment){
-        localStorage.removeItem("waitingPaymentId");
-        stopPaymentPolling();
         openPayment(payment);
         showMsg("Payment request created. Send the payment, then click I Made a Transfer.", "success");
       } else {
@@ -1002,7 +1040,7 @@
           return;
         }
 
-        const payments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+        const payments = prioritizePayments(Array.isArray(res.data?.payments) ? res.data.payments : []);
         window.__payments = payments;
         renderPaymentsTable(payments);
 
@@ -1028,7 +1066,12 @@
           return;
         }
 
-        pollStatusText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+        if(status === "awaiting_confirmation"){
+          pollStatusText.textContent = `Payment submitted. Waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+          return;
+        }
+
+        pollStatusText.textContent = `Still waiting... Last check: ${new Date().toLocaleTimeString()}`;
       };
 
       await check();
@@ -1038,6 +1081,20 @@
     async function userMadeTransfer(){
       if(!latestPayment || !latestPayment.id){
         showMsg("Create or open a payment request first", "warn");
+        return;
+      }
+
+      const currentStatus = String(latestPayment.status || "").toLowerCase();
+      if(currentStatus === "verified"){
+        showMsg("This payment is already verified", "success");
+        setConfirmedMode();
+        return;
+      }
+
+      if(currentStatus === "awaiting_confirmation"){
+        localStorage.setItem("waitingPaymentId", latestPayment.id);
+        showMsg("This payment is already waiting for admin confirmation", "success");
+        pollPaymentUntilVerified(latestPayment.id);
         return;
       }
 
