@@ -77,12 +77,6 @@
       flex-wrap:wrap;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:16px;
-    }
-
     .grid-2{
       display:grid;
       grid-template-columns:1.1fr .9fr;
@@ -128,6 +122,7 @@
     .status-paused{ color:var(--yellow); background:#2b1a00; }
     .status-expired{ color:var(--red); background:#2b0000; }
     .status-pending{ color:var(--yellow); background:#2b1a00; }
+    .status-awaiting{ color:#60a5fa; background:#172554; }
     .status-verified{ color:var(--green); background:#052e16; }
 
     button, a.btn{
@@ -198,7 +193,7 @@
       color:var(--muted);
     }
 
-    input, select, textarea{
+    input, select{
       width:100%;
       padding:12px;
       border-radius:10px;
@@ -206,10 +201,6 @@
       background:#000;
       color:var(--text);
       outline:none;
-    }
-
-    input:focus, select:focus, textarea:focus{
-      box-shadow:0 0 0 2px rgba(0,255,255,.13);
     }
 
     .plans{
@@ -225,7 +216,6 @@
       background:#010816;
       cursor:pointer;
       transition:.2s ease;
-      position:relative;
     }
 
     .plan:hover{
@@ -693,6 +683,7 @@
     function paymentStatusBadge(status){
       const s = String(status || "").toLowerCase();
       if(s === "verified") return `<span class="badge status-verified">VERIFIED</span>`;
+      if(s === "awaiting_confirmation") return `<span class="badge status-awaiting">AWAITING CONFIRMATION</span>`;
       if(s === "pending") return `<span class="badge status-pending">PENDING</span>`;
       return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
     }
@@ -925,7 +916,10 @@
       }
 
       if(openLatestPending){
-        const pending = payments.find(x => String(x.status).toLowerCase() === "pending");
+        const pending = payments.find(x => {
+          const s = String(x.status).toLowerCase();
+          return s === "pending" || s === "awaiting_confirmation";
+        });
         if(pending){
           openPayment(pending);
           return pending;
@@ -1041,14 +1035,30 @@
       paymentPoller = setInterval(check, 5000);
     }
 
-    function userMadeTransfer(){
+    async function userMadeTransfer(){
       if(!latestPayment || !latestPayment.id){
         showMsg("Create or open a payment request first", "warn");
         return;
       }
 
+      iTransferredBtn.disabled = true;
+      iTransferredBtn.textContent = "Saving...";
+
+      const res = await safeFetch(`${API}/payment-i-made`, "POST", {
+        paymentId: latestPayment.id
+      });
+
+      if(!res.ok){
+        iTransferredBtn.disabled = false;
+        iTransferredBtn.textContent = "I Made a Transfer";
+        showMsg(res.data?.message || "Could not mark payment as sent", "error");
+        return;
+      }
+
       localStorage.setItem("waitingPaymentId", latestPayment.id);
       showMsg("Transfer marked. Waiting for admin confirmation...", "success");
+
+      await loadPayments(false);
       pollPaymentUntilVerified(latestPayment.id);
     }
 
