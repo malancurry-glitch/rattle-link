@@ -127,6 +127,8 @@
     .status-active{ color:var(--green); background:#052e16; }
     .status-paused{ color:var(--yellow); background:#2b1a00; }
     .status-expired{ color:var(--red); background:#2b0000; }
+    .status-pending{ color:var(--yellow); background:#2b1a00; }
+    .status-verified{ color:var(--green); background:#052e16; }
 
     button, a.btn{
       background:#020617;
@@ -346,6 +348,8 @@
       min-height:22px;
       margin-top:12px;
       font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
     }
 
     .hidden{
@@ -369,6 +373,38 @@
       margin-top:10px;
       color:var(--yellow);
       font-weight:600;
+    }
+
+    .waiting-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(59,130,246,.12);
+      border:1px solid rgba(59,130,246,.35);
+    }
+
+    .spinner{
+      width:18px;
+      height:18px;
+      border:2px solid rgba(255,255,255,.2);
+      border-top:2px solid var(--cyan);
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    .confirm-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.35);
     }
 
     @media (max-width: 980px){
@@ -456,7 +492,7 @@
 
           <div id="emptyPaymentState" class="muted">
             Choose a plan and crypto option, then create a payment request.  
-            After you pay, the admin verifies it and your subscription becomes active.
+            After you pay, click <b>I Made a Transfer</b> and this page will wait for admin confirmation.
           </div>
 
           <div id="paymentState" class="hidden">
@@ -488,8 +524,24 @@
                 <div id="paymentTimer" class="timer"></div>
 
                 <div class="row" style="margin-top:12px;">
+                  <button id="iTransferredBtn" class="btn-primary" type="button">I Made a Transfer</button>
                   <button id="openBillingBtn" class="btn-purple" type="button">Open Billing Center</button>
                   <button id="checkMeBtn" type="button">Check Subscription</button>
+                </div>
+
+                <div id="waitingBox" class="waiting-box hidden">
+                  <div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div>
+                  <div class="muted" style="margin-top:8px;">
+                    We are checking your payment status. Once admin verifies it, this page will confirm automatically and return you to the dashboard.
+                  </div>
+                  <div id="pollStatusText" class="muted" style="margin-top:8px;">Checking...</div>
+                </div>
+
+                <div id="confirmedBox" class="confirm-box hidden">
+                  <div><b>✅ Payment confirmed and successful</b></div>
+                  <div class="muted" style="margin-top:8px;">
+                    Your subscription is active. Redirecting back to dashboard...
+                  </div>
                 </div>
               </div>
             </div>
@@ -549,6 +601,11 @@
     const paymentTimer = document.getElementById("paymentTimer");
     const paymentsTable = document.getElementById("paymentsTable");
 
+    const iTransferredBtn = document.getElementById("iTransferredBtn");
+    const waitingBox = document.getElementById("waitingBox");
+    const confirmedBox = document.getElementById("confirmedBox");
+    const pollStatusText = document.getElementById("pollStatusText");
+
     let plansData = [];
     let cryptoData = [];
     let meData = null;
@@ -556,11 +613,14 @@
     let selectedCrypto = null;
     let latestPayment = null;
     let paymentCountdown = null;
+    let paymentPoller = null;
+    let redirectTimer = null;
 
     function authHeaders(){
+      const token = localStorage.getItem("token") || "";
       return {
         "Content-Type": "application/json",
-        "Authorization": localStorage.getItem("token") || ""
+        "Authorization": token
       };
     }
 
@@ -610,6 +670,8 @@
     }
 
     function logout(){
+      stopPaymentCountdown();
+      stopPaymentPolling();
       localStorage.clear();
       window.location.href = "index.html";
     }
@@ -630,8 +692,8 @@
 
     function paymentStatusBadge(status){
       const s = String(status || "").toLowerCase();
-      if(s === "verified") return `<span class="badge status-active">VERIFIED</span>`;
-      if(s === "pending") return `<span class="badge status-paused">PENDING</span>`;
+      if(s === "verified") return `<span class="badge status-verified">VERIFIED</span>`;
+      if(s === "pending") return `<span class="badge status-pending">PENDING</span>`;
       return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
     }
 
@@ -700,6 +762,17 @@
       }
     }
 
+    function stopPaymentPolling(){
+      if(paymentPoller){
+        clearInterval(paymentPoller);
+        paymentPoller = null;
+      }
+      if(redirectTimer){
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
+    }
+
     function startPaymentCountdown(expiresAt){
       stopPaymentCountdown();
 
@@ -718,6 +791,24 @@
 
       tick();
       paymentCountdown = setInterval(tick, 1000);
+    }
+
+    function setWaitingMode(enabled){
+      waitingBox.classList.toggle("hidden", !enabled);
+      confirmedBox.classList.add("hidden");
+      iTransferredBtn.disabled = enabled;
+      if(enabled){
+        iTransferredBtn.textContent = "Waiting for Confirmation...";
+      } else {
+        iTransferredBtn.textContent = "I Made a Transfer";
+      }
+    }
+
+    function setConfirmedMode(){
+      waitingBox.classList.add("hidden");
+      confirmedBox.classList.remove("hidden");
+      iTransferredBtn.disabled = true;
+      iTransferredBtn.textContent = "Payment Confirmed";
     }
 
     function openPayment(payment){
@@ -739,6 +830,18 @@
         startPaymentCountdown(payment.expiresAt);
       } else {
         paymentTimer.textContent = "";
+      }
+
+      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+      const paymentStatusValue = String(payment.status || "").toLowerCase();
+
+      if(waitingPaymentId && waitingPaymentId === payment.id && paymentStatusValue !== "verified"){
+        setWaitingMode(true);
+        pollStatusText.textContent = `Checking payment ${payment.id}...`;
+      } else if(paymentStatusValue === "verified"){
+        setConfirmedMode();
+      } else {
+        setWaitingMode(false);
       }
     }
 
@@ -811,10 +914,30 @@
       window.__payments = payments;
       renderPaymentsTable(payments);
 
+      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+
+      if(waitingPaymentId){
+        const waitingPayment = payments.find(x => x.id === waitingPaymentId);
+        if(waitingPayment){
+          openPayment(waitingPayment);
+          return waitingPayment;
+        }
+      }
+
       if(openLatestPending){
         const pending = payments.find(x => String(x.status).toLowerCase() === "pending");
-        if(pending) openPayment(pending);
+        if(pending){
+          openPayment(pending);
+          return pending;
+        }
       }
+
+      if(payments[0]){
+        openPayment(payments[0]);
+        return payments[0];
+      }
+
+      return null;
     }
 
     async function createPaymentRequest(){
@@ -846,8 +969,10 @@
 
       const payment = res.data?.payment;
       if(payment){
+        localStorage.removeItem("waitingPaymentId");
+        stopPaymentPolling();
         openPayment(payment);
-        showMsg("Payment request created. Send the payment and wait for admin verification.", "success");
+        showMsg("Payment request created. Send the payment, then click I Made a Transfer.", "success");
       } else {
         showMsg("Payment request created", "success");
       }
@@ -870,6 +995,63 @@
       }
     }
 
+    async function pollPaymentUntilVerified(paymentIdValue){
+      stopPaymentPolling();
+
+      setWaitingMode(true);
+      pollStatusText.textContent = `Checking payment ${paymentIdValue}...`;
+
+      const check = async () => {
+        const res = await safeFetch(`${API}/payments/me`);
+        if(!res.ok){
+          pollStatusText.textContent = "Network issue while checking payment status...";
+          return;
+        }
+
+        const payments = Array.isArray(res.data?.payments) ? res.data.payments : [];
+        window.__payments = payments;
+        renderPaymentsTable(payments);
+
+        const payment = payments.find(x => x.id === paymentIdValue);
+        if(!payment){
+          pollStatusText.textContent = "Payment not found yet. Retrying...";
+          return;
+        }
+
+        openPayment(payment);
+        const status = String(payment.status || "").toLowerCase();
+
+        if(status === "verified"){
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          setConfirmedMode();
+          await loadMe();
+          showMsg("Payment confirmed and successful ✅ Redirecting to dashboard...", "success");
+
+          redirectTimer = setTimeout(() => {
+            window.location.href = "dashboard.html?payment=success";
+          }, 2500);
+          return;
+        }
+
+        pollStatusText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+      };
+
+      await check();
+      paymentPoller = setInterval(check, 5000);
+    }
+
+    function userMadeTransfer(){
+      if(!latestPayment || !latestPayment.id){
+        showMsg("Create or open a payment request first", "warn");
+        return;
+      }
+
+      localStorage.setItem("waitingPaymentId", latestPayment.id);
+      showMsg("Transfer marked. Waiting for admin confirmation...", "success");
+      pollPaymentUntilVerified(latestPayment.id);
+    }
+
     document.getElementById("createPaymentBtn").onclick = createPaymentRequest;
     document.getElementById("loadPendingBtn").onclick = loadLatestPending;
     document.getElementById("refreshBtn").onclick = async () => {
@@ -886,14 +1068,29 @@
     };
     document.getElementById("checkMeBtn").onclick = async () => {
       await loadMe();
+      await loadPayments(false);
       showMsg("Subscription status checked", "success");
     };
+    document.getElementById("iTransferredBtn").onclick = userMadeTransfer;
 
     (async function init(){
       if(!ensureAuth()) return;
       await loadPlans();
       await loadMe();
-      await loadPayments(true);
+      const payment = await loadPayments(true);
+
+      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+      if(waitingPaymentId){
+        if(payment && payment.id === waitingPaymentId){
+          pollPaymentUntilVerified(waitingPaymentId);
+        } else {
+          const existing = (window.__payments || []).find(x => x.id === waitingPaymentId);
+          if(existing){
+            openPayment(existing);
+            pollPaymentUntilVerified(waitingPaymentId);
+          }
+        }
+      }
     })();
   </script>
 </body>
