@@ -6,16 +6,31 @@
   <title>Rattle Link Admin Dashboard</title>
 
   <script>
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    if (!token || role !== "admin") {
-      window.location.href = "index.html";
-    }
+    (function bootstrapAdminAuth() {
+      const params = new URLSearchParams(window.location.search);
+      const tokenFromUrl = params.get("token");
+      const roleFromUrl = params.get("role");
+      const emailFromUrl = params.get("email");
+
+      if (tokenFromUrl) localStorage.setItem("token", tokenFromUrl);
+      if (roleFromUrl) localStorage.setItem("role", roleFromUrl);
+      if (emailFromUrl) localStorage.setItem("lastUser", emailFromUrl);
+
+      if (tokenFromUrl || roleFromUrl || emailFromUrl) {
+        const clean = window.location.pathname;
+        window.history.replaceState({}, "", clean);
+      }
+
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("role");
+
+      if (!token || role !== "admin") {
+        window.location.href = "index.html";
+      }
+    })();
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
     :root{
@@ -57,7 +72,7 @@
     }
 
     .sidebar{
-      width:265px;
+      width:260px;
       min-height:100vh;
       background:#020617;
       border-right:1px solid var(--border);
@@ -278,7 +293,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1160px;
+      min-width:1080px;
     }
 
     th,td{
@@ -343,14 +358,6 @@
       display:none;
       overflow:auto;
       z-index:50;
-    }
-
-    #map{
-      height:280px;
-      border-radius:12px;
-      overflow:hidden;
-      border:1px solid var(--border);
-      margin-top:12px;
     }
 
     .toast{
@@ -476,7 +483,6 @@
     <button class="nav-btn" id="navUsers">👥 Users</button>
     <button class="nav-btn" id="navPayments">💳 Payments</button>
     <button class="nav-btn" id="navLinks">🔗 Links</button>
-    <button class="nav-btn" id="navSecurity">🛡️ Security</button>
     <button class="nav-btn" id="navAudit">📜 Audit</button>
 
     <div class="sidebar-section">
@@ -495,7 +501,7 @@
     <div class="header">
       <div>
         <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Merged stable admin view for Backend 2 and Legacy AWS. Refreshes keep last good data instead of clearing your activities.</div>
+        <div class="sub">Admin view matched to your current Backend2 + Legacy AWS setup.</div>
       </div>
 
       <div class="header-actions">
@@ -526,12 +532,6 @@
         </div>
 
         <div class="card stat">
-          <div class="label">Flagged Threats</div>
-          <div class="value" id="statThreats">0</div>
-          <div class="delta" id="statThreatsMeta">Suspicious items</div>
-        </div>
-
-        <div class="card stat">
           <div class="label">Pending Payments</div>
           <div class="value" id="statPendingPayments">0</div>
           <div class="delta" id="statPendingPaymentsMeta">Waiting admin verification</div>
@@ -541,6 +541,12 @@
           <div class="label">Active Subscriptions</div>
           <div class="value" id="statActiveSubs">0</div>
           <div class="delta" id="statActiveSubsMeta">Users with full access</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Admins</div>
+          <div class="value" id="statAdmins">0</div>
+          <div class="delta" id="statAdminsMeta">Admin accounts</div>
         </div>
       </div>
 
@@ -558,38 +564,26 @@
 
       <div class="grid">
         <div class="card">
-          <h3>📧 Email Analytics</h3>
-          <div id="emailStats"></div>
-        </div>
-
-        <div class="card">
-          <h3>🤖 Threat Detection</h3>
-          <div id="aiThreats"></div>
-        </div>
-
-        <div class="card">
           <h3>🟢 Live Status</h3>
           <div id="liveStatus">System healthy</div>
           <div class="muted" id="lastRefreshText" style="margin-top:8px;">Not refreshed yet</div>
           <div class="muted" id="refreshStateText" style="margin-top:6px;">Waiting for first refresh</div>
         </div>
+
+        <div class="card">
+          <h3>👑 Admin Accounts</h3>
+          <div id="adminList" class="list-box"></div>
+        </div>
+
+        <div class="card">
+          <h3>🚫 Banned Accounts</h3>
+          <div id="bannedList" class="list-box"></div>
+        </div>
       </div>
 
-      <div class="grid">
-        <div class="card">
-          <h3>🚨 Live Attack Monitor</h3>
-          <div id="attackFeed" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>🧠 Threat Intelligence</h3>
-          <div id="threatList" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>🖥️ Terminal Logs</h3>
-          <div id="terminal" class="terminal"></div>
-        </div>
+      <div class="card">
+        <h3>🖥️ Terminal Logs</h3>
+        <div id="terminal" class="terminal"></div>
       </div>
     </section>
 
@@ -644,6 +638,7 @@
             <option value="">All payment status</option>
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
+            <option value="awaiting_confirmation">Awaiting confirmation</option>
           </select>
           <select id="paymentPlanFilter">
             <option value="">All plans</option>
@@ -715,25 +710,6 @@
       </div>
     </section>
 
-    <section id="securitySection" class="hidden">
-      <div class="grid">
-        <div class="card">
-          <h3>🔎 Most Clicked Links</h3>
-          <div id="topLinks" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>👑 Admin Accounts</h3>
-          <div id="adminList" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>🚫 Banned Accounts</h3>
-          <div id="bannedList" class="list-box"></div>
-        </div>
-      </div>
-    </section>
-
     <section id="auditSection" class="hidden">
       <div class="card">
         <h3>📜 Audit Logs</h3>
@@ -745,8 +721,6 @@
   <div class="panel" id="panel">
     <h3 id="panelTitle">Details</h3>
     <div id="panelContent"></div>
-    <h4>🌍 Geo Map</h4>
-    <div id="map"></div>
     <div style="margin-top:12px;">
       <button id="closePanelBtn">Close</button>
     </div>
@@ -757,7 +731,6 @@
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const WS_URL = "wss://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production";
 
     const API_BY_SOURCE = {
       primary: PRIMARY_API,
@@ -768,44 +741,32 @@
     let linksData = [];
     let paymentsData = [];
     let auditData = [];
-    let emailLogs = [];
     let chart = null;
-    let map = null;
     let autoRefresh = true;
     let refreshTimer = null;
-    let ws = null;
-    let wsReloadTimer = null;
-    let lastClicks = {};
     let isLoading = false;
 
-    let lastGoodState = {
+    const lastGoodState = {
       usersData: [],
       linksData: [],
       paymentsData: [],
-      auditData: [],
-      emailLogs: []
+      auditData: []
     };
 
     const statUsers = document.getElementById("statUsers");
     const statLinks = document.getElementById("statLinks");
     const statClicks = document.getElementById("statClicks");
-    const statThreats = document.getElementById("statThreats");
     const statPendingPayments = document.getElementById("statPendingPayments");
     const statActiveSubs = document.getElementById("statActiveSubs");
+    const statAdmins = document.getElementById("statAdmins");
 
-    const emailStats = document.getElementById("emailStats");
-    const aiThreats = document.getElementById("aiThreats");
     const liveStatus = document.getElementById("liveStatus");
     const lastRefreshText = document.getElementById("lastRefreshText");
     const refreshStateText = document.getElementById("refreshStateText");
-    const attackFeed = document.getElementById("attackFeed");
-    const threatList = document.getElementById("threatList");
-    const terminal = document.getElementById("terminal");
     const usersEl = document.getElementById("users");
     const linksEl = document.getElementById("links");
     const paymentsEl = document.getElementById("payments");
     const auditLogsEl = document.getElementById("auditLogs");
-    const topLinks = document.getElementById("topLinks");
     const adminList = document.getElementById("adminList");
     const bannedList = document.getElementById("bannedList");
     const paymentStats = document.getElementById("paymentStats");
@@ -814,12 +775,12 @@
     const panelContent = document.getElementById("panelContent");
     const toast = document.getElementById("toast");
     const backendBadge = document.getElementById("backendBadge");
+    const terminal = document.getElementById("terminal");
 
     const overviewSection = document.getElementById("overviewSection");
     const usersSection = document.getElementById("usersSection");
     const paymentsSection = document.getElementById("paymentsSection");
     const linksSection = document.getElementById("linksSection");
-    const securitySection = document.getElementById("securitySection");
     const auditSection = document.getElementById("auditSection");
 
     const userSearch = document.getElementById("userSearch");
@@ -832,25 +793,16 @@
     const paymentStatusFilter = document.getElementById("paymentStatusFilter");
     const paymentPlanFilter = document.getElementById("paymentPlanFilter");
 
-    function authHeaders(method = "GET", source = "primary") {
-  const token = localStorage.getItem("token") || "";
+    function authHeaders(method = "GET") {
+      const token = localStorage.getItem("token") || "";
+      const headers = {
+        "Authorization": token ? `Bearer ${token}` : ""
+      };
+      if (method !== "GET") headers["Content-Type"] = "application/json";
+      return headers;
+    }
 
-  const headers = {
-    "Authorization": token ? `Bearer ${token}` : ""
-  };
-
-  if (method !== "GET") {
-    headers["Content-Type"] = "application/json";
-  }
-
-  if (source === "legacy") {
-    headers["x-rattle-fallback"] = "legacy";
-  }
-
-  return headers;
-}
-
-    function setBackendBadge(text = "Merged View: Backend 2 + Legacy AWS") {
+    function setBackendBadge(text = "Merged View • Backend 2 + Legacy AWS") {
       backendBadge.textContent = text;
     }
 
@@ -882,11 +834,11 @@
       window.location.href = "index.html";
     }
 
-    async function safeFetchRaw(baseUrl, path, method = "GET", body = null, source = "primary", allowLogout = false) {
+    async function safeFetchRaw(baseUrl, path, method = "GET", body = null, allowLogout = false) {
       try {
         const res = await fetch(baseUrl.replace(/\/+$/, "") + path, {
           method,
-          headers: authHeaders(method, source),
+          headers: authHeaders(method),
           body: body ? JSON.stringify(body) : null
         });
 
@@ -912,7 +864,7 @@
 
     async function fetchBySource(source, path, method = "GET", body = null, allowLogout = false) {
       const base = API_BY_SOURCE[source];
-      const result = await safeFetchRaw(base, path, method, body, source, allowLogout);
+      const result = await safeFetchRaw(base, path, method, body, allowLogout);
       return { ...result, source };
     }
 
@@ -933,89 +885,29 @@
       }, false);
     }
 
-    function buildShortLink(slug, source) {
-      return `${API_BY_SOURCE[source]}/${slug}`;
-    }
-
     function showSection(sectionName) {
       overviewSection.classList.add("hidden");
       usersSection.classList.add("hidden");
       paymentsSection.classList.add("hidden");
       linksSection.classList.add("hidden");
-      securitySection.classList.add("hidden");
       auditSection.classList.add("hidden");
 
       if (sectionName === "overview") overviewSection.classList.remove("hidden");
       if (sectionName === "users") usersSection.classList.remove("hidden");
       if (sectionName === "payments") paymentsSection.classList.remove("hidden");
       if (sectionName === "links") linksSection.classList.remove("hidden");
-      if (sectionName === "security") securitySection.classList.remove("hidden");
       if (sectionName === "audit") auditSection.classList.remove("hidden");
     }
 
     function closePanel() {
       panel.style.display = "none";
       panelContent.innerHTML = "";
-      if (map) {
-        map.remove();
-        map = null;
-      }
-      document.getElementById("map").innerHTML = "";
     }
 
     function fmtDate(ts) {
       const n = Number(ts || 0);
       if (!n) return "-";
       return new Date(n).toLocaleString();
-    }
-
-    async function getGeo(ip) {
-      if (!ip || ip === "unknown") {
-        return {
-          country_name: "Unknown",
-          city: "",
-          latitude: 20,
-          longitude: 0
-        };
-      }
-
-      try {
-        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-        const data = await res.json();
-
-        return {
-          country_name: data.country_name || "Unknown",
-          city: data.city || "",
-          latitude: Number(data.latitude || 20),
-          longitude: Number(data.longitude || 0)
-        };
-      } catch {
-        return {
-          country_name: "Unknown",
-          city: "",
-          latitude: 20,
-          longitude: 0
-        };
-      }
-    }
-
-    function computeThreatScore(link) {
-      let score = 0;
-      const clicks = Number(link.clicks || 0);
-      if (clicks > 100) score += 30;
-      if (clicks > 300) score += 30;
-      if (clicks > 500) score += 30;
-      if ((link.slug || "").includes("admin")) score += 20;
-      if ((link.url || "").includes("login")) score += 10;
-      if (link.paused) score -= 10;
-      return Math.max(0, Math.min(score, 100));
-    }
-
-    function getThreatItems() {
-      return linksData
-        .map(link => ({ ...link, threatScore: computeThreatScore(link) }))
-        .filter(link => link.threatScore >= 50)
-        .sort((a, b) => b.threatScore - a.threatScore);
     }
 
     function getLinkStatusBadge(link) {
@@ -1051,6 +943,7 @@
       const s = String(payment.status || "").toLowerCase();
       if (s === "verified") return `<span class="badge verified">VERIFIED</span>`;
       if (s === "pending") return `<span class="badge pending">PENDING</span>`;
+      if (s === "awaiting_confirmation") return `<span class="badge pending">AWAITING</span>`;
       return `<span class="badge">${escapeHtml(payment.status || "unknown")}</span>`;
     }
 
@@ -1125,11 +1018,8 @@
         } else {
           const existing = map.get(key);
           const preferNew = (item.source === "primary" && existing.source !== "primary");
-          if (preferNew) {
-            map.set(key, { ...existing, ...item });
-          } else {
-            map.set(key, { ...item, ...existing });
-          }
+          if (preferNew) map.set(key, { ...existing, ...item });
+          else map.set(key, { ...item, ...existing });
         }
       }
       return [...map.values()];
@@ -1180,78 +1070,41 @@
       return merged;
     }
 
-    function mergeEmailLogs(primaryLogs, legacyLogs) {
-      const merged = mergeByKey(
-        [
-          ...legacyLogs.map(e => ({ ...e, source: "legacy" })),
-          ...primaryLogs.map(e => ({ ...e, source: "primary" }))
-        ],
-        item => `${item.id || ""}-${item.time || ""}-${item.type || ""}-${item.email || ""}`
-      );
-      merged.sort((a, b) => Number(b.time || 0) - Number(a.time || 0));
-      return merged;
-    }
-
     function renderStats(refreshSummary = "") {
       const totalUsers = usersData.length;
       const totalLinks = linksData.length;
       const totalClicks = linksData.reduce((sum, link) => sum + Number(link.clicks || 0), 0);
-      const threatItems = getThreatItems();
-      const pendingPayments = paymentsData.filter(p => String(p.status || "").toLowerCase() === "pending").length;
+      const pendingPayments = paymentsData.filter(p => ["pending", "awaiting_confirmation"].includes(String(p.status || "").toLowerCase())).length;
       const activeSubs = usersData.filter(u => {
         const paused = !!(u.subscriptionPaused || u.subscription_paused);
         const status = String(u.subscriptionStatus || u.subscription_status || "").toLowerCase();
         const expiresAt = Number(u.subscriptionExpiresAt || u.subscription_expires_at || 0);
         return !paused && status === "active" && expiresAt > Date.now();
       }).length;
+      const admins = usersData.filter(u => String(u.role || "").toLowerCase() === "admin").length;
 
       statUsers.textContent = totalUsers;
       statLinks.textContent = totalLinks;
       statClicks.textContent = totalClicks;
-      statThreats.textContent = threatItems.length;
       statPendingPayments.textContent = pendingPayments;
       statActiveSubs.textContent = activeSubs;
+      statAdmins.textContent = admins;
 
       document.getElementById("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
       document.getElementById("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
       document.getElementById("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
-      document.getElementById("statThreatsMeta").textContent = threatItems.length ? "Needs review" : "No major flags";
       document.getElementById("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
       document.getElementById("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
+      document.getElementById("statAdminsMeta").textContent = `${admins} admin accounts`;
 
-      liveStatus.innerHTML = threatItems.length
-        ? `🟡 Live • ${threatItems.length} flagged item(s)`
-        : `🟢 Live • All systems normal`;
-
+      liveStatus.innerHTML = `🟢 Live • Admin system ready`;
       lastRefreshText.textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
       refreshStateText.textContent = refreshSummary || "Merged refresh complete";
     }
 
-    function renderEmailStats() {
-      let sent = 0;
-      let failed = 0;
-      let clicked = 0;
-      let opened = 0;
-
-      emailLogs.forEach(l => {
-        const type = String(l.type || "").toLowerCase();
-        const status = String(l.status || "").toLowerCase();
-        if (type === "sent" || status === "sent") sent++;
-        if (type === "failed" || status === "failed") failed++;
-        if (type === "opened") opened++;
-        if (type === "clicked") clicked++;
-      });
-
-      emailStats.innerHTML = `
-        <div>📨 Sent: ${sent}</div>
-        <div>❌ Failed: ${failed}</div>
-        <div>👁️ Opens: ${opened}</div>
-        <div>🔗 Clicks: ${clicked}</div>
-      `;
-    }
-
     function renderPaymentStats() {
       const pending = paymentsData.filter(p => String(p.status || "").toLowerCase() === "pending");
+      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
       const verified = paymentsData.filter(p => String(p.status || "").toLowerCase() === "verified");
       const weekly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
       const monthly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
@@ -1259,6 +1112,7 @@
 
       paymentStats.innerHTML = `
         <div><b>Pending:</b> ${pending.length}</div>
+        <div><b>Awaiting confirmation:</b> ${awaiting.length}</div>
         <div><b>Verified:</b> ${verified.length}</div>
         <div><b>Weekly:</b> ${weekly}</div>
         <div><b>Monthly:</b> ${monthly}</div>
@@ -1266,51 +1120,7 @@
       `;
     }
 
-    function renderThreats() {
-      const threatItems = getThreatItems();
-
-      aiThreats.innerHTML = threatItems.length
-        ? threatItems.slice(0, 8).map(t => `
-            <div>⚠️ <b>${escapeHtml(t.slug)}</b> → score ${t.threatScore} ${getSourceBadge(t.source)}</div>
-          `).join("")
-        : `<div>No threats detected</div>`;
-
-      threatList.innerHTML = threatItems.length
-        ? threatItems.map(t => `
-            <div>
-              <b>${escapeHtml(t.slug)}</b>
-              <br>
-              <span class="muted">${escapeHtml(t.user || "unknown")}</span>
-              <br>
-              Score: ${t.threatScore} • ${escapeHtml(t.source)}
-            </div>
-          `).join("")
-        : `<div>No threat intel</div>`;
-
-      attackFeed.innerHTML = threatItems.length
-        ? threatItems.map(t => `
-            <div>🚨 ${escapeHtml(t.slug)} spike detected (${t.clicks} clicks) • ${escapeHtml(t.source)}</div>
-          `).join("")
-        : `<div>No active attacks</div>`;
-    }
-
     function renderSideLists() {
-      const top = [...linksData]
-        .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
-        .slice(0, 10);
-
-      topLinks.innerHTML = top.length
-        ? top.map(link => `
-            <div>
-              <b>${escapeHtml(link.slug)}</b>
-              <br>
-              <span class="muted">${escapeHtml(link.user || "")}</span>
-              <br>
-              ${link.clicks} clicks • ${escapeHtml(link.source)}
-            </div>
-          `).join("")
-        : `<div>No links</div>`;
-
       const admins = usersData.filter(u => (u.role || "") === "admin");
       adminList.innerHTML = admins.length
         ? admins.map(u => `
@@ -1339,7 +1149,6 @@
     function drawChart() {
       const canvas = document.getElementById("chart");
       if (!canvas) return;
-
       if (chart) chart.destroy();
 
       const sorted = [...linksData]
@@ -1424,7 +1233,7 @@
       const list = getFilteredUsers();
 
       usersEl.innerHTML = list.length ? list.map(u => `
-        <tr data-username="${escapeHtml(u.username)}">
+        <tr>
           <td>
             <b>${escapeHtml(u.username)}</b>
             <div class="muted">Created: ${fmtDate(u.createdAt || u.created_at)}</div>
@@ -1447,7 +1256,6 @@
           <td>
             <div class="actions">
               <button data-action="view-user" data-username="${escapeHtml(u.username)}">View</button>
-              <button data-action="view-user-links" data-username="${escapeHtml(u.username)}">Links</button>
               ${u.banned
                 ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Enable</button>`
                 : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Disable</button>`
@@ -1549,9 +1357,9 @@
       const list = getFilteredLinks();
 
       linksEl.innerHTML = list.length ? list.map(l => {
-        const full = buildShortLink(l.slug, l.source);
+        const full = `${API_BY_SOURCE[l.source]}/${l.slug}`;
         return `
-          <tr data-linkkey="${escapeHtml(`${l.source}:${l.slug}`)}">
+          <tr>
             <td>${escapeHtml(l.user || l.username || "")}</td>
             <td>${escapeHtml(l.slug || "")}</td>
             <td>
@@ -1566,7 +1374,6 @@
               <div class="actions">
                 <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
                 <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
-                <button class="btn-purple" data-action="analytics-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Analytics</button>
                 ${l.paused
                   ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>`
                   : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`
@@ -1581,22 +1388,6 @@
           <td colspan="8" class="muted">No links found</td>
         </tr>
       `;
-
-      trackRealtime();
-    }
-
-    function trackRealtime() {
-      linksData.forEach(l => {
-        const key = `${l.source}:${l.slug}`;
-        if (lastClicks[key] !== undefined && lastClicks[key] !== l.clicks) {
-          const row = document.querySelector(`[data-linkkey="${CSS.escape(key)}"]`);
-          if (row) {
-            row.style.background = "#065f46";
-            setTimeout(() => { row.style.background = ""; }, 1500);
-          }
-        }
-        lastClicks[key] = l.clicks;
-      });
     }
 
     async function openUser(username) {
@@ -1614,34 +1405,7 @@
         <div><b>Subscription Status:</b> ${escapeHtml(u?.subscriptionStatus || u?.subscription_status || "trial")}</div>
         <div><b>Subscription Expires:</b> ${fmtDate(u?.subscriptionExpiresAt || u?.subscription_expires_at)}</div>
         <div><b>Source:</b> ${escapeHtml(u?.source || "primary")}</div>
-        <div style="margin-top:12px;" class="actions">
-          <button data-action="make-admin" data-username="${escapeHtml(username)}" data-source="${escapeHtml(u?.source || "primary")}">Make Admin</button>
-          <button data-action="remove-admin" data-username="${escapeHtml(username)}" data-source="${escapeHtml(u?.source || "primary")}">Make User</button>
-          <button data-action="pause-subscription" data-username="${escapeHtml(username)}" data-source="${escapeHtml(u?.source || "primary")}">Pause Subscription</button>
-          <button data-action="resume-subscription" data-username="${escapeHtml(username)}" data-source="${escapeHtml(u?.source || "primary")}">Resume Subscription</button>
-        </div>
       `;
-      if (map) { map.remove(); map = null; }
-      document.getElementById("map").innerHTML = "";
-    }
-
-    async function viewUserLinks(username) {
-      const userLinks = linksData.filter(l => (l.user || l.username) === username);
-
-      panel.style.display = "block";
-      panelTitle.textContent = "User Links";
-      panelContent.innerHTML = userLinks.length ? userLinks.map(l => `
-        <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-          <b>${escapeHtml(l.slug)}</b>
-          <br>
-          <span class="muted">${escapeHtml(l.url || "")}</span>
-          <br>
-          Clicks: ${Number(l.clicks || 0)} • ${escapeHtml(l.source)}
-        </div>
-      `).join("") : "<div>No links</div>";
-
-      if (map) { map.remove(); map = null; }
-      document.getElementById("map").innerHTML = "";
     }
 
     async function openPayment(paymentId) {
@@ -1666,63 +1430,7 @@
           <div class="payment-qr">
             <img src="${escapeHtml(payment.qrImageUrl || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || "")))}" alt="Payment QR" />
           </div>` : ""}
-        <div style="margin-top:12px;" class="actions">
-          <button class="btn-green" data-action="verify-payment" data-payment-id="${escapeHtml(payment.id)}" data-source="${escapeHtml(payment.source || "primary")}">Verify Payment</button>
-          <button data-action="copy-payment-address" data-address="${escapeHtml(payment.address || "")}">Copy Address</button>
-        </div>
       `;
-
-      if (map) { map.remove(); map = null; }
-      document.getElementById("map").innerHTML = "";
-    }
-
-    async function openAnalytics(slug, source) {
-      panel.style.display = "block";
-      panelTitle.textContent = `Analytics: ${slug}`;
-      panelContent.innerHTML = "Loading...";
-
-      const res = await fetchBySource(source || "primary", `/history?slug=${encodeURIComponent(slug)}`, "GET", null, false);
-      const history = Array.isArray(res.data?.history) ? res.data.history : [];
-
-      if (!history.length) {
-        panelContent.innerHTML = "<div>No history</div>";
-        if (map) { map.remove(); map = null; }
-        document.getElementById("map").innerHTML = "";
-        return;
-      }
-
-      panelContent.innerHTML = history.map(h => `
-        <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-          <b>${escapeHtml(h.ip || "unknown")}</b>
-          <br>
-          <span class="muted">${new Date(Number(h.time || Date.now())).toLocaleString()}</span>
-          <br>
-          Risk: ${Number(h.risk || 0)} ${h.vpn ? " • VPN" : ""} ${h.bot ? " • BOT" : ""}
-        </div>
-      `).join("");
-
-      if (map) map.remove();
-      map = L.map("map").setView([20, 0], 2);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
-
-      let offset = 0;
-      for (const h of history) {
-        const geo = await getGeo(h.ip);
-        let lat = Number(geo.latitude || 20);
-        let lng = Number(geo.longitude || 0);
-
-        lat += offset * 0.25;
-        lng += offset * 0.25;
-        offset++;
-
-        L.circle([lat, lng], {
-          radius: 40000,
-          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(map).bindPopup(`${escapeHtml(geo.country_name || "Unknown")}<br>${escapeHtml(h.ip || "unknown")}`);
-      }
     }
 
     async function banUser(username, source) {
@@ -1731,9 +1439,7 @@
         await logAudit("BAN USER", username);
         showToast("User banned");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Ban failed");
-      }
+      } else showToast(res.data?.message || "Ban failed");
     }
 
     async function unbanUser(username, source) {
@@ -1742,9 +1448,7 @@
         await logAudit("UNBAN USER", username);
         showToast("User enabled");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Enable failed");
-      }
+      } else showToast(res.data?.message || "Enable failed");
     }
 
     async function makeAdmin(username, source) {
@@ -1753,9 +1457,7 @@
         await logAudit("PROMOTE ADMIN", username);
         showToast("User promoted");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Promote failed");
-      }
+      } else showToast(res.data?.message || "Promote failed");
     }
 
     async function removeAdmin(username, source) {
@@ -1764,9 +1466,7 @@
         await logAudit("REMOVE ADMIN", username);
         showToast("Role changed");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Role update failed");
-      }
+      } else showToast(res.data?.message || "Role update failed");
     }
 
     async function verifyUser(username, source) {
@@ -1775,9 +1475,7 @@
         await logAudit("VERIFY USER", username);
         showToast("User verified");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Verify failed");
-      }
+      } else showToast(res.data?.message || "Verify failed");
     }
 
     async function pauseSubscription(username, source) {
@@ -1786,9 +1484,7 @@
         await logAudit("PAUSE SUBSCRIPTION", username);
         showToast("Subscription paused");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Pause subscription failed");
-      }
+      } else showToast(res.data?.message || "Pause subscription failed");
     }
 
     async function resumeSubscription(username, source) {
@@ -1797,9 +1493,7 @@
         await logAudit("RESUME SUBSCRIPTION", username);
         showToast("Subscription resumed");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Resume subscription failed");
-      }
+      } else showToast(res.data?.message || "Resume subscription failed");
     }
 
     async function verifyPayment(paymentId, source) {
@@ -1808,9 +1502,7 @@
         await logAudit("VERIFY PAYMENT", paymentId);
         showToast("Payment verified");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Payment verify failed");
-      }
+      } else showToast(res.data?.message || "Payment verify failed");
     }
 
     async function pauseLink(slug, source) {
@@ -1819,9 +1511,7 @@
         await logAudit("PAUSE LINK", slug);
         showToast("Link paused");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Pause failed");
-      }
+      } else showToast(res.data?.message || "Pause failed");
     }
 
     async function resumeLink(slug, source) {
@@ -1830,25 +1520,20 @@
         await logAudit("RESUME LINK", slug);
         showToast("Link resumed");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Resume failed");
-      }
+      } else showToast(res.data?.message || "Resume failed");
     }
 
     async function deleteLink(slug, source) {
       if (!confirm(`Delete ${slug}?`)) return;
-
       const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug }, false);
       if (res.ok) {
         await logAudit("DELETE LINK", slug);
         showToast("Link deleted");
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Delete failed");
-      }
+      } else showToast(res.data?.message || "Delete failed");
     }
 
-    async function copyLink(text) {
+    async function copyText(text) {
       try {
         await navigator.clipboard.writeText(text);
       } catch {
@@ -1907,9 +1592,6 @@
         </div>
       `;
 
-      if (map) { map.remove(); map = null; }
-      document.getElementById("map").innerHTML = "";
-
       document.getElementById("submitCreateUserBtn").onclick = createUser;
     }
 
@@ -1926,9 +1608,6 @@
         </div>
       `;
 
-      if (map) { map.remove(); map = null; }
-      document.getElementById("map").innerHTML = "";
-
       document.getElementById("panelPaymentSearchBtn").onclick = () => {
         const id = document.getElementById("panelPaymentSearchInput").value.trim();
         const p = paymentsData.find(x => x.id === id);
@@ -1944,7 +1623,7 @@
           <div><b>Source:</b> ${escapeHtml(p.source || "-")}</div>
           <div class="actions" style="margin-top:10px;">
             <button class="btn-green" onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Verify Payment</button>
-            <button onclick="copyLink('${escapeHtml(p.address || "")}')">Copy Address</button>
+            <button onclick="copyText('${escapeHtml(p.address || "")}')">Copy Address</button>
           </div>
         `;
       };
@@ -2005,10 +1684,9 @@
 
         addTerminal("Starting merged refresh...");
 
-        const [usersPair, linksPair, emailPair, auditPair, paymentsPair] = await Promise.all([
+        const [usersPair, linksPair, auditPair, paymentsPair] = await Promise.all([
           fetchBoth(`/admin/users`),
           fetchBoth(`/admin/links`),
-          fetchBoth(`/admin/email-logs`),
           fetchBoth(`/admin/audit`),
           fetchBoth(`/admin/payments`)
         ]);
@@ -2023,11 +1701,6 @@
           Array.isArray(linksPair.legacy.data?.items) ? linksPair.legacy.data.items : []
         );
 
-        const nextEmailLogs = mergeEmailLogs(
-          Array.isArray(emailPair.primary.data?.logs) ? emailPair.primary.data.logs : [],
-          Array.isArray(emailPair.legacy.data?.logs) ? emailPair.legacy.data.logs : []
-        );
-
         const nextAudit = mergeAudits(
           Array.isArray(auditPair.primary.data?.logs) ? auditPair.primary.data.logs : [],
           Array.isArray(auditPair.legacy.data?.logs) ? auditPair.legacy.data.logs : []
@@ -2040,30 +1713,23 @@
 
         usersData = nextUsers.length ? nextUsers : lastGoodState.usersData;
         linksData = nextLinks.length ? nextLinks : lastGoodState.linksData;
-        emailLogs = nextEmailLogs.length ? nextEmailLogs : lastGoodState.emailLogs;
         auditData = nextAudit.length ? nextAudit : lastGoodState.auditData;
         paymentsData = nextPayments.length ? nextPayments : lastGoodState.paymentsData;
 
-        lastGoodState = {
-          usersData,
-          linksData,
-          paymentsData,
-          auditData,
-          emailLogs
-        };
+        lastGoodState.usersData = usersData;
+        lastGoodState.linksData = linksData;
+        lastGoodState.auditData = auditData;
+        lastGoodState.paymentsData = paymentsData;
 
         const stateSummary = [
           `Users P:${usersPair.primary.ok ? "OK" : usersPair.primary.status} L:${usersPair.legacy.ok ? "OK" : usersPair.legacy.status}`,
           `Links P:${linksPair.primary.ok ? "OK" : linksPair.primary.status} L:${linksPair.legacy.ok ? "OK" : linksPair.legacy.status}`,
           `Payments P:${paymentsPair.primary.ok ? "OK" : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? "OK" : paymentsPair.legacy.status}`,
-          `Audit P:${auditPair.primary.ok ? "OK" : auditPair.primary.status} L:${auditPair.legacy.ok ? "OK" : auditPair.legacy.status}`,
-          `Email P:${emailPair.primary.ok ? "OK" : emailPair.primary.status} L:${emailPair.legacy.ok ? "OK" : emailPair.legacy.status}`
+          `Audit P:${auditPair.primary.ok ? "OK" : auditPair.primary.status} L:${auditPair.legacy.ok ? "OK" : auditPair.legacy.status}`
         ].join(" • ");
 
         renderStats(stateSummary);
-        renderEmailStats();
         renderPaymentStats();
-        renderThreats();
         renderSideLists();
         renderUsers();
         renderPayments();
@@ -2102,7 +1768,6 @@
       document.getElementById("navUsers").onclick = () => showSection("users");
       document.getElementById("navPayments").onclick = () => showSection("payments");
       document.getElementById("navLinks").onclick = () => showSection("links");
-      document.getElementById("navSecurity").onclick = () => showSection("security");
       document.getElementById("navAudit").onclick = () => showSection("audit");
     }
 
@@ -2154,7 +1819,6 @@
         const source = btn.dataset.source;
 
         if (action === "view-user") return openUser(username);
-        if (action === "view-user-links") return viewUserLinks(username);
         if (action === "ban-user") return banUser(username, source);
         if (action === "unban-user") return unbanUser(username, source);
         if (action === "make-admin") return makeAdmin(username, source);
@@ -2175,7 +1839,7 @@
 
         if (action === "view-payment") return openPayment(paymentId);
         if (action === "verify-payment") return verifyPayment(paymentId, source);
-        if (action === "copy-payment-address") return copyLink(address);
+        if (action === "copy-payment-address") return copyText(address);
       });
 
       linksEl.addEventListener("click", async (e) => {
@@ -2187,52 +1851,12 @@
         const link = btn.dataset.link;
         const source = btn.dataset.source;
 
-        if (action === "copy-link") return copyLink(link);
+        if (action === "copy-link") return copyText(link);
         if (action === "open-link") return openLink(link);
-        if (action === "analytics-link") return openAnalytics(slug, source);
         if (action === "pause-link") return pauseLink(slug, source);
         if (action === "resume-link") return resumeLink(slug, source);
         if (action === "delete-link") return deleteLink(slug, source);
       });
-
-      panelContent.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
-        if (!btn) return;
-
-        const action = btn.dataset.action;
-        const username = btn.dataset.username;
-        const paymentId = btn.dataset.paymentId;
-        const address = btn.dataset.address;
-        const source = btn.dataset.source;
-
-        if (action === "make-admin") return makeAdmin(username, source);
-        if (action === "remove-admin") return removeAdmin(username, source);
-        if (action === "pause-subscription") return pauseSubscription(username, source);
-        if (action === "resume-subscription") return resumeSubscription(username, source);
-        if (action === "verify-payment") return verifyPayment(paymentId, source);
-        if (action === "copy-payment-address") return copyLink(address);
-      });
-    }
-
-    function setupWebSocket() {
-      try {
-        ws = new WebSocket(WS_URL);
-
-        ws.onopen = () => addTerminal("WebSocket connected");
-
-        ws.onmessage = () => {
-          addTerminal("Realtime update received");
-          clearTimeout(wsReloadTimer);
-          wsReloadTimer = setTimeout(() => {
-            if (!document.hidden) loadAdmin();
-          }, 800);
-        };
-
-        ws.onerror = () => addTerminal("WebSocket error");
-        ws.onclose = () => addTerminal("WebSocket disconnected");
-      } catch {
-        addTerminal("WebSocket unavailable");
-      }
     }
 
     function startAutoRefresh() {
@@ -2244,10 +1868,11 @@
     }
 
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        loadAdmin();
-      }
+      if (!document.hidden) loadAdmin();
     });
+
+    window.verifyPayment = verifyPayment;
+    window.copyText = copyText;
 
     (async function init() {
       setBackendBadge();
@@ -2256,7 +1881,6 @@
       setupTopButtons();
       setupFilters();
       setupEventDelegation();
-      setupWebSocket();
       startAutoRefresh();
       await loadAdmin();
     })();
