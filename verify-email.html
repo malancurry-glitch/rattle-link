@@ -231,11 +231,9 @@
   </div>
 
   <script>
-    // ================= API CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    // ================= ELEMENTS =================
     const tokenInput = document.getElementById("tokenInput");
     const emailInput = document.getElementById("emailInput");
     const verifyBtn = document.getElementById("verifyBtn");
@@ -246,10 +244,8 @@
     const backToIndexLink = document.getElementById("backToIndexLink");
     const backendBadge = document.getElementById("backendBadge");
 
-    // ================= STATE =================
     let forcedBackend = null;
 
-    // ================= HELPERS =================
     function params() {
       return new URLSearchParams(window.location.search);
     }
@@ -261,7 +257,6 @@
     function isUsableApiUrl(url) {
       const clean = normalizeApiUrl(url);
       if (!clean) return false;
-      if (clean.includes("your-backend2-domain.com")) return false;
       return /^https?:\/\//i.test(clean);
     }
 
@@ -433,7 +428,22 @@
       window.history.replaceState({}, "", newUrl);
     }
 
-    // ================= ACTIONS =================
+    function redirectToDashboard(token, role) {
+      if (!token) return false;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role || "user");
+
+      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
+      if (email) {
+        localStorage.setItem("lastUser", email);
+      }
+
+      const target = role === "admin" ? "admin.html" : "dashboard.html";
+      window.location.href = target;
+      return true;
+    }
+
     async function verifyToken(tokenFromArg) {
       const token = String(tokenFromArg || tokenInput.value || "").trim();
       const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
@@ -461,12 +471,22 @@
           showPostVerifyActions(email, forcedBackend);
           syncUrl(email, forcedBackend, token);
 
+          const data = result.data || {};
+
           showMessage(
-            `Email verified successfully on ${backendLabel(forcedBackend)} ✅ You can now log in.`,
+            `Email verified successfully on ${backendLabel(forcedBackend)} ✅ Redirecting to dashboard...`,
             "success"
           );
 
           resetButton(verifyBtn, "Verify Email");
+
+          if (data.token) {
+            setTimeout(() => {
+              redirectToDashboard(data.token, data.role || "user");
+            }, 800);
+            return;
+          }
+
           return;
         }
 
@@ -525,7 +545,6 @@
       resetButton(resendBtn, "Resend Verification Email");
     }
 
-    // ================= AUTO INIT =================
     async function autoVerify() {
       const token = String(params().get("token") || "").trim();
       const email = String(params().get("email") || "").trim().toLowerCase();
@@ -543,6 +562,18 @@
       }
 
       updateNavigation(email, forcedBackend || "");
+
+      const urlToken = String(params().get("token") || "").trim();
+      const urlRole = String(params().get("role") || "").trim();
+      const verified = String(params().get("verified") || "").trim();
+
+      if (urlToken && verified === "1") {
+        showMessage("Email already verified ✅ Redirecting...", "success");
+        setTimeout(() => {
+          redirectToDashboard(urlToken, urlRole || "user");
+        }, 500);
+        return;
+      }
 
       if (!token) return;
 
