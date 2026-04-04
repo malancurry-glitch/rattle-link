@@ -850,36 +850,37 @@
           </div>
         </div>
       </div>
+
       <div class="card">
-  <div class="section-head">
-    <h3>🟢 Backend2 Extras</h3>
-    <span class="backend-badge backend-primary">Backend2 Only</span>
-  </div>
+        <div class="section-head">
+          <h3>🟢 Backend2 Extras</h3>
+          <span class="backend-badge backend-primary">Backend2 Only</span>
+        </div>
 
-  <div class="split-create">
-    <div class="create-box">
-      <h4>Landing Pages</h4>
-      <div class="muted">Create and manage landing pages on Backend2 only.</div>
+        <div class="split-create">
+          <div class="create-box">
+            <h4>Landing Pages</h4>
+            <div class="muted">Create and manage landing pages on Backend2 only.</div>
 
-      <div class="form-row" style="margin-top:10px;">
-        <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
-        <button id="viewLandingLinksBtn" class="ghost-btn" type="button">View Landing Links</button>
+            <div class="form-row" style="margin-top:10px;">
+              <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
+              <button id="viewLandingLinksBtn" class="ghost-btn" type="button">View Landing Links</button>
+            </div>
+          </div>
+
+          <div class="create-box">
+            <h4>Custom Domains</h4>
+            <div class="muted">Add and verify custom domains on Backend2 only.</div>
+
+            <div class="form-row" style="margin-top:10px;">
+              <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
+              <button id="refreshDomainsBtn" class="ghost-btn" type="button">Refresh Domains</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="backend2ExtraResult" class="result"></div>
       </div>
-    </div>
-
-    <div class="create-box">
-      <h4>Custom Domains</h4>
-      <div class="muted">Add and verify custom domains on Backend2 only.</div>
-
-      <div class="form-row" style="margin-top:10px;">
-        <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
-        <button id="refreshDomainsBtn" class="ghost-btn" type="button">Refresh Domains</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="backend2ExtraResult" class="result"></div>
-</div>
 
       <div id="result" class="result"></div>
     </div>
@@ -1091,10 +1092,11 @@
     <div id="upgradeResult" class="result"></div>
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
+
   <div class="panel" id="backend2Panel">
-  <div id="backend2PanelContent"></div>
-  <button type="button" onclick="closeBackend2Panel()">Close</button>
-</div>
+    <div id="backend2PanelContent"></div>
+    <button type="button" onclick="closeBackend2Panel()">Close</button>
+  </div>
 
   <div class="toast" id="toast">Copied!</div>
 
@@ -1188,6 +1190,16 @@
     const upgradeResult = document.getElementById("upgradeResult");
     const paymentRequestBox = document.getElementById("paymentRequestBox");
 
+    const landingCenterBtn = document.getElementById("landingCenterBtn");
+    const domainCenterBtn = document.getElementById("domainCenterBtn");
+    const openLandingPanelBtn = document.getElementById("openLandingPanelBtn");
+    const viewLandingLinksBtn = document.getElementById("viewLandingLinksBtn");
+    const openDomainPanelBtn = document.getElementById("openDomainPanelBtn");
+    const refreshDomainsBtn = document.getElementById("refreshDomainsBtn");
+    const backend2ExtraResult = document.getElementById("backend2ExtraResult");
+    const backend2Panel = document.getElementById("backend2Panel");
+    const backend2PanelContent = document.getElementById("backend2PanelContent");
+
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
       return token ? { "Authorization": `Bearer ${token}` } : {};
@@ -1210,14 +1222,17 @@
     }
 
     function updatePreferredButtons() {
-      preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
-      preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
+      if (preferPrimaryBtn) preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
+      if (preferLegacyBtn) preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
     }
 
     function setTopBackendBadge() {
+      if (!backendBadgeTop) return;
       backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
       backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-      sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      if (sessionNote) {
+        sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      }
       updatePreferredButtons();
     }
 
@@ -1229,6 +1244,7 @@
     }
 
     function showToast(message = "Copied!") {
+      if (!toast) return;
       toast.textContent = message;
       toast.style.display = "block";
       clearTimeout(window.__toastTimer);
@@ -1238,8 +1254,15 @@
     }
 
     function setResult(message, isError = false, target = result) {
+      if (!target) return;
       target.textContent = message;
       target.className = "result " + (isError ? "error" : "success");
+    }
+
+    function setExtraResult(message, isError = false) {
+      if (!backend2ExtraResult) return;
+      backend2ExtraResult.textContent = message;
+      backend2ExtraResult.className = "result " + (isError ? "error" : "success");
     }
 
     function escapeHtml(str) {
@@ -1470,14 +1493,16 @@
     function renderMe() {
       if (!meState) return;
 
-      meEmail.textContent = meState.username || "-";
-      mePlan.textContent =
-        meState.subscriptionPlan
-          ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
-          : "Free Trial";
+      if (meEmail) meEmail.textContent = meState.username || "-";
+      if (mePlan) {
+        mePlan.textContent =
+          meState.subscriptionPlan
+            ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
+            : "Free Trial";
+      }
 
-      meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-      trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
+      if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+      if (trialRemainingEl) trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
 
       const status = String(meState.subscriptionStatus || "trial").toLowerCase();
       const paused = !!meState.subscriptionPaused;
@@ -1503,15 +1528,17 @@
         summary = `Free trial: ${Number(meState.trialLinksRemaining || 0)} of ${Number(meState.trialLinksLimit || 0)} links remaining.`;
       }
 
-      subscriptionBadge.className = `badge ${badgeClass}`;
-      subscriptionBadge.textContent = badgeText;
-      accessSummary.textContent = summary;
+      if (subscriptionBadge) {
+        subscriptionBadge.className = `badge ${badgeClass}`;
+        subscriptionBadge.textContent = badgeText;
+      }
+      if (accessSummary) accessSummary.textContent = summary;
     }
 
     async function loadMe(showLoading = false) {
-      if (showLoading) accessSummary.textContent = "Loading account...";
+      if (showLoading && accessSummary) accessSummary.textContent = "Loading account...";
       const ok = await verifyMainSession(false);
-      if (!ok) accessSummary.textContent = "Session expired";
+      if (!ok && accessSummary) accessSummary.textContent = "Session expired";
     }
 
     async function loadPlans(showMessage = false) {
@@ -1536,6 +1563,7 @@
     }
 
     function renderPlans() {
+      if (!planGrid) return;
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
       planGrid.innerHTML = plans.map(plan => `
         <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
@@ -1554,6 +1582,7 @@
     }
 
     function renderCryptoOptions() {
+      if (!cryptoSelect) return;
       const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
       cryptoSelect.innerHTML = options.map(opt => `
         <option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>
@@ -1576,6 +1605,7 @@
     }
 
     function renderLatestPayment(payment) {
+      if (!latestPaymentBox) return;
       if (!payment) {
         latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
         return;
@@ -1628,6 +1658,7 @@
     }
 
     function renderPaymentsTable() {
+      if (!paymentsTable) return;
       if (!paymentsStore.length) {
         paymentsTable.innerHTML = `<tr><td colspan="9" class="muted">No payments yet</td></tr>`;
         renderLatestPayment(null);
@@ -1686,6 +1717,7 @@
     }
 
     function renderPaymentRequestBox(payment, message = "") {
+      if (!paymentRequestBox) return;
       const status = String(payment.status || "").toLowerCase();
       const waiting = status === "awaiting_confirmation";
       const verified = status === "verified";
@@ -1738,7 +1770,7 @@
     }
 
     async function createPaymentRequest() {
-      const cryptoCode = cryptoSelect.value;
+      const cryptoCode = cryptoSelect?.value;
       if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
@@ -1886,8 +1918,8 @@
     }
 
     function openUpgradeModal() {
-      overlay.style.display = "block";
-      upgradeModal.style.display = "block";
+      if (overlay) overlay.style.display = "block";
+      if (upgradeModal) upgradeModal.style.display = "block";
 
       const p = waitingPaymentId
         ? paymentsStore.find(x => x.id === waitingPaymentId)
@@ -1897,8 +1929,8 @@
     }
 
     function closeUpgradeModal() {
-      overlay.style.display = "none";
-      upgradeModal.style.display = "none";
+      if (overlay) overlay.style.display = "none";
+      if (upgradeModal) upgradeModal.style.display = "none";
     }
 
     function showPaymentDetails(paymentId, backend = "") {
@@ -1912,10 +1944,10 @@
       const primaryLinks = dataStore.filter(x => x.backend === "primary");
       const legacyLinks = dataStore.filter(x => x.backend === "legacy");
 
-      primaryLinksCount.textContent = primaryLinks.length;
-      legacyLinksCount.textContent = legacyLinks.length;
-      primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
-      legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      if (primaryLinksCount) primaryLinksCount.textContent = primaryLinks.length;
+      if (legacyLinksCount) legacyLinksCount.textContent = legacyLinks.length;
+      if (primaryClicksCount) primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      if (legacyClicksCount) legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
     }
 
     async function checkOneBackendHealth(backend) {
@@ -1930,13 +1962,17 @@
         checkOneBackendHealth("legacy")
       ]);
 
-      primaryHealth.innerHTML = p.ok
-        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+      if (primaryHealth) {
+        primaryHealth.innerHTML = p.ok
+          ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+      }
 
-      legacyHealth.innerHTML = l.ok
-        ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      if (legacyHealth) {
+        legacyHealth.innerHTML = l.ok
+          ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      }
     }
 
     async function loadLinks(showLoading = false) {
@@ -1962,9 +1998,9 @@
       dataStore = mergeLinks(primaryItems, legacyItems);
 
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-      totalLinks.textContent = dataStore.length;
-      totalClicks.textContent = total;
-      avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+      if (totalLinks) totalLinks.textContent = dataStore.length;
+      if (totalClicks) totalClicks.textContent = total;
+      if (avgClicks) avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
 
       updateMiniStats();
       renderTable();
@@ -1979,8 +2015,9 @@
     }
 
     function renderTable() {
-      const q = (searchInput.value || "").trim().toLowerCase();
-      const backendOnly = backendFilter.value || "all";
+      if (!table) return;
+      const q = (searchInput?.value || "").trim().toLowerCase();
+      const backendOnly = backendFilter?.value || "all";
 
       const filtered = dataStore.filter(item => {
         const slug = String(item.slug || "").toLowerCase();
@@ -2062,6 +2099,7 @@
     }
 
     function renderRanking() {
+      if (!ranking) return;
       const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
       if (!sorted.length) {
         ranking.innerHTML = `<div class="muted">No links yet</div>`;
@@ -2080,9 +2118,9 @@
     }
 
     function getCreatePayload() {
-      const url = urlInput.value.trim();
-      const slug = slugInput.value.trim();
-      const expireHours = expireInput.value.trim();
+      const url = urlInput?.value.trim();
+      const slug = slugInput?.value.trim();
+      const expireHours = expireInput?.value.trim();
 
       if (!url) {
         setResult("Enter URL", true);
@@ -2140,9 +2178,9 @@
       const trialAfter = res.data?.trialRemainingAfter;
       setResult(`${backendLabel(backend)} created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
 
-      urlInput.value = "";
-      slugInput.value = "";
-      expireInput.value = "";
+      if (urlInput) urlInput.value = "";
+      if (slugInput) slugInput.value = "";
+      if (expireInput) expireInput.value = "";
 
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
@@ -2150,7 +2188,7 @@
     async function bulkCreateForBackend(backend) {
       const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
       const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
-      const count = Number(countInput.value || 0);
+      const count = Number(countInput?.value || 0);
       const body = getCreatePayload();
       if (!body) return;
       if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
@@ -2261,8 +2299,8 @@
     }
 
     function closePanel() {
-      panel.style.display = "none";
-      panelContent.innerHTML = "";
+      if (panel) panel.style.display = "none";
+      if (panelContent) panelContent.innerHTML = "";
       destroyMap();
       if (statsChartInstance) {
         statsChartInstance.destroy();
@@ -2271,6 +2309,7 @@
     }
 
     function openInfoPanel(type) {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
 
       if (type === "about") {
@@ -2318,6 +2357,7 @@
     }
 
     function openSupportPanel() {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🆘 Support Center</h3>
@@ -2368,6 +2408,7 @@
     }
 
     async function showGeo(slug, backend) {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
@@ -2380,6 +2421,7 @@
       destroyMap();
 
       const mapEl = document.getElementById("map");
+      if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -2415,6 +2457,7 @@
     }
 
     async function showHistory(slug, backend) {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
@@ -2442,8 +2485,9 @@
         }));
       }
 
+      const statsBody = document.getElementById("statsBody");
       if (!history.length) {
-        document.getElementById("statsBody").innerHTML = "<p class='muted'>No clicks recorded</p>";
+        if (statsBody) statsBody.innerHTML = "<p class='muted'>No clicks recorded</p>";
         return;
       }
 
@@ -2460,25 +2504,28 @@
 
       if (statsChartInstance) statsChartInstance.destroy();
 
-      statsChartInstance = new Chart(document.getElementById("statsChart"), {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: "Clicks Timeline",
-            data: dataPoints,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+      const statsCanvas = document.getElementById("statsChart");
+      if (statsCanvas) {
+        statsChartInstance = new Chart(statsCanvas, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{
+              label: "Clicks Timeline",
+              data: dataPoints,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: "#e2e8f0" } } },
+            scales: {
+              x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+              y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+            }
           }
-        }
-      });
+        });
+      }
 
       const stats = {};
       for (const h of history) {
@@ -2517,9 +2564,10 @@
         `;
       });
 
-      document.getElementById("statsBody").innerHTML = html;
+      if (statsBody) statsBody.innerHTML = html;
 
       const mapEl = document.getElementById("map");
+      if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -2600,13 +2648,13 @@
       }
 
       setBusy(button, false);
-      if (backend === "legacy") csvFileLegacy.value = "";
-      if (backend === "primary") csvFilePrimary.value = "";
+      if (backend === "legacy" && csvFileLegacy) csvFileLegacy.value = "";
+      if (backend === "primary" && csvFilePrimary) csvFilePrimary.value = "";
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
     async function uploadCSVForBackend(backend) {
-      const file = backend === "legacy" ? csvFileLegacy.files?.[0] : csvFilePrimary.files?.[0];
+      const file = backend === "legacy" ? csvFileLegacy?.files?.[0] : csvFilePrimary?.files?.[0];
       await processFile(file, backend);
     }
 
@@ -2626,16 +2674,19 @@
 
     function setupKeyboardShortcuts() {
       [urlInput, slugInput, expireInput].forEach(el => {
+        if (!el) return;
         el.addEventListener("keydown", e => {
           if (e.key === "Enter") createLinkForBackend(preferredBackend);
         });
       });
 
-      searchInput.addEventListener("input", renderTable);
-      backendFilter.addEventListener("change", renderTable);
+      if (searchInput) searchInput.addEventListener("input", renderTable);
+      if (backendFilter) backendFilter.addEventListener("change", renderTable);
     }
 
     function wireDropZone(zone, backend) {
+      if (!zone) return;
+
       ["dragenter", "dragover"].forEach(eventName => {
         zone.addEventListener(eventName, e => {
           e.preventDefault();
@@ -2674,22 +2725,105 @@
       });
     }
 
-    refreshBtn.addEventListener("click", refreshNow);
-    upgradeBtn.addEventListener("click", openUpgradeModal);
-    createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
-    createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
-    bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
-    bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
-    uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
-    uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
-    requestPaymentBtn.addEventListener("click", createPaymentRequest);
-    preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
-    preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
-    verifySessionBtn.addEventListener("click", async () => {
-      setBusy(verifySessionBtn, true, "Checking...");
-      await verifyMainSession(true);
-      setBusy(verifySessionBtn, false);
-    });
+    function openBackend2Panel(html) {
+      if (!backend2Panel || !backend2PanelContent) return;
+      backend2PanelContent.innerHTML = html;
+      backend2Panel.style.display = "block";
+    }
+
+    function closeBackend2Panel() {
+      if (!backend2Panel || !backend2PanelContent) return;
+      backend2Panel.style.display = "none";
+      backend2PanelContent.innerHTML = "";
+    }
+
+    function openLandingCenter() {
+      openBackend2Panel(`
+        <h3>🟢 Landing Pages</h3>
+        <div class="info-box">
+          <b>Backend2 only</b>
+          <div class="muted" style="margin-top:8px;">
+            Landing pages are managed only on Backend2.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>What you can do</b>
+          <div class="muted" style="margin-top:8px;">
+            • create landing pages<br>
+            • update landing pages<br>
+            • use custom HTML/CSS/JS<br>
+            • connect verified custom domains
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="backend2-btn" onclick="showToast('Connect your landing builder here')">Create Landing</button>
+          <button type="button" class="ghost-btn" onclick="showToast('List Backend2 landing pages here')">List Landings</button>
+        </div>
+      `);
+    }
+
+    function openDomainCenter() {
+      openBackend2Panel(`
+        <h3>🌐 Custom Domains</h3>
+        <div class="info-box">
+          <b>Backend2 only</b>
+          <div class="muted" style="margin-top:8px;">
+            Custom domains are added and verified only on Backend2.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>What you can do</b>
+          <div class="muted" style="margin-top:8px;">
+            • add domain<br>
+            • verify TXT record<br>
+            • set primary domain<br>
+            • use domain for landing pages and links
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="backend2-btn" onclick="showToast('Open domain add flow here')">Add Domain</button>
+          <button type="button" class="ghost-btn" onclick="showToast('Refresh Backend2 domains here')">Refresh Domains</button>
+        </div>
+      `);
+    }
+
+    if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
+    if (upgradeBtn) upgradeBtn.addEventListener("click", openUpgradeModal);
+    if (createLegacyBtn) createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
+    if (createPrimaryBtn) createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
+    if (bulkLegacyBtn) bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
+    if (bulkPrimaryBtn) bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
+    if (uploadLegacyBtn) uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
+    if (uploadPrimaryBtn) uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
+    if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
+    if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
+    if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+    if (verifySessionBtn) {
+      verifySessionBtn.addEventListener("click", async () => {
+        setBusy(verifySessionBtn, true, "Checking...");
+        await verifyMainSession(true);
+        setBusy(verifySessionBtn, false);
+      });
+    }
+
+    if (landingCenterBtn) landingCenterBtn.addEventListener("click", openLandingCenter);
+    if (domainCenterBtn) domainCenterBtn.addEventListener("click", openDomainCenter);
+    if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", openLandingCenter);
+    if (viewLandingLinksBtn) {
+      viewLandingLinksBtn.addEventListener("click", () => {
+        setExtraResult("Landing pages are Backend2 only. Connect your landing list endpoint here.");
+      });
+    }
+    if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", openDomainCenter);
+    if (refreshDomainsBtn) {
+      refreshDomainsBtn.addEventListener("click", () => {
+        setExtraResult("Custom domains are Backend2 only. Connect your domain refresh endpoint here.");
+      });
+    }
 
     (async function init() {
       if (!ensureAuth()) return;
@@ -2732,8 +2866,14 @@
     window.openUpgradeModal = openUpgradeModal;
     window.closeUpgradeModal = closeUpgradeModal;
     window.loadPayments = loadPayments;
+    window.loadPlans = loadPlans;
     window.logout = logout;
     window.markPaymentSent = markPaymentSent;
+    window.closeBackend2Panel = closeBackend2Panel;
+    window.openBackend2Panel = openBackend2Panel;
+    window.openLandingCenter = openLandingCenter;
+    window.openDomainCenter = openDomainCenter;
+    window.showToast = showToast;
   </script>
 </body>
 </html>
