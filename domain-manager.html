@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link - Custom Domain Manager</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:rgba(2,6,23,0.84);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+      --border:rgba(0,255,255,0.18);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      position:relative;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+      background-size:38px 38px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1200px;
+      margin:0 auto;
+      padding:20px;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .header h1{
+      margin:0 0 6px;
+      font-size:28px;
+      color:var(--cyan);
+      text-shadow:0 0 10px rgba(0,255,255,0.45);
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      backdrop-filter:blur(12px);
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:18px;
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.10),
+        inset 0 0 15px rgba(0,255,255,0.03);
+    }
+
+    .card h2,
+    .card h3,
+    .card h4{
+      margin:0 0 12px;
+      color:var(--cyan);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+    }
+
+    .two-col{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .small{
+      font-size:12px;
+    }
+
+    .info-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
+      margin-bottom:10px;
+    }
+
+    .notice{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(245,158,11,0.08);
+      border:1px solid rgba(245,158,11,0.25);
+      color:#fcd34d;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+    }
+
+    .success-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(34,197,94,0.08);
+      border:1px solid rgba(34,197,94,0.25);
+      color:#86efac;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+    }
+
+    .danger-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(239,68,68,0.08);
+      border:1px solid rgba(239,68,68,0.25);
+      color:#fca5a5;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+    }
+
+    .backend-badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #22c55e;
+      color:#22c55e;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+    }
+
+    .verified{ color:var(--green); }
+    .pending{ color:var(--yellow); }
+    .expired{ color:var(--red); }
+    .live{ color:var(--green); }
+    .warn{ color:var(--yellow); }
+
+    .form-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .field{
+      flex:1 1 220px;
+    }
+
+    .field.wide{
+      flex:1 1 100%;
+    }
+
+    .field label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.22);
+      background:#000;
+      color:var(--cyan);
+      outline:none;
+    }
+
+    input::placeholder, textarea::placeholder{
+      color:var(--muted);
+    }
+
+    input:focus, select:focus, textarea:focus{
+      box-shadow:0 0 10px rgba(0,255,255,0.4);
+    }
+
+    button, .btn{
+      padding:11px 14px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:12px;
+      background:#020617;
+      color:var(--cyan);
+      border:1px solid rgba(0,255,255,0.28);
+      transition:.2s ease;
+      text-decoration:none;
+      display:inline-block;
+    }
+
+    button:hover, .btn:hover{
+      color:#fff;
+      border-color:var(--cyan);
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.4),
+        0 0 24px rgba(0,255,255,0.15);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .success-btn{
+      background:var(--green);
+      color:#000;
+      border-color:var(--green);
+    }
+
+    .danger-btn{
+      background:var(--red);
+      color:#fff;
+      border-color:var(--red);
+    }
+
+    .backend2-btn{
+      background:#0f172a;
+      color:#22c55e;
+      border-color:#22c55e;
+    }
+
+    .ghost-btn{
+      color:#cbd5e1;
+      border-color:#475569;
+    }
+
+    .copy{
+      color:var(--green);
+      border-color:var(--green);
+    }
+
+    .result{
+      margin-top:10px;
+      font-size:13px;
+      min-height:20px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+
+    .domain-card{
+      border:1px solid rgba(0,255,255,0.14);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+      margin-bottom:12px;
+    }
+
+    .domain-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+
+    .domain-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .empty{
+      padding:20px;
+      border:1px dashed rgba(0,255,255,0.18);
+      border-radius:14px;
+      text-align:center;
+      color:var(--muted);
+    }
+
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
+      border-radius:10px;
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 15px rgba(0,255,255,0.4);
+      max-width:80vw;
+    }
+
+    code{
+      background:#000;
+      border:1px solid rgba(0,255,255,0.18);
+      padding:2px 6px;
+      border-radius:8px;
+      color:var(--cyan);
+      word-break:break-all;
+    }
+
+    @media (max-width: 860px){
+      .two-col{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🌐 Custom Domain Manager</h1>
+        <div class="sub">
+          Backend2 only • Add domains • Verify DNS • Set primary domain • Use domains for links and landing pages
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span class="backend-badge">Backend2 Only</span>
+        <button id="refreshBtn" type="button">Refresh</button>
+        <a class="btn ghost-btn" href="dashboard.html">Back to Dashboard</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3 id="totalDomains">0</h3>
+        <p class="muted">Total Domains</p>
+      </div>
+      <div class="card">
+        <h3 id="verifiedDomains">0</h3>
+        <p class="muted">Verified Domains</p>
+      </div>
+      <div class="card">
+        <h3 id="pendingDomains">0</h3>
+        <p class="muted">Pending Domains</p>
+      </div>
+      <div class="card">
+        <h3 id="primaryDomainCount">0</h3>
+        <p class="muted">Primary Domain</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h3>➕ Add Custom Domain</h3>
+
+        <div class="notice">
+          Add a domain like <b>links.example.com</b>. After adding it, the system will give you a TXT record to place in your DNS.
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="domainInput">Domain</label>
+            <input id="domainInput" placeholder="links.example.com" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="addDomainBtn" class="backend2-btn" type="button">Add Domain</button>
+          <button id="clearDomainBtn" class="ghost-btn" type="button">Clear</button>
+        </div>
+
+        <div id="addResult" class="result"></div>
+      </div>
+
+      <div class="card">
+        <h3>📘 DNS Instructions</h3>
+
+        <div class="info-box">
+          <b>Step 1</b>
+          <div class="muted" style="margin-top:8px;">Add your domain here.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Step 2</b>
+          <div class="muted" style="margin-top:8px;">Copy the TXT host and TXT value shown below the domain after creation.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Step 3</b>
+          <div class="muted" style="margin-top:8px;">Wait for DNS propagation, then click Verify.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Step 4</b>
+          <div class="muted" style="margin-top:8px;">Once verified, you can use the domain in your landing pages and short links.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>🌍 Your Domains</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="searchInput" placeholder="Search domain..." style="max-width:280px;" />
+          <select id="statusFilter" style="max-width:180px;">
+            <option value="all">All statuses</option>
+            <option value="verified">Verified</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="domainsList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+  <script>
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+
+    let domainsStore = [];
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const addDomainBtn = document.getElementById("addDomainBtn");
+    const clearDomainBtn = document.getElementById("clearDomainBtn");
+
+    const domainInput = document.getElementById("domainInput");
+    const addResult = document.getElementById("addResult");
+
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const domainsList = document.getElementById("domainsList");
+
+    const totalDomains = document.getElementById("totalDomains");
+    const verifiedDomains = document.getElementById("verifiedDomains");
+    const pendingDomains = document.getElementById("pendingDomains");
+    const primaryDomainCount = document.getElementById("primaryDomainCount");
+
+    const toast = document.getElementById("toast");
+
+    function authHeaders() {
+      const token = localStorage.getItem("token") || "";
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    function ensureAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    function normalizeDomain(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/g, "");
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeForJs(str) {
+      return String(str ?? "")
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'")
+        .replaceAll("\n", "\\n")
+        .replaceAll("\r", "");
+    }
+
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function setBusy(button, busy, text = "") {
+      if (!button) return;
+      if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+      button.disabled = !!busy;
+      button.textContent = busy ? text : button.dataset.originalText;
+    }
+
+    function showToast(message = "Copied!") {
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
+    }
+
+    function setResult(message, isError = false, target = addResult) {
+      target.textContent = message;
+      target.className = "result " + (isError ? "error" : "success");
+    }
+
+    async function safeFetch(path, options = {}) {
+      try {
+        const method = String(options.method || "GET").toUpperCase();
+        const headers = {
+          ...authHeaders(),
+          ...(options.headers || {})
+        };
+
+        if (method !== "GET" && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, {
+          ...options,
+          headers
+        });
+
+        const raw = await res.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
+
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          window.location.href = "index.html";
+          return { ok: false, status: 401, data };
+        }
+
+        return {
+          ok: res.ok,
+          status: res.status,
+          data
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: e?.message || "Failed to fetch" }
+        };
+      }
+    }
+
+    function updateStats() {
+      const verified = domainsStore.filter(d => String(d.status || "").toLowerCase() === "verified");
+      const pending = domainsStore.filter(d => String(d.status || "").toLowerCase() !== "verified");
+      const primary = domainsStore.find(d => d.isPrimary);
+
+      totalDomains.textContent = domainsStore.length;
+      verifiedDomains.textContent = verified.length;
+      pendingDomains.textContent = pending.length;
+      primaryDomainCount.textContent = primary ? "1" : "0";
+    }
+
+    function renderDomains() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const status = statusFilter.value || "all";
+
+      const filtered = domainsStore.filter(domain => {
+        const domainName = String(domain.domain || "").toLowerCase();
+        const domainStatus = String(domain.status || "pending").toLowerCase();
+
+        const qMatch = !q || domainName.includes(q);
+        const statusMatch = status === "all" ? true : domainStatus === status;
+
+        return qMatch && statusMatch;
+      });
+
+      if (!filtered.length) {
+        domainsList.innerHTML = `<div class="empty">No domains found</div>`;
+        return;
+      }
+
+      domainsList.innerHTML = filtered.map(d => {
+        const isVerified = String(d.status || "").toLowerCase() === "verified";
+        return `
+          <div class="domain-card">
+            <div class="domain-card-top">
+              <div>
+                <div style="font-size:18px;font-weight:700;">${escapeHtml(d.domain)}</div>
+                <div style="margin-top:8px;">
+                  ${isVerified
+                    ? '<span class="badge verified">Verified</span>'
+                    : '<span class="badge pending">Pending</span>'}
+                  ${d.isPrimary ? '<span class="badge live">Primary</span>' : ''}
+                </div>
+              </div>
+              <div class="small muted">
+                Created: ${fmtDate(d.createdAt)}
+              </div>
+            </div>
+
+            <div class="info-box" style="margin-top:12px;">
+              <b>TXT Host</b>
+              <div style="margin-top:8px;"><code>${escapeHtml(d.verificationTarget || "-")}</code></div>
+            </div>
+
+            <div class="info-box">
+              <b>TXT Value</b>
+              <div style="margin-top:8px;"><code>${escapeHtml(d.verifyToken || "-")}</code></div>
+            </div>
+
+            ${d.verifiedAt ? `
+              <div class="muted">Verified at: ${fmtDate(d.verifiedAt)}</div>
+            ` : `
+              <div class="muted">Waiting for DNS verification</div>
+            `}
+
+            <div class="domain-actions">
+              <button type="button" class="copy" onclick="copyText('${escapeForJs(d.verificationTarget || "")}')">Copy TXT Host</button>
+              <button type="button" class="copy" onclick="copyText('${escapeForJs(d.verifyToken || "")}')">Copy TXT Value</button>
+              <button type="button" class="success-btn" onclick="verifyDomain('${escapeForJs(d.domain)}')">Verify</button>
+              <button type="button" class="ghost-btn" onclick="setPrimaryDomain('${escapeForJs(d.domain)}')" ${d.isPrimary ? "disabled" : ""}>Set Primary</button>
+              <button type="button" class="danger-btn" onclick="removeDomain('${escapeForJs(d.domain)}')">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadDomains(showToastMessage = false) {
+      const res = await safeFetch("/domains/me", { method: "GET" });
+
+      if (!res.ok) {
+        domainsStore = [];
+        updateStats();
+        renderDomains();
+        if (showToastMessage) showToast(res.data?.message || "Failed to load domains");
+        return;
+      }
+
+      const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
+
+      domainsStore = domains.map(d => ({
+        ...d,
+        domain: normalizeDomain(d.domain || ""),
+        status: d.status || "pending",
+        isPrimary: !!d.isPrimary,
+        createdAt: Number(d.createdAt || d.created_at || 0),
+        verifiedAt: Number(d.verifiedAt || d.verified_at || 0) || null
+      })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+      updateStats();
+      renderDomains();
+
+      if (showToastMessage) showToast("Domains refreshed");
+    }
+
+    async function addDomain() {
+      const domain = normalizeDomain(domainInput.value);
+
+      if (!domain) {
+        setResult("Enter a domain first", true);
+        return;
+      }
+
+      setBusy(addDomainBtn, true, "Adding...");
+
+      const res = await safeFetch("/domains/add", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
+
+      setBusy(addDomainBtn, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Failed to add domain", true);
+        return;
+      }
+
+      const txtName = res.data?.verificationTarget || "";
+      const txtValue = res.data?.verifyToken || "";
+
+      setResult(
+        `Domain added successfully.\n\nTXT Host:\n${txtName}\n\nTXT Value:\n${txtValue}`,
+        false
+      );
+
+      domainInput.value = "";
+      await loadDomains(false);
+    }
+
+    async function verifyDomain(domain) {
+      if (!domain) return;
+
+      const res = await safeFetch("/domains/verify", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Verification failed");
+        return;
+      }
+
+      showToast(`Verified: ${domain}`);
+      await loadDomains(false);
+    }
+
+    async function setPrimaryDomain(domain) {
+      if (!domain) return;
+
+      const res = await safeFetch("/domains/set-primary", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Could not set primary domain");
+        return;
+      }
+
+      showToast(`Primary domain set: ${domain}`);
+      await loadDomains(false);
+    }
+
+    async function removeDomain(domain) {
+      if (!domain) return;
+      if (!confirm(`Remove domain ${domain}?`)) return;
+
+      const res = await safeFetch("/domains/remove", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Could not remove domain");
+        return;
+      }
+
+      showToast(`Removed: ${domain}`);
+      await loadDomains(false);
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    clearDomainBtn.addEventListener("click", () => {
+      domainInput.value = "";
+      setResult("", false);
+    });
+
+    addDomainBtn.addEventListener("click", addDomain);
+    refreshBtn.addEventListener("click", () => loadDomains(true));
+    searchInput.addEventListener("input", renderDomains);
+    statusFilter.addEventListener("change", renderDomains);
+
+    domainInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") addDomain();
+    });
+
+    window.copyText = copyText;
+    window.verifyDomain = verifyDomain;
+    window.setPrimaryDomain = setPrimaryDomain;
+    window.removeDomain = removeDomain;
+
+    (async function init() {
+      if (!ensureAuth()) return;
+      await loadDomains(false);
+    })();
+  </script>
+</body>
+</html>

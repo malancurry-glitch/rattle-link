@@ -864,7 +864,7 @@
 
             <div class="form-row" style="margin-top:10px;">
               <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
-              <button id="viewLandingLinksBtn" class="ghost-btn" type="button">View Landing Links</button>
+              <button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button>
             </div>
           </div>
 
@@ -874,7 +874,7 @@
 
             <div class="form-row" style="margin-top:10px;">
               <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
-              <button id="refreshDomainsBtn" class="ghost-btn" type="button">Refresh Domains</button>
+              <button id="refreshDomainsBtn" class="ghost-btn" type="button">Open domain-manager.html</button>
             </div>
           </div>
         </div>
@@ -1093,11 +1093,6 @@
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
 
-  <div class="panel" id="backend2Panel">
-    <div id="backend2PanelContent"></div>
-    <button type="button" onclick="closeBackend2Panel()">Close</button>
-  </div>
-
   <div class="toast" id="toast">Copied!</div>
 
   <script>
@@ -1197,8 +1192,6 @@
     const openDomainPanelBtn = document.getElementById("openDomainPanelBtn");
     const refreshDomainsBtn = document.getElementById("refreshDomainsBtn");
     const backend2ExtraResult = document.getElementById("backend2ExtraResult");
-    const backend2Panel = document.getElementById("backend2Panel");
-    const backend2PanelContent = document.getElementById("backend2PanelContent");
 
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
@@ -2725,70 +2718,12 @@
       });
     }
 
-    function openBackend2Panel(html) {
-      if (!backend2Panel || !backend2PanelContent) return;
-      backend2PanelContent.innerHTML = html;
-      backend2Panel.style.display = "block";
+    function goToLandingPage() {
+      window.location.href = "landing.html";
     }
 
-    function closeBackend2Panel() {
-      if (!backend2Panel || !backend2PanelContent) return;
-      backend2Panel.style.display = "none";
-      backend2PanelContent.innerHTML = "";
-    }
-
-    function openLandingCenter() {
-      openBackend2Panel(`
-        <h3>🟢 Landing Pages</h3>
-        <div class="info-box">
-          <b>Backend2 only</b>
-          <div class="muted" style="margin-top:8px;">
-            Landing pages are managed only on Backend2.
-          </div>
-        </div>
-
-        <div class="info-box">
-          <b>What you can do</b>
-          <div class="muted" style="margin-top:8px;">
-            • create landing pages<br>
-            • update landing pages<br>
-            • use custom HTML/CSS/JS<br>
-            • connect verified custom domains
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" class="backend2-btn" onclick="showToast('Connect your landing builder here')">Create Landing</button>
-          <button type="button" class="ghost-btn" onclick="showToast('List Backend2 landing pages here')">List Landings</button>
-        </div>
-      `);
-    }
-
-    function openDomainCenter() {
-      openBackend2Panel(`
-        <h3>🌐 Custom Domains</h3>
-        <div class="info-box">
-          <b>Backend2 only</b>
-          <div class="muted" style="margin-top:8px;">
-            Custom domains are added and verified only on Backend2.
-          </div>
-        </div>
-
-        <div class="info-box">
-          <b>What you can do</b>
-          <div class="muted" style="margin-top:8px;">
-            • add domain<br>
-            • verify TXT record<br>
-            • set primary domain<br>
-            • use domain for landing pages and links
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" class="backend2-btn" onclick="showToast('Open domain add flow here')">Add Domain</button>
-          <button type="button" class="ghost-btn" onclick="showToast('Refresh Backend2 domains here')">Refresh Domains</button>
-        </div>
-      `);
+    function goToDomainManager() {
+      window.location.href = "domain-manager.html";
     }
 
     if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
@@ -2802,6 +2737,7 @@
     if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
     if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
     if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+
     if (verifySessionBtn) {
       verifySessionBtn.addEventListener("click", async () => {
         setBusy(verifySessionBtn, true, "Checking...");
@@ -2810,18 +2746,20 @@
       });
     }
 
-    if (landingCenterBtn) landingCenterBtn.addEventListener("click", openLandingCenter);
-    if (domainCenterBtn) domainCenterBtn.addEventListener("click", openDomainCenter);
-    if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", openLandingCenter);
+    if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
+    if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
+    if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", goToLandingPage);
     if (viewLandingLinksBtn) {
       viewLandingLinksBtn.addEventListener("click", () => {
-        setExtraResult("Landing pages are Backend2 only. Connect your landing list endpoint here.");
+        setExtraResult("Opening landing.html ...");
+        goToLandingPage();
       });
     }
-    if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", openDomainCenter);
+    if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
     if (refreshDomainsBtn) {
       refreshDomainsBtn.addEventListener("click", () => {
-        setExtraResult("Custom domains are Backend2 only. Connect your domain refresh endpoint here.");
+        setExtraResult("Opening domain-manager.html ...");
+        goToDomainManager();
       });
     }
 
@@ -2869,11 +2807,9 @@
     window.loadPlans = loadPlans;
     window.logout = logout;
     window.markPaymentSent = markPaymentSent;
-    window.closeBackend2Panel = closeBackend2Panel;
-    window.openBackend2Panel = openBackend2Panel;
-    window.openLandingCenter = openLandingCenter;
-    window.openDomainCenter = openDomainCenter;
     window.showToast = showToast;
+    window.goToLandingPage = goToLandingPage;
+    window.goToDomainManager = goToDomainManager;
   </script>
 </body>
 </html>
