@@ -679,6 +679,8 @@
       <div class="top-actions">
         <span id="backendBadgeTop" class="backend-badge">Backend</span>
         <button id="refreshBtn" type="button">Refresh</button>
+        <button id="landingCenterBtn" class="backend2-btn" type="button">Landing Pages</button>
+        <button id="domainCenterBtn" class="backend2-btn" type="button">Custom Domains</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
         <button class="btn" type="button" onclick="openSupportPanel()">Support</button>
         <button class="danger-btn" type="button" onclick="logout()">Logout</button>
@@ -848,6 +850,36 @@
           </div>
         </div>
       </div>
+      <div class="card">
+  <div class="section-head">
+    <h3>🟢 Backend2 Extras</h3>
+    <span class="backend-badge backend-primary">Backend2 Only</span>
+  </div>
+
+  <div class="split-create">
+    <div class="create-box">
+      <h4>Landing Pages</h4>
+      <div class="muted">Create and manage landing pages on Backend2 only.</div>
+
+      <div class="form-row" style="margin-top:10px;">
+        <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
+        <button id="viewLandingLinksBtn" class="ghost-btn" type="button">View Landing Links</button>
+      </div>
+    </div>
+
+    <div class="create-box">
+      <h4>Custom Domains</h4>
+      <div class="muted">Add and verify custom domains on Backend2 only.</div>
+
+      <div class="form-row" style="margin-top:10px;">
+        <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
+        <button id="refreshDomainsBtn" class="ghost-btn" type="button">Refresh Domains</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="backend2ExtraResult" class="result"></div>
+</div>
 
       <div id="result" class="result"></div>
     </div>
@@ -1059,6 +1091,10 @@
     <div id="upgradeResult" class="result"></div>
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
+  <div class="panel" id="backend2Panel">
+  <div id="backend2PanelContent"></div>
+  <button type="button" onclick="closeBackend2Panel()">Close</button>
+</div>
 
   <div class="toast" id="toast">Copied!</div>
 
