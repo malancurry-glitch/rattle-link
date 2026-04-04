@@ -14,7 +14,6 @@
       --bg:#020617;
       --bg2:#000000;
       --card:rgba(2,6,23,0.84);
-      --card2:rgba(15,23,42,0.58);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -23,22 +22,17 @@
       --red:#ef4444;
       --yellow:#f59e0b;
       --purple:#a855f7;
-      --pink:#ec4899;
       --border:rgba(0,255,255,0.18);
     }
 
     *{ box-sizing:border-box; }
 
-    html, body{
+    body{
       margin:0;
-      padding:0;
       font-family:Inter, Arial, sans-serif;
       background:radial-gradient(circle at top, var(--bg), var(--bg2));
       color:var(--text);
       min-height:100vh;
-    }
-
-    body{
       position:relative;
     }
 
@@ -57,7 +51,7 @@
     .container{
       position:relative;
       z-index:1;
-      max-width:1560px;
+      max-width:1500px;
       margin:0 auto;
       padding:20px;
     }
@@ -74,7 +68,7 @@
     .header h2{
       margin:0 0 6px;
       color:var(--cyan);
-      text-shadow:0 0 10px rgba(0,255,255,0.45);
+      text-shadow:0 0 10px rgba(0,255,255,0.5);
     }
 
     .sub{
@@ -102,10 +96,6 @@
         inset 0 0 15px rgba(0,255,255,0.03);
     }
 
-    .card.alt{
-      background:var(--card2);
-    }
-
     .card h3,
     .card h4{
       margin:0 0 12px;
@@ -116,45 +106,6 @@
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
       gap:14px;
-    }
-
-    .two-col{
-      display:grid;
-      grid-template-columns:1.15fr .85fr;
-      gap:18px;
-    }
-
-    .three-col{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      gap:14px;
-    }
-
-    .four-col{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:14px;
-    }
-
-    .dashboard-grid{
-      display:grid;
-      grid-template-columns:1.15fr .85fr;
-      gap:18px;
-    }
-
-    .stack{
-      display:grid;
-      gap:18px;
-    }
-
-    .section-head,
-    .links-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
     }
 
     .stat-card{
@@ -173,144 +124,29 @@
       font-size:13px;
     }
 
-    .mini-stat{
-      padding:10px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.45);
-      border:1px solid rgba(0,255,255,0.12);
+    .two-col{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
     }
 
-    .muted{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
+    .three-col{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
     }
 
-    .small{
-      font-size:12px;
+    .four-col{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
     }
-
-    .info-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.45);
-      border:1px solid rgba(0,255,255,0.12);
-      margin-bottom:10px;
-    }
-
-    .notice{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(245,158,11,0.08);
-      border:1px solid rgba(245,158,11,0.25);
-      color:#fcd34d;
-      font-size:13px;
-      line-height:1.6;
-      margin-bottom:12px;
-    }
-
-    .success-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(34,197,94,0.08);
-      border:1px solid rgba(34,197,94,0.25);
-      color:#86efac;
-      font-size:13px;
-      line-height:1.6;
-      margin-bottom:12px;
-    }
-
-    .danger-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(239,68,68,0.08);
-      border:1px solid rgba(239,68,68,0.25);
-      color:#fca5a5;
-      font-size:13px;
-      line-height:1.6;
-      margin-bottom:12px;
-    }
-
-    .backend-switch{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .backend-badge{
-      display:inline-block;
-      padding:5px 10px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid rgba(0,255,255,0.25);
-      color:var(--cyan);
-    }
-
-    .backend-legacy{
-      color:#facc15;
-      border-color:#facc15;
-    }
-
-    .backend-primary{
-      color:#22c55e;
-      border-color:#22c55e;
-    }
-
-    .chip{
-      display:inline-block;
-      font-size:11px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid currentColor;
-    }
-
-    .badge{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid currentColor;
-    }
-
-    .pill{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid currentColor;
-      margin-right:6px;
-      margin-bottom:4px;
-    }
-
-    .live{ color:var(--green); }
-    .paused{ color:var(--yellow); }
-    .expired{ color:var(--red); }
-    .trial{ color:var(--cyan); }
-    .pending{ color:var(--yellow); }
-    .awaiting{ color:#60a5fa; }
-    .verified{ color:var(--green); }
 
     .form-row{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       margin-bottom:10px;
-    }
-
-    .field{
-      flex:1 1 220px;
-    }
-
-    .field.wide{
-      flex:1 1 100%;
-    }
-
-    .field label{
-      display:block;
-      margin-bottom:6px;
-      font-size:12px;
-      color:var(--muted);
     }
 
     input, select, textarea{
@@ -384,12 +220,6 @@
       border-color:var(--purple);
     }
 
-    .pink-btn{
-      background:var(--pink);
-      color:#fff;
-      border-color:var(--pink);
-    }
-
     .legacy-btn{
       background:#0f172a;
       color:#facc15;
@@ -402,89 +232,63 @@
       border-color:#22c55e;
     }
 
-    .warn-btn{
-      color:#f59e0b;
-      border-color:#f59e0b;
-    }
-
-    .copy{
-      color:var(--green);
-      border-color:var(--green);
-    }
-
-    .open{
-      color:var(--blue);
-      border-color:var(--blue);
-    }
-
-    .qr{
-      color:#06b6d4;
-      border-color:#06b6d4;
-    }
-
-    .delete{
-      color:var(--red);
-      border-color:var(--red);
-    }
-
-    .ghost-btn{
-      color:#cbd5e1;
-      border-color:#475569;
-    }
-
     .backend-active{
       box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08);
       transform:translateY(-1px);
       font-weight:700;
     }
 
-    .split-create{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
+    .copy{ color:var(--green); border-color:var(--green); }
+    .open{ color:var(--blue); border-color:var(--blue); }
+    .qr{ color:#06b6d4; border-color:#06b6d4; }
+    .delete{ color:var(--red); border-color:var(--red); }
+    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
+    .warn-btn{ color:#f59e0b; border-color:#f59e0b; }
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+    }
+
+    .live{ color:var(--green); }
+    .paused{ color:var(--yellow); }
+    .expired{ color:var(--red); }
+    .trial{ color:var(--cyan); }
+    .pending{ color:var(--yellow); }
+    .awaiting{ color:#60a5fa; }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .small{
+      font-size:12px;
+    }
+
+    .result{
       margin-top:10px;
+      font-size:13px;
+      min-height:20px;
+      line-height:1.5;
+      white-space:pre-wrap;
     }
 
-    .create-box{
-      border:1px solid rgba(0,255,255,0.16);
-      border-radius:14px;
-      padding:14px;
-      background:rgba(15,23,42,0.45);
-    }
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
 
-    .create-tabs{
+    .links-header,
+    .section-head{
       display:flex;
-      gap:8px;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
       flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-
-    .tab-btn.active{
-      box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08);
-      font-weight:700;
-    }
-
-    .tab-panel{
-      display:none;
-    }
-
-    .tab-panel.active{
-      display:block;
-    }
-
-    .drop-zone{
-      border:2px dashed rgba(0,255,255,0.24);
-      padding:14px;
-      text-align:center;
-      margin-top:10px;
-      border-radius:12px;
-      transition:.2s ease;
-    }
-
-    .drop-zone.dragover{
-      background:#020617;
-      border-color:var(--cyan);
-      box-shadow:0 0 15px rgba(0,255,255,0.2) inset;
+      margin-bottom:10px;
     }
 
     .table-wrap{
@@ -495,7 +299,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1280px;
+      min-width:1180px;
     }
 
     th, td{
@@ -515,23 +319,82 @@
       background:#020617;
     }
 
-    .result{
-      margin-top:10px;
-      font-size:13px;
-      min-height:20px;
-      line-height:1.5;
-      white-space:pre-wrap;
+    .pill{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+      margin-right:6px;
+      margin-bottom:4px;
     }
 
-    .success{ color:var(--green); }
-    .error{ color:var(--red); }
+    .plan-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+      margin-top:8px;
+    }
 
-    .ranking-item{
-      padding:10px;
+    .plan-card{
+      border:1px solid rgba(0,255,255,0.16);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .plan-card.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 16px rgba(0,255,255,0.22);
+      background:rgba(0,255,255,0.05);
+    }
+
+    .drop-zone{
+      border:2px dashed rgba(0,255,255,0.24);
+      padding:14px;
+      text-align:center;
+      margin-top:10px;
+      border-radius:12px;
+      transition:.2s ease;
+    }
+
+    .drop-zone.dragover{
+      background:#020617;
+      border-color:var(--cyan);
+      box-shadow:0 0 15px rgba(0,255,255,0.2) inset;
+    }
+
+    .panel{
+      position:fixed;
+      right:0;
+      top:0;
+      width:430px;
+      max-width:100%;
+      height:100%;
+      background:#000;
+      border-left:1px solid rgba(0,255,255,0.3);
+      box-shadow:-10px 0 40px rgba(0,255,255,0.18);
+      padding:20px;
+      display:none;
+      overflow:auto;
+      z-index:1000;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
       border-radius:10px;
-      margin-bottom:10px;
-      background:rgba(15,23,42,0.65);
-      border:1px solid rgba(0,255,255,0.12);
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 15px rgba(0,255,255,0.4);
+      max-width:80vw;
     }
 
     .payment-box{
@@ -566,35 +429,31 @@
       font-size:13px;
     }
 
-    .panel{
-      position:fixed;
-      right:0;
-      top:0;
-      width:460px;
-      max-width:100%;
-      height:100%;
-      background:#000;
-      border-left:1px solid rgba(0,255,255,0.3);
-      box-shadow:-10px 0 40px rgba(0,255,255,0.18);
-      padding:20px;
-      display:none;
-      overflow:auto;
-      z-index:1000;
+    .ranking-item{
+      padding:10px;
+      border-radius:10px;
+      margin-bottom:10px;
+      background:rgba(15,23,42,0.65);
+      border:1px solid rgba(0,255,255,0.12);
     }
 
-    .toast{
-      position:fixed;
-      bottom:20px;
-      right:20px;
-      background:var(--cyan);
-      color:#000;
-      padding:12px 14px;
-      border-radius:10px;
-      display:none;
-      z-index:2000;
-      font-weight:700;
-      box-shadow:0 0 15px rgba(0,255,255,0.4);
-      max-width:80vw;
+    .backend-badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(0,255,255,0.25);
+      color:var(--cyan);
+    }
+
+    .backend-legacy{
+      color:#facc15;
+      border-color:#facc15;
+    }
+
+    .backend-primary{
+      color:#22c55e;
+      border-color:#22c55e;
     }
 
     .overlay{
@@ -609,7 +468,7 @@
       position:fixed;
       inset:50% auto auto 50%;
       transform:translate(-50%,-50%);
-      width:min(900px,94vw);
+      width:min(860px,94vw);
       max-height:88vh;
       overflow:auto;
       background:#000;
@@ -621,32 +480,88 @@
       box-shadow:0 0 40px rgba(0,255,255,0.18);
     }
 
-    .domain-grid{
+    .notice{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(245,158,11,0.08);
+      border:1px solid rgba(245,158,11,0.25);
+      color:#fcd34d;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+    }
+
+    .split-create{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:14px;
+      margin-top:10px;
     }
 
-    .domain-card{
+    .create-box{
+      border:1px solid rgba(0,255,255,0.16);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,0.45);
+    }
+
+    .health-list{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+
+    .health-item{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,0.14);
+      background:rgba(15,23,42,0.45);
+    }
+
+    .backend-switch{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .chip{
+      display:inline-block;
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid currentColor;
+    }
+
+    .mini-stat{
+      padding:10px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
+    }
+
+    .resource-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:14px;
+    }
+
+    .resource-card{
       border:1px solid rgba(0,255,255,0.14);
       border-radius:14px;
       padding:14px;
       background:rgba(15,23,42,0.45);
     }
 
-    .landing-preview{
-      min-height:220px;
-      border:1px solid rgba(0,255,255,0.16);
-      border-radius:14px;
-      overflow:hidden;
-      background:#020617;
+    .resource-card h4{
+      margin:0 0 8px;
     }
 
-    .landing-preview iframe{
-      width:100%;
-      height:360px;
-      border:0;
-      background:#fff;
+    .resource-card p{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
     }
 
     .faq-item{
@@ -680,28 +595,19 @@
       display:block;
     }
 
-    .resource-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-      gap:14px;
+    .footer-links{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
     }
 
-    .resource-card{
-      border:1px solid rgba(0,255,255,0.14);
-      border-radius:14px;
-      padding:14px;
+    .info-box{
+      padding:12px;
+      border-radius:12px;
       background:rgba(15,23,42,0.45);
-    }
-
-    .resource-card h4{
-      margin:0 0 8px;
-    }
-
-    .resource-card p{
-      margin:0 0 10px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
+      border:1px solid rgba(0,255,255,0.12);
+      margin-bottom:10px;
     }
 
     .support-list a{
@@ -748,14 +654,13 @@
       to{ transform:rotate(360deg); }
     }
 
-    @media (max-width: 1180px){
-      .dashboard-grid,
+    @media (max-width: 980px){
       .two-col,
       .three-col,
       .four-col,
       .payment-box,
       .split-create,
-      .domain-grid{
+      .health-list{
         grid-template-columns:1fr;
       }
     }
@@ -767,7 +672,7 @@
       <div>
         <h2>📊 Rattle Link Dashboard</h2>
         <div class="sub">
-          Manage redirects • Landing pages • Custom domains • Payments • AWS + Backend2
+          Manage links • Track traffic • Use AWS and Backend2 together • Payment requests
         </div>
       </div>
 
@@ -783,15 +688,7 @@
     <div class="grid">
       <div class="card stat-card">
         <h3 id="totalLinks">0</h3>
-        <p>Total Items</p>
-      </div>
-      <div class="card stat-card">
-        <h3 id="totalRedirects">0</h3>
-        <p>Redirect Links</p>
-      </div>
-      <div class="card stat-card">
-        <h3 id="totalLandings">0</h3>
-        <p>Landing Pages</p>
+        <p>Total Links</p>
       </div>
       <div class="card stat-card">
         <h3 id="totalClicks">0</h3>
@@ -809,406 +706,181 @@
 
     <div class="four-col">
       <div class="card mini-stat">
-        <div class="muted">Backend2 Items</div>
+        <div class="muted">Backend2 Links</div>
         <div id="primaryLinksCount" style="font-size:24px;color:#22c55e;">0</div>
       </div>
       <div class="card mini-stat">
-        <div class="muted">AWS Items</div>
+        <div class="muted">AWS Links</div>
         <div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div>
-      </div>
-      <div class="card mini-stat">
-        <div class="muted">Custom Domains</div>
-        <div id="domainsCount" style="font-size:24px;color:#00ffff;">0</div>
       </div>
       <div class="card mini-stat">
         <div class="muted">Backend2 Clicks</div>
         <div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div>
       </div>
+      <div class="card mini-stat">
+        <div class="muted">AWS Clicks</div>
+        <div id="legacyClicksCount" style="font-size:24px;color:#facc15;">0</div>
+      </div>
     </div>
 
-    <div class="dashboard-grid">
-      <div class="stack">
-        <div class="card">
-          <div class="section-head">
-            <h3>👤 Account Access</h3>
-            <span id="subscriptionBadge" class="badge trial">Trial</span>
-          </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="section-head">
+          <h3>👤 Account Access</h3>
+          <span id="subscriptionBadge" class="badge trial">Trial</span>
+        </div>
 
-          <div class="three-col">
-            <div>
-              <div class="muted">Email</div>
-              <div id="meEmail">-</div>
-            </div>
-            <div>
-              <div class="muted">Plan</div>
-              <div id="mePlan">Free Trial</div>
-            </div>
-            <div>
-              <div class="muted">Expires</div>
-              <div id="meExpire">-</div>
-            </div>
+        <div class="three-col">
+          <div>
+            <div class="muted">Email</div>
+            <div id="meEmail">-</div>
           </div>
-
-          <div style="margin-top:14px;">
-            <div class="muted">Access Summary</div>
-            <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
+          <div>
+            <div class="muted">Plan</div>
+            <div id="mePlan">Free Trial</div>
           </div>
-
-          <div style="margin-top:14px;">
-            <div class="muted">Preferred backend</div>
-            <div class="backend-switch" style="margin-top:8px;">
-              <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
-              <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
-              <button type="button" id="verifySessionBtn" class="ghost-btn">Verify Session</button>
-            </div>
-          </div>
-
-          <div style="margin-top:14px;">
-            <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
-            <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
+          <div>
+            <div class="muted">Expires</div>
+            <div id="meExpire">-</div>
           </div>
         </div>
 
-        <div class="card">
-          <h3>🚀 Create Content</h3>
+        <div style="margin-top:14px;">
+          <div class="muted">Access Summary</div>
+          <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
+        </div>
 
-          <div class="create-tabs">
-            <button class="tab-btn backend2-btn active" type="button" data-tab="redirectTab">Redirect Link</button>
-            <button class="tab-btn pink-btn" type="button" data-tab="landingTab">Landing Page</button>
-            <button class="tab-btn ghost-btn" type="button" data-tab="domainTab">Custom Domain</button>
-          </div>
-
-          <div class="tab-panel active" id="redirectTab">
-            <div class="form-row">
-              <div class="field">
-                <label for="url">Destination URL</label>
-                <input id="url" placeholder="Paste URL (https://...)" />
-              </div>
-              <div class="field">
-                <label for="customSlug">Custom slug</label>
-                <input id="customSlug" placeholder="Custom slug (optional)" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="redirectDomain">Custom domain</label>
-                <select id="redirectDomain">
-                  <option value="">Default domain</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="expire">Expire in hours</label>
-                <input id="expire" type="number" min="1" placeholder="Optional" />
-              </div>
-            </div>
-
-            <div class="split-create">
-              <div class="create-box">
-                <h4>☁️ Create AWS Redirect</h4>
-                <div class="muted">Creates redirect links on the legacy AWS backend.</div>
-                <div class="form-row" style="margin-top:10px;">
-                  <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Redirect</button>
-                </div>
-                <div class="form-row">
-                  <div class="field">
-                    <label for="bulkCountLegacy">Bulk count</label>
-                    <input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" />
-                  </div>
-                  <div class="field" style="display:flex;align-items:end;">
-                    <button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button>
-                  </div>
-                </div>
-                <div class="drop-zone" id="dropZoneLegacy">
-                  <p>📂 Upload CSV for <b>AWS redirect links</b></p>
-                  <input type="file" id="csvFileLegacy" accept=".csv,.txt" />
-                  <button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button>
-                </div>
-              </div>
-
-              <div class="create-box">
-                <h4>🟢 Create Backend2 Redirect</h4>
-                <div class="muted">Creates redirect links on the Backend2 server.</div>
-                <div class="form-row" style="margin-top:10px;">
-                  <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Redirect</button>
-                </div>
-                <div class="form-row">
-                  <div class="field">
-                    <label for="bulkCountPrimary">Bulk count</label>
-                    <input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" />
-                  </div>
-                  <div class="field" style="display:flex;align-items:end;">
-                    <button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button>
-                  </div>
-                </div>
-                <div class="drop-zone" id="dropZonePrimary">
-                  <p>📂 Upload CSV for <b>Backend2 redirect links</b></p>
-                  <input type="file" id="csvFilePrimary" accept=".csv,.txt" />
-                  <button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button>
-                </div>
-              </div>
-            </div>
-
-            <div id="result" class="result"></div>
-          </div>
-
-          <div class="tab-panel" id="landingTab">
-            <div class="notice">
-              Landing pages support button-based pages and full custom HTML/CSS/JS. You can create them on Backend2 and manage them from this dashboard.
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingBackend">Backend</label>
-                <select id="landingBackend">
-                  <option value="primary">Backend2</option>
-                  <option value="legacy">AWS</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="landingSlug">Landing slug</label>
-                <input id="landingSlug" placeholder="landing-slug" />
-              </div>
-              <div class="field">
-                <label for="landingDomain">Landing domain</label>
-                <select id="landingDomain">
-                  <option value="">Default domain</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingTitle">Landing title</label>
-                <input id="landingTitle" placeholder="My Landing Title" />
-              </div>
-              <div class="field">
-                <label for="landingDescription">Description</label>
-                <input id="landingDescription" placeholder="Short description" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingImage">Image URL</label>
-                <input id="landingImage" placeholder="https://..." />
-              </div>
-              <div class="field">
-                <label for="landingTheme">Theme color</label>
-                <input id="landingTheme" placeholder="#00ffff" value="#00ffff" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingCtaLabel">CTA Label</label>
-                <input id="landingCtaLabel" placeholder="Visit Now" />
-              </div>
-              <div class="field">
-                <label for="landingCtaUrl">CTA URL</label>
-                <input id="landingCtaUrl" placeholder="https://..." />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingFooter">Footer</label>
-                <input id="landingFooter" placeholder="Powered by Rattle Link" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingButtonLabel1">Button 1 Label</label>
-                <input id="landingButtonLabel1" placeholder="Instagram" />
-              </div>
-              <div class="field">
-                <label for="landingButtonUrl1">Button 1 URL</label>
-                <input id="landingButtonUrl1" placeholder="https://..." />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field">
-                <label for="landingButtonLabel2">Button 2 Label</label>
-                <input id="landingButtonLabel2" placeholder="Website" />
-              </div>
-              <div class="field">
-                <label for="landingButtonUrl2">Button 2 URL</label>
-                <input id="landingButtonUrl2" placeholder="https://..." />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingMetaTitle">Meta title</label>
-                <input id="landingMetaTitle" placeholder="SEO title" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingMetaDescription">Meta description</label>
-                <textarea id="landingMetaDescription" placeholder="SEO description"></textarea>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingHtml">Custom HTML</label>
-                <textarea id="landingHtml" placeholder="Optional full HTML override"></textarea>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingCss">Custom CSS</label>
-                <textarea id="landingCss" placeholder="Optional CSS"></textarea>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="field wide">
-                <label for="landingJs">Custom JavaScript</label>
-                <textarea id="landingJs" placeholder="Optional JS"></textarea>
-              </div>
-            </div>
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button id="landingPreviewBtn" class="ghost-btn" type="button">Preview Landing</button>
-              <button id="landingCreateBtn" class="pink-btn" type="button">Create Landing</button>
-              <button id="landingUpdateBtn" class="backend2-btn" type="button">Update Landing</button>
-              <button id="landingClearBtn" class="warn-btn" type="button">Clear Form</button>
-            </div>
-
-            <div id="landingResult" class="result"></div>
-
-            <div style="margin-top:14px;">
-              <h4>Preview</h4>
-              <div class="landing-preview">
-                <iframe id="landingPreviewFrame" title="Landing Preview"></iframe>
-              </div>
-            </div>
-          </div>
-
-          <div class="tab-panel" id="domainTab">
-            <div class="domain-grid">
-              <div class="domain-card">
-                <h4>➕ Add Domain</h4>
-                <div class="field">
-                  <label for="domainInput">Domain</label>
-                  <input id="domainInput" placeholder="links.example.com" />
-                </div>
-                <div style="margin-top:10px;">
-                  <button id="domainAddBtn" class="backend2-btn" type="button">Add Domain</button>
-                </div>
-                <div id="domainResult" class="result"></div>
-              </div>
-
-              <div class="domain-card">
-                <h4>🧪 Verify Domain</h4>
-                <div class="field">
-                  <label for="domainVerifySelect">Domain</label>
-                  <select id="domainVerifySelect">
-                    <option value="">Select domain</option>
-                  </select>
-                </div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                  <button id="domainVerifyBtn" class="success-btn" type="button">Verify</button>
-                  <button id="domainPrimaryBtn" class="ghost-btn" type="button">Set Primary</button>
-                  <button id="domainRemoveBtn" class="danger-btn" type="button">Remove</button>
-                </div>
-                <div id="domainVerifyResult" class="result"></div>
-              </div>
-            </div>
-
-            <div style="margin-top:14px;" class="info-box">
-              <b>How it works</b>
-              <div class="muted" style="margin-top:8px;">
-                Add your custom domain, create the TXT verification record shown by the backend, wait for DNS propagation, then click Verify. After verification you can use the domain on redirects and landing pages.
-              </div>
-            </div>
+        <div style="margin-top:14px;">
+          <div class="muted">Preferred backend</div>
+          <div class="backend-switch" style="margin-top:8px;">
+            <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
+            <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
+            <button type="button" id="verifySessionBtn" class="ghost-btn">Verify Session</button>
           </div>
         </div>
 
-        <div class="card">
-          <div class="links-header">
-            <h3>🔗 Your Links & Landing Pages</h3>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <select id="backendFilter" style="max-width:180px;">
-                <option value="all">All backends</option>
-                <option value="primary">Backend2 only</option>
-                <option value="legacy">AWS only</option>
-              </select>
-              <select id="itemTypeFilter" style="max-width:180px;">
-                <option value="all">All item types</option>
-                <option value="redirect">Redirect only</option>
-                <option value="landing">Landing only</option>
-              </select>
-              <input id="search" placeholder="Search slug, domain or URL..." />
-            </div>
-          </div>
+        <div style="margin-top:14px;">
+          <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
+          <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
+        </div>
+      </div>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Backend</th>
-                  <th>Type</th>
-                  <th>Slug</th>
-                  <th>Domain</th>
-                  <th>Clicks</th>
-                  <th>Public Link</th>
-                  <th>Status</th>
-                  <th>Expire</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="table"></tbody>
-            </table>
+      <div class="card">
+        <div class="section-head">
+          <h3>💳 Latest Payment Request</h3>
+          <button type="button" onclick="loadPayments(true)">Reload</button>
+        </div>
+
+        <div id="latestPaymentBox" class="muted">
+          No payment request yet.
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h3>🛰 Backend Health</h3>
+        <div class="health-list">
+          <div class="health-item">
+            <div class="muted">Backend2</div>
+            <div id="primaryHealth" style="margin-top:6px;">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="muted">AWS Legacy</div>
+            <div id="legacyHealth" style="margin-top:6px;">Checking...</div>
           </div>
         </div>
       </div>
 
-      <div class="stack">
-        <div class="card">
-          <div class="section-head">
-            <h3>💳 Latest Payment Request</h3>
-            <button type="button" onclick="loadPayments(true)">Reload</button>
+      <div class="card">
+        <h3>🧠 Session Notes</h3>
+        <div class="muted">
+          Preferred backend is manual only. This page will not switch your preference automatically anymore.
+        </div>
+        <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🚀 Create Link</h3>
+
+      <div class="form-row">
+        <input id="url" placeholder="Paste URL (https://...)" />
+        <input id="customSlug" placeholder="Custom slug (optional)" />
+      </div>
+
+      <div class="form-row">
+        <input id="expire" type="number" min="1" placeholder="Expire in hours" />
+      </div>
+
+      <div class="split-create">
+        <div class="create-box">
+          <h4>☁️ Create AWS Link</h4>
+          <div class="muted">Creates short links on the legacy AWS backend.</div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button>
           </div>
-          <div id="latestPaymentBox" class="muted">
-            No payment request yet.
+          <div class="form-row">
+            <input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button>
+          </div>
+          <div class="drop-zone" id="dropZoneLegacy">
+            <p>📂 Upload CSV for <b>AWS links</b></p>
+            <input type="file" id="csvFileLegacy" accept=".csv,.txt" />
+            <button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button>
           </div>
         </div>
 
-        <div class="card">
-          <h3>🛰 Backend Health</h3>
-          <div class="grid">
-            <div class="health-item info-box">
-              <div class="muted">Backend2</div>
-              <div id="primaryHealth" style="margin-top:6px;">Checking...</div>
-            </div>
-            <div class="health-item info-box">
-              <div class="muted">AWS Legacy</div>
-              <div id="legacyHealth" style="margin-top:6px;">Checking...</div>
-            </div>
+        <div class="create-box">
+          <h4>🟢 Create Backend2 Link</h4>
+          <div class="muted">Creates short links on the Backend2 server.</div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
+          </div>
+          <div class="form-row">
+            <input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button>
+          </div>
+          <div class="drop-zone" id="dropZonePrimary">
+            <p>📂 Upload CSV for <b>Backend2 links</b></p>
+            <input type="file" id="csvFilePrimary" accept=".csv,.txt" />
+            <button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button>
           </div>
         </div>
+      </div>
 
-        <div class="card">
-          <h3>🌐 Custom Domains</h3>
-          <div id="domainsSummary" class="muted">Loading domains...</div>
-          <div id="domainsList" style="margin-top:10px;"></div>
-        </div>
+      <div id="result" class="result"></div>
+    </div>
 
-        <div class="card">
-          <h3>🧠 Session Notes</h3>
-          <div class="muted">
-            Preferred backend is manual only. Redirects, landing pages, and payments stay aligned with the backend you choose.
-          </div>
-          <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
+    <div class="card">
+      <div class="links-header">
+        <h3>🔗 Your Links</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select id="backendFilter" style="max-width:180px;">
+            <option value="all">All backends</option>
+            <option value="primary">Backend2 only</option>
+            <option value="legacy">AWS only</option>
+          </select>
+          <input id="search" placeholder="Search slug or URL..." />
         </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Backend</th>
+              <th>Slug</th>
+              <th>Clicks</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th>Expire</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table"></tbody>
+        </table>
       </div>
     </div>
 
@@ -1219,7 +891,7 @@
       </div>
 
       <div class="card">
-        <h3>🏆 Top Performing Items</h3>
+        <h3>🏆 Top Performing Links</h3>
         <div id="ranking"></div>
       </div>
     </div>
@@ -1264,17 +936,12 @@
 
         <div class="faq-item">
           <button class="faq-q" type="button">Why do I see Backend2 and AWS together?</button>
-          <div class="faq-a">Your account can work across both systems. This dashboard merges both sources so you can manage redirects, landing pages, payments, and activity from one place.</div>
+          <div class="faq-a">Your account can work across both systems. This dashboard merges both sources so you can manage links, payments, and activity from one place.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How do custom domains work?</button>
-          <div class="faq-a">Add the domain, copy the TXT record value, verify DNS, then choose the domain when creating a redirect or landing page.</div>
-        </div>
-
-        <div class="faq-item">
-          <button class="faq-q" type="button">How do landing pages work?</button>
-          <div class="faq-a">You can create simple button-based landing pages or full custom HTML/CSS/JS landing pages from this dashboard.</div>
+          <button class="faq-q" type="button">How do payments get verified?</button>
+          <div class="faq-a">Payments are currently created from the dashboard and then manually verified by admin after checking the wallet/payment details.</div>
         </div>
 
         <div class="faq-item">
@@ -1310,7 +977,7 @@
     <div class="resource-grid">
       <div class="card resource-card">
         <h4>ℹ️ About Rattle Link</h4>
-        <p>Rattle Link helps you create and manage short links, landing pages, custom domains, and traffic analytics across your active backend setup.</p>
+        <p>Rattle Link helps you create and manage short links, track traffic, and run your link operations from one dashboard across your active backend setup.</p>
         <button type="button" onclick="openInfoPanel('about')">Read About</button>
       </div>
 
@@ -1341,15 +1008,21 @@
       </div>
       <div class="info-box">
         <b>Privacy:</b>
-        <div class="muted">The platform may store account, click, IP, device/session, and payment reference data for analytics, fraud prevention, and service operation.</div>
+        <div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div>
       </div>
       <div class="info-box">
         <b>Billing:</b>
-        <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new content creation.</div>
+        <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new link creation.</div>
       </div>
       <div class="info-box">
         <b>Support Response:</b>
-        <div class="muted">Support requests are handled through the listed support channels and may require account or payment details for faster help.</div>
+        <div class="muted">Support requests are handled through the listed support channels and may require account/payment details for faster help.</div>
+      </div>
+
+      <div class="footer-links">
+        <button type="button" onclick="openInfoPanel('about')">About</button>
+        <button type="button" onclick="openInfoPanel('legal')">Legal</button>
+        <button type="button" onclick="openSupportPanel()">Support</button>
       </div>
     </div>
   </div>
@@ -1371,7 +1044,7 @@
       Free accounts can create only a limited number of links. Choose a plan, select your crypto network, generate a payment request, then click <b>I Made a Transfer</b> after paying. The system will wait for admin verification.
     </div>
 
-    <div class="plan-grid" id="planGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:8px;"></div>
+    <div class="plan-grid" id="planGrid"></div>
 
     <div style="margin-top:14px;">
       <div class="muted">Crypto Option</div>
@@ -1402,44 +1075,39 @@
 
     let dataStore = [];
     let paymentsStore = [];
-    let domainsStore = [];
+    let chart = null;
+    let statsChartInstance = null;
+    let refreshTimer = null;
+    let map = null;
+    let loadingLinks = false;
     let meState = null;
     let plansState = null;
     let selectedPlan = "monthly";
-
-    let chart = null;
-    let statsChartInstance = null;
-    let map = null;
-    let refreshTimer = null;
     let paymentPoller = null;
-
-    let loadingLinks = false;
     let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
 
-    let preferredBackend =
-      (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy"
-        ? "legacy"
-        : "primary";
-
-    let sessionBackend =
-      (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy"
-        ? "legacy"
-        : "primary";
+    let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
 
     const totalLinks = document.getElementById("totalLinks");
-    const totalRedirects = document.getElementById("totalRedirects");
-    const totalLandings = document.getElementById("totalLandings");
     const totalClicks = document.getElementById("totalClicks");
     const avgClicks = document.getElementById("avgClicks");
     const trialRemainingEl = document.getElementById("trialRemaining");
+    const table = document.getElementById("table");
+    const ranking = document.getElementById("ranking");
+    const panel = document.getElementById("panel");
+    const panelContent = document.getElementById("panelContent");
+    const toast = document.getElementById("toast");
+    const result = document.getElementById("result");
+    const paymentsTable = document.getElementById("paymentsTable");
 
     const primaryLinksCount = document.getElementById("primaryLinksCount");
     const legacyLinksCount = document.getElementById("legacyLinksCount");
-    const domainsCount = document.getElementById("domainsCount");
     const primaryClicksCount = document.getElementById("primaryClicksCount");
-
+    const legacyClicksCount = document.getElementById("legacyClicksCount");
     const primaryHealth = document.getElementById("primaryHealth");
     const legacyHealth = document.getElementById("legacyHealth");
+    const sessionNote = document.getElementById("sessionNote");
 
     const backendBadgeTop = document.getElementById("backendBadgeTop");
     const meEmail = document.getElementById("meEmail");
@@ -1448,83 +1116,33 @@
     const accessSummary = document.getElementById("accessSummary");
     const subscriptionBadge = document.getElementById("subscriptionBadge");
     const latestPaymentBox = document.getElementById("latestPaymentBox");
-    const sessionNote = document.getElementById("sessionNote");
-
-    const result = document.getElementById("result");
-    const landingResult = document.getElementById("landingResult");
-    const domainResult = document.getElementById("domainResult");
-    const domainVerifyResult = document.getElementById("domainVerifyResult");
-
-    const table = document.getElementById("table");
-    const ranking = document.getElementById("ranking");
-    const paymentsTable = document.getElementById("paymentsTable");
-    const domainsList = document.getElementById("domainsList");
-    const domainsSummary = document.getElementById("domainsSummary");
-
-    const panel = document.getElementById("panel");
-    const panelContent = document.getElementById("panelContent");
-    const toast = document.getElementById("toast");
-
-    const refreshBtn = document.getElementById("refreshBtn");
-    const upgradeBtn = document.getElementById("upgradeBtn");
-    const verifySessionBtn = document.getElementById("verifySessionBtn");
-    const preferPrimaryBtn = document.getElementById("preferPrimaryBtn");
-    const preferLegacyBtn = document.getElementById("preferLegacyBtn");
 
     const urlInput = document.getElementById("url");
     const slugInput = document.getElementById("customSlug");
-    const redirectDomain = document.getElementById("redirectDomain");
     const expireInput = document.getElementById("expire");
 
+    const bulkCountLegacy = document.getElementById("bulkCountLegacy");
+    const bulkCountPrimary = document.getElementById("bulkCountPrimary");
+    const searchInput = document.getElementById("search");
+    const backendFilter = document.getElementById("backendFilter");
+
+    const csvFileLegacy = document.getElementById("csvFileLegacy");
+    const csvFilePrimary = document.getElementById("csvFilePrimary");
+
+    const dropZoneLegacy = document.getElementById("dropZoneLegacy");
+    const dropZonePrimary = document.getElementById("dropZonePrimary");
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const upgradeBtn = document.getElementById("upgradeBtn");
     const createLegacyBtn = document.getElementById("createLegacyBtn");
     const createPrimaryBtn = document.getElementById("createPrimaryBtn");
     const bulkLegacyBtn = document.getElementById("bulkLegacyBtn");
     const bulkPrimaryBtn = document.getElementById("bulkPrimaryBtn");
-    const bulkCountLegacy = document.getElementById("bulkCountLegacy");
-    const bulkCountPrimary = document.getElementById("bulkCountPrimary");
-
-    const csvFileLegacy = document.getElementById("csvFileLegacy");
-    const csvFilePrimary = document.getElementById("csvFilePrimary");
     const uploadLegacyBtn = document.getElementById("uploadLegacyBtn");
     const uploadPrimaryBtn = document.getElementById("uploadPrimaryBtn");
-    const dropZoneLegacy = document.getElementById("dropZoneLegacy");
-    const dropZonePrimary = document.getElementById("dropZonePrimary");
-
-    const landingBackend = document.getElementById("landingBackend");
-    const landingSlug = document.getElementById("landingSlug");
-    const landingDomain = document.getElementById("landingDomain");
-    const landingTitle = document.getElementById("landingTitle");
-    const landingDescription = document.getElementById("landingDescription");
-    const landingImage = document.getElementById("landingImage");
-    const landingTheme = document.getElementById("landingTheme");
-    const landingCtaLabel = document.getElementById("landingCtaLabel");
-    const landingCtaUrl = document.getElementById("landingCtaUrl");
-    const landingFooter = document.getElementById("landingFooter");
-    const landingButtonLabel1 = document.getElementById("landingButtonLabel1");
-    const landingButtonUrl1 = document.getElementById("landingButtonUrl1");
-    const landingButtonLabel2 = document.getElementById("landingButtonLabel2");
-    const landingButtonUrl2 = document.getElementById("landingButtonUrl2");
-    const landingMetaTitle = document.getElementById("landingMetaTitle");
-    const landingMetaDescription = document.getElementById("landingMetaDescription");
-    const landingHtml = document.getElementById("landingHtml");
-    const landingCss = document.getElementById("landingCss");
-    const landingJs = document.getElementById("landingJs");
-    const landingPreviewBtn = document.getElementById("landingPreviewBtn");
-    const landingCreateBtn = document.getElementById("landingCreateBtn");
-    const landingUpdateBtn = document.getElementById("landingUpdateBtn");
-    const landingClearBtn = document.getElementById("landingClearBtn");
-    const landingPreviewFrame = document.getElementById("landingPreviewFrame");
-
-    const domainInput = document.getElementById("domainInput");
-    const domainAddBtn = document.getElementById("domainAddBtn");
-    const domainVerifySelect = document.getElementById("domainVerifySelect");
-    const domainVerifyBtn = document.getElementById("domainVerifyBtn");
-    const domainPrimaryBtn = document.getElementById("domainPrimaryBtn");
-    const domainRemoveBtn = document.getElementById("domainRemoveBtn");
-
-    const backendFilter = document.getElementById("backendFilter");
-    const itemTypeFilter = document.getElementById("itemTypeFilter");
-    const searchInput = document.getElementById("search");
+    const preferPrimaryBtn = document.getElementById("preferPrimaryBtn");
+    const preferLegacyBtn = document.getElementById("preferLegacyBtn");
+    const verifySessionBtn = document.getElementById("verifySessionBtn");
 
     const overlay = document.getElementById("overlay");
     const upgradeModal = document.getElementById("upgradeModal");
@@ -1533,10 +1151,10 @@
     const requestPaymentBtn = document.getElementById("requestPaymentBtn");
     const upgradeResult = document.getElementById("upgradeResult");
     const paymentRequestBox = document.getElementById("paymentRequestBox");
-   
+
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
-      return token ? { Authorization: `Bearer ${token}` } : {};
+      return token ? { "Authorization": `Bearer ${token}` } : {};
     }
 
     function apiBaseForBackend(backend) {
@@ -1551,34 +1169,26 @@
       return backend === "legacy" ? "backend-legacy" : "backend-primary";
     }
 
-    function normalizeDomain(value) {
-      return String(value || "")
-        .trim()
-        .toLowerCase()
-        .replace(/^https?:\/\//i, "")
-        .replace(/\/+$/g, "");
+    function buildPublicLink(slug, backend) {
+      return `${apiBaseForBackend(backend)}/${slug}`;
     }
 
-    function buildPublicLink(itemOrSlug, backendMaybe, domainMaybe = "") {
-      if (typeof itemOrSlug === "object" && itemOrSlug) {
-        const item = itemOrSlug;
-        const slug = String(item.slug || "").trim();
-        const domain = normalizeDomain(item.domain || "");
-        if (domain) return `https://${domain}/${slug}`;
-        return `${apiBaseForBackend(item.backend || "primary").replace(/\/+$/, "")}/${slug}`;
-      }
+    function updatePreferredButtons() {
+      preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
+      preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
+    }
 
-      const slug = String(itemOrSlug || "").trim();
-      const backend = backendMaybe || "primary";
-      const domain = normalizeDomain(domainMaybe || "");
-      if (domain) return `https://${domain}/${slug}`;
-      return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
+    function setTopBackendBadge() {
+      backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
+      backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+      sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      updatePreferredButtons();
     }
 
     function setBusy(button, busy, text = "") {
       if (!button) return;
       if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
-      button.disabled = !!busy;
+      button.disabled = busy;
       button.textContent = busy ? text : button.dataset.originalText;
     }
 
@@ -1637,32 +1247,32 @@
 
     function formatPaymentStatus(status) {
       const s = String(status || "").toLowerCase();
-      if (s === "verified") return `<span class="badge verified">Verified</span>`;
+      if (s === "verified") return `<span class="badge live">Verified</span>`;
       if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
       if (s === "pending") return `<span class="badge pending">Pending</span>`;
       if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
       return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
     }
 
-    function getStatus(item) {
-      if (item.paused) return '<span class="pill paused">Paused</span>';
-      if (item.expire && Number(item.expire) <= Date.now()) return '<span class="pill expired">Expired</span>';
+    function getStatus(link) {
+      if (link.paused) return '<span class="pill paused">Paused</span>';
+      if (link.expire && Number(link.expire) <= Date.now()) return '<span class="pill expired">Expired</span>';
       return '<span class="pill live">Live</span>';
     }
 
-    function scoreLink(item) {
+    function scoreLink(link) {
       let score = 0;
-      const clicks = Number(item.clicks || 0);
+      const clicks = Number(link.clicks || 0);
       if (clicks > 20) score += 20;
       if (clicks > 50) score += 30;
       if (clicks > 100) score += 30;
-      if (!item.paused) score += 10;
-      if (!item.expire || Number(item.expire) > Date.now()) score += 10;
+      if (!link.paused) score += 10;
+      if (!link.expire || Number(link.expire) > Date.now()) score += 10;
       return Math.min(score, 100);
     }
 
-    function detectFraud(item) {
-      const clicks = Number(item.clicks || 0);
+    function detectFraud(link) {
+      const clicks = Number(link.clicks || 0);
       if (clicks > 200) return "🔥 Bot Attack";
       if (clicks > 100) return "⚠️ Suspicious";
       return "✅ Normal";
@@ -1705,7 +1315,9 @@
     }
 
     async function callBackend(backend, path, options = {}) {
-      const headers = { ...(options.headers || {}) };
+      const headers = {
+        ...(options.headers || {})
+      };
 
       if (backend === "legacy") {
         headers["x-rattle-fallback"] = "legacy";
@@ -1741,9 +1353,36 @@
       return { ...res, backend: targetBackend };
     }
 
-    function normalizeItemType(value) {
-      const v = String(value || "redirect").toLowerCase();
-      return v === "landing" ? "landing" : "redirect";
+    async function verifyMainSession(showToastMessage = false) {
+      const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+
+      if (preferredRes.ok) {
+        sessionBackend = preferredBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = preferredRes.data || null;
+        renderMe();
+        setTopBackendBadge();
+        if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
+        return true;
+      }
+
+      const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
+      const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+
+      if (fallbackRes.ok) {
+        sessionBackend = otherBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = fallbackRes.data || null;
+        renderMe();
+        setTopBackendBadge();
+        if (showToastMessage) {
+          showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
+        }
+        return true;
+      }
+
+      logout();
+      return false;
     }
 
     function normalizeLinkItem(item, backend) {
@@ -1754,27 +1393,7 @@
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
         expire: item.expire ? Number(item.expire) : null,
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        domain: normalizeDomain(item.domain || ""),
-        linkType: normalizeItemType(item.linkType || item.link_type || "redirect"),
-        landingTitle: item.landingTitle || item.title || "",
-        landingDescription: item.landingDescription || item.description || "",
-        landingImage: item.landingImage || item.image || "",
-        landingTheme: item.landingTheme || item.theme || "#00ffff",
-        landingButtons: Array.isArray(item.landingButtons) ? item.landingButtons : (Array.isArray(item.buttons) ? item.buttons : []),
-        landingCtaLabel: item.landingCtaLabel || item.ctaLabel || "",
-        landingCtaUrl: item.landingCtaUrl || item.ctaUrl || "",
-        landingFooter: item.landingFooter || item.footer || "",
-        landingHtml: item.landingHtml || "",
-        landingCss: item.landingCss || "",
-        landingJs: item.landingJs || "",
-        metaTitle: item.metaTitle || "",
-        metaDescription: item.metaDescription || "",
-        publicLink: buildPublicLink({
-          slug: item.slug,
-          domain: item.domain || "",
-          backend
-        })
+        createdAt: Number(item.createdAt || item.created_at || 0)
       };
     }
 
@@ -1812,50 +1431,6 @@
       });
     }
 
-    function updatePreferredButtons() {
-      preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
-      preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
-    }
-
-    function setTopBackendBadge() {
-      backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
-      backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-      sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
-      updatePreferredButtons();
-    }
-
-    async function verifyMainSession(showToastMessage = false) {
-      const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
-
-      if (preferredRes.ok) {
-        sessionBackend = preferredBackend;
-        localStorage.setItem("sessionBackend", sessionBackend);
-        meState = preferredRes.data || null;
-        renderMe();
-        setTopBackendBadge();
-        if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
-        return true;
-      }
-
-      const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
-      const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
-
-      if (fallbackRes.ok) {
-        sessionBackend = otherBackend;
-        localStorage.setItem("sessionBackend", sessionBackend);
-        meState = fallbackRes.data || null;
-        renderMe();
-        setTopBackendBadge();
-        if (showToastMessage) {
-          showToast(`Preferred ${backendLabel(preferredBackend)} unavailable. Session works on ${backendLabel(sessionBackend)}.`);
-        }
-        return true;
-      }
-
-      logout();
-      return false;
-    }
-
     function renderMe() {
       if (!meState) return;
 
@@ -1881,11 +1456,11 @@
       } else if (paused) {
         badgeClass = "paused";
         badgeText = "Paused";
-        summary = "Your subscription is paused.";
+        summary = `Your subscription is paused.`;
       } else if (status === "expired") {
         badgeClass = "expired";
         badgeText = "Expired";
-        summary = "Your subscription is expired.";
+        summary = `Your subscription is expired.`;
       } else {
         badgeClass = "trial";
         badgeText = "Trial";
@@ -1927,14 +1502,14 @@
     function renderPlans() {
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
       planGrid.innerHTML = plans.map(plan => `
-        <div class="domain-card ${selectedPlan === plan.code ? "backend-active" : ""}" data-plan="${escapeHtml(plan.code)}" style="cursor:pointer;">
+        <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
           <h4>${escapeHtml(plan.label)}</h4>
           <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
           <div class="muted">${escapeHtml(plan.code)} billing</div>
         </div>
       `).join("");
 
-      document.querySelectorAll("[data-plan]").forEach(card => {
+      document.querySelectorAll(".plan-card").forEach(card => {
         card.onclick = () => {
           selectedPlan = card.dataset.plan;
           renderPlans();
@@ -2080,7 +1655,7 @@
       const verified = status === "verified";
 
       paymentRequestBox.innerHTML = `
-        <div class="card alt" style="margin:0;">
+        <div class="card" style="margin:0;">
           <div class="payment-box">
             <div class="payment-qr">
               <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
@@ -2297,198 +1872,180 @@
       renderPaymentRequestBox(payment);
     }
 
-    function renderDomainsSelectors() {
-      const verifiedDomains = domainsStore.filter(d => String(d.status || "").toLowerCase() === "verified");
+    function updateMiniStats() {
+      const primaryLinks = dataStore.filter(x => x.backend === "primary");
+      const legacyLinks = dataStore.filter(x => x.backend === "legacy");
 
-      const optionsHtml = ['<option value="">Default domain</option>']
-        .concat(
-          verifiedDomains.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`)
-        )
-        .join("");
-
-      redirectDomain.innerHTML = optionsHtml;
-      landingDomain.innerHTML = optionsHtml;
-
-      domainVerifySelect.innerHTML = ['<option value="">Select domain</option>']
-        .concat(
-          domainsStore.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`)
-        )
-        .join("");
+      primaryLinksCount.textContent = primaryLinks.length;
+      legacyLinksCount.textContent = legacyLinks.length;
+      primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
     }
 
-    function renderDomainsSummary() {
-      domainsCount.textContent = domainsStore.length;
+    async function checkOneBackendHealth(backend) {
+      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
+      if (health.ok) return health;
+      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
+    }
 
-      if (!domainsStore.length) {
-        domainsSummary.textContent = "No domains added yet.";
-        domainsList.innerHTML = "";
-        renderDomainsSelectors();
+    async function checkBackendHealth() {
+      const [p, l] = await Promise.all([
+        checkOneBackendHealth("primary"),
+        checkOneBackendHealth("legacy")
+      ]);
+
+      primaryHealth.innerHTML = p.ok
+        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+
+      legacyHealth.innerHTML = l.ok
+        ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+    }
+
+    async function loadLinks(showLoading = false) {
+      if (loadingLinks) return;
+      loadingLinks = true;
+
+      if (showLoading) {
+        setBusy(refreshBtn, true, "Loading...");
+        setResult("Loading links...", false);
+      }
+
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/list", { method: "GET" }, "primary", false),
+        authorizedFetch("/list", { method: "GET" }, "legacy", false)
+      ]);
+
+      loadingLinks = false;
+      setBusy(refreshBtn, false);
+
+      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+
+      dataStore = mergeLinks(primaryItems, legacyItems);
+
+      const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+      totalLinks.textContent = dataStore.length;
+      totalClicks.textContent = total;
+      avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+
+      updateMiniStats();
+      renderTable();
+      drawChart();
+      renderRanking();
+
+      if (showLoading) {
+        const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
+        const primaryMsg = primaryRes.ok ? "Backend2 OK" : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
+        setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
+      }
+    }
+
+    function renderTable() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const backendOnly = backendFilter.value || "all";
+
+      const filtered = dataStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        const backend = String(item.backend || "").toLowerCase();
+
+        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q);
+
+        return backendMatch && queryMatch;
+      });
+
+      if (!filtered.length) {
+        table.innerHTML = `<tr><td colspan="8" class="muted">No links found</td></tr>`;
         return;
       }
 
-      const verified = domainsStore.filter(d => String(d.status || "").toLowerCase() === "verified");
-      const primary = domainsStore.find(d => d.isPrimary);
+      table.innerHTML = filtered.map(item => {
+        const publicLink = buildPublicLink(item.slug, item.backend);
 
-      domainsSummary.innerHTML = `
-        Total domains: <b>${domainsStore.length}</b><br>
-        Verified: <b>${verified.length}</b><br>
-        Primary: <b>${primary ? escapeHtml(primary.domain) : "None"}</b>
-      `;
+        return `
+          <tr>
+            <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+            <td>
+              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+              <div class="muted">${escapeHtml(item.url || "")}</div>
+            </td>
+            <td>${getStatus(item)}</td>
+            <td>${fmtExpire(item.expire)}</td>
+            <td>${fmtDate(item.createdAt)}</td>
+            <td>
+              <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
+              <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
+              <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
+              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>
+              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>
+              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
 
-      domainsList.innerHTML = domainsStore.map(d => `
-        <div class="info-box">
-          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-            <div>
-              <b>${escapeHtml(d.domain)}</b>
-              ${d.isPrimary ? '<span class="badge live">Primary</span>' : ""}
-              ${String(d.status || "").toLowerCase() === "verified"
-                ? '<span class="badge verified">Verified</span>'
-                : '<span class="badge pending">Pending</span>'}
-            </div>
-            <div class="small muted">${fmtDate(d.createdAt)}</div>
-          </div>
-          <div class="muted" style="margin-top:8px;">TXT target: ${escapeHtml(d.verificationTarget || "")}</div>
-          <div class="muted">TXT value: ${escapeHtml(d.verifyToken || "")}</div>
-          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button type="button" class="copy" onclick="copyLink('${escapeForJs(d.verifyToken || "")}')">Copy TXT Value</button>
-            <button type="button" class="ghost-btn" onclick="selectDomainForActions('${escapeForJs(d.domain)}')">Select</button>
-          </div>
+      document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
+      document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
+      document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
+      document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend));
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("chart");
+      if (!canvas) return;
+      if (chart) chart.destroy();
+
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+      chart = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
+          datasets: [{
+            label: "Clicks",
+            data: sorted.map(i => Number(i.clicks || 0)),
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
+          scales: {
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+          }
+        }
+      });
+    }
+
+    function renderRanking() {
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (!sorted.length) {
+        ranking.innerHTML = `<div class="muted">No links yet</div>`;
+        return;
+      }
+
+      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
+        <div class="ranking-item">
+          <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+          <div>Clicks: ${Number(item.clicks || 0)}</div>
+          <div>Score: ${scoreLink(item)}/100</div>
+          <div>${detectFraud(item)}</div>
         </div>
       `).join("");
-
-      renderDomainsSelectors();
-    }
-
-    function selectDomainForActions(domain) {
-      domainVerifySelect.value = domain || "";
-      showToast("Domain selected");
-    }
-
-    async function loadDomains(showMessage = false) {
-      const res = await authorizedFetch("/domains/me", { method: "GET" }, "primary", false);
-
-      if (!res.ok) {
-        domainsStore = [];
-        renderDomainsSummary();
-        if (showMessage) setResult(res.data?.message || "Failed to load domains", true, domainResult);
-        return;
-      }
-
-      const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
-      domainsStore = domains.map(d => ({
-        ...d,
-        domain: normalizeDomain(d.domain || ""),
-        status: d.status || "pending",
-        isPrimary: !!d.isPrimary,
-        createdAt: Number(d.createdAt || d.created_at || 0),
-        verifiedAt: Number(d.verifiedAt || d.verified_at || 0) || null
-      })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-
-      renderDomainsSummary();
-      if (showMessage) showToast("Domains refreshed");
-    }
-
-    async function addDomain() {
-      const domain = normalizeDomain(domainInput.value);
-      if (!domain) {
-        setResult("Enter a domain first", true, domainResult);
-        return;
-      }
-
-      setBusy(domainAddBtn, true, "Adding...");
-      const res = await authorizedFetch("/domains/add", {
-        method: "POST",
-        body: JSON.stringify({ domain })
-      }, "primary", false);
-      setBusy(domainAddBtn, false);
-
-      if (!res.ok) {
-        setResult(res.data?.message || "Failed to add domain", true, domainResult);
-        return;
-      }
-
-      domainInput.value = "";
-      const txtName = res.data?.verificationTarget || "";
-      const txtValue = res.data?.verifyToken || "";
-      setResult(`Domain added.\nCreate TXT:\n${txtName}\nValue:\n${txtValue}`, false, domainResult);
-      await loadDomains(false);
-    }
-
-    async function verifyDomain() {
-      const domain = normalizeDomain(domainVerifySelect.value);
-      if (!domain) {
-        setResult("Select a domain", true, domainVerifyResult);
-        return;
-      }
-
-      setBusy(domainVerifyBtn, true, "Verifying...");
-      const res = await authorizedFetch("/domains/verify", {
-        method: "POST",
-        body: JSON.stringify({ domain })
-      }, "primary", false);
-      setBusy(domainVerifyBtn, false);
-
-      if (!res.ok) {
-        setResult(res.data?.message || "Verification failed", true, domainVerifyResult);
-        return;
-      }
-
-      setResult(`Domain verified: ${domain}`, false, domainVerifyResult);
-      await loadDomains(false);
-    }
-
-    async function setPrimaryDomain() {
-      const domain = normalizeDomain(domainVerifySelect.value);
-      if (!domain) {
-        setResult("Select a domain", true, domainVerifyResult);
-        return;
-      }
-
-      setBusy(domainPrimaryBtn, true, "Updating...");
-      const res = await authorizedFetch("/domains/set-primary", {
-        method: "POST",
-        body: JSON.stringify({ domain })
-      }, "primary", false);
-      setBusy(domainPrimaryBtn, false);
-
-      if (!res.ok) {
-        setResult(res.data?.message || "Could not set primary domain", true, domainVerifyResult);
-        return;
-      }
-
-      setResult(`Primary domain set: ${domain}`, false, domainVerifyResult);
-      await loadDomains(false);
-    }
-
-    async function removeDomain() {
-      const domain = normalizeDomain(domainVerifySelect.value);
-      if (!domain) {
-        setResult("Select a domain", true, domainVerifyResult);
-        return;
-      }
-
-      if (!confirm(`Remove domain ${domain}?`)) return;
-
-      setBusy(domainRemoveBtn, true, "Removing...");
-      const res = await authorizedFetch("/domains/remove", {
-        method: "POST",
-        body: JSON.stringify({ domain })
-      }, "primary", false);
-      setBusy(domainRemoveBtn, false);
-
-      if (!res.ok) {
-        setResult(res.data?.message || "Could not remove domain", true, domainVerifyResult);
-        return;
-      }
-
-      setResult(`Domain removed: ${domain}`, false, domainVerifyResult);
-      await loadDomains(false);
     }
 
     function getCreatePayload() {
       const url = urlInput.value.trim();
       const slug = slugInput.value.trim();
-      const domain = normalizeDomain(redirectDomain.value);
       const expireHours = expireInput.value.trim();
 
       if (!url) {
@@ -2498,7 +2055,6 @@
 
       const body = { url };
       if (slug) body.slug = slug;
-      if (domain) body.domain = domain;
 
       if (expireHours) {
         const hours = Number(expireHours);
@@ -2512,278 +2068,13 @@
       return body;
     }
 
-    function getLandingButtons() {
-      const buttons = [];
-
-      const b1Label = landingButtonLabel1.value.trim();
-      const b1Url = landingButtonUrl1.value.trim();
-      if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
-
-      const b2Label = landingButtonLabel2.value.trim();
-      const b2Url = landingButtonUrl2.value.trim();
-      if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
-
-      return buttons;
-    }
-
-    function getLandingPayload() {
-      const backend = landingBackend.value === "legacy" ? "legacy" : "primary";
-      const slug = landingSlug.value.trim();
-      const domain = normalizeDomain(landingDomain.value);
-      const title = landingTitle.value.trim();
-      const description = landingDescription.value.trim();
-      const image = landingImage.value.trim();
-      const theme = landingTheme.value.trim() || "#00ffff";
-      const ctaLabel = landingCtaLabel.value.trim();
-      const ctaUrl = landingCtaUrl.value.trim();
-      const footer = landingFooter.value.trim();
-      const buttons = getLandingButtons();
-      const html = landingHtml.value;
-      const css = landingCss.value;
-      const js = landingJs.value;
-      const metaTitle = landingMetaTitle.value.trim();
-      const metaDescription = landingMetaDescription.value.trim();
-
-      if (!slug) {
-        setResult("Landing slug is required", true, landingResult);
-        return null;
-      }
-
-      if (!title && !html.trim()) {
-        setResult("Landing title or custom HTML is required", true, landingResult);
-        return null;
-      }
-
-      return {
-        backend,
-        body: {
-          slug,
-          domain: domain || "",
-          title,
-          description,
-          image,
-          theme,
-          buttons,
-          ctaLabel,
-          ctaUrl,
-          footer,
-          landingHtml: html,
-          landingCss: css,
-          landingJs: js,
-          metaTitle,
-          metaDescription
-        }
-      };
-    }
-
-    function renderLandingPreview() {
-      const payload = getLandingPayload();
-      if (!payload) return;
-
-      const data = payload.body;
-      const title = escapeHtml(data.title || data.slug || "Landing Page");
-      const description = escapeHtml(data.description || "");
-      const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
-      const theme = escapeHtml(data.theme || "#00ffff");
-      const buttons = Array.isArray(data.buttons) ? data.buttons : [];
-      const ctaLabel = escapeHtml(data.ctaLabel || "");
-      const ctaUrl = data.ctaUrl || "";
-      const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-      const customHtml = String(data.landingHtml || "").trim();
-      const customCss = String(data.landingCss || "");
-      const customJs = String(data.landingJs || "");
-
-      let html = "";
-
-      if (customHtml) {
-        html = customHtml;
-      } else {
-        html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>${title}</title>
-<style>
-:root{
-  --theme:${theme};
-  --bg:#020617;
-  --card:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:Inter,Arial,sans-serif;
-  background:radial-gradient(circle at top,#0f172a,#000);
-  color:var(--text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-}
-.card{
-  width:min(560px,100%);
-  background:rgba(15,23,42,.92);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:22px;
-  padding:28px;
-  text-align:center;
-}
-.avatar{
-  width:110px;
-  height:110px;
-  margin:0 auto 18px;
-  border-radius:999px;
-  overflow:hidden;
-  border:3px solid var(--theme);
-  background:#111827;
-}
-.avatar img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-h1{margin:0 0 10px;color:var(--theme);font-size:30px;}
-p.desc{margin:0 0 22px;color:var(--muted);line-height:1.7;}
-.links{display:grid;gap:12px;}
-a.btn{
-  display:block;
-  padding:14px 16px;
-  border-radius:14px;
-  text-decoration:none;
-  font-weight:700;
-  border:1px solid rgba(255,255,255,.08);
-  background:#111827;
-  color:var(--text);
-}
-a.cta{background:var(--theme);color:#000;}
-.footer{margin-top:20px;color:var(--muted);font-size:12px;}
-${customCss}
-</style>
-</head>
-<body>
-  <div class="card">
-    ${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
-    <h1>${title}</h1>
-    ${description ? `<p class="desc">${description}</p>` : ""}
-    <div class="links">
-      ${buttons.map(btn => `<a class="btn" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`).join("")}
-      ${ctaLabel && ctaUrl ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>` : ""}
-    </div>
-    <div class="footer">${footer}</div>
-  </div>
-  ${customJs ? `<script>${customJs}<\/script>` : ""}
-</body>
-</html>`;
-      }
-
-      landingPreviewFrame.srcdoc = html;
-      setResult("Preview updated", false, landingResult);
-    }
-
-    function fillLandingForm(item) {
-      landingBackend.value = item.backend || "primary";
-      landingSlug.value = item.slug || "";
-      landingDomain.value = item.domain || "";
-      landingTitle.value = item.landingTitle || "";
-      landingDescription.value = item.landingDescription || "";
-      landingImage.value = item.landingImage || "";
-      landingTheme.value = item.landingTheme || "#00ffff";
-      landingCtaLabel.value = item.landingCtaLabel || "";
-      landingCtaUrl.value = item.landingCtaUrl || "";
-      landingFooter.value = item.landingFooter || "";
-      landingMetaTitle.value = item.metaTitle || "";
-      landingMetaDescription.value = item.metaDescription || "";
-      landingHtml.value = item.landingHtml || "";
-      landingCss.value = item.landingCss || "";
-      landingJs.value = item.landingJs || "";
-
-      const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
-      landingButtonLabel1.value = buttons[0]?.label || "";
-      landingButtonUrl1.value = buttons[0]?.url || "";
-      landingButtonLabel2.value = buttons[1]?.label || "";
-      landingButtonUrl2.value = buttons[1]?.url || "";
-
-      switchCreateTab("landingTab");
-      renderLandingPreview();
-      showToast("Landing loaded into form");
-    }
-
-    function clearLandingForm() {
-      landingSlug.value = "";
-      landingDomain.value = "";
-      landingTitle.value = "";
-      landingDescription.value = "";
-      landingImage.value = "";
-      landingTheme.value = "#00ffff";
-      landingCtaLabel.value = "";
-      landingCtaUrl.value = "";
-      landingFooter.value = "";
-      landingButtonLabel1.value = "";
-      landingButtonUrl1.value = "";
-      landingButtonLabel2.value = "";
-      landingButtonUrl2.value = "";
-      landingMetaTitle.value = "";
-      landingMetaDescription.value = "";
-      landingHtml.value = "";
-      landingCss.value = "";
-      landingJs.value = "";
-      landingPreviewFrame.srcdoc = "";
-      setResult("Landing form cleared", false, landingResult);
-    }
-
-    async function createLanding() {
-      const payload = getLandingPayload();
-      if (!payload) return;
-
-      setBusy(landingCreateBtn, true, "Creating...");
-      const res = await authorizedFetch("/landing/create", {
-        method: "POST",
-        body: JSON.stringify(payload.body)
-      }, payload.backend, false);
-      setBusy(landingCreateBtn, false);
-
-      if (!res.ok) {
-        if (res.status === 402) openUpgradeModal();
-        setResult(res.data?.message || "Landing create failed", true, landingResult);
-        return;
-      }
-
-      setResult(`Landing created: ${res.data?.link || "Success"}`, false, landingResult);
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    async function updateLanding() {
-      const payload = getLandingPayload();
-      if (!payload) return;
-
-      setBusy(landingUpdateBtn, true, "Updating...");
-      const res = await authorizedFetch("/landing/update", {
-        method: "POST",
-        body: JSON.stringify(payload.body)
-      }, payload.backend, false);
-      setBusy(landingUpdateBtn, false);
-
-      if (!res.ok) {
-        setResult(res.data?.message || "Landing update failed", true, landingResult);
-        return;
-      }
-
-      setResult("Landing updated", false, landingResult);
-      await loadLinks(false);
-    }
-
     async function createLinkForBackend(backend) {
       const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
       const body = getCreatePayload();
       if (!body) return;
 
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-      setResult(`Creating ${backendLabel(backend)} redirect...`, false);
+      setResult(`Creating ${backendLabel(backend)} link...`, false);
 
       let res = await authorizedFetch("/create", {
         method: "POST",
@@ -2829,7 +2120,7 @@ ${customCss}
       if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
 
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-      setResult(`Bulk creating ${count} ${backendLabel(backend)} redirects...`, false);
+      setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
 
       let success = 0;
       for (let i = 0; i < count; i++) {
@@ -2862,22 +2153,19 @@ ${customCss}
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    async function deleteItem(slug, backend, domain = "", linkType = "redirect") {
-      const name = linkType === "landing" ? "landing page" : "redirect";
-      if (!confirm(`Delete ${name} ${slug}${domain ? ` on ${domain}` : ""} from ${backendLabel(backend)}?`)) return;
+    async function deleteLink(slug, backend) {
+      if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
 
-      const path = linkType === "landing" ? "/landing/delete" : "/delete";
-
-      let res = await authorizedFetch(path, {
+      let res = await authorizedFetch("/delete", {
         method: "POST",
-        body: JSON.stringify({ slug, domain })
+        body: JSON.stringify({ slug })
       }, backend, false);
 
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch(path, {
+        res = await authorizedFetch("/delete", {
           method: "POST",
-          body: JSON.stringify({ slug, domain })
+          body: JSON.stringify({ slug })
         }, backend, false);
       }
 
@@ -2953,11 +2241,11 @@ ${customCss}
         panelContent.innerHTML = `
           <h3>ℹ️ About Rattle Link</h3>
           <div class="muted">
-            Rattle Link is a smart short-link platform that lets users create, manage, and monitor redirects, landing pages, domains, and payments across connected backend systems.
+            Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.
           </div>
           <div class="info-box" style="margin-top:12px;">
             <b>What it does</b>
-            <div class="muted">Shorten links, host landing pages, manage expiry, review analytics, track clicks, and control payments through one dashboard.</div>
+            <div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div>
           </div>
           <div class="info-box">
             <b>Why two backends</b>
@@ -2965,7 +2253,7 @@ ${customCss}
           </div>
           <div class="info-box">
             <b>Main purpose</b>
-            <div class="muted">Fast link creation, hosted landing pages, domain support, clean analytics, billing control, and operational visibility.</div>
+            <div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div>
           </div>
         `;
       }
@@ -2979,7 +2267,7 @@ ${customCss}
           </div>
           <div class="info-box">
             <b>Privacy</b>
-            <div class="muted">Account details, payment references, click records, domain data, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div>
+            <div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div>
           </div>
           <div class="info-box">
             <b>Billing</b>
@@ -2987,7 +2275,7 @@ ${customCss}
           </div>
           <div class="info-box">
             <b>User Responsibility</b>
-            <div class="muted">You are responsible for the content behind your links and landing pages, your domains, and for protecting your login credentials.</div>
+            <div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div>
           </div>
         `;
       }
@@ -3013,17 +2301,16 @@ ${customCss}
           <div class="muted" style="margin-top:8px;">
             • login/session problems<br>
             • payment verification delay<br>
-            • redirect paused or expired<br>
-            • landing page help<br>
-            • custom domain verification<br>
-            • analytics questions
+            • link paused or expired<br>
+            • link analytics questions<br>
+            • account verification help
           </div>
         </div>
 
         <div class="info-box">
           <b>Before contacting support</b>
           <div class="muted" style="margin-top:8px;">
-            Include your email, payment ID if relevant, backend used, item slug/domain, and a short explanation of the problem.
+            Include your email, payment ID if relevant, backend used, and a short explanation of the problem.
           </div>
         </div>
 
@@ -3044,12 +2331,11 @@ ${customCss}
       });
     }
 
-    async function showGeo(slug, backend, domain = "") {
+    async function showGeo(slug, backend) {
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
         <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
-        <div class="muted">Domain: ${escapeHtml(domain || "default")}</div>
         <div class="muted">Loading location data...</div>
         <div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
       `;
@@ -3064,10 +2350,7 @@ ${customCss}
         attribution: "&copy; OpenStreetMap contributors"
       }).addTo(map);
 
-      const qs = new URLSearchParams({ slug });
-      if (domain) qs.set("domain", domain);
-
-      const res = await authorizedFetch(`/history?${qs.toString()}`, { method: "GET" }, backend, false);
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
       if (!history.length) {
@@ -3095,12 +2378,11 @@ ${customCss}
       }
     }
 
-    async function showHistory(slug, backend, domain = "") {
+    async function showHistory(slug, backend) {
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
         <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
-        <div class="muted">Domain: ${escapeHtml(domain || "default")}</div>
         <canvas id="statsChart" height="120"></canvas>
         <div id="statsBody" style="margin-top:14px;"></div>
         <h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4>
@@ -3110,15 +2392,12 @@ ${customCss}
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
 
-      const qs = new URLSearchParams({ slug });
-      if (domain) qs.set("domain", domain);
-
-      const res = await authorizedFetch(`/history?${qs.toString()}`, { method: "GET" }, backend, false);
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
-      const item = dataStore.find(l => l.slug === slug && l.backend === backend && normalizeDomain(l.domain || "") === normalizeDomain(domain || ""));
+      const link = dataStore.find(l => l.slug === slug && l.backend === backend);
 
-      if (!history.length && item && Number(item.clicks || 0) > 0) {
-        history = Array.from({ length: Number(item.clicks || 0) }).map((_, i) => ({
+      if (!history.length && link && Number(link.clicks || 0) > 0) {
+        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
           ip: "unknown",
           time: Date.now() - (i * 30000),
           risk: 0,
@@ -3295,216 +2574,8 @@ ${customCss}
       await processFile(file, backend);
     }
 
-    async function loadOneBackendList(backend) {
-      const res = await authorizedFetch("/list", { method: "GET" }, backend, false);
-      return res.ok && Array.isArray(res.data?.items) ? res.data.items : [];
-    }
-
-    async function loadLinks(showLoading = false) {
-      if (loadingLinks) return;
-      loadingLinks = true;
-
-      if (showLoading) {
-        setBusy(refreshBtn, true, "Loading...");
-        setResult("Loading items...", false);
-      }
-
-      const [primaryItems, legacyItems] = await Promise.all([
-        loadOneBackendList("primary"),
-        loadOneBackendList("legacy")
-      ]);
-
-      loadingLinks = false;
-      setBusy(refreshBtn, false);
-
-      dataStore = mergeLinks(primaryItems, legacyItems);
-
-      const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-      const redirects = dataStore.filter(x => x.linkType === "redirect");
-      const landings = dataStore.filter(x => x.linkType === "landing");
-
-      totalLinks.textContent = dataStore.length;
-      totalRedirects.textContent = redirects.length;
-      totalLandings.textContent = landings.length;
-      totalClicks.textContent = total;
-      avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
-
-      updateMiniStats();
-      renderTable();
-      drawChart();
-      renderRanking();
-
-      if (showLoading) {
-        setResult(`Loaded ${dataStore.length} items`, false);
-      }
-    }
-
-    function updateMiniStats() {
-      const primaryItems = dataStore.filter(x => x.backend === "primary");
-      const legacyItems = dataStore.filter(x => x.backend === "legacy");
-
-      primaryLinksCount.textContent = primaryItems.length;
-      legacyLinksCount.textContent = legacyItems.length;
-      primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
-    }
-
-    function renderTable() {
-      const q = (searchInput.value || "").trim().toLowerCase();
-      const backendOnly = backendFilter.value || "all";
-      const typeOnly = itemTypeFilter.value || "all";
-
-      const filtered = dataStore.filter(item => {
-        const slug = String(item.slug || "").toLowerCase();
-        const url = String(item.url || "").toLowerCase();
-        const backend = String(item.backend || "").toLowerCase();
-        const domain = String(item.domain || "").toLowerCase();
-        const title = String(item.landingTitle || "").toLowerCase();
-        const itemType = String(item.linkType || "redirect").toLowerCase();
-
-        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-        const typeMatch = typeOnly === "all" ? true : itemType === typeOnly;
-        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q) || domain.includes(q) || title.includes(q);
-
-        return backendMatch && typeMatch && queryMatch;
-      });
-
-      if (!filtered.length) {
-        table.innerHTML = `<tr><td colspan="10" class="muted">No items found</td></tr>`;
-        return;
-      }
-
-      table.innerHTML = filtered.map(item => {
-        const publicLink = buildPublicLink(item);
-        const itemType = item.linkType === "landing"
-          ? '<span class="badge verified">Landing</span>'
-          : '<span class="badge live">Redirect</span>';
-
-        return `
-          <tr>
-            <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
-            <td>${itemType}</td>
-            <td>
-              <b>${escapeHtml(item.slug)}</b>
-              ${item.linkType === "landing" && item.landingTitle ? `<div class="muted">${escapeHtml(item.landingTitle)}</div>` : ""}
-            </td>
-            <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
-            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
-            <td>
-              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
-              <div class="muted">${escapeHtml(item.url || "")}</div>
-            </td>
-            <td>${getStatus(item)}</td>
-            <td>${fmtExpire(item.expire)}</td>
-            <td>${fmtDate(item.createdAt)}</td>
-            <td>
-              <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
-              <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
-              <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
-              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-domain="${escapeHtml(item.domain || "")}">Stats</button>
-              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-domain="${escapeHtml(item.domain || "")}">Geo</button>
-              ${item.linkType === "landing"
-                ? `<button class="edit-landing-btn ghost-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-domain="${escapeHtml(item.domain || "")}">Edit</button>`
-                : ""
-              }
-              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-domain="${escapeHtml(item.domain || "")}" data-linktype="${escapeHtml(item.linkType)}">Delete</button>
-            </td>
-          </tr>
-        `;
-      }).join("");
-
-      document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
-      document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
-      document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
-      document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend, btn.dataset.domain || ""));
-      document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend, btn.dataset.domain || ""));
-      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteItem(btn.dataset.slug, btn.dataset.backend, btn.dataset.domain || "", btn.dataset.linktype || "redirect"));
-      document.querySelectorAll(".edit-landing-btn").forEach(btn => {
-        btn.onclick = async () => {
-          const item = dataStore.find(x =>
-            x.slug === btn.dataset.slug &&
-            x.backend === btn.dataset.backend &&
-            normalizeDomain(x.domain || "") === normalizeDomain(btn.dataset.domain || "")
-          );
-          if (item) fillLandingForm(item);
-        };
-      });
-    }
-
-    function drawChart() {
-      const canvas = document.getElementById("chart");
-      if (!canvas) return;
-      if (chart) chart.destroy();
-
-      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 20);
-
-      chart = new Chart(canvas, {
-        type: "line",
-        data: {
-          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
-          datasets: [{
-            label: "Clicks",
-            data: sorted.map(i => Number(i.clicks || 0)),
-            tension: 0.35
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-          }
-        }
-      });
-    }
-
-    function renderRanking() {
-      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-      if (!sorted.length) {
-        ranking.innerHTML = `<div class="muted">No items yet</div>`;
-        return;
-      }
-
-      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
-        <div class="ranking-item">
-          <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div>Type: ${escapeHtml(item.linkType)}</div>
-          <div>Clicks: ${Number(item.clicks || 0)}</div>
-          <div>Score: ${scoreLink(item)}/100</div>
-          <div>${detectFraud(item)}</div>
-        </div>
-      `).join("");
-    }
-
-    async function checkOneBackendHealth(backend) {
-      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
-      if (health.ok) return health;
-      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
-    }
-
-    async function checkBackendHealth() {
-      const [p, l] = await Promise.all([
-        checkOneBackendHealth("primary"),
-        checkOneBackendHealth("legacy")
-      ]);
-
-      primaryHealth.innerHTML = p.ok
-        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-
-      legacyHealth.innerHTML = l.ok
-        ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
-    }
     function refreshNow() {
-      Promise.all([
-        loadMe(true),
-        loadLinks(true),
-        loadPayments(false),
-        loadDomains(false),
-        checkBackendHealth()
-      ]);
+      Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
     }
 
     function logout() {
@@ -3517,24 +2588,6 @@ ${customCss}
       window.location.href = "index.html";
     }
 
-    function switchCreateTab(tabId) {
-      document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === tabId);
-      });
-
-      document.querySelectorAll(".tab-panel").forEach(panelEl => {
-        panelEl.classList.toggle("active", panelEl.id === tabId);
-      });
-    }
-
-    function setupTabs() {
-      document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          switchCreateTab(btn.dataset.tab);
-        });
-      });
-    }
-
     function setupKeyboardShortcuts() {
       [urlInput, slugInput, expireInput].forEach(el => {
         el.addEventListener("keydown", e => {
@@ -3542,31 +2595,8 @@ ${customCss}
         });
       });
 
-      [
-        landingSlug,
-        landingTitle,
-        landingDescription,
-        landingImage,
-        landingTheme,
-        landingCtaLabel,
-        landingCtaUrl,
-        landingFooter,
-        landingButtonLabel1,
-        landingButtonUrl1,
-        landingButtonLabel2,
-        landingButtonUrl2,
-        landingMetaTitle
-      ].forEach(el => {
-        el.addEventListener("keydown", e => {
-          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-            renderLandingPreview();
-          }
-        });
-      });
-
       searchInput.addEventListener("input", renderTable);
       backendFilter.addEventListener("change", renderTable);
-      itemTypeFilter.addEventListener("change", renderTable);
     }
 
     function wireDropZone(zone, backend) {
@@ -3608,213 +2638,29 @@ ${customCss}
       });
     }
 
-    function getDefaultDomainFromStore() {
-      const primary = domainsStore.find(d => d.isPrimary);
-      return primary ? primary.domain : "";
-    }
+    refreshBtn.addEventListener("click", refreshNow);
+    upgradeBtn.addEventListener("click", openUpgradeModal);
+    createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
+    createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
+    bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
+    bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
+    uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
+    uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
+    requestPaymentBtn.addEventListener("click", createPaymentRequest);
+    preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
+    preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+    verifySessionBtn.addEventListener("click", async () => {
+      setBusy(verifySessionBtn, true, "Checking...");
+      await verifyMainSession(true);
+      setBusy(verifySessionBtn, false);
+    });
 
-    function getSelectedBackendForLanding() {
-      return landingBackend.value === "legacy" ? "legacy" : "primary";
-    }
-
-    function usePrimaryDomainDefaults() {
-      const defaultDomain = getDefaultDomainFromStore();
-      if (!redirectDomain.value && defaultDomain) redirectDomain.value = defaultDomain;
-      if (!landingDomain.value && defaultDomain) landingDomain.value = defaultDomain;
-    }
-
-    function attachLandingLivePreview() {
-      [
-        landingSlug,
-        landingDomain,
-        landingTitle,
-        landingDescription,
-        landingImage,
-        landingTheme,
-        landingCtaLabel,
-        landingCtaUrl,
-        landingFooter,
-        landingButtonLabel1,
-        landingButtonUrl1,
-        landingButtonLabel2,
-        landingButtonUrl2,
-        landingMetaTitle,
-        landingMetaDescription,
-        landingHtml,
-        landingCss,
-        landingJs
-      ].forEach(el => {
-        el.addEventListener("input", () => {
-          clearTimeout(window.__landingPreviewTimer);
-          window.__landingPreviewTimer = setTimeout(() => {
-            if (document.getElementById("landingTab").classList.contains("active")) {
-              try {
-                renderLandingPreview();
-              } catch {}
-            }
-          }, 250);
-        });
-      });
-    }
-
-    function getItemByIdentity(slug, backend, domain = "") {
-      return dataStore.find(item =>
-        String(item.slug || "") === String(slug || "") &&
-        String(item.backend || "") === String(backend || "") &&
-        normalizeDomain(item.domain || "") === normalizeDomain(domain || "")
-      );
-    }
-
-    function normalizeCsvLine(line) {
-      return String(line || "").trim();
-    }
-
-    async function previewLandingFromExisting(slug, backend, domain = "") {
-      const item = getItemByIdentity(slug, backend, domain);
-      if (!item) {
-        showToast("Landing not found");
-        return;
-      }
-      fillLandingForm(item);
-      renderLandingPreview();
-    }
-
-    function openPreviewPublic(item) {
-      if (!item) return;
-      const link = buildPublicLink(item);
-      openLink(link);
-    }
-
-    function buildItemActionsSummary(item) {
-      return `
-        <div class="info-box">
-          <b>${escapeHtml(item.slug)}</b>
-          <div class="muted">Backend: ${escapeHtml(backendLabel(item.backend))}</div>
-          <div class="muted">Type: ${escapeHtml(item.linkType)}</div>
-          <div class="muted">Domain: ${escapeHtml(item.domain || "default")}</div>
-          <div class="muted">Public link: ${escapeHtml(buildPublicLink(item))}</div>
-        </div>
-      `;
-    }
-
-    function openItemQuickPanel(slug, backend, domain = "") {
-      const item = getItemByIdentity(slug, backend, domain);
-      if (!item) return;
-
-      panel.style.display = "block";
-      panelContent.innerHTML = `
-        <h3>⚡ Item Quick Actions</h3>
-        ${buildItemActionsSummary(item)}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button type="button" class="copy" onclick="copyLink('${escapeForJs(buildPublicLink(item))}')">Copy Public Link</button>
-          <button type="button" class="open" onclick="openLink('${escapeForJs(buildPublicLink(item))}')">Open Public Link</button>
-          <button type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(item.domain || "")}')">Analytics</button>
-          <button type="button" onclick="showGeo('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(item.domain || "")}')">Geo Map</button>
-          ${
-            item.linkType === "landing"
-              ? `<button type="button" class="pink-btn" onclick="previewLandingFromExisting('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(item.domain || "")}')">Edit Landing</button>`
-              : ""
-          }
-          <button type="button" class="danger-btn" onclick="deleteItem('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(item.domain || "")}','${escapeForJs(item.linkType || "redirect")}')">Delete</button>
-        </div>
-      `;
-    }
-
-    async function handleLandingCreateOrUpdate(mode) {
-      if (mode === "create") {
-        await createLanding();
-      } else {
-        await updateLanding();
-      }
-    }
-
-    async function safeRefreshAfterCreate() {
-      await Promise.all([
-        loadLinks(false),
-        loadMe(false),
-        loadDomains(false)
-      ]);
-    }
-
-    function syncLandingBackendDomainOptions() {
-      renderDomainsSelectors();
-      usePrimaryDomainDefaults();
-    }
-
-    function setupCreateAreaHelpers() {
-      landingBackend.addEventListener("change", () => {
-        syncLandingBackendDomainOptions();
-      });
-
-      landingPreviewBtn.addEventListener("click", renderLandingPreview);
-      landingCreateBtn.addEventListener("click", () => handleLandingCreateOrUpdate("create"));
-      landingUpdateBtn.addEventListener("click", () => handleLandingCreateOrUpdate("update"));
-      landingClearBtn.addEventListener("click", clearLandingForm);
-
-      domainAddBtn.addEventListener("click", addDomain);
-      domainVerifyBtn.addEventListener("click", verifyDomain);
-      domainPrimaryBtn.addEventListener("click", setPrimaryDomain);
-      domainRemoveBtn.addEventListener("click", removeDomain);
-
-      requestPaymentBtn.addEventListener("click", createPaymentRequest);
-    }
-
-    function setupButtons() {
-      refreshBtn.addEventListener("click", refreshNow);
-      upgradeBtn.addEventListener("click", openUpgradeModal);
-
-      createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
-      createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
-
-      bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
-      bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
-
-      uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
-      uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
-
-      preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
-      preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
-
-      verifySessionBtn.addEventListener("click", async () => {
-        setBusy(verifySessionBtn, true, "Checking...");
-        await verifyMainSession(true);
-        setBusy(verifySessionBtn, false);
-      });
-    }
-
-    function setupGlobalHelpers() {
-      window.openSupportPanel = openSupportPanel;
-      window.openInfoPanel = openInfoPanel;
-      window.toggleAllFaq = toggleAllFaq;
-      window.copyLink = copyLink;
-      window.showPaymentDetails = showPaymentDetails;
-      window.closePanel = closePanel;
-      window.openUpgradeModal = openUpgradeModal;
-      window.closeUpgradeModal = closeUpgradeModal;
-      window.loadPayments = loadPayments;
-      window.logout = logout;
-      window.markPaymentSent = markPaymentSent;
-      window.selectDomainForActions = selectDomainForActions;
-      window.previewLandingFromExisting = previewLandingFromExisting;
-      window.showHistory = showHistory;
-      window.showGeo = showGeo;
-      window.openLink = openLink;
-      window.deleteItem = deleteItem;
-      window.openItemQuickPanel = openItemQuickPanel;
-    }
-
-    async function initDashboard() {
+    (async function init() {
       if (!ensureAuth()) return;
 
       setTopBackendBadge();
-      setupTabs();
       setupKeyboardShortcuts();
       setupFaq();
-      setupButtons();
-      setupCreateAreaHelpers();
-      attachLandingLivePreview();
-      setupGlobalHelpers();
-
       wireDropZone(dropZoneLegacy, "legacy");
       wireDropZone(dropZonePrimary, "primary");
 
@@ -3823,11 +2669,8 @@ ${customCss}
         loadMe(true),
         loadLinks(true),
         loadPayments(false),
-        loadDomains(false),
         checkBackendHealth()
       ]);
-
-      syncLandingBackendDomainOptions();
 
       if (waitingPaymentId) {
         const p = paymentsStore.find(x => x.id === waitingPaymentId);
@@ -3840,27 +2683,21 @@ ${customCss}
         loadMe(false);
         loadLinks(false);
         loadPayments(false);
-        loadDomains(false);
         checkBackendHealth();
       }, 15000);
-    }
+    })();
 
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        loadMe(false);
-        loadLinks(false);
-        loadPayments(false);
-        loadDomains(false);
-        checkBackendHealth();
-      }
-    });
-
-    window.addEventListener("beforeunload", () => {
-      stopPaymentPolling();
-      clearInterval(refreshTimer);
-    });
-
-    initDashboard();
+    window.openSupportPanel = openSupportPanel;
+    window.openInfoPanel = openInfoPanel;
+    window.toggleAllFaq = toggleAllFaq;
+    window.copyLink = copyLink;
+    window.showPaymentDetails = showPaymentDetails;
+    window.closePanel = closePanel;
+    window.openUpgradeModal = openUpgradeModal;
+    window.closeUpgradeModal = closeUpgradeModal;
+    window.loadPayments = loadPayments;
+    window.logout = logout;
+    window.markPaymentSent = markPaymentSent;
   </script>
 </body>
 </html>
