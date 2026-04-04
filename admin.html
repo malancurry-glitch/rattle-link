@@ -45,7 +45,6 @@
       --red:#ef4444;
       --yellow:#f59e0b;
       --purple:#8b5cf6;
-      --amber:#f59e0b;
       --orange:#fb923c;
       --sky:#60a5fa;
       --border:rgba(0,255,255,.15);
@@ -75,7 +74,7 @@
     }
 
     .sidebar{
-      width:260px;
+      width:270px;
       min-height:100vh;
       background:#020617;
       border-right:1px solid var(--border);
@@ -297,7 +296,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1180px;
+      min-width:1240px;
     }
 
     th,td{
@@ -352,6 +351,10 @@
     .cancelled{ background:#3a0b0b; color:#fca5a5; }
     .legacy-source{ background:#3a2a00; color:#fde047; }
     .primary-source{ background:#062e1d; color:#86efac; }
+    .domain-pending{ background:#332701; color:#fde68a; }
+    .domain-verified{ background:#052e16; color:#86efac; }
+    .landing-type{ background:#1e1b4b; color:#c4b5fd; }
+    .redirect-type{ background:#03263a; color:#67e8f9; }
 
     .muted{ color:var(--muted); }
 
@@ -371,7 +374,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:520px;
+      width:560px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -498,6 +501,14 @@
       margin-bottom:12px;
     }
 
+    .preview-frame{
+      width:100%;
+      min-height:520px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+    }
+
     @media (max-width: 1000px){
       body{ display:block; }
       .sidebar{
@@ -522,6 +533,8 @@
     <button class="nav-btn" id="navUsers">👥 Users</button>
     <button class="nav-btn" id="navPayments">💳 Payments</button>
     <button class="nav-btn" id="navLinks">🔗 Links</button>
+    <button class="nav-btn" id="navDomains">🌐 Domains</button>
+    <button class="nav-btn" id="navLanding">🪄 Landing Pages</button>
     <button class="nav-btn" id="navAudit">📜 Audit</button>
 
     <div class="sidebar-section">
@@ -532,9 +545,13 @@
       <button id="showAwaitingBtn">⚡ Awaiting Payments</button>
       <button id="showPendingBtn">🟡 Pending Payments</button>
       <button id="showVerifiedBtn">✅ Verified Payments</button>
+      <button id="showDomainsBtn">🌐 View Domains</button>
+      <button id="showLandingBtn">🪄 View Landing Pages</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Links</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
+      <button id="exportDomainsBtn">⬇️ Export Domains</button>
+      <button id="exportLandingBtn">⬇️ Export Landing</button>
       <button id="logoutBtn" class="btn-red">🚪 Logout</button>
     </div>
   </aside>
@@ -543,7 +560,7 @@
     <div class="header">
       <div>
         <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control.</div>
+        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, domains, and landing pages.</div>
       </div>
 
       <div class="header-actions">
@@ -565,6 +582,18 @@
           <div class="label">Total Links</div>
           <div class="value" id="statLinks">0</div>
           <div class="delta" id="statLinksMeta">Short links created</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Landing Pages</div>
+          <div class="value" id="statLanding">0</div>
+          <div class="delta" id="statLandingMeta">Hosted landing pages</div>
+        </div>
+
+        <div class="card stat">
+          <div class="label">Custom Domains</div>
+          <div class="value" id="statDomains">0</div>
+          <div class="delta" id="statDomainsMeta">Attached user domains</div>
         </div>
 
         <div class="card stat">
@@ -624,13 +653,13 @@
         </div>
 
         <div class="card">
-          <h3>👑 Admin Accounts</h3>
-          <div id="adminList" class="list-box"></div>
+          <h3>🌐 Latest Domains</h3>
+          <div id="domainList" class="list-box"></div>
         </div>
 
         <div class="card">
-          <h3>🚫 Banned Accounts</h3>
-          <div id="bannedList" class="list-box"></div>
+          <h3>🪄 Latest Landing Pages</h3>
+          <div id="landingList" class="list-box"></div>
         </div>
       </div>
 
@@ -703,15 +732,7 @@
         </div>
 
         <div class="highlight-box">
-          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>. These are the highest priority items to verify.
-        </div>
-
-        <div class="danger-box">
-          <b>Payment Controls:</b> You can now <b>verify</b>, <b>cancel</b>, or <b>delete</b> mistaken or unwanted payments directly from the actions column.
-        </div>
-
-        <div class="section-note">
-          Payments are merged from both backends. Every action runs on the payment’s own backend source.
+          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>.
         </div>
 
         <div class="table-wrap">
@@ -738,7 +759,7 @@
     <section id="linksSection" class="hidden">
       <div class="card">
         <div class="toolbar">
-          <input id="linkSearch" placeholder="Search slug, url, user..." />
+          <input id="linkSearch" placeholder="Search slug, url, user, domain..." />
           <select id="linkFilterStatus">
             <option value="">All link status</option>
             <option value="active">Active</option>
@@ -758,6 +779,8 @@
               <tr>
                 <th>User</th>
                 <th>Slug</th>
+                <th>Domain</th>
+                <th>Type</th>
                 <th>URL</th>
                 <th>Clicks</th>
                 <th>Status</th>
@@ -767,6 +790,77 @@
               </tr>
             </thead>
             <tbody id="links"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="domainsSection" class="hidden">
+      <div class="card">
+        <div class="toolbar">
+          <input id="domainSearch" placeholder="Search domain or username..." />
+          <select id="domainStatusFilter">
+            <option value="">All domain status</option>
+            <option value="pending">Pending</option>
+            <option value="verified">Verified</option>
+          </select>
+        </div>
+
+        <div class="section-note">
+          Domain data comes from Backend2. Admin can review, verify, and remove custom domains.
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>User</th>
+                <th>Status</th>
+                <th>TXT Target</th>
+                <th>Verify Token</th>
+                <th>Created</th>
+                <th>Verified</th>
+                <th>Primary</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="domains"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="landingSection" class="hidden">
+      <div class="card">
+        <div class="toolbar">
+          <input id="landingSearch" placeholder="Search landing slug, title, domain, user..." />
+          <select id="landingSourceFilter">
+            <option value="">All sources</option>
+            <option value="primary">Backend2</option>
+            <option value="legacy">Legacy AWS</option>
+          </select>
+        </div>
+
+        <div class="section-note">
+          Landing pages are link records with <b>linkType = landing</b>. You can preview and remove them here.
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Slug</th>
+                <th>Domain</th>
+                <th>Title</th>
+                <th>Theme</th>
+                <th>Clicks</th>
+                <th>Source</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="landingPages"></tbody>
           </table>
         </div>
       </div>
@@ -793,6 +887,8 @@
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const DEFAULT_PRIMARY_HOST = "rattleshortapi.it.com";
+    const DEFAULT_LEGACY_HOST = "suvegwrmzl.execute-api.us-east-2.amazonaws.com";
 
     const API_BY_SOURCE = {
       primary: PRIMARY_API,
@@ -803,6 +899,8 @@
     let linksData = [];
     let paymentsData = [];
     let auditData = [];
+    let domainsData = [];
+    let landingData = [];
     let chart = null;
     let autoRefresh = true;
     let refreshTimer = null;
@@ -812,11 +910,15 @@
       usersData: [],
       linksData: [],
       paymentsData: [],
-      auditData: []
+      auditData: [],
+      domainsData: [],
+      landingData: []
     };
 
     const statUsers = document.getElementById("statUsers");
     const statLinks = document.getElementById("statLinks");
+    const statLanding = document.getElementById("statLanding");
+    const statDomains = document.getElementById("statDomains");
     const statClicks = document.getElementById("statClicks");
     const statPendingPayments = document.getElementById("statPendingPayments");
     const statAwaitingPayments = document.getElementById("statAwaitingPayments");
@@ -829,10 +931,12 @@
     const usersEl = document.getElementById("users");
     const linksEl = document.getElementById("links");
     const paymentsEl = document.getElementById("payments");
+    const domainsEl = document.getElementById("domains");
+    const landingPagesEl = document.getElementById("landingPages");
     const auditLogsEl = document.getElementById("auditLogs");
     const awaitingList = document.getElementById("awaitingList");
-    const adminList = document.getElementById("adminList");
-    const bannedList = document.getElementById("bannedList");
+    const domainList = document.getElementById("domainList");
+    const landingList = document.getElementById("landingList");
     const paymentStats = document.getElementById("paymentStats");
     const panel = document.getElementById("panel");
     const panelTitle = document.getElementById("panelTitle");
@@ -845,6 +949,8 @@
     const usersSection = document.getElementById("usersSection");
     const paymentsSection = document.getElementById("paymentsSection");
     const linksSection = document.getElementById("linksSection");
+    const domainsSection = document.getElementById("domainsSection");
+    const landingSection = document.getElementById("landingSection");
     const auditSection = document.getElementById("auditSection");
 
     const userSearch = document.getElementById("userSearch");
@@ -856,6 +962,10 @@
     const paymentSearch = document.getElementById("paymentSearch");
     const paymentStatusFilter = document.getElementById("paymentStatusFilter");
     const paymentPlanFilter = document.getElementById("paymentPlanFilter");
+    const domainSearch = document.getElementById("domainSearch");
+    const domainStatusFilter = document.getElementById("domainStatusFilter");
+    const landingSearch = document.getElementById("landingSearch");
+    const landingSourceFilter = document.getElementById("landingSourceFilter");
 
     function authHeaders(method = "GET") {
       const token = localStorage.getItem("token") || "";
@@ -954,12 +1064,16 @@
       usersSection.classList.add("hidden");
       paymentsSection.classList.add("hidden");
       linksSection.classList.add("hidden");
+      domainsSection.classList.add("hidden");
+      landingSection.classList.add("hidden");
       auditSection.classList.add("hidden");
 
       if (sectionName === "overview") overviewSection.classList.remove("hidden");
       if (sectionName === "users") usersSection.classList.remove("hidden");
       if (sectionName === "payments") paymentsSection.classList.remove("hidden");
       if (sectionName === "links") linksSection.classList.remove("hidden");
+      if (sectionName === "domains") domainsSection.classList.remove("hidden");
+      if (sectionName === "landing") landingSection.classList.remove("hidden");
       if (sectionName === "audit") auditSection.classList.remove("hidden");
     }
 
@@ -1012,10 +1126,31 @@
       return `<span class="badge">${escapeHtml(payment.status || "unknown")}</span>`;
     }
 
+    function getDomainStatusBadge(domain) {
+      const s = String(domain.status || "").toLowerCase();
+      if (s === "verified") return `<span class="badge domain-verified">VERIFIED</span>`;
+      return `<span class="badge domain-pending">PENDING</span>`;
+    }
+
+    function getLinkTypeBadge(link) {
+      const t = String(link.linkType || link.link_type || "redirect").toLowerCase();
+      if (t === "landing") return `<span class="badge landing-type">LANDING</span>`;
+      return `<span class="badge redirect-type">REDIRECT</span>`;
+    }
+
     function getSourceBadge(source) {
       return source === "legacy"
         ? `<span class="badge legacy-source">LEGACY AWS</span>`
         : `<span class="badge primary-source">BACKEND 2</span>`;
+    }
+
+    function defaultHostBySource(source) {
+      return source === "legacy" ? DEFAULT_LEGACY_HOST : DEFAULT_PRIMARY_HOST;
+    }
+
+    function buildPublicLink(item) {
+      const domain = item.domain || defaultHostBySource(item.source);
+      return `https://${domain}/${item.slug}`;
     }
 
     function formatExpire(expire) {
@@ -1056,7 +1191,17 @@
         user: item.user || item.username || "",
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
-        expire: item.expire || null
+        expire: item.expire || null,
+        domain: item.domain || null,
+        linkType: item.linkType || item.link_type || "redirect",
+        landingTitle: item.landingTitle || item.landing_title || "",
+        landingDescription: item.landingDescription || item.landing_description || "",
+        landingImage: item.landingImage || item.landing_image || "",
+        landingTheme: item.landingTheme || item.landing_theme || "",
+        landingButtons: item.landingButtons || item.landing_buttons || [],
+        landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || "",
+        landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || "",
+        landingFooter: item.landingFooter || item.landing_footer || ""
       };
     }
 
@@ -1067,6 +1212,21 @@
         id: item.id || "",
         username: item.username || "",
         amountUsd: Number(item.amountUsd || item.amount_usd || 0)
+      };
+    }
+
+    function normalizeDomain(item) {
+      return {
+        ...item,
+        id: item.id || "",
+        username: item.username || "",
+        domain: item.domain || "",
+        status: item.status || "pending",
+        verifyToken: item.verifyToken || item.verify_token || "",
+        verificationTarget: item.verificationTarget || item.verification_target || "",
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
+        isPrimary: !!(item.isPrimary || item.is_primary)
       };
     }
 
@@ -1111,6 +1271,12 @@
       return merged;
     }
 
+    function mergeDomains(primaryDomains) {
+      return (Array.isArray(primaryDomains) ? primaryDomains : [])
+        .map(normalizeDomain)
+        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    }
+
     function paymentPriorityScore(p) {
       const s = String(p.status || "").toLowerCase();
       if (s === "awaiting_confirmation") return 0;
@@ -1151,6 +1317,8 @@
     function renderStats(refreshSummary = "") {
       const totalUsers = usersData.length;
       const totalLinks = linksData.length;
+      const totalLanding = linksData.filter(l => String(l.linkType || "").toLowerCase() === "landing").length;
+      const totalDomains = domainsData.length;
       const totalClicks = linksData.reduce((sum, link) => sum + Number(link.clicks || 0), 0);
       const pendingPayments = paymentsData.filter(p => ["pending", "awaiting_confirmation"].includes(String(p.status || "").toLowerCase())).length;
       const awaitingPayments = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").length;
@@ -1164,6 +1332,8 @@
 
       statUsers.textContent = totalUsers;
       statLinks.textContent = totalLinks;
+      statLanding.textContent = totalLanding;
+      statDomains.textContent = totalDomains;
       statClicks.textContent = totalClicks;
       statPendingPayments.textContent = pendingPayments;
       statAwaitingPayments.textContent = awaitingPayments;
@@ -1172,6 +1342,8 @@
 
       document.getElementById("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
       document.getElementById("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
+      document.getElementById("statLandingMeta").textContent = `${totalLanding} landing pages found`;
+      document.getElementById("statDomainsMeta").textContent = `${domainsData.filter(d => String(d.status).toLowerCase() === "verified").length} verified domains`;
       document.getElementById("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
       document.getElementById("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
       document.getElementById("statAwaitingPaymentsMeta").textContent = `${awaitingPayments} submitted by users`;
@@ -1227,29 +1399,30 @@
           `).join("")
         : `<div>No awaiting confirmations</div>`;
 
-      const admins = usersData.filter(u => (u.role || "") === "admin");
-      adminList.innerHTML = admins.length
-        ? admins.map(u => `
+      domainList.innerHTML = domainsData.length
+        ? domainsData.slice(0, 25).map(d => `
             <div>
-              <b>${escapeHtml(u.username)}</b>
+              <b>${escapeHtml(d.domain)}</b>
               <br>
-              ${u.banned ? `<span class="badge banned">BANNED</span>` : `<span class="badge admin">ADMIN</span>`}
-              ${getSourceBadge(u.source)}
+              ${getDomainStatusBadge(d)}
+              ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
+              <div class="muted">User: ${escapeHtml(d.username || "-")}</div>
             </div>
           `).join("")
-        : `<div>No admins found</div>`;
+        : `<div>No domains yet</div>`;
 
-      const banned = usersData.filter(u => !!u.banned);
-      bannedList.innerHTML = banned.length
-        ? banned.map(u => `
+      landingList.innerHTML = landingData.length
+        ? landingData.slice(0, 25).map(l => `
             <div>
-              <b>${escapeHtml(u.username)}</b>
+              <b>${escapeHtml(l.slug)}</b>
               <br>
-              <span class="badge banned">BANNED</span>
-              ${getSourceBadge(u.source)}
+              ${getSourceBadge(l.source)}
+              ${getLinkTypeBadge(l)}
+              <div class="muted">Domain: ${escapeHtml(l.domain || defaultHostBySource(l.source))}</div>
+              <div class="muted">Title: ${escapeHtml(l.landingTitle || "-")}</div>
             </div>
           `).join("")
-        : `<div>No banned users</div>`;
+        : `<div>No landing pages yet</div>`;
     }
 
     function drawChart() {
@@ -1485,7 +1658,7 @@
       const sort = linkSort.value;
 
       let list = linksData.filter(l => {
-        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || l.username || ""}`.toLowerCase();
+        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || l.username || ""} ${l.domain || ""} ${l.linkType || ""} ${l.landingTitle || ""}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
         const matchesStatus =
           !status ||
@@ -1507,14 +1680,16 @@
       const list = getFilteredLinks();
 
       linksEl.innerHTML = list.length ? list.map(l => {
-        const full = `${API_BY_SOURCE[l.source]}/${l.slug}`;
+        const full = buildPublicLink(l);
         return `
           <tr>
             <td>${escapeHtml(l.user || l.username || "")}</td>
             <td>${escapeHtml(l.slug || "")}</td>
+            <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
+            <td>${getLinkTypeBadge(l)}</td>
             <td>
               <a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a>
-              <div class="muted">${escapeHtml(l.url || "")}</div>
+              <div class="muted">${escapeHtml(l.linkType === "landing" ? (l.landingTitle || l.url || "") : (l.url || ""))}</div>
             </td>
             <td>${Number(l.clicks || 0)}</td>
             <td>${getLinkStatusBadge(l)}</td>
@@ -1524,18 +1699,109 @@
               <div class="actions">
                 <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
                 <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
+                ${l.linkType === "landing" ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
                 ${l.paused
                   ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>`
                   : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`
                 }
-                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Delete</button>
+                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Delete</button>
               </div>
             </td>
           </tr>
         `;
       }).join("") : `
         <tr>
-          <td colspan="8" class="muted">No links found</td>
+          <td colspan="10" class="muted">No links found</td>
+        </tr>
+      `;
+    }
+
+    function getFilteredDomains() {
+      const q = domainSearch.value.trim().toLowerCase();
+      const status = domainStatusFilter.value;
+
+      return domainsData.filter(d => {
+        const blob = `${d.domain || ""} ${d.username || ""} ${d.verifyToken || ""}`.toLowerCase();
+        const matchesQ = !q || blob.includes(q);
+        const matchesStatus = !status || String(d.status || "").toLowerCase() === status;
+        return matchesQ && matchesStatus;
+      });
+    }
+
+    function renderDomains() {
+      const list = getFilteredDomains();
+
+      domainsEl.innerHTML = list.length ? list.map(d => `
+        <tr>
+          <td><b>${escapeHtml(d.domain)}</b></td>
+          <td>${escapeHtml(d.username || "-")}</td>
+          <td>
+            ${getDomainStatusBadge(d)}
+            ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
+          </td>
+          <td><code>${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</code></td>
+          <td><code>${escapeHtml(d.verifyToken || "-")}</code></td>
+          <td>${fmtDate(d.createdAt)}</td>
+          <td>${fmtDate(d.verifiedAt)}</td>
+          <td>${d.isPrimary ? "Yes" : "No"}</td>
+          <td>
+            <div class="actions">
+              <button data-action="view-domain" data-domain="${escapeHtml(d.domain)}">View</button>
+              ${String(d.status).toLowerCase() !== "verified"
+                ? `<button class="btn-green" data-action="verify-domain" data-domain="${escapeHtml(d.domain)}">Verify</button>`
+                : ``
+              }
+              ${!d.isPrimary && String(d.status).toLowerCase() === "verified"
+                ? `<button class="btn-yellow" data-action="set-primary-domain" data-domain="${escapeHtml(d.domain)}">Set Primary</button>`
+                : ``
+              }
+              <button class="btn-red" data-action="delete-domain" data-domain="${escapeHtml(d.domain)}">Delete</button>
+              <button data-action="copy-domain-token" data-token="${escapeHtml(d.verifyToken || "")}">Copy Token</button>
+            </div>
+          </td>
+        </tr>
+      `).join("") : `
+        <tr>
+          <td colspan="9" class="muted">No domains found</td>
+        </tr>
+      `;
+    }
+
+    function getFilteredLandingPages() {
+      const q = landingSearch.value.trim().toLowerCase();
+      const source = landingSourceFilter.value;
+
+      return landingData.filter(l => {
+        const blob = `${l.slug || ""} ${l.domain || ""} ${l.user || ""} ${l.landingTitle || ""}`.toLowerCase();
+        const matchesQ = !q || blob.includes(q);
+        const matchesSource = !source || String(l.source || "") === source;
+        return matchesQ && matchesSource;
+      });
+    }
+
+    function renderLandingPages() {
+      const list = getFilteredLandingPages();
+
+      landingPagesEl.innerHTML = list.length ? list.map(l => `
+        <tr>
+          <td>${escapeHtml(l.user || l.username || "")}</td>
+          <td><b>${escapeHtml(l.slug)}</b></td>
+          <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
+          <td>${escapeHtml(l.landingTitle || "-")}</td>
+          <td>${escapeHtml(l.landingTheme || "-")}</td>
+          <td>${Number(l.clicks || 0)}</td>
+          <td>${getSourceBadge(l.source)}</td>
+          <td>
+            <div class="actions">
+              <button data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Preview</button>
+              <button data-action="view-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Details</button>
+              <button class="btn-red" data-action="delete-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("") : `
+        <tr>
+          <td colspan="8" class="muted">No landing pages found</td>
         </tr>
       `;
     }
@@ -1571,18 +1837,8 @@
       panel.style.display = "block";
       panelTitle.textContent = "Payment Details";
       panelContent.innerHTML = `
-        ${isAwaiting ? `
-          <div class="highlight-box">
-            <b>Needs Action:</b> This payment was marked by the user as sent. Review and verify if received.
-          </div>
-        ` : ""}
-
-        ${isCancelled ? `
-          <div class="danger-box">
-            <b>Cancelled:</b> This payment has been cancelled and should not be verified.
-          </div>
-        ` : ""}
-
+        ${isAwaiting ? `<div class="highlight-box"><b>Needs Action:</b> This payment was marked by the user as sent.</div>` : ""}
+        ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ""}
         <div><b>Payment ID:</b> <code>${escapeHtml(payment.id)}</code></div>
         <div><b>User:</b> ${escapeHtml(payment.username || "-")}</div>
         <div><b>Plan:</b> ${escapeHtml(payment.billingCycle || payment.billing_cycle || "-")}</div>
@@ -1599,28 +1855,64 @@
             <img src="${escapeHtml(payment.qrImageUrl || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || "")))}" alt="Payment QR" />
           </div>` : ""}
         <div class="actions" style="margin-top:12px;">
-          <button
-            class="${isAwaiting ? "btn-action" : "btn-green"}"
-            onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')"
-            ${disableVerify ? "disabled" : ""}>
-            ${isAwaiting ? "Verify This Payment" : "Verify Payment"}
-          </button>
-
-          <button
-            class="btn-yellow"
-            onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')"
-            ${disableCancel ? "disabled" : ""}>
-            Cancel Payment
-          </button>
-
-          <button
-            class="btn-red"
-            onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">
-            Delete Payment
-          </button>
-
+          <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')" ${disableVerify ? "disabled" : ""}>${isAwaiting ? "Verify This Payment" : "Verify Payment"}</button>
+          <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')" ${disableCancel ? "disabled" : ""}>Cancel Payment</button>
+          <button class="btn-red" onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">Delete Payment</button>
           <button onclick="copyText('${escapeHtml(payment.address || "")}')">Copy Address</button>
         </div>
+      `;
+    }
+
+    async function openDomain(domain) {
+      const d = domainsData.find(x => x.domain === domain);
+      if (!d) return;
+
+      panel.style.display = "block";
+      panelTitle.textContent = "Domain Details";
+      panelContent.innerHTML = `
+        <div><b>Domain:</b> ${escapeHtml(d.domain)}</div>
+        <div><b>User:</b> ${escapeHtml(d.username || "-")}</div>
+        <div><b>Status:</b> ${getDomainStatusBadge(d)}</div>
+        <div><b>Primary:</b> ${d.isPrimary ? "Yes" : "No"}</div>
+        <div><b>TXT Record:</b></div>
+        <div class="code-box">${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</div>
+        <div><b>Verify Token:</b></div>
+        <div class="code-box">${escapeHtml(d.verifyToken || "-")}</div>
+        <div><b>Created:</b> ${fmtDate(d.createdAt)}</div>
+        <div><b>Verified:</b> ${fmtDate(d.verifiedAt)}</div>
+        <div class="actions" style="margin-top:12px;">
+          ${String(d.status).toLowerCase() !== "verified" ? `<button class="btn-green" onclick="verifyDomain('${escapeHtml(d.domain)}')">Verify Domain</button>` : ``}
+          ${!d.isPrimary && String(d.status).toLowerCase() === "verified" ? `<button class="btn-yellow" onclick="setPrimaryDomain('${escapeHtml(d.domain)}')">Set Primary</button>` : ``}
+          <button onclick="copyText('${escapeHtml(d.verifyToken || "")}')">Copy Token</button>
+          <button class="btn-red" onclick="deleteDomain('${escapeHtml(d.domain)}')">Delete Domain</button>
+        </div>
+      `;
+    }
+
+    async function openLanding(slug, domain, source, previewOnly = false) {
+      const link = landingData.find(x => x.slug === slug && (x.domain || "") === (domain || "") && x.source === source);
+      if (!link) return;
+
+      const publicUrl = buildPublicLink(link);
+
+      panel.style.display = "block";
+      panelTitle.textContent = previewOnly ? "Landing Preview" : "Landing Details";
+      panelContent.innerHTML = `
+        <div><b>Slug:</b> ${escapeHtml(link.slug)}</div>
+        <div><b>Domain:</b> ${escapeHtml(link.domain || defaultHostBySource(link.source))}</div>
+        <div><b>User:</b> ${escapeHtml(link.user || "-")}</div>
+        <div><b>Title:</b> ${escapeHtml(link.landingTitle || "-")}</div>
+        <div><b>Description:</b> ${escapeHtml(link.landingDescription || "-")}</div>
+        <div><b>Theme:</b> ${escapeHtml(link.landingTheme || "-")}</div>
+        <div><b>Clicks:</b> ${Number(link.clicks || 0)}</div>
+        <div><b>Source:</b> ${escapeHtml(link.source)}</div>
+        <div class="code-box">${escapeHtml(publicUrl)}</div>
+        <div class="actions" style="margin:12px 0;">
+          <button onclick="openLink('${escapeHtml(publicUrl)}')">Open Live</button>
+          <button onclick="copyText('${escapeHtml(publicUrl)}')">Copy URL</button>
+          <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || "")}','${escapeHtml(link.source)}')">Delete Landing</button>
+        </div>
+        <iframe class="preview-frame" src="${escapeHtml(publicUrl)}"></iframe>
       `;
     }
 
@@ -1698,7 +1990,6 @@
 
     async function cancelPayment(paymentId, source) {
       if (!confirm(`Cancel payment ${paymentId}?`)) return;
-
       const res = await fetchBySource(source || "primary", `/admin/payment-cancel`, "POST", { paymentId }, false);
       if (res.ok) {
         await logAudit("CANCEL PAYMENT", paymentId);
@@ -1709,13 +2000,60 @@
 
     async function deletePayment(paymentId, source) {
       if (!confirm(`Delete payment ${paymentId} permanently?`)) return;
-
       const res = await fetchBySource(source || "primary", `/admin/payment-delete`, "POST", { paymentId }, false);
       if (res.ok) {
         await logAudit("DELETE PAYMENT", paymentId);
         showToast("Payment deleted");
         await loadAdmin();
       } else showToast(res.data?.message || "Payment delete failed");
+    }
+
+    async function verifyDomain(domain) {
+      const res = await fetchBySource("primary", `/domains/verify`, "POST", { domain }, false);
+      if (res.ok) {
+        await logAudit("VERIFY DOMAIN", domain);
+        showToast("Domain verified");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Domain verify failed");
+    }
+
+    async function setPrimaryDomain(domain) {
+      const res = await fetchBySource("primary", `/domains/set-primary`, "POST", { domain }, false);
+      if (res.ok) {
+        await logAudit("SET PRIMARY DOMAIN", domain);
+        showToast("Primary domain updated");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Set primary failed");
+    }
+
+    async function deleteDomain(domain) {
+      if (!confirm(`Delete domain ${domain}?`)) return;
+      let res = await fetchBySource("primary", `/admin/domain-delete`, "POST", { domain }, false);
+      if (!res.ok) {
+        res = await fetchBySource("primary", `/domains/remove`, "POST", { domain }, false);
+      }
+      if (res.ok) {
+        await logAudit("DELETE DOMAIN", domain);
+        showToast("Domain deleted");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Domain delete failed");
+    }
+
+    async function deleteLanding(slug, domain, source) {
+      if (!confirm(`Delete landing page ${slug}?`)) return;
+
+      let res;
+      if (source === "primary") {
+        res = await fetchBySource("primary", `/landing/delete`, "POST", { slug, domain }, false);
+      } else {
+        res = await fetchBySource(source || "legacy", `/delete`, "POST", { slug, domain }, false);
+      }
+
+      if (res.ok) {
+        await logAudit("DELETE LANDING", `${domain || defaultHostBySource(source)} / ${slug}`);
+        showToast("Landing page deleted");
+        await loadAdmin();
+      } else showToast(res.data?.message || "Landing delete failed");
     }
 
     async function pauseLink(slug, source) {
@@ -1736,9 +2074,9 @@
       } else showToast(res.data?.message || "Resume failed");
     }
 
-    async function deleteLink(slug, source) {
+    async function deleteLink(slug, source, domain = "") {
       if (!confirm(`Delete ${slug}?`)) return;
-      const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug }, false);
+      const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug, domain }, false);
       if (res.ok) {
         await logAudit("DELETE LINK", slug);
         showToast("Link deleted");
@@ -1804,7 +2142,6 @@
           <button id="submitCreateUserBtn" class="btn-primary">Create User</button>
         </div>
       `;
-
       document.getElementById("submitCreateUserBtn").onclick = createUser;
     }
 
@@ -1829,37 +2166,15 @@
           resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`;
           return;
         }
-        const status = String(p.status || "").toLowerCase();
-        const isAwaiting = status === "awaiting_confirmation";
-        const isCancelled = status === "cancelled";
-        const disableVerify = isCancelled;
-        const disableCancel = ["verified", "cancelled"].includes(status);
-
         resultBox.innerHTML = `
           <div><b>User:</b> ${escapeHtml(p.username || "-")}</div>
           <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
           <div><b>Status:</b> ${getPaymentStatusBadge(p)}</div>
           <div><b>Source:</b> ${escapeHtml(p.source || "-")}</div>
           <div class="actions" style="margin-top:10px;">
-            <button
-              class="${isAwaiting ? "btn-action" : "btn-green"}"
-              onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')"
-              ${disableVerify ? "disabled" : ""}>
-              ${isAwaiting ? "Verify Now" : "Verify"}
-            </button>
-
-            <button
-              class="btn-yellow"
-              onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')"
-              ${disableCancel ? "disabled" : ""}>
-              Cancel
-            </button>
-
-            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">
-              Delete
-            </button>
-
-            <button onclick="copyText('${escapeHtml(p.address || "")}')">Copy Address</button>
+            <button onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Verify</button>
+            <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Cancel</button>
+            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Delete</button>
           </div>
         `;
       };
@@ -1920,11 +2235,12 @@
 
         addTerminal("Starting merged refresh...");
 
-        const [usersPair, linksPair, auditPair, paymentsPair] = await Promise.all([
+        const [usersPair, linksPair, auditPair, paymentsPair, domainsRes] = await Promise.all([
           fetchBoth(`/admin/users`),
           fetchBoth(`/admin/links`),
           fetchBoth(`/admin/audit`),
-          fetchBoth(`/admin/payments`)
+          fetchBoth(`/admin/payments`),
+          fetchBySource("primary", `/admin/domains`, "GET", null, false)
         ]);
 
         const nextUsers = mergeUsers(
@@ -1947,20 +2263,31 @@
           Array.isArray(paymentsPair.legacy.data?.payments) ? paymentsPair.legacy.data.payments : []
         );
 
+        const nextDomains = mergeDomains(
+          Array.isArray(domainsRes.data?.domains) ? domainsRes.data.domains : []
+        );
+
+        const nextLanding = nextLinks.filter(l => String(l.linkType || "").toLowerCase() === "landing");
+
         usersData = nextUsers.length ? nextUsers : lastGoodState.usersData;
         linksData = nextLinks.length ? nextLinks : lastGoodState.linksData;
         auditData = nextAudit.length ? nextAudit : lastGoodState.auditData;
         paymentsData = nextPayments.length ? nextPayments : lastGoodState.paymentsData;
+        domainsData = nextDomains.length || Array.isArray(domainsRes.data?.domains) ? nextDomains : lastGoodState.domainsData;
+        landingData = nextLanding.length || nextLinks.length ? nextLanding : lastGoodState.landingData;
 
         lastGoodState.usersData = usersData;
         lastGoodState.linksData = linksData;
         lastGoodState.auditData = auditData;
         lastGoodState.paymentsData = paymentsData;
+        lastGoodState.domainsData = domainsData;
+        lastGoodState.landingData = landingData;
 
         const stateSummary = [
           `Users P:${usersPair.primary.ok ? "OK" : usersPair.primary.status} L:${usersPair.legacy.ok ? "OK" : usersPair.legacy.status}`,
           `Links P:${linksPair.primary.ok ? "OK" : linksPair.primary.status} L:${linksPair.legacy.ok ? "OK" : linksPair.legacy.status}`,
           `Payments P:${paymentsPair.primary.ok ? "OK" : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? "OK" : paymentsPair.legacy.status}`,
+          `Domains P:${domainsRes.ok ? "OK" : domainsRes.status}`,
           `Audit P:${auditPair.primary.ok ? "OK" : auditPair.primary.status} L:${auditPair.legacy.ok ? "OK" : auditPair.legacy.status}`
         ].join(" • ");
 
@@ -1970,6 +2297,8 @@
         renderUsers();
         renderPayments();
         renderLinks();
+        renderDomains();
+        renderLandingPages();
         renderAuditLogs();
         drawChart();
 
@@ -1997,6 +2326,12 @@
       linkSearch.addEventListener("input", renderLinks);
       linkFilterStatus.addEventListener("change", renderLinks);
       linkSort.addEventListener("change", renderLinks);
+
+      domainSearch.addEventListener("input", renderDomains);
+      domainStatusFilter.addEventListener("change", renderDomains);
+
+      landingSearch.addEventListener("input", renderLandingPages);
+      landingSourceFilter.addEventListener("change", renderLandingPages);
     }
 
     function setupNavigation() {
@@ -2004,6 +2339,8 @@
       document.getElementById("navUsers").onclick = () => showSection("users");
       document.getElementById("navPayments").onclick = () => showSection("payments");
       document.getElementById("navLinks").onclick = () => showSection("links");
+      document.getElementById("navDomains").onclick = () => showSection("domains");
+      document.getElementById("navLanding").onclick = () => showSection("landing");
       document.getElementById("navAudit").onclick = () => showSection("audit");
     }
 
@@ -2042,6 +2379,16 @@
         showToast("Showing verified payments");
       };
 
+      document.getElementById("showDomainsBtn").onclick = () => {
+        showSection("domains");
+        showToast("Showing domains");
+      };
+
+      document.getElementById("showLandingBtn").onclick = () => {
+        showSection("landing");
+        showToast("Showing landing pages");
+      };
+
       document.getElementById("closePanelBtn").onclick = closePanel;
       document.getElementById("logoutBtn").onclick = logout;
 
@@ -2058,6 +2405,16 @@
       document.getElementById("exportPaymentsBtn").onclick = () => {
         exportJson("payments.json", paymentsData);
         showToast("Payments exported");
+      };
+
+      document.getElementById("exportDomainsBtn").onclick = () => {
+        exportJson("domains.json", domainsData);
+        showToast("Domains exported");
+      };
+
+      document.getElementById("exportLandingBtn").onclick = () => {
+        exportJson("landing-pages.json", landingData);
+        showToast("Landing pages exported");
       };
 
       document.getElementById("autoRefreshBtn").onclick = () => {
@@ -2110,12 +2467,43 @@
         const slug = btn.dataset.slug;
         const link = btn.dataset.link;
         const source = btn.dataset.source;
+        const domain = btn.dataset.domain || "";
 
         if (action === "copy-link") return copyText(link);
         if (action === "open-link") return openLink(link);
         if (action === "pause-link") return pauseLink(slug, source);
         if (action === "resume-link") return resumeLink(slug, source);
-        if (action === "delete-link") return deleteLink(slug, source);
+        if (action === "delete-link") return deleteLink(slug, source, domain);
+        if (action === "preview-landing") return openLanding(slug, domain, source, true);
+      });
+
+      domainsEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const domain = btn.dataset.domain;
+        const token = btn.dataset.token || "";
+
+        if (action === "view-domain") return openDomain(domain);
+        if (action === "verify-domain") return verifyDomain(domain);
+        if (action === "set-primary-domain") return setPrimaryDomain(domain);
+        if (action === "delete-domain") return deleteDomain(domain);
+        if (action === "copy-domain-token") return copyText(token);
+      });
+
+      landingPagesEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const slug = btn.dataset.slug;
+        const domain = btn.dataset.domain || "";
+        const source = btn.dataset.source;
+
+        if (action === "preview-landing") return openLanding(slug, domain, source, true);
+        if (action === "view-landing") return openLanding(slug, domain, source, false);
+        if (action === "delete-landing") return deleteLanding(slug, domain, source);
       });
     }
 
@@ -2135,6 +2523,11 @@
     window.cancelPayment = cancelPayment;
     window.deletePayment = deletePayment;
     window.copyText = copyText;
+    window.verifyDomain = verifyDomain;
+    window.setPrimaryDomain = setPrimaryDomain;
+    window.deleteDomain = deleteDomain;
+    window.deleteLanding = deleteLanding;
+    window.openLink = openLink;
 
     (async function init() {
       setBackendBadge();
