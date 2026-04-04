@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Landing Builder</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:rgba(2,6,23,0.84);
+      --card2:rgba(15,23,42,0.58);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --pink:#ec4899;
+      --purple:#a855f7;
+      --border:rgba(0,255,255,0.18);
+    }
+
+    *{ box-sizing:border-box; }
+
+    html, body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      color:var(--text);
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+      background-size:38px 38px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1500px;
+      margin:0 auto;
+      padding:20px;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .header h1{
+      margin:0 0 6px;
+      color:var(--cyan);
+      text-shadow:0 0 10px rgba(0,255,255,0.45);
+      font-size:30px;
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      backdrop-filter:blur(12px);
+      border-radius:16px;
+      padding:16px;
+      margin-bottom:18px;
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.10),
+        inset 0 0 15px rgba(0,255,255,0.03);
+    }
+
+    .card.alt{
+      background:var(--card2);
+    }
+
+    .card h2,
+    .card h3,
+    .card h4{
+      margin:0 0 12px;
+      color:var(--cyan);
+    }
+
+    .grid{
+      display:grid;
+      gap:16px;
+    }
+
+    .two-col{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:18px;
+    }
+
+    .three-col{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+    }
+
+    .form-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .field{
+      flex:1 1 220px;
+    }
+
+    .field.wide{
+      flex:1 1 100%;
+    }
+
+    .field label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.22);
+      background:#000;
+      color:var(--cyan);
+      outline:none;
+      font:inherit;
+    }
+
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder{
+      color:var(--muted);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus{
+      box-shadow:0 0 10px rgba(0,255,255,0.4);
+    }
+
+    button, .btn{
+      padding:11px 14px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:12px;
+      background:#020617;
+      color:var(--cyan);
+      border:1px solid rgba(0,255,255,0.28);
+      transition:.2s ease;
+      text-decoration:none;
+      display:inline-block;
+    }
+
+    button:hover, .btn:hover{
+      color:#fff;
+      border-color:var(--cyan);
+      box-shadow:
+        0 0 10px rgba(0,255,255,0.4),
+        0 0 24px rgba(0,255,255,0.15);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .backend2-btn{
+      background:#0f172a;
+      color:#22c55e;
+      border-color:#22c55e;
+    }
+
+    .pink-btn{
+      background:var(--pink);
+      color:#fff;
+      border-color:var(--pink);
+    }
+
+    .purple-btn{
+      background:var(--purple);
+      color:#fff;
+      border-color:var(--purple);
+    }
+
+    .success-btn{
+      background:var(--green);
+      color:#000;
+      border-color:var(--green);
+    }
+
+    .danger-btn{
+      background:var(--red);
+      color:#fff;
+      border-color:var(--red);
+    }
+
+    .ghost-btn{
+      color:#cbd5e1;
+      border-color:#475569;
+    }
+
+    .warn-btn{
+      color:#f59e0b;
+      border-color:#f59e0b;
+    }
+
+    .copy{
+      color:var(--green);
+      border-color:var(--green);
+    }
+
+    .open{
+      color:var(--blue);
+      border-color:var(--blue);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+    }
+
+    .live{ color:var(--green); }
+    .pending{ color:var(--yellow); }
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .small{
+      font-size:12px;
+    }
+
+    .notice{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(245,158,11,0.08);
+      border:1px solid rgba(245,158,11,0.25);
+      color:#fcd34d;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+    }
+
+    .info-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
+      margin-bottom:10px;
+    }
+
+    .result{
+      margin-top:10px;
+      font-size:13px;
+      min-height:20px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .stat-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+    }
+
+    .stat-card{
+      text-align:center;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(15,23,42,0.45);
+      border:1px solid rgba(0,255,255,0.12);
+    }
+
+    .stat-card h3{
+      margin:0 0 8px;
+      font-size:28px;
+      color:var(--cyan);
+    }
+
+    .stat-card p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .landing-preview{
+      min-height:220px;
+      border:1px solid rgba(0,255,255,0.16);
+      border-radius:14px;
+      overflow:hidden;
+      background:#020617;
+    }
+
+    .landing-preview iframe{
+      width:100%;
+      height:500px;
+      border:0;
+      background:#fff;
+      display:block;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1150px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid #334155;
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    th{
+      color:var(--cyan);
+      font-weight:600;
+    }
+
+    tr:hover{
+      background:#020617;
+    }
+
+    .empty{
+      padding:18px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed rgba(0,255,255,0.18);
+      border-radius:12px;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
+      border-radius:10px;
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 15px rgba(0,255,255,0.4);
+      max-width:80vw;
+    }
+
+    @media (max-width: 1100px){
+      .two-col,
+      .three-col,
+      .stat-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🟢 Landing Builder</h1>
+        <div class="sub">
+          Backend2 only • Create, preview, edit, and manage landing pages
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span class="badge live">Backend2 Only</span>
+        <a class="btn ghost-btn" href="dashboard.html">Back to Dashboard</a>
+        <button id="refreshBtn" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <h3 id="totalLandings">0</h3>
+        <p>Total Landing Pages</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="totalLandingClicks">0</h3>
+        <p>Total Clicks</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="verifiedDomainsCount">0</h3>
+        <p>Verified Domains</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="activeLandings">0</h3>
+        <p>Active Landings</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="section-head">
+          <h2>🎨 Landing Form</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="clearBtn" type="button" class="warn-btn">Clear</button>
+            <button id="previewBtn" type="button" class="ghost-btn">Preview</button>
+            <button id="createBtn" type="button" class="pink-btn">Create Landing</button>
+            <button id="updateBtn" type="button" class="backend2-btn">Update Landing</button>
+          </div>
+        </div>
+
+        <div class="notice">
+          This page talks only to Backend2. Custom domains shown here are verified Backend2 domains.
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingSlug">Landing slug</label>
+            <input id="landingSlug" placeholder="my-landing-page" />
+          </div>
+          <div class="field">
+            <label for="landingDomain">Landing domain</label>
+            <select id="landingDomain">
+              <option value="">Default domain</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingTitle">Landing title</label>
+            <input id="landingTitle" placeholder="My Landing Title" />
+          </div>
+          <div class="field">
+            <label for="landingDescription">Description</label>
+            <input id="landingDescription" placeholder="Short description" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingImage">Image URL</label>
+            <input id="landingImage" placeholder="https://..." />
+          </div>
+          <div class="field">
+            <label for="landingTheme">Theme color</label>
+            <input id="landingTheme" placeholder="#00ffff" value="#00ffff" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingCtaLabel">CTA Label</label>
+            <input id="landingCtaLabel" placeholder="Visit Now" />
+          </div>
+          <div class="field">
+            <label for="landingCtaUrl">CTA URL</label>
+            <input id="landingCtaUrl" placeholder="https://..." />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingFooter">Footer</label>
+            <input id="landingFooter" placeholder="Powered by Rattle Link" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingButtonLabel1">Button 1 Label</label>
+            <input id="landingButtonLabel1" placeholder="Instagram" />
+          </div>
+          <div class="field">
+            <label for="landingButtonUrl1">Button 1 URL</label>
+            <input id="landingButtonUrl1" placeholder="https://..." />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="landingButtonLabel2">Button 2 Label</label>
+            <input id="landingButtonLabel2" placeholder="Website" />
+          </div>
+          <div class="field">
+            <label for="landingButtonUrl2">Button 2 URL</label>
+            <input id="landingButtonUrl2" placeholder="https://..." />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingMetaTitle">Meta title</label>
+            <input id="landingMetaTitle" placeholder="SEO title" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingMetaDescription">Meta description</label>
+            <textarea id="landingMetaDescription" placeholder="SEO description"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingHtml">Custom HTML</label>
+            <textarea id="landingHtml" placeholder="Optional full HTML override"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingCss">Custom CSS</label>
+            <textarea id="landingCss" placeholder="Optional CSS"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field wide">
+            <label for="landingJs">Custom JavaScript</label>
+            <textarea id="landingJs" placeholder="Optional JS"></textarea>
+          </div>
+        </div>
+
+        <div id="formResult" class="result"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>👀 Live Preview</h2>
+          <button id="openPreviewBtn" type="button" class="open">Open Preview</button>
+        </div>
+
+        <div class="landing-preview">
+          <iframe id="landingPreviewFrame" title="Landing Preview"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>🗂 Your Landing Pages</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select id="domainFilter" style="max-width:220px;">
+            <option value="all">All domains</option>
+          </select>
+          <input id="searchInput" placeholder="Search slug, title or URL..." style="max-width:320px;" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Slug</th>
+              <th>Domain</th>
+              <th>Title</th>
+              <th>Clicks</th>
+              <th>Public Link</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="landingTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+  <script>
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+
+    let landingStore = [];
+    let domainsStore = [];
+    let refreshTimer = null;
+
+    const toast = document.getElementById("toast");
+
+    const totalLandings = document.getElementById("totalLandings");
+    const totalLandingClicks = document.getElementById("totalLandingClicks");
+    const verifiedDomainsCount = document.getElementById("verifiedDomainsCount");
+    const activeLandings = document.getElementById("activeLandings");
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const previewBtn = document.getElementById("previewBtn");
+    const createBtn = document.getElementById("createBtn");
+    const updateBtn = document.getElementById("updateBtn");
+    const openPreviewBtn = document.getElementById("openPreviewBtn");
+
+    const landingSlug = document.getElementById("landingSlug");
+    const landingDomain = document.getElementById("landingDomain");
+    const landingTitle = document.getElementById("landingTitle");
+    const landingDescription = document.getElementById("landingDescription");
+    const landingImage = document.getElementById("landingImage");
+    const landingTheme = document.getElementById("landingTheme");
+    const landingCtaLabel = document.getElementById("landingCtaLabel");
+    const landingCtaUrl = document.getElementById("landingCtaUrl");
+    const landingFooter = document.getElementById("landingFooter");
+    const landingButtonLabel1 = document.getElementById("landingButtonLabel1");
+    const landingButtonUrl1 = document.getElementById("landingButtonUrl1");
+    const landingButtonLabel2 = document.getElementById("landingButtonLabel2");
+    const landingButtonUrl2 = document.getElementById("landingButtonUrl2");
+    const landingMetaTitle = document.getElementById("landingMetaTitle");
+    const landingMetaDescription = document.getElementById("landingMetaDescription");
+    const landingHtml = document.getElementById("landingHtml");
+    const landingCss = document.getElementById("landingCss");
+    const landingJs = document.getElementById("landingJs");
+    const landingPreviewFrame = document.getElementById("landingPreviewFrame");
+
+    const formResult = document.getElementById("formResult");
+    const landingTable = document.getElementById("landingTable");
+    const searchInput = document.getElementById("searchInput");
+    const domainFilter = document.getElementById("domainFilter");
+
+    function authHeaders() {
+      const token = localStorage.getItem("token") || "";
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    function ensureAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Missing login token. Please log in again.");
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    function normalizeDomain(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/g, "");
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeForJs(str) {
+      return String(str ?? "")
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'")
+        .replaceAll("\n", "\\n")
+        .replaceAll("\r", "");
+    }
+
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function setBusy(button, busy, text = "") {
+      if (!button) return;
+      if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+      button.disabled = !!busy;
+      button.textContent = busy ? text : button.dataset.originalText;
+    }
+
+    function showToast(message = "Copied!") {
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
+    }
+
+    function setResult(message, isError = false) {
+      formResult.textContent = message;
+      formResult.className = "result " + (isError ? "error" : "success");
+    }
+
+    async function safeFetchRaw(path, options = {}) {
+      try {
+        const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
+        const raw = await res.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
+        return { ok: res.ok, status: res.status, data, raw };
+      } catch (e) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: e?.message || "Failed to fetch" },
+          raw: ""
+        };
+      }
+    }
+
+    async function authorizedFetch(path, options = {}) {
+      const method = String(options.method || "GET").toUpperCase();
+      const headers = {
+        ...authHeaders(),
+        ...(options.headers || {})
+      };
+
+      if (method !== "GET" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+
+      return safeFetchRaw(path, {
+        ...options,
+        headers
+      });
+    }
+
+    function buildPublicLink(item) {
+      const slug = String(item.slug || "").trim();
+      const domain = normalizeDomain(item.domain || "");
+      if (domain) return `https://${domain}/${slug}`;
+      return `${PRIMARY_API.replace(/\/+$/, "")}/${slug}`;
+    }
+
+    function normalizeLandingItem(item) {
+      return {
+        ...item,
+        backend: "primary",
+        clicks: Number(item.clicks || 0),
+        paused: !!item.paused,
+        expire: item.expire ? Number(item.expire) : null,
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        domain: normalizeDomain(item.domain || ""),
+        linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
+        landingTitle: item.landingTitle || item.title || "",
+        landingDescription: item.landingDescription || item.description || "",
+        landingImage: item.landingImage || item.image || "",
+        landingTheme: item.landingTheme || item.theme || "#00ffff",
+        landingButtons: Array.isArray(item.landingButtons) ? item.landingButtons : (Array.isArray(item.buttons) ? item.buttons : []),
+        landingCtaLabel: item.landingCtaLabel || item.ctaLabel || "",
+        landingCtaUrl: item.landingCtaUrl || item.ctaUrl || "",
+        landingFooter: item.landingFooter || item.footer || "",
+        landingHtml: item.landingHtml || "",
+        landingCss: item.landingCss || "",
+        landingJs: item.landingJs || "",
+        metaTitle: item.metaTitle || "",
+        metaDescription: item.metaDescription || ""
+      };
+    }
+
+    function getLandingButtons() {
+      const buttons = [];
+
+      const b1Label = landingButtonLabel1.value.trim();
+      const b1Url = landingButtonUrl1.value.trim();
+      if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
+
+      const b2Label = landingButtonLabel2.value.trim();
+      const b2Url = landingButtonUrl2.value.trim();
+      if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
+
+      return buttons;
+    }
+
+    function getPayload() {
+      const slug = landingSlug.value.trim();
+      const domain = normalizeDomain(landingDomain.value);
+      const title = landingTitle.value.trim();
+      const description = landingDescription.value.trim();
+      const image = landingImage.value.trim();
+      const theme = landingTheme.value.trim() || "#00ffff";
+      const ctaLabel = landingCtaLabel.value.trim();
+      const ctaUrl = landingCtaUrl.value.trim();
+      const footer = landingFooter.value.trim();
+      const buttons = getLandingButtons();
+      const html = landingHtml.value;
+      const css = landingCss.value;
+      const js = landingJs.value;
+      const metaTitle = landingMetaTitle.value.trim();
+      const metaDescription = landingMetaDescription.value.trim();
+
+      if (!slug) {
+        setResult("Landing slug is required", true);
+        return null;
+      }
+
+      if (!title && !html.trim()) {
+        setResult("Landing title or custom HTML is required", true);
+        return null;
+      }
+
+      return {
+        slug,
+        domain,
+        title,
+        description,
+        image,
+        theme,
+        buttons,
+        ctaLabel,
+        ctaUrl,
+        footer,
+        landingHtml: html,
+        landingCss: css,
+        landingJs: js,
+        metaTitle,
+        metaDescription
+      };
+    }
+
+    function renderPreview() {
+      const data = getPayload();
+      if (!data) return;
+
+      const title = escapeHtml(data.title || data.slug || "Landing Page");
+      const description = escapeHtml(data.description || "");
+      const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
+      const theme = escapeHtml(data.theme || "#00ffff");
+      const buttons = Array.isArray(data.buttons) ? data.buttons : [];
+      const ctaLabel = escapeHtml(data.ctaLabel || "");
+      const ctaUrl = data.ctaUrl || "";
+      const footer = escapeHtml(data.footer || "Powered by Rattle Link");
+      const customHtml = String(data.landingHtml || "").trim();
+      const customCss = String(data.landingCss || "");
+      const customJs = String(data.landingJs || "");
+
+      let html = "";
+
+      if (customHtml) {
+        html = customHtml;
+      } else {
+        html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${title}</title>
+<style>
+:root{
+  --theme:${theme};
+  --bg:#020617;
+  --card:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,Arial,sans-serif;
+  background:radial-gradient(circle at top,#0f172a,#000);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.card{
+  width:min(560px,100%);
+  background:rgba(15,23,42,.92);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  padding:28px;
+  text-align:center;
+}
+.avatar{
+  width:110px;
+  height:110px;
+  margin:0 auto 18px;
+  border-radius:999px;
+  overflow:hidden;
+  border:3px solid var(--theme);
+  background:#111827;
+}
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+h1{margin:0 0 10px;color:var(--theme);font-size:30px;}
+p.desc{margin:0 0 22px;color:var(--muted);line-height:1.7;}
+.links{display:grid;gap:12px;}
+a.btn{
+  display:block;
+  padding:14px 16px;
+  border-radius:14px;
+  text-decoration:none;
+  font-weight:700;
+  border:1px solid rgba(255,255,255,.08);
+  background:#111827;
+  color:var(--text);
+}
+a.cta{background:var(--theme);color:#000;}
+.footer{margin-top:20px;color:var(--muted);font-size:12px;}
+${customCss}
+</style>
+</head>
+<body>
+  <div class="card">
+    ${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
+    <h1>${title}</h1>
+    ${description ? `<p class="desc">${description}</p>` : ""}
+    <div class="links">
+      ${buttons.map(btn => `<a class="btn" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`).join("")}
+      ${ctaLabel && ctaUrl ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>` : ""}
+    </div>
+    <div class="footer">${footer}</div>
+  </div>
+  ${customJs ? `<script>${customJs}<\/script>` : ""}
+</body>
+</html>`;
+      }
+
+      landingPreviewFrame.srcdoc = html;
+      setResult("Preview updated", false);
+    }
+
+    function clearForm() {
+      landingSlug.value = "";
+      landingDomain.value = "";
+      landingTitle.value = "";
+      landingDescription.value = "";
+      landingImage.value = "";
+      landingTheme.value = "#00ffff";
+      landingCtaLabel.value = "";
+      landingCtaUrl.value = "";
+      landingFooter.value = "";
+      landingButtonLabel1.value = "";
+      landingButtonUrl1.value = "";
+      landingButtonLabel2.value = "";
+      landingButtonUrl2.value = "";
+      landingMetaTitle.value = "";
+      landingMetaDescription.value = "";
+      landingHtml.value = "";
+      landingCss.value = "";
+      landingJs.value = "";
+      landingPreviewFrame.srcdoc = "";
+      setResult("Form cleared", false);
+    }
+
+    function fillForm(item) {
+      landingSlug.value = item.slug || "";
+      landingDomain.value = item.domain || "";
+      landingTitle.value = item.landingTitle || "";
+      landingDescription.value = item.landingDescription || "";
+      landingImage.value = item.landingImage || "";
+      landingTheme.value = item.landingTheme || "#00ffff";
+      landingCtaLabel.value = item.landingCtaLabel || "";
+      landingCtaUrl.value = item.landingCtaUrl || "";
+      landingFooter.value = item.landingFooter || "";
+      landingMetaTitle.value = item.metaTitle || "";
+      landingMetaDescription.value = item.metaDescription || "";
+      landingHtml.value = item.landingHtml || "";
+      landingCss.value = item.landingCss || "";
+      landingJs.value = item.landingJs || "";
+
+      const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
+      landingButtonLabel1.value = buttons[0]?.label || "";
+      landingButtonUrl1.value = buttons[0]?.url || "";
+      landingButtonLabel2.value = buttons[1]?.label || "";
+      landingButtonUrl2.value = buttons[1]?.url || "";
+
+      renderPreview();
+      showToast("Landing loaded");
+    }
+
+    async function createLanding() {
+      const payload = getPayload();
+      if (!payload) return;
+
+      setBusy(createBtn, true, "Creating...");
+
+      const res = await authorizedFetch("/landing/create", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      setBusy(createBtn, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Landing create failed", true);
+        return;
+      }
+
+      setResult(`Landing created: ${res.data?.link || payload.slug}`, false);
+      await loadAll(false);
+    }
+
+    async function updateLanding() {
+      const payload = getPayload();
+      if (!payload) return;
+
+      setBusy(updateBtn, true, "Updating...");
+
+      const res = await authorizedFetch("/landing/update", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      setBusy(updateBtn, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Landing update failed", true);
+        return;
+      }
+
+      setResult("Landing updated", false);
+      await loadAll(false);
+    }
+
+    async function deleteLanding(slug, domain = "") {
+      if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) return;
+
+      const res = await authorizedFetch("/landing/delete", {
+        method: "POST",
+        body: JSON.stringify({ slug, domain })
+      });
+
+      if (!res.ok) {
+        showToast("Delete failed");
+        return;
+      }
+
+      showToast("Landing deleted");
+      await loadAll(false);
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    function openLink(url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    async function loadDomains() {
+      const res = await authorizedFetch("/domains/me", { method: "GET" });
+      if (!res.ok) {
+        domainsStore = [];
+        renderDomainSelectors();
+        return;
+      }
+
+      const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
+      domainsStore = domains.map(d => ({
+        ...d,
+        domain: normalizeDomain(d.domain || ""),
+        status: String(d.status || "pending").toLowerCase(),
+        isPrimary: !!d.isPrimary,
+        createdAt: Number(d.createdAt || d.created_at || 0)
+      })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+      renderDomainSelectors();
+    }
+
+    function renderDomainSelectors() {
+      const verifiedDomains = domainsStore.filter(d => d.status === "verified");
+
+      const domainOptions = ['<option value="">Default domain</option>']
+        .concat(
+          verifiedDomains.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`)
+        )
+        .join("");
+
+      landingDomain.innerHTML = domainOptions;
+
+      domainFilter.innerHTML = ['<option value="all">All domains</option>']
+        .concat(
+          verifiedDomains.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`)
+        )
+        .join("");
+
+      verifiedDomainsCount.textContent = verifiedDomains.length;
+    }
+
+    async function loadLandings() {
+      const res = await authorizedFetch("/list", { method: "GET" });
+
+      if (!res.ok) {
+        landingStore = [];
+        renderLandingTable();
+        updateStats();
+        return;
+      }
+
+      const items = Array.isArray(res.data?.items) ? res.data.items : [];
+      landingStore = items
+        .map(normalizeLandingItem)
+        .filter(item => item.linkType === "landing")
+        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+      renderLandingTable();
+      updateStats();
+    }
+
+    function updateStats() {
+      totalLandings.textContent = landingStore.length;
+      totalLandingClicks.textContent = landingStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+      activeLandings.textContent = landingStore.filter(item => !item.paused && (!item.expire || Number(item.expire) > Date.now())).length;
+    }
+
+    function renderLandingTable() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const domainOnly = domainFilter.value || "all";
+
+      const filtered = landingStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const title = String(item.landingTitle || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        const domain = String(item.domain || "").toLowerCase();
+
+        const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
+        const queryMatch = !q || slug.includes(q) || title.includes(q) || url.includes(q) || domain.includes(q);
+
+        return domainMatch && queryMatch;
+      });
+
+      if (!filtered.length) {
+        landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
+        return;
+      }
+
+      landingTable.innerHTML = filtered.map(item => {
+        const publicLink = buildPublicLink(item);
+        const statusHtml = item.paused
+          ? `<span class="badge pending">Paused</span>`
+          : `<span class="badge live">Live</span>`;
+
+        return `
+          <tr>
+            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
+            <td>
+              ${escapeHtml(item.landingTitle || "-")}
+              ${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}
+            </td>
+            <td>${Number(item.clicks || 0)}</td>
+            <td>
+              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+            </td>
+            <td>${statusHtml}</td>
+            <td>${fmtDate(item.createdAt)}</td>
+            <td>
+              <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
+              <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy</button>
+              <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open</button>
+              <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function editLandingByKey(slug, domain) {
+      const item = landingStore.find(x =>
+        String(x.slug || "") === String(slug || "") &&
+        normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+      );
+
+      if (!item) {
+        showToast("Landing not found");
+        return;
+      }
+
+      fillForm(item);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function loadAll(showMessage = false) {
+      setBusy(refreshBtn, true, "Loading...");
+      await Promise.all([loadDomains(), loadLandings()]);
+      setBusy(refreshBtn, false);
+      if (showMessage) showToast("Landing page data refreshed");
+    }
+
+    function attachLivePreview() {
+      [
+        landingSlug,
+        landingDomain,
+        landingTitle,
+        landingDescription,
+        landingImage,
+        landingTheme,
+        landingCtaLabel,
+        landingCtaUrl,
+        landingFooter,
+        landingButtonLabel1,
+        landingButtonUrl1,
+        landingButtonLabel2,
+        landingButtonUrl2,
+        landingMetaTitle,
+        landingMetaDescription,
+        landingHtml,
+        landingCss,
+        landingJs
+      ].forEach(el => {
+        el.addEventListener("input", () => {
+          clearTimeout(window.__landingPreviewTimer);
+          window.__landingPreviewTimer = setTimeout(() => {
+            try { renderPreview(); } catch {}
+          }, 250);
+        });
+      });
+    }
+
+    function setupEvents() {
+      refreshBtn.addEventListener("click", () => loadAll(true));
+      clearBtn.addEventListener("click", clearForm);
+      previewBtn.addEventListener("click", renderPreview);
+      createBtn.addEventListener("click", createLanding);
+      updateBtn.addEventListener("click", updateLanding);
+
+      openPreviewBtn.addEventListener("click", () => {
+        const html = landingPreviewFrame.srcdoc || "";
+        if (!html) {
+          renderPreview();
+        }
+        const win = window.open("", "_blank");
+        if (win) {
+          win.document.open();
+          win.document.write(landingPreviewFrame.srcdoc || "");
+          win.document.close();
+        }
+      });
+
+      searchInput.addEventListener("input", renderLandingTable);
+      domainFilter.addEventListener("change", renderLandingTable);
+
+      [landingSlug, landingTitle, landingDescription].forEach(el => {
+        el.addEventListener("keydown", e => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            renderPreview();
+          }
+        });
+      });
+    }
+
+    window.copyText = copyText;
+    window.openLink = openLink;
+    window.deleteLanding = deleteLanding;
+    window.editLandingByKey = editLandingByKey;
+
+    (async function init() {
+      if (!ensureAuth()) return;
+      setupEvents();
+      attachLivePreview();
+      await loadAll(false);
+      renderPreview();
+
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (document.hidden) return;
+        loadAll(false);
+      }, 20000);
+    })();
+
+    window.addEventListener("beforeunload", () => {
+      clearInterval(refreshTimer);
+    });
+  </script>
+</body>
+</html>
