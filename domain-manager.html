@@ -18,6 +18,7 @@
       --yellow:#f59e0b;
       --blue:#3b82f6;
       --border:rgba(0,255,255,0.18);
+      --soft:rgba(15,23,42,0.45);
     }
 
     *{ box-sizing:border-box; }
@@ -46,7 +47,7 @@
     .container{
       position:relative;
       z-index:1;
-      max-width:1200px;
+      max-width:1240px;
       margin:0 auto;
       padding:20px;
     }
@@ -71,6 +72,7 @@
       color:var(--muted);
       font-size:13px;
       line-height:1.6;
+      max-width:800px;
     }
 
     .top-actions{
@@ -111,6 +113,12 @@
       gap:18px;
     }
 
+    .three-col{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+
     .muted{
       color:var(--muted);
       font-size:12px;
@@ -121,10 +129,14 @@
       font-size:12px;
     }
 
+    .tiny{
+      font-size:11px;
+    }
+
     .info-box{
       padding:12px;
       border-radius:12px;
-      background:rgba(15,23,42,0.45);
+      background:var(--soft);
       border:1px solid rgba(0,255,255,0.12);
       margin-bottom:10px;
     }
@@ -184,6 +196,7 @@
     .expired{ color:var(--red); }
     .live{ color:var(--green); }
     .warn{ color:var(--yellow); }
+    .blue{ color:var(--blue); }
 
     .form-row{
       display:flex;
@@ -349,17 +362,88 @@
       max-width:80vw;
     }
 
+    .records{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .record{
+      padding:12px;
+      border-radius:12px;
+      background:#000;
+      border:1px solid rgba(0,255,255,0.14);
+    }
+
+    .record-title{
+      color:var(--cyan);
+      font-weight:700;
+      margin-bottom:8px;
+      font-size:13px;
+    }
+
+    .record-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .record-grid .full{
+      grid-column:1 / -1;
+    }
+
+    .record-label{
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
     code{
+      display:block;
       background:#000;
       border:1px solid rgba(0,255,255,0.18);
-      padding:2px 6px;
+      padding:8px 10px;
       border-radius:8px;
       color:var(--cyan);
       word-break:break-all;
+      line-height:1.5;
+    }
+
+    .dns-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .dns-tab.active{
+      background:var(--cyan);
+      color:#000;
+      border-color:var(--cyan);
+    }
+
+    .helper-list{
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.8;
+    }
+
+    .mono{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    @media (max-width: 980px){
+      .two-col,
+      .three-col{
+        grid-template-columns:1fr;
+      }
     }
 
     @media (max-width: 860px){
-      .two-col{
+      .record-grid{
         grid-template-columns:1fr;
       }
     }
@@ -371,7 +455,7 @@
       <div>
         <h1>🌐 Custom Domain Manager</h1>
         <div class="sub">
-          Backend2 only • Add domains • Verify DNS • Set primary domain • Use domains for links and landing pages
+          Backend2 only • Add domains • Verify DNS • Set primary domain • Refresh status • Copy exact DNS records • Use verified domains for links and landing pages
         </div>
       </div>
 
@@ -406,7 +490,7 @@
         <h3>➕ Add Custom Domain</h3>
 
         <div class="notice">
-          Add a domain like <b>links.example.com</b>. After adding it, the system will give you a TXT record to place in your DNS.
+          Add a domain like <b>go.example.com</b> or <b>links.example.com</b>. After adding it, you will get the TXT verification record and connection records.
         </div>
 
         <div class="form-row">
@@ -425,26 +509,31 @@
       </div>
 
       <div class="card">
-        <h3>📘 DNS Instructions</h3>
+        <h3>📘 Quick Setup</h3>
 
         <div class="info-box">
           <b>Step 1</b>
-          <div class="muted" style="margin-top:8px;">Add your domain here.</div>
+          <div class="muted" style="margin-top:8px;">Add the domain here.</div>
         </div>
 
         <div class="info-box">
           <b>Step 2</b>
-          <div class="muted" style="margin-top:8px;">Copy the TXT host and TXT value shown below the domain after creation.</div>
+          <div class="muted" style="margin-top:8px;">Create the TXT verification record exactly as shown.</div>
         </div>
 
         <div class="info-box">
           <b>Step 3</b>
-          <div class="muted" style="margin-top:8px;">Wait for DNS propagation, then click Verify.</div>
+          <div class="muted" style="margin-top:8px;">Create the connect record that points traffic to your VPS.</div>
         </div>
 
         <div class="info-box">
           <b>Step 4</b>
-          <div class="muted" style="margin-top:8px;">Once verified, you can use the domain in your landing pages and short links.</div>
+          <div class="muted" style="margin-top:8px;">Wait for DNS propagation, then click <b>Refresh Status</b> or <b>Verify</b>.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Step 5</b>
+          <div class="muted" style="margin-top:8px;">After verification, use the domain while creating links or set it as your primary domain.</div>
         </div>
       </div>
     </div>
@@ -469,9 +558,9 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
-
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     let domainsStore = [];
+    let activeDnsProvider = "cloudflare";
 
     const refreshBtn = document.getElementById("refreshBtn");
     const addDomainBtn = document.getElementById("addDomainBtn");
@@ -510,7 +599,8 @@
         .trim()
         .toLowerCase()
         .replace(/^https?:\/\//i, "")
-        .replace(/\/+$/g, "");
+        .replace(/\/+$/g, "")
+        .replace(/^www\./, (m) => m);
     }
 
     function escapeHtml(str) {
@@ -614,6 +704,90 @@
       primaryDomainCount.textContent = primary ? "1" : "0";
     }
 
+    function renderProviderTabs(domain) {
+      return `
+        <div class="dns-tabs">
+          <button type="button" class="dns-tab ${activeDnsProvider === "cloudflare" ? "active" : ""}" onclick="setDnsProvider('cloudflare','${escapeForJs(domain)}')">Cloudflare</button>
+          <button type="button" class="dns-tab ${activeDnsProvider === "namecheap" ? "active" : ""}" onclick="setDnsProvider('namecheap','${escapeForJs(domain)}')">Namecheap</button>
+          <button type="button" class="dns-tab ${activeDnsProvider === "generic" ? "active" : ""}" onclick="setDnsProvider('generic','${escapeForJs(domain)}')">Generic DNS</button>
+        </div>
+      `;
+    }
+
+    function buildRecordsHtml(domain) {
+      const verificationTarget = domain.verificationTarget || `_rattle_verify.${domain.domain}`;
+      const verifyToken = domain.verifyToken || "-";
+      const dns = domain.dns || {};
+      const examples = domain.examples || {};
+
+      const cloudflare = examples.cloudflare || [
+        { type: "TXT", name: "_rattle_verify", value: verifyToken, proxied: false },
+        { type: "A", name: "@", value: dns.connect?.value || "-", proxied: true },
+        { type: "CNAME", name: "www", value: "@", proxied: true }
+      ];
+
+      const namecheap = examples.namecheap || [
+        { type: "TXT", host: "_rattle_verify", value: verifyToken },
+        { type: "A", host: "@", value: dns.connect?.value || "-" },
+        { type: "CNAME", host: "www", value: domain.domain || "-" }
+      ];
+
+      const generic = examples.generic || [
+        { type: "TXT", name: verificationTarget, value: verifyToken },
+        { type: "A", name: domain.domain || "-", value: dns.connect?.value || "-" },
+        { type: "CNAME", name: `www.${domain.domain || ""}`, value: domain.domain || "-" }
+      ];
+
+      const recordBlock = (title, rows) => `
+        <div class="record">
+          <div class="record-title">${escapeHtml(title)}</div>
+          ${rows.map((row, idx) => `
+            <div class="record-grid" style="${idx > 0 ? "margin-top:10px;" : ""}">
+              ${Object.entries(row).map(([key, value]) => `
+                <div class="${String(value).length > 40 ? "full" : ""}">
+                  <div class="record-label">${escapeHtml(key)}</div>
+                  <code>${escapeHtml(String(value))}</code>
+                </div>
+              `).join("")}
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      let providerHtml = "";
+      if (activeDnsProvider === "cloudflare") {
+        providerHtml = recordBlock("Cloudflare records", cloudflare);
+      } else if (activeDnsProvider === "namecheap") {
+        providerHtml = recordBlock("Namecheap records", namecheap);
+      } else {
+        providerHtml = recordBlock("Generic DNS records", generic);
+      }
+
+      return `
+        ${renderProviderTabs(domain.domain)}
+        <div class="records">
+          <div class="record">
+            <div class="record-title">Verification TXT</div>
+            <div class="record-grid">
+              <div>
+                <div class="record-label">Type</div>
+                <code>TXT</code>
+              </div>
+              <div>
+                <div class="record-label">Value</div>
+                <code>${escapeHtml(verifyToken)}</code>
+              </div>
+              <div class="full">
+                <div class="record-label">Name / Host</div>
+                <code>${escapeHtml(verificationTarget)}</code>
+              </div>
+            </div>
+          </div>
+          ${providerHtml}
+        </div>
+      `;
+    }
+
     function renderDomains() {
       const q = (searchInput.value || "").trim().toLowerCase();
       const status = statusFilter.value || "all";
@@ -635,6 +809,8 @@
 
       domainsList.innerHTML = filtered.map(d => {
         const isVerified = String(d.status || "").toLowerCase() === "verified";
+        const refreshLabel = isVerified ? "Refresh Status" : "Check DNS";
+
         return `
           <div class="domain-card">
             <div class="domain-card-top">
@@ -652,28 +828,47 @@
               </div>
             </div>
 
-            <div class="info-box" style="margin-top:12px;">
-              <b>TXT Host</b>
-              <div style="margin-top:8px;"><code>${escapeHtml(d.verificationTarget || "-")}</code></div>
+            <div style="margin-top:12px;">
+              ${
+                isVerified
+                  ? `<div class="success-box">This domain is verified and ready to use.</div>`
+                  : `<div class="notice">DNS is still pending. Add the records below, wait for propagation, then verify.</div>`
+              }
             </div>
 
-            <div class="info-box">
-              <b>TXT Value</b>
-              <div style="margin-top:8px;"><code>${escapeHtml(d.verifyToken || "-")}</code></div>
+            <div class="three-col">
+              <div class="info-box">
+                <b>Status</b>
+                <div class="muted" style="margin-top:6px;">${escapeHtml(d.status || "pending")}</div>
+              </div>
+              <div class="info-box">
+                <b>Primary</b>
+                <div class="muted" style="margin-top:6px;">${d.isPrimary ? "Yes" : "No"}</div>
+              </div>
+              <div class="info-box">
+                <b>Verified At</b>
+                <div class="muted" style="margin-top:6px;">${d.verifiedAt ? fmtDate(d.verifiedAt) : "-"}</div>
+              </div>
             </div>
 
-            ${d.verifiedAt ? `
-              <div class="muted">Verified at: ${fmtDate(d.verifiedAt)}</div>
-            ` : `
-              <div class="muted">Waiting for DNS verification</div>
-            `}
+            ${buildRecordsHtml(d)}
 
             <div class="domain-actions">
               <button type="button" class="copy" onclick="copyText('${escapeForJs(d.verificationTarget || "")}')">Copy TXT Host</button>
               <button type="button" class="copy" onclick="copyText('${escapeForJs(d.verifyToken || "")}')">Copy TXT Value</button>
+              <button type="button" class="ghost-btn" onclick="refreshDomain('${escapeForJs(d.domain)}')">${refreshLabel}</button>
               <button type="button" class="success-btn" onclick="verifyDomain('${escapeForJs(d.domain)}')">Verify</button>
               <button type="button" class="ghost-btn" onclick="setPrimaryDomain('${escapeForJs(d.domain)}')" ${d.isPrimary ? "disabled" : ""}>Set Primary</button>
               <button type="button" class="danger-btn" onclick="removeDomain('${escapeForJs(d.domain)}')">Remove</button>
+            </div>
+
+            <div class="info-box" style="margin-top:12px;">
+              <b>After verification</b>
+              <ul class="helper-list">
+                <li>Use <span class="mono">${escapeHtml(d.domain)}</span> when creating a short link.</li>
+                <li>Set it as primary if you want it to be your main branded domain.</li>
+                <li>You can also use it for landing pages.</li>
+              </ul>
             </div>
           </div>
         `;
@@ -708,6 +903,15 @@
       if (showToastMessage) showToast("Domains refreshed");
     }
 
+    async function loadDnsInstructionsForDomain(domain) {
+      const res = await safeFetch(`/domains/dns-instructions?domain=${encodeURIComponent(domain)}`, {
+        method: "GET"
+      });
+
+      if (!res.ok) return null;
+      return res.data || null;
+    }
+
     async function addDomain() {
       const domain = normalizeDomain(domainInput.value);
 
@@ -732,13 +936,42 @@
 
       const txtName = res.data?.verificationTarget || "";
       const txtValue = res.data?.verifyToken || "";
+      const connectValue = res.data?.instructions?.step2?.cloudflare?.value || "";
 
       setResult(
-        `Domain added successfully.\n\nTXT Host:\n${txtName}\n\nTXT Value:\n${txtValue}`,
+        `Domain added successfully.
+
+TXT Host:
+${txtName}
+
+TXT Value:
+${txtValue}
+
+Point traffic to:
+${connectValue}
+
+Now create the DNS records, wait a bit, then click Verify.`,
         false
       );
 
       domainInput.value = "";
+      await loadDomains(false);
+    }
+
+    async function refreshDomain(domain) {
+      if (!domain) return;
+
+      const res = await safeFetch("/domains/refresh", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Refresh failed");
+        return;
+      }
+
+      showToast(`Status refreshed: ${domain}`);
       await loadDomains(false);
     }
 
@@ -803,6 +1036,11 @@
       }
     }
 
+    function setDnsProvider(provider) {
+      activeDnsProvider = provider;
+      renderDomains();
+    }
+
     clearDomainBtn.addEventListener("click", () => {
       domainInput.value = "";
       setResult("", false);
@@ -819,12 +1057,24 @@
 
     window.copyText = copyText;
     window.verifyDomain = verifyDomain;
+    window.refreshDomain = refreshDomain;
     window.setPrimaryDomain = setPrimaryDomain;
     window.removeDomain = removeDomain;
+    window.setDnsProvider = setDnsProvider;
 
     (async function init() {
       if (!ensureAuth()) return;
       await loadDomains(false);
+
+      for (let i = 0; i < domainsStore.length; i += 1) {
+        const domain = domainsStore[i];
+        const dnsInfo = await loadDnsInstructionsForDomain(domain.domain);
+        if (dnsInfo) {
+          domainsStore[i] = { ...domainsStore[i], ...dnsInfo };
+        }
+      }
+
+      renderDomains();
     })();
   </script>
 </body>
