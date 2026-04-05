@@ -3,24 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rattle Link Landing Builder</title>
+  <title>Rattle Link Pro Landing Builder</title>
 
   <style>
     :root{
       --bg:#020617;
       --bg2:#000000;
-      --card:rgba(2,6,23,0.84);
-      --card2:rgba(15,23,42,0.58);
+      --panel:rgba(2,6,23,0.84);
+      --panel2:rgba(15,23,42,0.62);
+      --panel3:rgba(8,15,32,0.92);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
-      --blue:#3b82f6;
+      --cyan2:#67e8f9;
       --green:#22c55e;
       --red:#ef4444;
       --yellow:#f59e0b;
       --pink:#ec4899;
       --purple:#a855f7;
+      --blue:#3b82f6;
       --border:rgba(0,255,255,0.18);
+      --shadow:0 0 18px rgba(0,255,255,0.10), inset 0 0 14px rgba(0,255,255,0.03);
+      --radius:18px;
+      --radius-sm:12px;
     }
 
     *{ box-sizing:border-box; }
@@ -30,7 +35,8 @@
       padding:0;
       min-height:100%;
       font-family:Inter, Arial, sans-serif;
-      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      background:
+        radial-gradient(circle at top, #081225 0%, #020617 38%, #000000 100%);
       color:var(--text);
     }
 
@@ -49,7 +55,7 @@
     .container{
       position:relative;
       z-index:1;
-      max-width:1500px;
+      max-width:1650px;
       margin:0 auto;
       padding:20px;
     }
@@ -66,14 +72,16 @@
     .header h1{
       margin:0 0 6px;
       color:var(--cyan);
-      text-shadow:0 0 10px rgba(0,255,255,0.45);
-      font-size:30px;
+      text-shadow:0 0 12px rgba(0,255,255,0.42);
+      font-size:32px;
+      letter-spacing:.3px;
     }
 
     .sub{
       color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
+      font-size:13px;
+      line-height:1.7;
+      max-width:820px;
     }
 
     .top-actions{
@@ -83,20 +91,35 @@
       align-items:center;
     }
 
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+      line-height:1;
+      white-space:nowrap;
+    }
+
+    .live{ color:var(--green); }
+    .pending{ color:var(--yellow); }
+    .danger{ color:var(--red); }
+    .cyan{ color:var(--cyan2); }
+
     .card{
-      background:var(--card);
+      background:var(--panel);
       border:1px solid var(--border);
-      backdrop-filter:blur(12px);
-      border-radius:16px;
+      backdrop-filter:blur(14px);
+      border-radius:var(--radius);
       padding:16px;
       margin-bottom:18px;
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.10),
-        inset 0 0 15px rgba(0,255,255,0.03);
+      box-shadow:var(--shadow);
     }
 
     .card.alt{
-      background:var(--card2);
+      background:var(--panel2);
     }
 
     .card h2,
@@ -111,16 +134,109 @@
       gap:16px;
     }
 
-    .two-col{
+    .main-grid{
       display:grid;
-      grid-template-columns:1.05fr .95fr;
+      grid-template-columns:1.08fr .92fr;
       gap:18px;
+      align-items:start;
     }
 
-    .three-col{
+    .sub-grid{
       display:grid;
-      grid-template-columns:repeat(3, 1fr);
+      grid-template-columns:repeat(2,1fr);
       gap:14px;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .small{
+      font-size:12px;
+    }
+
+    .tiny{
+      font-size:11px;
+    }
+
+    .notice,
+    .success-box,
+    .danger-box,
+    .info-box{
+      padding:12px;
+      border-radius:14px;
+      margin-bottom:12px;
+      line-height:1.6;
+      font-size:13px;
+    }
+
+    .notice{
+      background:rgba(245,158,11,0.08);
+      border:1px solid rgba(245,158,11,0.25);
+      color:#fcd34d;
+    }
+
+    .success-box{
+      background:rgba(34,197,94,0.08);
+      border:1px solid rgba(34,197,94,0.25);
+      color:#86efac;
+    }
+
+    .danger-box{
+      background:rgba(239,68,68,0.08);
+      border:1px solid rgba(239,68,68,0.25);
+      color:#fca5a5;
+    }
+
+    .info-box{
+      background:rgba(15,23,42,0.46);
+      border:1px solid rgba(0,255,255,0.12);
+      color:var(--text);
+    }
+
+    .stat-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
+      margin-bottom:18px;
+    }
+
+    .stat-card{
+      text-align:center;
+      padding:16px;
+      border-radius:16px;
+      background:rgba(15,23,42,0.55);
+      border:1px solid rgba(0,255,255,0.12);
+    }
+
+    .stat-card h3{
+      margin:0 0 8px;
+      font-size:28px;
+      color:var(--cyan);
+    }
+
+    .stat-card p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
     }
 
     .form-row{
@@ -138,17 +254,23 @@
       flex:1 1 100%;
     }
 
+    .field.third{
+      flex:1 1 calc(33.333% - 10px);
+    }
+
     .field label{
       display:block;
       margin-bottom:6px;
       font-size:12px;
       color:var(--muted);
+      font-weight:600;
+      letter-spacing:.2px;
     }
 
     input, select, textarea{
       width:100%;
       padding:12px;
-      border-radius:10px;
+      border-radius:12px;
       border:1px solid rgba(0,255,255,0.22);
       background:#000;
       color:var(--cyan);
@@ -169,29 +291,33 @@
     input:focus,
     select:focus,
     textarea:focus{
-      box-shadow:0 0 10px rgba(0,255,255,0.4);
+      box-shadow:0 0 12px rgba(0,255,255,0.32);
+      border-color:rgba(0,255,255,0.40);
     }
 
     button, .btn{
       padding:11px 14px;
       border:none;
-      border-radius:10px;
+      border-radius:12px;
       cursor:pointer;
       font-size:12px;
+      font-weight:700;
       background:#020617;
       color:var(--cyan);
       border:1px solid rgba(0,255,255,0.28);
-      transition:.2s ease;
+      transition:.18s ease;
       text-decoration:none;
-      display:inline-block;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
     }
 
     button:hover, .btn:hover{
       color:#fff;
       border-color:var(--cyan);
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.4),
-        0 0 24px rgba(0,255,255,0.15);
+      box-shadow:0 0 12px rgba(0,255,255,0.34), 0 0 24px rgba(0,255,255,0.15);
       transform:translateY(-1px);
     }
 
@@ -252,43 +378,139 @@
       border-color:var(--blue);
     }
 
-    .badge{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid currentColor;
+    .tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:14px;
     }
 
-    .live{ color:var(--green); }
-    .pending{ color:var(--yellow); }
-    .muted{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
+    .tab-btn.active{
+      background:rgba(0,255,255,0.10);
+      border-color:var(--cyan);
+      color:#fff;
     }
 
-    .small{
-      font-size:12px;
+    .tab-panel{
+      display:none;
     }
 
-    .notice{
+    .tab-panel.active{
+      display:block;
+    }
+
+    .builder-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .button-list{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .button-item{
       padding:12px;
-      border-radius:12px;
-      background:rgba(245,158,11,0.08);
-      border:1px solid rgba(245,158,11,0.25);
-      color:#fcd34d;
-      font-size:13px;
-      line-height:1.6;
-      margin-bottom:12px;
-    }
-
-    .info-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.45);
+      border-radius:14px;
+      background:rgba(15,23,42,0.42);
       border:1px solid rgba(0,255,255,0.12);
+    }
+
+    .button-item-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
       margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .preview-shell{
+      background:linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.92));
+      border:1px solid rgba(0,255,255,.16);
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .preview-topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(0,255,255,.12);
+      background:rgba(0,0,0,.32);
+    }
+
+    .device-switch{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
+    .device-btn.active{
+      background:rgba(0,255,255,0.10);
+      border-color:var(--cyan);
+      color:#fff;
+    }
+
+    .landing-preview{
+      min-height:220px;
+      padding:14px;
+    }
+
+    .landing-preview iframe{
+      width:100%;
+      height:720px;
+      border:0;
+      background:#fff;
+      display:block;
+      border-radius:14px;
+    }
+
+    .device-mobile iframe{ max-width:390px; margin:0 auto; display:block; }
+    .device-tablet iframe{ max-width:820px; margin:0 auto; display:block; }
+    .device-desktop iframe{ max-width:100%; }
+
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1320px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid #334155;
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    th{
+      color:var(--cyan);
+      font-weight:700;
+    }
+
+    tr:hover{
+      background:#020617;
+    }
+
+    .table-title{
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
     }
 
     .result{
@@ -302,91 +524,53 @@
     .success{ color:var(--green); }
     .error{ color:var(--red); }
 
-    .section-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
-
-    .stat-grid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:14px;
-    }
-
-    .stat-card{
-      text-align:center;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(15,23,42,0.45);
-      border:1px solid rgba(0,255,255,0.12);
-    }
-
-    .stat-card h3{
-      margin:0 0 8px;
-      font-size:28px;
-      color:var(--cyan);
-    }
-
-    .stat-card p{
-      margin:0;
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    .landing-preview{
-      min-height:220px;
-      border:1px solid rgba(0,255,255,0.16);
-      border-radius:14px;
-      overflow:hidden;
-      background:#020617;
-    }
-
-    .landing-preview iframe{
-      width:100%;
-      height:500px;
-      border:0;
-      background:#fff;
-      display:block;
-    }
-
-    .table-wrap{
-      overflow:auto;
-      width:100%;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1150px;
-    }
-
-    th, td{
-      padding:10px;
-      border-bottom:1px solid #334155;
-      text-align:left;
-      vertical-align:top;
-      font-size:13px;
-    }
-
-    th{
-      color:var(--cyan);
-      font-weight:600;
-    }
-
-    tr:hover{
-      background:#020617;
-    }
-
     .empty{
       padding:18px;
       text-align:center;
       color:var(--muted);
       border:1px dashed rgba(0,255,255,0.18);
       border-radius:12px;
+    }
+
+    .template-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .template-card{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(0,255,255,0.14);
+      background:rgba(15,23,42,.45);
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .template-card:hover{
+      border-color:var(--cyan);
+      box-shadow:0 0 12px rgba(0,255,255,.18);
+      transform:translateY(-1px);
+    }
+
+    .template-card h4{
+      margin:0 0 8px;
+      font-size:14px;
+      color:var(--cyan2);
+    }
+
+    .template-card p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .seo-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
     }
 
     .toast{
@@ -404,9 +588,17 @@
       max-width:80vw;
     }
 
-    @media (max-width: 1100px){
-      .two-col,
-      .three-col,
+    .sticky-tools{
+      position:sticky;
+      top:12px;
+      z-index:10;
+    }
+
+    @media (max-width: 1320px){
+      .main-grid,
+      .sub-grid,
+      .template-grid,
+      .seo-grid,
       .stat-grid{
         grid-template-columns:1fr;
       }
@@ -417,15 +609,17 @@
   <div class="container">
     <div class="header">
       <div>
-        <h1>🟢 Landing Builder</h1>
+        <h1>🚀 Pro Landing Builder</h1>
         <div class="sub">
-          Backend2 only • Create, preview, edit, and manage landing pages
+          Backend2 only • Build branded landing pages faster • Live preview • Templates • Button manager • SEO fields • Verified custom domains • Full CRUD
         </div>
       </div>
 
       <div class="top-actions">
         <span class="badge live">Backend2 Only</span>
+        <span class="badge cyan" id="primaryDomainBadge">Primary: loading...</span>
         <a class="btn ghost-btn" href="dashboard.html">Back to Dashboard</a>
+        <button id="autosaveBtn" type="button" class="ghost-btn">Autosave: On</button>
         <button id="refreshBtn" type="button">Refresh</button>
       </div>
     </div>
@@ -447,145 +641,309 @@
         <h3 id="activeLandings">0</h3>
         <p>Active Landings</p>
       </div>
+      <div class="stat-card">
+        <h3 id="draftState">Draft</h3>
+        <p id="draftStateText">Not saved yet</p>
+      </div>
     </div>
 
-    <div class="two-col">
-      <div class="card">
-        <div class="section-head">
-          <h2>🎨 Landing Form</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button id="clearBtn" type="button" class="warn-btn">Clear</button>
-            <button id="previewBtn" type="button" class="ghost-btn">Preview</button>
-            <button id="createBtn" type="button" class="pink-btn">Create Landing</button>
-            <button id="updateBtn" type="button" class="backend2-btn">Update Landing</button>
+    <div class="main-grid">
+      <div>
+        <div class="card sticky-tools">
+          <div class="section-head">
+            <div>
+              <h2>🎨 Builder Studio</h2>
+              <div class="muted">Use tabs below to build a polished landing page.</div>
+            </div>
+            <div class="builder-actions">
+              <button id="clearBtn" type="button" class="warn-btn">Clear</button>
+              <button id="previewBtn" type="button" class="ghost-btn">Preview</button>
+              <button id="createBtn" type="button" class="pink-btn">Create Landing</button>
+              <button id="updateBtn" type="button" class="backend2-btn">Update Landing</button>
+            </div>
           </div>
-        </div>
 
-        <div class="notice">
-          This page talks only to Backend2. Custom domains shown here are verified Backend2 domains.
-        </div>
+          <div class="notice">
+            This page uses only Backend2 endpoints. Verified custom domains load automatically from your Backend2 account.
+          </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingSlug">Landing slug</label>
-            <input id="landingSlug" placeholder="my-landing-page" />
+          <div class="tabs">
+            <button type="button" class="tab-btn active" data-tab="tab-basics">Basics</button>
+            <button type="button" class="tab-btn" data-tab="tab-content">Content</button>
+            <button type="button" class="tab-btn" data-tab="tab-buttons">Buttons</button>
+            <button type="button" class="tab-btn" data-tab="tab-seo">SEO</button>
+            <button type="button" class="tab-btn" data-tab="tab-advanced">Advanced</button>
+            <button type="button" class="tab-btn" data-tab="tab-templates">Templates</button>
           </div>
-          <div class="field">
-            <label for="landingDomain">Landing domain</label>
-            <select id="landingDomain">
-              <option value="">Default domain</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingTitle">Landing title</label>
-            <input id="landingTitle" placeholder="My Landing Title" />
-          </div>
-          <div class="field">
-            <label for="landingDescription">Description</label>
-            <input id="landingDescription" placeholder="Short description" />
-          </div>
-        </div>
+          <div id="tab-basics" class="tab-panel active">
+            <div class="form-row">
+              <div class="field">
+                <label for="landingSlug">Landing slug</label>
+                <input id="landingSlug" placeholder="my-landing-page" />
+              </div>
+              <div class="field">
+                <label for="landingDomain">Landing domain</label>
+                <select id="landingDomain">
+                  <option value="">Default domain</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="landingTheme">Theme color</label>
+                <input id="landingTheme" placeholder="#00ffff" value="#00ffff" />
+              </div>
+            </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingImage">Image URL</label>
-            <input id="landingImage" placeholder="https://..." />
-          </div>
-          <div class="field">
-            <label for="landingTheme">Theme color</label>
-            <input id="landingTheme" placeholder="#00ffff" value="#00ffff" />
-          </div>
-        </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="landingTitle">Landing title</label>
+                <input id="landingTitle" placeholder="Your main headline" />
+              </div>
+              <div class="field">
+                <label for="landingSubtitle">Subtitle / eyebrow</label>
+                <input id="landingSubtitle" placeholder="Creator • Brand • Product" />
+              </div>
+            </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingCtaLabel">CTA Label</label>
-            <input id="landingCtaLabel" placeholder="Visit Now" />
-          </div>
-          <div class="field">
-            <label for="landingCtaUrl">CTA URL</label>
-            <input id="landingCtaUrl" placeholder="https://..." />
-          </div>
-        </div>
+            <div class="form-row">
+              <div class="field wide">
+                <label for="landingDescription">Description</label>
+                <textarea id="landingDescription" placeholder="Short paragraph that explains who you are, what you offer, or what visitors should do next."></textarea>
+              </div>
+            </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingFooter">Footer</label>
-            <input id="landingFooter" placeholder="Powered by Rattle Link" />
+            <div class="form-row">
+              <div class="field">
+                <label for="landingImage">Avatar / cover image URL</label>
+                <input id="landingImage" placeholder="https://..." />
+              </div>
+              <div class="field">
+                <label for="landingFooter">Footer</label>
+                <input id="landingFooter" placeholder="Powered by Rattle Link" />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingButtonLabel1">Button 1 Label</label>
-            <input id="landingButtonLabel1" placeholder="Instagram" />
-          </div>
-          <div class="field">
-            <label for="landingButtonUrl1">Button 1 URL</label>
-            <input id="landingButtonUrl1" placeholder="https://..." />
-          </div>
-        </div>
+          <div id="tab-content" class="tab-panel">
+            <div class="form-row">
+              <div class="field">
+                <label for="landingCtaLabel">Primary CTA label</label>
+                <input id="landingCtaLabel" placeholder="Visit Now" />
+              </div>
+              <div class="field">
+                <label for="landingCtaUrl">Primary CTA URL</label>
+                <input id="landingCtaUrl" placeholder="https://..." />
+              </div>
+            </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="landingButtonLabel2">Button 2 Label</label>
-            <input id="landingButtonLabel2" placeholder="Website" />
-          </div>
-          <div class="field">
-            <label for="landingButtonUrl2">Button 2 URL</label>
-            <input id="landingButtonUrl2" placeholder="https://..." />
-          </div>
-        </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="bgStyle">Background style</label>
+                <select id="bgStyle">
+                  <option value="radial">Radial Dark</option>
+                  <option value="solid">Solid Dark</option>
+                  <option value="mesh">Mesh Glow</option>
+                  <option value="sunset">Sunset Neon</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cardStyle">Card style</label>
+                <select id="cardStyle">
+                  <option value="glass">Glass</option>
+                  <option value="solid">Solid</option>
+                  <option value="outline">Outline</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="buttonStyle">Button style</label>
+                <select id="buttonStyle">
+                  <option value="rounded">Rounded</option>
+                  <option value="pill">Pill</option>
+                  <option value="sharp">Sharp</option>
+                </select>
+              </div>
+            </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingMetaTitle">Meta title</label>
-            <input id="landingMetaTitle" placeholder="SEO title" />
+            <div class="info-box">
+              <b>Tip</b>
+              <div class="muted" style="margin-top:6px;">
+                Keep the title short, description clear, and CTA strong. Your first screen should tell visitors exactly what to do.
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingMetaDescription">Meta description</label>
-            <textarea id="landingMetaDescription" placeholder="SEO description"></textarea>
+          <div id="tab-buttons" class="tab-panel">
+            <div class="section-head">
+              <h3>🔗 Button Manager</h3>
+              <button id="addButtonBtn" type="button" class="success-btn">Add Button</button>
+            </div>
+
+            <div class="muted" style="margin-bottom:10px;">
+              Add as many button links as you want. First two are optional quick fields below for speed.
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="landingButtonLabel1">Quick Button 1 Label</label>
+                <input id="landingButtonLabel1" placeholder="Instagram" />
+              </div>
+              <div class="field">
+                <label for="landingButtonUrl1">Quick Button 1 URL</label>
+                <input id="landingButtonUrl1" placeholder="https://..." />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="landingButtonLabel2">Quick Button 2 Label</label>
+                <input id="landingButtonLabel2" placeholder="Website" />
+              </div>
+              <div class="field">
+                <label for="landingButtonUrl2">Quick Button 2 URL</label>
+                <input id="landingButtonUrl2" placeholder="https://..." />
+              </div>
+            </div>
+
+            <div id="dynamicButtons" class="button-list"></div>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingHtml">Custom HTML</label>
-            <textarea id="landingHtml" placeholder="Optional full HTML override"></textarea>
+          <div id="tab-seo" class="tab-panel">
+            <div class="seo-grid">
+              <div class="field">
+                <label for="landingMetaTitle">Meta title</label>
+                <input id="landingMetaTitle" placeholder="SEO title" />
+              </div>
+              <div class="field">
+                <label for="landingOgTitle">Open Graph title</label>
+                <input id="landingOgTitle" placeholder="Social share title" />
+              </div>
+            </div>
+
+            <div class="seo-grid">
+              <div class="field wide">
+                <label for="landingMetaDescription">Meta description</label>
+                <textarea id="landingMetaDescription" placeholder="SEO description"></textarea>
+              </div>
+              <div class="field wide">
+                <label for="landingOgDescription">Open Graph description</label>
+                <textarea id="landingOgDescription" placeholder="Social share description"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="landingOgImage">Open Graph image URL</label>
+                <input id="landingOgImage" placeholder="https://..." />
+              </div>
+              <div class="field">
+                <label for="landingCanonicalUrl">Canonical URL</label>
+                <input id="landingCanonicalUrl" placeholder="Optional canonical URL" />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingCss">Custom CSS</label>
-            <textarea id="landingCss" placeholder="Optional CSS"></textarea>
+          <div id="tab-advanced" class="tab-panel">
+            <div class="form-row">
+              <div class="field wide">
+                <label for="landingHtml">Custom HTML override</label>
+                <textarea id="landingHtml" placeholder="Optional full HTML override"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field wide">
+                <label for="landingCss">Custom CSS</label>
+                <textarea id="landingCss" placeholder="Optional CSS"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="field wide">
+                <label for="landingJs">Custom JavaScript</label>
+                <textarea id="landingJs" placeholder="Optional JS"></textarea>
+              </div>
+            </div>
+
+            <div class="danger-box">
+              Custom HTML/CSS/JS gives full control, but can break your page if malformed.
+            </div>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="field wide">
-            <label for="landingJs">Custom JavaScript</label>
-            <textarea id="landingJs" placeholder="Optional JS"></textarea>
+          <div id="tab-templates" class="tab-panel">
+            <div class="muted" style="margin-bottom:10px;">Click a template to instantly populate the builder.</div>
+
+            <div class="template-grid">
+              <div class="template-card" data-template="creator">
+                <h4>Creator Profile</h4>
+                <p>Good for influencers, personal brands, and social links.</p>
+              </div>
+              <div class="template-card" data-template="product">
+                <h4>Product Launch</h4>
+                <p>Best for a product, tool, or startup with one main CTA.</p>
+              </div>
+              <div class="template-card" data-template="agency">
+                <h4>Agency / Services</h4>
+                <p>Use for agencies, freelancers, and client booking funnels.</p>
+              </div>
+              <div class="template-card" data-template="music">
+                <h4>Music / Artist</h4>
+                <p>Perfect for songs, Spotify, YouTube, and fan actions.</p>
+              </div>
+              <div class="template-card" data-template="event">
+                <h4>Event / Ticket</h4>
+                <p>Great for webinars, events, countdown campaigns, and RSVP links.</p>
+              </div>
+              <div class="template-card" data-template="minimal">
+                <h4>Minimal Bio Link</h4>
+                <p>Simple clean page with a title and link stack.</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div id="formResult" class="result"></div>
+          <div id="formResult" class="result"></div>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="section-head">
-          <h2>👀 Live Preview</h2>
-          <button id="openPreviewBtn" type="button" class="open">Open Preview</button>
+      <div>
+        <div class="card preview-shell">
+          <div class="preview-topbar">
+            <div>
+              <h2 style="margin:0;color:var(--cyan);">👀 Live Preview</h2>
+              <div class="muted">Build visually before saving.</div>
+            </div>
+
+            <div class="toolbar">
+              <div class="device-switch">
+                <button id="desktopViewBtn" type="button" class="device-btn active">Desktop</button>
+                <button id="tabletViewBtn" type="button" class="device-btn">Tablet</button>
+                <button id="mobileViewBtn" type="button" class="device-btn">Mobile</button>
+              </div>
+              <button id="openPreviewBtn" type="button" class="open">Open Preview</button>
+            </div>
+          </div>
+
+          <div id="previewWrap" class="landing-preview device-desktop">
+            <iframe id="landingPreviewFrame" title="Landing Preview"></iframe>
+          </div>
         </div>
 
-        <div class="landing-preview">
-          <iframe id="landingPreviewFrame" title="Landing Preview"></iframe>
+        <div class="sub-grid">
+          <div class="card alt">
+            <h3>📦 Quick Presets</h3>
+            <div class="toolbar">
+              <button id="presetNeonBtn" type="button" class="ghost-btn">Neon</button>
+              <button id="presetBlueBtn" type="button" class="ghost-btn">Blue</button>
+              <button id="presetPinkBtn" type="button" class="ghost-btn">Pink</button>
+              <button id="presetGreenBtn" type="button" class="ghost-btn">Green</button>
+            </div>
+          </div>
+
+          <div class="card alt">
+            <h3>📝 Builder Status</h3>
+            <div class="muted" id="builderStatus">
+              Ready. Start filling the form and the preview will update automatically.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -593,11 +951,16 @@
     <div class="card">
       <div class="section-head">
         <h2>🗂 Your Landing Pages</h2>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="toolbar">
           <select id="domainFilter" style="max-width:220px;">
             <option value="all">All domains</option>
           </select>
-          <input id="searchInput" placeholder="Search slug, title or URL..." style="max-width:320px;" />
+          <select id="statusFilter" style="max-width:180px;">
+            <option value="all">All statuses</option>
+            <option value="live">Live</option>
+            <option value="paused">Paused</option>
+          </select>
+          <input id="searchInput" placeholder="Search slug, title, URL or domain..." style="max-width:360px;" />
         </div>
       </div>
 
@@ -625,17 +988,25 @@
 
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
+    const AUTOSAVE_KEY = "rattle_landing_builder_draft_v2";
 
     let landingStore = [];
     let domainsStore = [];
     let refreshTimer = null;
+    let autosaveEnabled = true;
+    let dynamicButtonsStore = [];
 
     const toast = document.getElementById("toast");
+    const previewWrap = document.getElementById("previewWrap");
+    const primaryDomainBadge = document.getElementById("primaryDomainBadge");
+    const builderStatus = document.getElementById("builderStatus");
 
     const totalLandings = document.getElementById("totalLandings");
     const totalLandingClicks = document.getElementById("totalLandingClicks");
     const verifiedDomainsCount = document.getElementById("verifiedDomainsCount");
     const activeLandings = document.getElementById("activeLandings");
+    const draftState = document.getElementById("draftState");
+    const draftStateText = document.getElementById("draftStateText");
 
     const refreshBtn = document.getElementById("refreshBtn");
     const clearBtn = document.getElementById("clearBtn");
@@ -643,10 +1014,16 @@
     const createBtn = document.getElementById("createBtn");
     const updateBtn = document.getElementById("updateBtn");
     const openPreviewBtn = document.getElementById("openPreviewBtn");
+    const autosaveBtn = document.getElementById("autosaveBtn");
+
+    const desktopViewBtn = document.getElementById("desktopViewBtn");
+    const tabletViewBtn = document.getElementById("tabletViewBtn");
+    const mobileViewBtn = document.getElementById("mobileViewBtn");
 
     const landingSlug = document.getElementById("landingSlug");
     const landingDomain = document.getElementById("landingDomain");
     const landingTitle = document.getElementById("landingTitle");
+    const landingSubtitle = document.getElementById("landingSubtitle");
     const landingDescription = document.getElementById("landingDescription");
     const landingImage = document.getElementById("landingImage");
     const landingTheme = document.getElementById("landingTheme");
@@ -662,12 +1039,27 @@
     const landingHtml = document.getElementById("landingHtml");
     const landingCss = document.getElementById("landingCss");
     const landingJs = document.getElementById("landingJs");
+    const landingOgTitle = document.getElementById("landingOgTitle");
+    const landingOgDescription = document.getElementById("landingOgDescription");
+    const landingOgImage = document.getElementById("landingOgImage");
+    const landingCanonicalUrl = document.getElementById("landingCanonicalUrl");
+    const bgStyle = document.getElementById("bgStyle");
+    const cardStyle = document.getElementById("cardStyle");
+    const buttonStyle = document.getElementById("buttonStyle");
     const landingPreviewFrame = document.getElementById("landingPreviewFrame");
+    const dynamicButtons = document.getElementById("dynamicButtons");
+
+    const addButtonBtn = document.getElementById("addButtonBtn");
+    const presetNeonBtn = document.getElementById("presetNeonBtn");
+    const presetBlueBtn = document.getElementById("presetBlueBtn");
+    const presetPinkBtn = document.getElementById("presetPinkBtn");
+    const presetGreenBtn = document.getElementById("presetGreenBtn");
 
     const formResult = document.getElementById("formResult");
     const landingTable = document.getElementById("landingTable");
     const searchInput = document.getElementById("searchInput");
     const domainFilter = document.getElementById("domainFilter");
+    const statusFilter = document.getElementById("statusFilter");
 
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
@@ -736,6 +1128,15 @@
       formResult.className = "result " + (isError ? "error" : "success");
     }
 
+    function setBuilderStatus(message) {
+      builderStatus.textContent = message;
+    }
+
+    function setDraftIndicator(label, text) {
+      draftState.textContent = label;
+      draftStateText.textContent = text;
+    }
+
     async function safeFetchRaw(path, options = {}) {
       try {
         const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
@@ -745,6 +1146,11 @@
           data = raw ? JSON.parse(raw) : {};
         } catch {
           data = { message: raw };
+        }
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          window.location.href = "index.html";
         }
         return { ok: res.ok, status: res.status, data, raw };
       } catch (e) {
@@ -795,7 +1201,9 @@
         landingDescription: item.landingDescription || item.description || "",
         landingImage: item.landingImage || item.image || "",
         landingTheme: item.landingTheme || item.theme || "#00ffff",
-        landingButtons: Array.isArray(item.landingButtons) ? item.landingButtons : (Array.isArray(item.buttons) ? item.buttons : []),
+        landingButtons: Array.isArray(item.landingButtons)
+          ? item.landingButtons
+          : (Array.isArray(item.buttons) ? item.buttons : []),
         landingCtaLabel: item.landingCtaLabel || item.ctaLabel || "",
         landingCtaUrl: item.landingCtaUrl || item.ctaUrl || "",
         landingFooter: item.landingFooter || item.footer || "",
@@ -805,6 +1213,83 @@
         metaTitle: item.metaTitle || "",
         metaDescription: item.metaDescription || ""
       };
+    }
+
+    function updatePreviewDevice(device) {
+      previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
+      previewWrap.classList.add(`device-${device}`);
+
+      [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach(btn => btn.classList.remove("active"));
+      if (device === "desktop") desktopViewBtn.classList.add("active");
+      if (device === "tablet") tabletViewBtn.classList.add("active");
+      if (device === "mobile") mobileViewBtn.classList.add("active");
+    }
+
+    function setTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.toggle("active", panel.id === tabId);
+      });
+    }
+
+    function getDynamicButtons() {
+      return dynamicButtonsStore
+        .map((btn, index) => {
+          const labelEl = document.getElementById(`dynBtnLabel_${index}`);
+          const urlEl = document.getElementById(`dynBtnUrl_${index}`);
+          return {
+            label: String(labelEl?.value || "").trim(),
+            url: String(urlEl?.value || "").trim()
+          };
+        })
+        .filter(btn => btn.label && btn.url);
+    }
+
+    function addDynamicButton(label = "", url = "") {
+      dynamicButtonsStore.push({ label, url });
+      renderDynamicButtons();
+    }
+
+    function removeDynamicButton(index) {
+      dynamicButtonsStore.splice(index, 1);
+      renderDynamicButtons();
+      triggerAutosave();
+      renderPreview();
+    }
+
+    function renderDynamicButtons() {
+      if (!dynamicButtonsStore.length) {
+        dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
+        return;
+      }
+
+      dynamicButtons.innerHTML = dynamicButtonsStore.map((btn, index) => `
+        <div class="button-item">
+          <div class="button-item-head">
+            <div><b>Extra Button ${index + 1}</b></div>
+            <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="dynBtnLabel_${index}">Label</label>
+              <input id="dynBtnLabel_${index}" value="${escapeHtml(btn.label || "")}" placeholder="Button label" />
+            </div>
+            <div class="field">
+              <label for="dynBtnUrl_${index}">URL</label>
+              <input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      dynamicButtons.querySelectorAll("input").forEach(el => {
+        el.addEventListener("input", () => {
+          triggerAutosave();
+          renderPreview();
+        });
+      });
     }
 
     function getLandingButtons() {
@@ -818,7 +1303,111 @@
       const b2Url = landingButtonUrl2.value.trim();
       if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
 
-      return buttons;
+      return buttons.concat(getDynamicButtons());
+    }
+
+    function collectDraft() {
+      return {
+        slug: landingSlug.value.trim(),
+        domain: normalizeDomain(landingDomain.value),
+        title: landingTitle.value.trim(),
+        subtitle: landingSubtitle.value.trim(),
+        description: landingDescription.value,
+        image: landingImage.value.trim(),
+        theme: landingTheme.value.trim() || "#00ffff",
+        ctaLabel: landingCtaLabel.value.trim(),
+        ctaUrl: landingCtaUrl.value.trim(),
+        footer: landingFooter.value.trim(),
+        buttonsQuick1: {
+          label: landingButtonLabel1.value.trim(),
+          url: landingButtonUrl1.value.trim()
+        },
+        buttonsQuick2: {
+          label: landingButtonLabel2.value.trim(),
+          url: landingButtonUrl2.value.trim()
+        },
+        extraButtons: getDynamicButtons(),
+        metaTitle: landingMetaTitle.value.trim(),
+        metaDescription: landingMetaDescription.value.trim(),
+        ogTitle: landingOgTitle.value.trim(),
+        ogDescription: landingOgDescription.value.trim(),
+        ogImage: landingOgImage.value.trim(),
+        canonicalUrl: landingCanonicalUrl.value.trim(),
+        landingHtml: landingHtml.value,
+        landingCss: landingCss.value,
+        landingJs: landingJs.value,
+        bgStyle: bgStyle.value,
+        cardStyle: cardStyle.value,
+        buttonStyle: buttonStyle.value
+      };
+    }
+
+    function saveDraft() {
+      if (!autosaveEnabled) return;
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          data: collectDraft()
+        }));
+        setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
+      } catch {}
+    }
+
+    function loadDraft() {
+      try {
+        const raw = localStorage.getItem(AUTOSAVE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        const d = parsed?.data;
+        if (!d) return false;
+
+        landingSlug.value = d.slug || "";
+        landingDomain.value = d.domain || "";
+        landingTitle.value = d.title || "";
+        landingSubtitle.value = d.subtitle || "";
+        landingDescription.value = d.description || "";
+        landingImage.value = d.image || "";
+        landingTheme.value = d.theme || "#00ffff";
+        landingCtaLabel.value = d.ctaLabel || "";
+        landingCtaUrl.value = d.ctaUrl || "";
+        landingFooter.value = d.footer || "";
+        landingButtonLabel1.value = d.buttonsQuick1?.label || "";
+        landingButtonUrl1.value = d.buttonsQuick1?.url || "";
+        landingButtonLabel2.value = d.buttonsQuick2?.label || "";
+        landingButtonUrl2.value = d.buttonsQuick2?.url || "";
+        landingMetaTitle.value = d.metaTitle || "";
+        landingMetaDescription.value = d.metaDescription || "";
+        landingOgTitle.value = d.ogTitle || "";
+        landingOgDescription.value = d.ogDescription || "";
+        landingOgImage.value = d.ogImage || "";
+        landingCanonicalUrl.value = d.canonicalUrl || "";
+        landingHtml.value = d.landingHtml || "";
+        landingCss.value = d.landingCss || "";
+        landingJs.value = d.landingJs || "";
+        bgStyle.value = d.bgStyle || "radial";
+        cardStyle.value = d.cardStyle || "glass";
+        buttonStyle.value = d.buttonStyle || "rounded";
+
+        dynamicButtonsStore = Array.isArray(d.extraButtons) ? d.extraButtons.slice(0, 20) : [];
+        renderDynamicButtons();
+
+        const when = parsed?.savedAt ? new Date(parsed.savedAt).toLocaleString() : "previous session";
+        setDraftIndicator("Draft", `Restored from ${when}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function clearSavedDraft() {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setDraftIndicator("Draft", "Cleared");
+    }
+
+    function triggerAutosave() {
+      if (!autosaveEnabled) return;
+      clearTimeout(window.__builderAutosaveTimer);
+      window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
     }
 
     function getPayload() {
@@ -867,33 +1456,61 @@
       };
     }
 
-    function renderPreview() {
-      const data = getPayload();
-      if (!data) return;
+    function getGeneratedPreviewHtml() {
+      const data = collectDraft();
 
       const title = escapeHtml(data.title || data.slug || "Landing Page");
+      const subtitle = escapeHtml(data.subtitle || "");
       const description = escapeHtml(data.description || "");
       const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
       const theme = escapeHtml(data.theme || "#00ffff");
-      const buttons = Array.isArray(data.buttons) ? data.buttons : [];
       const ctaLabel = escapeHtml(data.ctaLabel || "");
       const ctaUrl = data.ctaUrl || "";
       const footer = escapeHtml(data.footer || "Powered by Rattle Link");
+      const metaTitle = escapeHtml(data.metaTitle || data.title || "Landing Page");
+      const metaDescription = escapeHtml(data.metaDescription || data.description || "");
+      const ogTitle = escapeHtml(data.ogTitle || data.metaTitle || data.title || "Landing Page");
+      const ogDescription = escapeHtml(data.ogDescription || data.metaDescription || data.description || "");
+      const ogImage = data.ogImage && /^https?:\/\//i.test(data.ogImage) ? escapeHtml(data.ogImage) : "";
+      const canonicalUrl = data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl) ? escapeHtml(data.canonicalUrl) : "";
       const customHtml = String(data.landingHtml || "").trim();
       const customCss = String(data.landingCss || "");
       const customJs = String(data.landingJs || "");
+      const buttons = getLandingButtons();
 
-      let html = "";
+      const bgCssMap = {
+        radial: "background:radial-gradient(circle at top,#0f172a,#000);",
+        solid: "background:#020617;",
+        mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;",
+        sunset: "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);"
+      };
 
-      if (customHtml) {
-        html = customHtml;
-      } else {
-        html = `<!DOCTYPE html>
+      const cardCssMap = {
+        glass: "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);",
+        solid: "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);",
+        outline: "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);"
+      };
+
+      const buttonRadiusMap = {
+        rounded: "14px",
+        pill: "999px",
+        sharp: "8px"
+      };
+
+      if (customHtml) return customHtml;
+
+      return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>${title}</title>
+<title>${metaTitle}</title>
+<meta name="description" content="${metaDescription}" />
+<meta property="og:title" content="${ogTitle}" />
+<meta property="og:description" content="${ogDescription}" />
+<meta property="og:type" content="website" />
+${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ""}
+${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}" />` : ""}
 <style>
 :root{
   --theme:${theme};
@@ -901,35 +1518,41 @@
   --card:#0f172a;
   --text:#e2e8f0;
   --muted:#94a3b8;
+  --btn-radius:${buttonRadiusMap[data.buttonStyle] || "14px"};
 }
 *{box-sizing:border-box}
 body{
   margin:0;
   min-height:100vh;
   font-family:Inter,Arial,sans-serif;
-  background:radial-gradient(circle at top,#0f172a,#000);
+  ${bgCssMap[data.bgStyle] || bgCssMap.radial}
   color:var(--text);
   display:flex;
   align-items:center;
   justify-content:center;
   padding:24px;
 }
+.wrap{
+  width:100%;
+  max-width:900px;
+}
 .card{
-  width:min(560px,100%);
-  background:rgba(15,23,42,.92);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:22px;
-  padding:28px;
+  width:min(620px,100%);
+  margin:0 auto;
+  ${cardCssMap[data.cardStyle] || cardCssMap.glass}
+  border-radius:24px;
+  padding:32px;
   text-align:center;
 }
 .avatar{
-  width:110px;
-  height:110px;
+  width:120px;
+  height:120px;
   margin:0 auto 18px;
   border-radius:999px;
   overflow:hidden;
   border:3px solid var(--theme);
   background:#111827;
+  box-shadow:0 0 18px rgba(0,255,255,.18);
 }
 .avatar img{
   width:100%;
@@ -937,48 +1560,97 @@ body{
   object-fit:cover;
   display:block;
 }
-h1{margin:0 0 10px;color:var(--theme);font-size:30px;}
-p.desc{margin:0 0 22px;color:var(--muted);line-height:1.7;}
-.links{display:grid;gap:12px;}
+.eyebrow{
+  display:inline-block;
+  margin:0 0 12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  color:var(--muted);
+  font-size:12px;
+}
+h1{
+  margin:0 0 10px;
+  color:var(--theme);
+  font-size:34px;
+  line-height:1.2;
+}
+p.desc{
+  margin:0 0 22px;
+  color:var(--muted);
+  line-height:1.8;
+  font-size:15px;
+}
+.links{
+  display:grid;
+  gap:12px;
+  margin-top:20px;
+}
 a.btn{
   display:block;
   padding:14px 16px;
-  border-radius:14px;
+  border-radius:var(--btn-radius);
   text-decoration:none;
   font-weight:700;
   border:1px solid rgba(255,255,255,.08);
   background:#111827;
   color:var(--text);
+  transition:.18s ease;
 }
-a.cta{background:var(--theme);color:#000;}
-.footer{margin-top:20px;color:var(--muted);font-size:12px;}
+a.btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--theme);
+}
+a.cta{
+  background:var(--theme);
+  color:#000;
+}
+.footer{
+  margin-top:22px;
+  color:var(--muted);
+  font-size:12px;
+}
 ${customCss}
 </style>
 </head>
 <body>
-  <div class="card">
-    ${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
-    <h1>${title}</h1>
-    ${description ? `<p class="desc">${description}</p>` : ""}
-    <div class="links">
-      ${buttons.map(btn => `<a class="btn" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`).join("")}
-      ${ctaLabel && ctaUrl ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>` : ""}
+  <div class="wrap">
+    <div class="card">
+      ${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
+      ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
+      <h1>${title}</h1>
+      ${description ? `<p class="desc">${description}</p>` : ""}
+      <div class="links">
+        ${buttons.map(btn => `
+          <a class="btn" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>
+        `).join("")}
+        ${ctaLabel && ctaUrl ? `
+          <a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>
+        ` : ""}
+      </div>
+      <div class="footer">${footer}</div>
     </div>
-    <div class="footer">${footer}</div>
   </div>
   ${customJs ? `<script>${customJs}<\/script>` : ""}
 </body>
 </html>`;
-      }
+    }
 
+    function renderPreview() {
+      const payload = getPayload();
+      if (!payload) return;
+
+      const html = getGeneratedPreviewHtml();
       landingPreviewFrame.srcdoc = html;
       setResult("Preview updated", false);
+      setBuilderStatus("Preview rendered successfully.");
     }
 
     function clearForm() {
       landingSlug.value = "";
       landingDomain.value = "";
       landingTitle.value = "";
+      landingSubtitle.value = "";
       landingDescription.value = "";
       landingImage.value = "";
       landingTheme.value = "#00ffff";
@@ -991,17 +1663,29 @@ ${customCss}
       landingButtonUrl2.value = "";
       landingMetaTitle.value = "";
       landingMetaDescription.value = "";
+      landingOgTitle.value = "";
+      landingOgDescription.value = "";
+      landingOgImage.value = "";
+      landingCanonicalUrl.value = "";
       landingHtml.value = "";
       landingCss.value = "";
       landingJs.value = "";
+      bgStyle.value = "radial";
+      cardStyle.value = "glass";
+      buttonStyle.value = "rounded";
+      dynamicButtonsStore = [];
+      renderDynamicButtons();
       landingPreviewFrame.srcdoc = "";
       setResult("Form cleared", false);
+      setBuilderStatus("Builder reset.");
+      clearSavedDraft();
     }
 
     function fillForm(item) {
       landingSlug.value = item.slug || "";
       landingDomain.value = item.domain || "";
       landingTitle.value = item.landingTitle || "";
+      landingSubtitle.value = "";
       landingDescription.value = item.landingDescription || "";
       landingImage.value = item.landingImage || "";
       landingTheme.value = item.landingTheme || "#00ffff";
@@ -1010,9 +1694,16 @@ ${customCss}
       landingFooter.value = item.landingFooter || "";
       landingMetaTitle.value = item.metaTitle || "";
       landingMetaDescription.value = item.metaDescription || "";
+      landingOgTitle.value = "";
+      landingOgDescription.value = "";
+      landingOgImage.value = "";
+      landingCanonicalUrl.value = "";
       landingHtml.value = item.landingHtml || "";
       landingCss.value = item.landingCss || "";
       landingJs.value = item.landingJs || "";
+      bgStyle.value = "radial";
+      cardStyle.value = "glass";
+      buttonStyle.value = "rounded";
 
       const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
       landingButtonLabel1.value = buttons[0]?.label || "";
@@ -1020,8 +1711,16 @@ ${customCss}
       landingButtonLabel2.value = buttons[1]?.label || "";
       landingButtonUrl2.value = buttons[1]?.url || "";
 
+      dynamicButtonsStore = buttons.slice(2).map(btn => ({
+        label: btn.label || "",
+        url: btn.url || ""
+      }));
+      renderDynamicButtons();
+
       renderPreview();
+      saveDraft();
       showToast("Landing loaded");
+      setBuilderStatus("Landing loaded into builder.");
     }
 
     async function createLanding() {
@@ -1039,10 +1738,13 @@ ${customCss}
 
       if (!res.ok) {
         setResult(res.data?.message || "Landing create failed", true);
+        setBuilderStatus("Create failed.");
         return;
       }
 
       setResult(`Landing created: ${res.data?.link || payload.slug}`, false);
+      setBuilderStatus("Landing created successfully.");
+      saveDraft();
       await loadAll(false);
     }
 
@@ -1061,10 +1763,13 @@ ${customCss}
 
       if (!res.ok) {
         setResult(res.data?.message || "Landing update failed", true);
+        setBuilderStatus("Update failed.");
         return;
       }
 
       setResult("Landing updated", false);
+      setBuilderStatus("Landing updated successfully.");
+      saveDraft();
       await loadAll(false);
     }
 
@@ -1077,7 +1782,7 @@ ${customCss}
       });
 
       if (!res.ok) {
-        showToast("Delete failed");
+        showToast(res.data?.message || "Delete failed");
         return;
       }
 
@@ -1120,14 +1825,16 @@ ${customCss}
 
     function renderDomainSelectors() {
       const verifiedDomains = domainsStore.filter(d => d.status === "verified");
+      const primary = verifiedDomains.find(d => d.isPrimary);
 
-      const domainOptions = ['<option value="">Default domain</option>']
+      const selectedDomain = landingDomain.value;
+      const selectedFilter = domainFilter.value;
+
+      landingDomain.innerHTML = ['<option value="">Default domain</option>']
         .concat(
           verifiedDomains.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`)
         )
         .join("");
-
-      landingDomain.innerHTML = domainOptions;
 
       domainFilter.innerHTML = ['<option value="all">All domains</option>']
         .concat(
@@ -1135,7 +1842,15 @@ ${customCss}
         )
         .join("");
 
+      if ([...landingDomain.options].some(o => o.value === selectedDomain)) {
+        landingDomain.value = selectedDomain;
+      }
+      if ([...domainFilter.options].some(o => o.value === selectedFilter)) {
+        domainFilter.value = selectedFilter;
+      }
+
       verifiedDomainsCount.textContent = verifiedDomains.length;
+      primaryDomainBadge.textContent = primary ? `Primary: ${primary.domain}` : "Primary: none";
     }
 
     async function loadLandings() {
@@ -1167,6 +1882,7 @@ ${customCss}
     function renderLandingTable() {
       const q = (searchInput.value || "").trim().toLowerCase();
       const domainOnly = domainFilter.value || "all";
+      const statusOnly = statusFilter.value || "all";
 
       const filtered = landingStore.filter(item => {
         const slug = String(item.slug || "").toLowerCase();
@@ -1174,10 +1890,16 @@ ${customCss}
         const url = String(item.url || "").toLowerCase();
         const domain = String(item.domain || "").toLowerCase();
 
+        const isPaused = !!item.paused;
+        const statusMatch =
+          statusOnly === "all" ? true :
+          statusOnly === "paused" ? isPaused :
+          !isPaused;
+
         const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
         const queryMatch = !q || slug.includes(q) || title.includes(q) || url.includes(q) || domain.includes(q);
 
-        return domainMatch && queryMatch;
+        return domainMatch && queryMatch && statusMatch;
       });
 
       if (!filtered.length) {
@@ -1196,7 +1918,7 @@ ${customCss}
             <td><b>${escapeHtml(item.slug)}</b></td>
             <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
             <td>
-              ${escapeHtml(item.landingTitle || "-")}
+              <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
               ${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}
             </td>
             <td>${Number(item.clicks || 0)}</td>
@@ -1206,10 +1928,12 @@ ${customCss}
             <td>${statusHtml}</td>
             <td>${fmtDate(item.createdAt)}</td>
             <td>
-              <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
-              <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy</button>
-              <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open</button>
-              <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
+              <div class="actions">
+                <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
+                <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy</button>
+                <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open</button>
+                <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
+              </div>
             </td>
           </tr>
         `;
@@ -1235,7 +1959,122 @@ ${customCss}
       setBusy(refreshBtn, true, "Loading...");
       await Promise.all([loadDomains(), loadLandings()]);
       setBusy(refreshBtn, false);
-      if (showMessage) showToast("Landing page data refreshed");
+      if (showMessage) showToast("Landing data refreshed");
+    }
+
+    function applyThemePreset(hex) {
+      landingTheme.value = hex;
+      renderPreview();
+      triggerAutosave();
+    }
+
+    function applyTemplate(name) {
+      const templates = {
+        creator: {
+          title: "Your Name",
+          subtitle: "Creator • Content • Socials",
+          description: "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+          ctaLabel: "Watch Latest Video",
+          ctaUrl: "https://youtube.com/",
+          footer: "Thanks for visiting",
+          theme: "#00ffff",
+          buttons: [
+            { label: "Instagram", url: "https://instagram.com/" },
+            { label: "TikTok", url: "https://tiktok.com/" },
+            { label: "X / Twitter", url: "https://x.com/" }
+          ]
+        },
+        product: {
+          title: "Launch Your Product Faster",
+          subtitle: "New release",
+          description: "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+          ctaLabel: "Start Free Trial",
+          ctaUrl: "https://example.com/signup",
+          footer: "Built with Rattle Link",
+          theme: "#3b82f6",
+          buttons: [
+            { label: "See Features", url: "https://example.com/features" },
+            { label: "Pricing", url: "https://example.com/pricing" },
+            { label: "Book Demo", url: "https://example.com/demo" }
+          ]
+        },
+        agency: {
+          title: "We Build Brands That Convert",
+          subtitle: "Agency • Design • Growth",
+          description: "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
+          ctaLabel: "Book a Call",
+          ctaUrl: "https://calendly.com/",
+          footer: "Agency inquiries welcome",
+          theme: "#a855f7",
+          buttons: [
+            { label: "Portfolio", url: "https://example.com/portfolio" },
+            { label: "Testimonials", url: "https://example.com/reviews" },
+            { label: "Services", url: "https://example.com/services" }
+          ]
+        },
+        music: {
+          title: "New Single Out Now",
+          subtitle: "Artist • Music • Streaming",
+          description: "Stream my latest release, watch the music video, and follow me everywhere.",
+          ctaLabel: "Listen Now",
+          ctaUrl: "https://spotify.com/",
+          footer: "Thank you for the support",
+          theme: "#ec4899",
+          buttons: [
+            { label: "Spotify", url: "https://spotify.com/" },
+            { label: "Apple Music", url: "https://music.apple.com/" },
+            { label: "YouTube", url: "https://youtube.com/" }
+          ]
+        },
+        event: {
+          title: "Join Our Live Event",
+          subtitle: "Limited seats",
+          description: "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
+          ctaLabel: "Reserve My Spot",
+          ctaUrl: "https://eventbrite.com/",
+          footer: "See you there",
+          theme: "#f59e0b",
+          buttons: [
+            { label: "Agenda", url: "https://example.com/agenda" },
+            { label: "Speakers", url: "https://example.com/speakers" },
+            { label: "Venue", url: "https://example.com/location" }
+          ]
+        },
+        minimal: {
+          title: "My Links",
+          subtitle: "",
+          description: "Everything important in one place.",
+          ctaLabel: "",
+          ctaUrl: "",
+          footer: "Powered by Rattle Link",
+          theme: "#22c55e",
+          buttons: [
+            { label: "Website", url: "https://example.com/" },
+            { label: "Instagram", url: "https://instagram.com/" },
+            { label: "Contact", url: "mailto:hello@example.com" }
+          ]
+        }
+      };
+
+      const t = templates[name];
+      if (!t) return;
+
+      landingTitle.value = t.title || "";
+      landingSubtitle.value = t.subtitle || "";
+      landingDescription.value = t.description || "";
+      landingCtaLabel.value = t.ctaLabel || "";
+      landingCtaUrl.value = t.ctaUrl || "";
+      landingFooter.value = t.footer || "";
+      landingTheme.value = t.theme || "#00ffff";
+      landingButtonLabel1.value = t.buttons[0]?.label || "";
+      landingButtonUrl1.value = t.buttons[0]?.url || "";
+      landingButtonLabel2.value = t.buttons[1]?.label || "";
+      landingButtonUrl2.value = t.buttons[1]?.url || "";
+      dynamicButtonsStore = t.buttons.slice(2);
+      renderDynamicButtons();
+      renderPreview();
+      triggerAutosave();
+      showToast(`Template loaded: ${name}`);
     }
 
     function attachLivePreview() {
@@ -1243,6 +2082,7 @@ ${customCss}
         landingSlug,
         landingDomain,
         landingTitle,
+        landingSubtitle,
         landingDescription,
         landingImage,
         landingTheme,
@@ -1255,15 +2095,31 @@ ${customCss}
         landingButtonUrl2,
         landingMetaTitle,
         landingMetaDescription,
+        landingOgTitle,
+        landingOgDescription,
+        landingOgImage,
+        landingCanonicalUrl,
         landingHtml,
         landingCss,
-        landingJs
+        landingJs,
+        bgStyle,
+        cardStyle,
+        buttonStyle
       ].forEach(el => {
         el.addEventListener("input", () => {
           clearTimeout(window.__landingPreviewTimer);
           window.__landingPreviewTimer = setTimeout(() => {
-            try { renderPreview(); } catch {}
-          }, 250);
+            try {
+              renderPreview();
+              triggerAutosave();
+            } catch {}
+          }, 220);
+        });
+        el.addEventListener("change", () => {
+          try {
+            renderPreview();
+            triggerAutosave();
+          } catch {}
         });
       });
     }
@@ -1275,11 +2131,15 @@ ${customCss}
       createBtn.addEventListener("click", createLanding);
       updateBtn.addEventListener("click", updateLanding);
 
+      autosaveBtn.addEventListener("click", () => {
+        autosaveEnabled = !autosaveEnabled;
+        autosaveBtn.textContent = `Autosave: ${autosaveEnabled ? "On" : "Off"}`;
+        if (autosaveEnabled) saveDraft();
+      });
+
       openPreviewBtn.addEventListener("click", () => {
         const html = landingPreviewFrame.srcdoc || "";
-        if (!html) {
-          renderPreview();
-        }
+        if (!html) renderPreview();
         const win = window.open("", "_blank");
         if (win) {
           win.document.open();
@@ -1288,14 +2148,32 @@ ${customCss}
         }
       });
 
+      desktopViewBtn.addEventListener("click", () => updatePreviewDevice("desktop"));
+      tabletViewBtn.addEventListener("click", () => updatePreviewDevice("tablet"));
+      mobileViewBtn.addEventListener("click", () => updatePreviewDevice("mobile"));
+
       searchInput.addEventListener("input", renderLandingTable);
       domainFilter.addEventListener("change", renderLandingTable);
+      statusFilter.addEventListener("change", renderLandingTable);
+
+      addButtonBtn.addEventListener("click", () => addDynamicButton());
+
+      presetNeonBtn.addEventListener("click", () => applyThemePreset("#00ffff"));
+      presetBlueBtn.addEventListener("click", () => applyThemePreset("#3b82f6"));
+      presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
+      presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
+
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => setTab(btn.dataset.tab));
+      });
+
+      document.querySelectorAll(".template-card").forEach(card => {
+        card.addEventListener("click", () => applyTemplate(card.dataset.template));
+      });
 
       [landingSlug, landingTitle, landingDescription].forEach(el => {
         el.addEventListener("keydown", e => {
-          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-            renderPreview();
-          }
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
         });
       });
     }
@@ -1304,13 +2182,17 @@ ${customCss}
     window.openLink = openLink;
     window.deleteLanding = deleteLanding;
     window.editLandingByKey = editLandingByKey;
+    window.removeDynamicButton = removeDynamicButton;
 
     (async function init() {
       if (!ensureAuth()) return;
       setupEvents();
       attachLivePreview();
+      renderDynamicButtons();
       await loadAll(false);
+      loadDraft();
       renderPreview();
+      updatePreviewDevice("desktop");
 
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
@@ -1321,6 +2203,7 @@ ${customCss}
 
     window.addEventListener("beforeunload", () => {
       clearInterval(refreshTimer);
+      if (autosaveEnabled) saveDraft();
     });
   </script>
 </body>
