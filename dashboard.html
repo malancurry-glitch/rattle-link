@@ -1096,257 +1096,1261 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-(function () {
-  const PRIMARY_API = window.PRIMARY_API || "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-  const patchState = {
-    domains: [],
-    supportInfo: null,
-    faq: [],
-    about: null,
-    legal: null,
-    tickets: []
-  };
+    const SUPPORT_CONFIG = {
+      telegram: "https://t.me/Rtslik",
+      discord: "https://discord.gg/xwGvhtjb",
+      email: "support@rattleshort.online",
+      phone: "+1 954 787 8220"
+    };
 
-  function onReady(fn) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", fn, { once: true });
-    } else {
-      fn();
+    let dataStore = [];
+    let paymentsStore = [];
+    let chart = null;
+    let statsChartInstance = null;
+    let refreshTimer = null;
+    let map = null;
+    let loadingLinks = false;
+    let meState = null;
+    let plansState = null;
+    let selectedPlan = "monthly";
+    let paymentPoller = null;
+    let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
+
+    let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
+
+    const totalLinks = document.getElementById("totalLinks");
+    const totalClicks = document.getElementById("totalClicks");
+    const avgClicks = document.getElementById("avgClicks");
+    const trialRemainingEl = document.getElementById("trialRemaining");
+    const table = document.getElementById("table");
+    const ranking = document.getElementById("ranking");
+    const panel = document.getElementById("panel");
+    const panelContent = document.getElementById("panelContent");
+    const toast = document.getElementById("toast");
+    const result = document.getElementById("result");
+    const paymentsTable = document.getElementById("paymentsTable");
+
+    const primaryLinksCount = document.getElementById("primaryLinksCount");
+    const legacyLinksCount = document.getElementById("legacyLinksCount");
+    const primaryClicksCount = document.getElementById("primaryClicksCount");
+    const legacyClicksCount = document.getElementById("legacyClicksCount");
+    const primaryHealth = document.getElementById("primaryHealth");
+    const legacyHealth = document.getElementById("legacyHealth");
+    const sessionNote = document.getElementById("sessionNote");
+
+    const backendBadgeTop = document.getElementById("backendBadgeTop");
+    const meEmail = document.getElementById("meEmail");
+    const mePlan = document.getElementById("mePlan");
+    const meExpire = document.getElementById("meExpire");
+    const accessSummary = document.getElementById("accessSummary");
+    const subscriptionBadge = document.getElementById("subscriptionBadge");
+    const latestPaymentBox = document.getElementById("latestPaymentBox");
+
+    const urlInput = document.getElementById("url");
+    const slugInput = document.getElementById("customSlug");
+    const expireInput = document.getElementById("expire");
+
+    const bulkCountLegacy = document.getElementById("bulkCountLegacy");
+    const bulkCountPrimary = document.getElementById("bulkCountPrimary");
+    const searchInput = document.getElementById("search");
+    const backendFilter = document.getElementById("backendFilter");
+
+    const csvFileLegacy = document.getElementById("csvFileLegacy");
+    const csvFilePrimary = document.getElementById("csvFilePrimary");
+
+    const dropZoneLegacy = document.getElementById("dropZoneLegacy");
+    const dropZonePrimary = document.getElementById("dropZonePrimary");
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const upgradeBtn = document.getElementById("upgradeBtn");
+    const createLegacyBtn = document.getElementById("createLegacyBtn");
+    const createPrimaryBtn = document.getElementById("createPrimaryBtn");
+    const bulkLegacyBtn = document.getElementById("bulkLegacyBtn");
+    const bulkPrimaryBtn = document.getElementById("bulkPrimaryBtn");
+    const uploadLegacyBtn = document.getElementById("uploadLegacyBtn");
+    const uploadPrimaryBtn = document.getElementById("uploadPrimaryBtn");
+    const preferPrimaryBtn = document.getElementById("preferPrimaryBtn");
+    const preferLegacyBtn = document.getElementById("preferLegacyBtn");
+    const verifySessionBtn = document.getElementById("verifySessionBtn");
+
+    const overlay = document.getElementById("overlay");
+    const upgradeModal = document.getElementById("upgradeModal");
+    const planGrid = document.getElementById("planGrid");
+    const cryptoSelect = document.getElementById("cryptoSelect");
+    const requestPaymentBtn = document.getElementById("requestPaymentBtn");
+    const upgradeResult = document.getElementById("upgradeResult");
+    const paymentRequestBox = document.getElementById("paymentRequestBox");
+
+    const landingCenterBtn = document.getElementById("landingCenterBtn");
+    const domainCenterBtn = document.getElementById("domainCenterBtn");
+    const openLandingPanelBtn = document.getElementById("openLandingPanelBtn");
+    const viewLandingLinksBtn = document.getElementById("viewLandingLinksBtn");
+    const openDomainPanelBtn = document.getElementById("openDomainPanelBtn");
+    const refreshDomainsBtn = document.getElementById("refreshDomainsBtn");
+    const backend2ExtraResult = document.getElementById("backend2ExtraResult");
+
+    function authHeaders() {
+      const token = localStorage.getItem("token") || "";
+      return token ? { "Authorization": `Bearer ${token}` } : {};
     }
-  }
 
-  function esc(v) {
-    return String(v ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function showToastSafe(msg) {
-    if (typeof window.showToast === "function") {
-      window.showToast(msg);
-      return;
+    function apiBaseForBackend(backend) {
+      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
     }
-    console.log(msg);
-  }
 
-  function setResultSafe(message, isError, target) {
-    if (typeof window.setResult === "function") {
-      window.setResult(message, isError, target);
-      return;
+    function backendLabel(backend) {
+      return backend === "legacy" ? "AWS" : "Backend2";
     }
-    console[isError ? "error" : "log"](message);
-  }
 
-  async function callPrimary(path, options = {}) {
-    if (typeof window.callBackend === "function") {
-      return window.callBackend("primary", path, options);
+    function backendClass(backend) {
+      return backend === "legacy" ? "backend-legacy" : "backend-primary";
     }
-    const headers = { ...(options.headers || {}) };
-    const res = await fetch(`${PRIMARY_API.replace(/\/+$/, "")}${path}`, { ...options, headers });
-    const raw = await res.text();
-    let data = {};
-    try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
-    return { ok: res.ok, status: res.status, data, raw };
-  }
 
-  async function authPrimary(path, options = {}) {
-    if (typeof window.authorizedFetch === "function") {
-      return window.authorizedFetch(path, options, "primary", false);
+    function buildPublicLink(slug, backend) {
+      return `${apiBaseForBackend(backend)}/${slug}`;
     }
-    return callPrimary(path, options);
-  }
 
-  function ensureMiniCards() {
-    const twoCol = document.querySelector(".two-col");
-    if (!twoCol || document.getElementById("landingLinksCount")) return;
-
-    const wrap = document.createElement("div");
-    wrap.className = "four-col";
-    wrap.innerHTML = `
-      <div class="card mini-stat">
-        <div class="muted">Landing Pages</div>
-        <div id="landingLinksCount" style="font-size:24px;color:#a855f7;">0</div>
-      </div>
-      <div class="card mini-stat">
-        <div class="muted">Custom Domains</div>
-        <div id="customDomainsCount" style="font-size:24px;color:#06b6d4;">0</div>
-      </div>
-      <div class="card mini-stat">
-        <div class="muted">Verified Domains</div>
-        <div id="verifiedDomainsCount" style="font-size:24px;color:#22c55e;">0</div>
-      </div>
-      <div class="card mini-stat">
-        <div class="muted">Primary Domain</div>
-        <div id="primaryDomainStat" style="font-size:14px;color:#00ffff;word-break:break-word;">-</div>
-      </div>
-    `;
-    twoCol.parentNode.insertBefore(wrap, twoCol);
-  }
-
-  function ensurePrimaryDomainPicker() {
-    const backend2Box = Array.from(document.querySelectorAll(".create-box")).find(
-      el => /Backend2 Link/i.test(el.textContent || "")
-    );
-    if (!backend2Box || document.getElementById("primaryDomainSelect")) return;
-
-    const row = document.createElement("div");
-    row.className = "form-row";
-    row.innerHTML = `
-      <select id="primaryDomainSelect">
-        <option value="">Default / Primary route</option>
-      </select>
-    `;
-
-    const bulkRow = Array.from(backend2Box.querySelectorAll(".form-row")).find(
-      el => el.querySelector("#bulkCountPrimary")
-    );
-    if (bulkRow) backend2Box.insertBefore(row, bulkRow);
-    else backend2Box.appendChild(row);
-  }
-
-  function renderDomainPicker() {
-    const select = document.getElementById("primaryDomainSelect");
-    if (!select) return;
-    const current = select.value;
-    const verified = patchState.domains.filter(d => String(d.status || "").toLowerCase() === "verified");
-    select.innerHTML = `<option value="">Default / Primary route</option>` + verified.map(d =>
-      `<option value="${esc(d.domain)}">${esc(d.domain)}${d.isPrimary ? " (primary)" : ""}</option>`
-    ).join("");
-    if ([...select.options].some(o => o.value === current)) select.value = current;
-  }
-
-  function updateDomainStats() {
-    const totalEl = document.getElementById("customDomainsCount");
-    const verifiedEl = document.getElementById("verifiedDomainsCount");
-    if (totalEl) totalEl.textContent = String(patchState.domains.length);
-    if (verifiedEl) {
-      verifiedEl.textContent = String(
-        patchState.domains.filter(d => String(d.status || "").toLowerCase() === "verified").length
-      );
+    function updatePreferredButtons() {
+      if (preferPrimaryBtn) preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
+      if (preferLegacyBtn) preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
     }
-  }
 
-  function updateLandingStats() {
-    const dataStore = Array.isArray(window.dataStore) ? window.dataStore : [];
-    const count = dataStore.filter(x => x.backend === "primary" && String(x.linkType || x.link_type || "").toLowerCase() === "landing").length;
-    const el = document.getElementById("landingLinksCount");
-    if (el) el.textContent = String(count);
-  }
-
-  function updatePrimaryDomainStat() {
-    const meState = window.meState || {};
-    const stat = document.getElementById("primaryDomainStat");
-    if (stat) stat.textContent = meState.primaryDomain || "-";
-  }
-
-  async function loadDomains() {
-    const res = await authPrimary("/domains/me", { method: "GET" });
-    patchState.domains = res.ok && Array.isArray(res.data?.domains) ? res.data.domains : [];
-    renderDomainPicker();
-    updateDomainStats();
-    updatePrimaryDomainStat();
-  }
-
-  function renderSupportListIntoCards() {
-    const supportList = document.querySelector(".support-list");
-    const info = patchState.supportInfo;
-    if (!supportList || !info) return;
-    supportList.innerHTML = `
-      <a href="mailto:${esc(info.email || "")}">Email: ${esc(info.email || "-")}</a>
-      ${info.telegram ? `<a href="${esc(info.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>` : ""}
-      ${info.discord ? `<a href="${esc(info.discord)}" target="_blank" rel="noopener noreferrer">Discord</a>` : ""}
-      ${info.phone ? `<a href="tel:${esc(String(info.phone).replace(/\s+/g,""))}">Phone: ${esc(info.phone)}</a>` : ""}
-    `;
-  }
-
-  function renderFaqCard() {
-    const faqCard = [...document.querySelectorAll(".card")].find(card =>
-      card.querySelector(".section-head h3")?.textContent?.includes("FAQ")
-    );
-    if (!faqCard || !patchState.faq.length) return;
-    const head = faqCard.querySelector(".section-head");
-    faqCard.innerHTML = "";
-    if (head) faqCard.appendChild(head);
-    for (const item of patchState.faq) {
-      const box = document.createElement("div");
-      box.className = "faq-item";
-      box.innerHTML = `
-        <button class="faq-q" type="button">${esc(item.q || "Question")}</button>
-        <div class="faq-a">${esc(item.a || "")}</div>
-      `;
-      faqCard.appendChild(box);
+    function setTopBackendBadge() {
+      if (!backendBadgeTop) return;
+      backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
+      backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+      if (sessionNote) {
+        sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      }
+      updatePreferredButtons();
     }
-    faqCard.querySelectorAll(".faq-q").forEach(btn => {
-      btn.onclick = () => btn.parentElement.classList.toggle("open");
-    });
-  }
 
-  function renderInfoCards() {
-    const aboutCard = [...document.querySelectorAll(".resource-card")].find(card =>
-      card.querySelector("h4")?.textContent?.includes("About")
-    );
-    const legalCard = [...document.querySelectorAll(".resource-card")].find(card =>
-      card.querySelector("h4")?.textContent?.includes("Legal")
-    );
-    if (aboutCard && patchState.about?.description) {
-      const p = aboutCard.querySelector("p");
-      if (p) p.textContent = patchState.about.description;
+    function setBusy(button, busy, text = "") {
+      if (!button) return;
+      if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+      button.disabled = busy;
+      button.textContent = busy ? text : button.dataset.originalText;
     }
-    if (legalCard && patchState.legal?.summary) {
-      const p = legalCard.querySelector("p");
-      if (p) p.textContent = patchState.legal.summary;
+
+    function showToast(message = "Copied!") {
+      if (!toast) return;
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
     }
-  }
 
-  async function loadSupportResources() {
-    const [supportRes, faqRes, aboutRes, legalRes, ticketsRes] = await Promise.all([
-      callPrimary("/support-info", { method: "GET" }),
-      callPrimary("/faq", { method: "GET" }),
-      callPrimary("/about", { method: "GET" }),
-      callPrimary("/legal", { method: "GET" }),
-      authPrimary("/support/my-tickets", { method: "GET" })
-    ]);
+    function setResult(message, isError = false, target = result) {
+      if (!target) return;
+      target.textContent = message;
+      target.className = "result " + (isError ? "error" : "success");
+    }
 
-    if (supportRes.ok) patchState.supportInfo = supportRes.data || null;
-    if (faqRes.ok) patchState.faq = Array.isArray(faqRes.data?.items) ? faqRes.data.items : [];
-    if (aboutRes.ok) patchState.about = aboutRes.data || null;
-    if (legalRes.ok) patchState.legal = legalRes.data || null;
-    if (ticketsRes.ok) patchState.tickets = Array.isArray(ticketsRes.data?.tickets) ? ticketsRes.data.tickets : [];
+    function setExtraResult(message, isError = false) {
+      if (!backend2ExtraResult) return;
+      backend2ExtraResult.textContent = message;
+      backend2ExtraResult.className = "result " + (isError ? "error" : "success");
+    }
 
-    renderSupportListIntoCards();
-    renderFaqCard();
-    renderInfoCards();
-  }
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
 
-  function renderTicketListHtml() {
-    if (!patchState.tickets.length) return `<div class="muted">No support tickets yet.</div>`;
-    return patchState.tickets.map(t => `
-      <div class="info-box">
-        <b>${esc(t.subject || "No subject")}</b>
-        <div class="muted">Ticket ID: ${esc(t.id || "-")}</div>
-        <div class="muted">Status: ${esc(t.status || "open")}</div>
-        <div class="muted">Created: ${new Date(Number(t.created_at || t.createdAt || 0)).toLocaleString()}</div>
-        <div class="muted" style="margin-top:8px;">${esc(t.message || "")}</div>
-      </div>
-    `).join("");
-  }
+    function escapeForJs(str) {
+      return String(str ?? "")
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'")
+        .replaceAll("\n", "\\n")
+        .replaceAll("\r", "");
+    }
 
-  function patchSupportPanel() {
-    const original = window.openSupportPanel;
-    window.openSupportPanel = function () {
-      const panel = document.getElementById("panel");
-      const panelContent = document.getElementById("panelContent");
-      if (!panel || !panelContent) {
-        if (typeof original === "function") return original();
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function fmtMoney(v) {
+      return `$${Number(v || 0).toFixed(2)}`;
+    }
+
+    function fmtExpire(ts) {
+      const n = Number(ts || 0);
+      if (!n) return '<span class="muted">No expiry</span>';
+      if (n <= Date.now()) return `<span class="expired">Expired</span>`;
+
+      const diff = n - Date.now();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+      return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
+    }
+
+    function formatPaymentStatus(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "verified") return `<span class="badge live">Verified</span>`;
+      if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
+      if (s === "pending") return `<span class="badge pending">Pending</span>`;
+      if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
+      return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
+    }
+
+    function getStatus(link) {
+      if (link.paused) return '<span class="pill paused">Paused</span>';
+      if (link.expire && Number(link.expire) <= Date.now()) return '<span class="pill expired">Expired</span>';
+      return '<span class="pill live">Live</span>';
+    }
+
+    function scoreLink(link) {
+      let score = 0;
+      const clicks = Number(link.clicks || 0);
+      if (clicks > 20) score += 20;
+      if (clicks > 50) score += 30;
+      if (clicks > 100) score += 30;
+      if (!link.paused) score += 10;
+      if (!link.expire || Number(link.expire) > Date.now()) score += 10;
+      return Math.min(score, 100);
+    }
+
+    function detectFraud(link) {
+      const clicks = Number(link.clicks || 0);
+      if (clicks > 200) return "🔥 Bot Attack";
+      if (clicks > 100) return "⚠️ Suspicious";
+      return "✅ Normal";
+    }
+
+    function ensureAuth() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    async function safeFetchRaw(base, path, options = {}) {
+      try {
+        const res = await fetch(base.replace(/\/+$/, "") + path, options);
+        const raw = await res.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
+
+        return {
+          ok: res.ok,
+          status: res.status,
+          data,
+          raw
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: e?.message || "Failed to fetch" },
+          raw: ""
+        };
+      }
+    }
+
+    async function callBackend(backend, path, options = {}) {
+      const headers = {
+        ...(options.headers || {})
+      };
+
+      if (backend === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
+      return safeFetchRaw(apiBaseForBackend(backend), path, {
+        ...options,
+        headers
+      });
+    }
+
+    async function authorizedFetch(path, options = {}, backend, autoLogout = false) {
+      const targetBackend = backend || sessionBackend;
+      const method = String(options.method || "GET").toUpperCase();
+      const headers = {
+        ...authHeaders(),
+        ...(options.headers || {})
+      };
+
+      if (method !== "GET" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+
+      const res = await callBackend(targetBackend, path, {
+        ...options,
+        headers
+      });
+
+      if (autoLogout && res.status === 401) {
+        logout();
+      }
+
+      return { ...res, backend: targetBackend };
+    }
+
+    async function verifyMainSession(showToastMessage = false) {
+      const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+
+      if (preferredRes.ok) {
+        sessionBackend = preferredBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = preferredRes.data || null;
+        renderMe();
+        setTopBackendBadge();
+        if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
+        return true;
+      }
+
+      const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
+      const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+
+      if (fallbackRes.ok) {
+        sessionBackend = otherBackend;
+        localStorage.setItem("sessionBackend", sessionBackend);
+        meState = fallbackRes.data || null;
+        renderMe();
+        setTopBackendBadge();
+        if (showToastMessage) {
+          showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
+        }
+        return true;
+      }
+
+      logout();
+      return false;
+    }
+
+    function normalizeLinkItem(item, backend) {
+      return {
+        ...item,
+        backend,
+        user: item.user || item.username || "",
+        clicks: Number(item.clicks || 0),
+        paused: !!item.paused,
+        expire: item.expire ? Number(item.expire) : null,
+        createdAt: Number(item.createdAt || item.created_at || 0)
+      };
+    }
+
+    function normalizePaymentItem(item, backend) {
+      return {
+        ...item,
+        backend,
+        amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        expiresAt: Number(item.expiresAt || item.expires_at || 0),
+        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null
+      };
+    }
+
+    function mergeLinks(primaryItems = [], legacyItems = []) {
+      return [
+        ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
+        ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
+      ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    }
+
+    function sortPayments(payments = []) {
+      return [...payments].sort((a, b) => {
+        const rank = (s) => {
+          s = String(s || "").toLowerCase();
+          if (s === "awaiting_confirmation") return 0;
+          if (s === "pending") return 1;
+          if (s === "verified") return 2;
+          if (s === "cancelled") return 3;
+          return 4;
+        };
+        const diff = rank(a.status) - rank(b.status);
+        if (diff !== 0) return diff;
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+      });
+    }
+
+    function renderMe() {
+      if (!meState) return;
+
+      if (meEmail) meEmail.textContent = meState.username || "-";
+      if (mePlan) {
+        mePlan.textContent =
+          meState.subscriptionPlan
+            ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
+            : "Free Trial";
+      }
+
+      if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+      if (trialRemainingEl) trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
+
+      const status = String(meState.subscriptionStatus || "trial").toLowerCase();
+      const paused = !!meState.subscriptionPaused;
+      let summary = "";
+      let badgeClass = "trial";
+      let badgeText = "Trial";
+
+      if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+        badgeClass = "live";
+        badgeText = "Active";
+        summary = `Your subscription is active until ${fmtDate(meState.subscriptionExpiresAt)}.`;
+      } else if (paused) {
+        badgeClass = "paused";
+        badgeText = "Paused";
+        summary = `Your subscription is paused.`;
+      } else if (status === "expired") {
+        badgeClass = "expired";
+        badgeText = "Expired";
+        summary = `Your subscription is expired.`;
+      } else {
+        badgeClass = "trial";
+        badgeText = "Trial";
+        summary = `Free trial: ${Number(meState.trialLinksRemaining || 0)} of ${Number(meState.trialLinksLimit || 0)} links remaining.`;
+      }
+
+      if (subscriptionBadge) {
+        subscriptionBadge.className = `badge ${badgeClass}`;
+        subscriptionBadge.textContent = badgeText;
+      }
+      if (accessSummary) accessSummary.textContent = summary;
+    }
+
+    async function loadMe(showLoading = false) {
+      if (showLoading && accessSummary) accessSummary.textContent = "Loading account...";
+      const ok = await verifyMainSession(false);
+      if (!ok && accessSummary) accessSummary.textContent = "Session expired";
+    }
+
+    async function loadPlans(showMessage = false) {
+      const primary = await callBackend("primary", "/plans", { method: "GET" });
+      const legacy = await callBackend("legacy", "/plans", { method: "GET" });
+      const res = primary.ok ? primary : legacy;
+
+      if (!res.ok) {
+        if (showMessage) setResult("Failed to load plans", true, upgradeResult);
         return;
       }
 
-      const info = patchState.supportInfo || {};
-      const meState = window.meState || {};
+      plansState = res.data || {};
+      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+      if (plans.length && !plans.some(p => p.code === selectedPlan)) {
+        selectedPlan = plans[0].code;
+      }
+
+      renderPlans();
+      renderCryptoOptions();
+      if (showMessage) setResult("Plans loaded", false, upgradeResult);
+    }
+
+    function renderPlans() {
+      if (!planGrid) return;
+      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+      planGrid.innerHTML = plans.map(plan => `
+        <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
+          <h4>${escapeHtml(plan.label)}</h4>
+          <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
+          <div class="muted">${escapeHtml(plan.code)} billing</div>
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".plan-card").forEach(card => {
+        card.onclick = () => {
+          selectedPlan = card.dataset.plan;
+          renderPlans();
+        };
+      });
+    }
+
+    function renderCryptoOptions() {
+      if (!cryptoSelect) return;
+      const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
+      cryptoSelect.innerHTML = options.map(opt => `
+        <option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>
+      `).join("");
+    }
+
+    function stopPaymentPolling() {
+      if (paymentPoller) {
+        clearInterval(paymentPoller);
+        paymentPoller = null;
+      }
+    }
+
+    function getLatestInterestingPayment() {
+      if (!paymentsStore.length) return null;
+      return paymentsStore.find(p => {
+        const s = String(p.status || "").toLowerCase();
+        return s === "awaiting_confirmation" || s === "pending";
+      }) || paymentsStore[0];
+    }
+
+    function renderLatestPayment(payment) {
+      if (!latestPaymentBox) return;
+      if (!payment) {
+        latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
+        return;
+      }
+
+      const status = String(payment.status || "").toLowerCase();
+      const waiting = status === "awaiting_confirmation";
+      const verified = status === "verified";
+
+      latestPaymentBox.innerHTML = `
+        <div class="payment-box">
+          <div class="payment-qr">
+            <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
+          </div>
+          <div>
+            <div>
+              <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+              <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              ${formatPaymentStatus(payment.status)}
+            </div>
+            <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+            <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+            <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+            <div class="address-box">${escapeHtml(payment.address)}</div>
+            <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
+            <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+              <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+              <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
+            </div>
+
+            ${waiting ? `
+              <div class="waiting-box">
+                <div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div>
+                <div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div>
+              </div>
+            ` : ""}
+
+            ${verified ? `
+              <div class="confirm-box">
+                <div><b>✅ Payment confirmed</b></div>
+                <div class="muted" style="margin-top:8px;">Your plan should already be active.</div>
+              </div>
+            ` : ""}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPaymentsTable() {
+      if (!paymentsTable) return;
+      if (!paymentsStore.length) {
+        paymentsTable.innerHTML = `<tr><td colspan="9" class="muted">No payments yet</td></tr>`;
+        renderLatestPayment(null);
+        return;
+      }
+
+      paymentsTable.innerHTML = paymentsStore.map(p => `
+        <tr>
+          <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
+          <td><code>${escapeHtml(p.id)}</code></td>
+          <td>${escapeHtml(p.billingCycle)}</td>
+          <td>${fmtMoney(p.amountUsd)}</td>
+          <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
+          <td>${formatPaymentStatus(p.status)}</td>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${fmtDate(p.expiresAt)}</td>
+          <td>
+            <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
+            <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
+            <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase()==="verified" ? "disabled" : ""}>I Made a Transfer</button>
+          </td>
+        </tr>
+      `).join("");
+
+      renderLatestPayment(getLatestInterestingPayment());
+    }
+
+    async function loadPayments(showMessage = false) {
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
+        authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
+      ]);
+
+      const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments)
+        ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
+        : [];
+
+      const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments)
+        ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
+        : [];
+
+      paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
+      renderPaymentsTable();
+
+      if (waitingPaymentId) {
+        const p = paymentsStore.find(x => x.id === waitingPaymentId);
+        if (p) handleWaitingPaymentState(p);
+        else {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+        }
+      }
+
+      if (showMessage) showToast("Payments refreshed");
+    }
+
+    function renderPaymentRequestBox(payment, message = "") {
+      if (!paymentRequestBox) return;
+      const status = String(payment.status || "").toLowerCase();
+      const waiting = status === "awaiting_confirmation";
+      const verified = status === "verified";
+
+      paymentRequestBox.innerHTML = `
+        <div class="card" style="margin:0;">
+          <div class="payment-box">
+            <div class="payment-qr">
+              <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
+            </div>
+            <div>
+              <div>
+                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+                ${formatPaymentStatus(payment.status)}
+                <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              </div>
+              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+              <div class="muted" style="margin-top:8px;">Send to:</div>
+              <div class="address-box">${escapeHtml(payment.address)}</div>
+              <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
+              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
+
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
+                <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
+              </div>
+
+              ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
+
+              ${waiting ? `
+                <div class="waiting-box">
+                  <div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div>
+                  <div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div>
+                  <div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div>
+                </div>
+              ` : ""}
+
+              ${verified ? `
+                <div class="confirm-box">
+                  <div><b>✅ Payment confirmed and successful</b></div>
+                  <div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div>
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function createPaymentRequest() {
+      const cryptoCode = cryptoSelect?.value;
+      if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
+      if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
+
+      setBusy(requestPaymentBtn, true, "Creating...");
+
+      let res = await authorizedFetch("/payment-request", {
+        method: "POST",
+        body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+      }, preferredBackend, false);
+
+      if (res.status === 401) {
+        await verifyMainSession(false);
+        res = await authorizedFetch("/payment-request", {
+          method: "POST",
+          body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+        }, preferredBackend, false);
+      }
+
+      setBusy(requestPaymentBtn, false);
+
+      if (!res.ok) {
+        setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
+        return;
+      }
+
+      const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend) : null;
+      if (!payment) {
+        setResult("Payment request created, but response was empty", true, upgradeResult);
+        return;
+      }
+
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
+
+      setResult("Payment request generated.", false, upgradeResult);
+      renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
+
+      await loadPayments(false);
+    }
+
+    async function markPaymentSent(paymentId, backend) {
+      const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
+      if (!payment) return;
+
+      const status = String(payment.status || "").toLowerCase();
+
+      if (status === "verified") {
+        showToast("This payment is already verified");
+        return;
+      }
+
+      if (status === "awaiting_confirmation") {
+        waitingPaymentId = payment.id;
+        localStorage.setItem("waitingPaymentId", payment.id);
+        renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
+        startPaymentPolling(payment.id, payment.backend);
+        showToast("Already waiting for confirmation");
+        return;
+      }
+
+      const res = await authorizedFetch("/payment-i-made", {
+        method: "POST",
+        body: JSON.stringify({ paymentId })
+      }, backend, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+        return;
+      }
+
+      waitingPaymentId = payment.id;
+      localStorage.setItem("waitingPaymentId", payment.id);
+      showToast("Transfer submitted");
+      await loadPayments(false);
+
+      const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
+      renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
+      startPaymentPolling(updated.id, updated.backend);
+    }
+
+    function handleWaitingPaymentState(payment) {
+      const status = String(payment.status || "").toLowerCase();
+
+      if (status === "verified") {
+        waitingPaymentId = "";
+        localStorage.removeItem("waitingPaymentId");
+        stopPaymentPolling();
+        renderPaymentRequestBox(payment, "Payment confirmed.");
+        loadMe(false);
+        return;
+      }
+
+      if (status === "awaiting_confirmation" || status === "pending") {
+        renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
+        startPaymentPolling(payment.id, payment.backend);
+        return;
+      }
+
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
+    }
+
+    function startPaymentPolling(paymentId, backend) {
+      stopPaymentPolling();
+
+      const run = async () => {
+        const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
+        if (!res.ok) return;
+
+        const incoming = Array.isArray(res.data?.payments)
+          ? res.data.payments.map(p => normalizePaymentItem(p, backend))
+          : [];
+
+        const current = incoming.find(p => p.id === paymentId);
+        if (!current) return;
+
+        const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
+        paymentsStore = sortPayments([...incoming, ...otherPayments]);
+        renderPaymentsTable();
+
+        const status = String(current.status || "").toLowerCase();
+        const pollText = document.getElementById("paymentPollText");
+        if (pollText) {
+          if (status === "awaiting_confirmation") {
+            pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+          } else if (status === "pending") {
+            pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
+          }
+        }
+
+        if (status === "verified") {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          renderPaymentRequestBox(current, "Payment confirmed and successful.");
+          await loadMe(false);
+          showToast("Payment confirmed");
+        }
+      };
+
+      run();
+      paymentPoller = setInterval(run, 5000);
+    }
+
+    function openUpgradeModal() {
+      if (overlay) overlay.style.display = "block";
+      if (upgradeModal) upgradeModal.style.display = "block";
+
+      const p = waitingPaymentId
+        ? paymentsStore.find(x => x.id === waitingPaymentId)
+        : getLatestInterestingPayment();
+
+      if (p) renderPaymentRequestBox(p);
+    }
+
+    function closeUpgradeModal() {
+      if (overlay) overlay.style.display = "none";
+      if (upgradeModal) upgradeModal.style.display = "none";
+    }
+
+    function showPaymentDetails(paymentId, backend = "") {
+      const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
+      if (!payment) return;
+      openUpgradeModal();
+      renderPaymentRequestBox(payment);
+    }
+
+    function updateMiniStats() {
+      const primaryLinks = dataStore.filter(x => x.backend === "primary");
+      const legacyLinks = dataStore.filter(x => x.backend === "legacy");
+
+      if (primaryLinksCount) primaryLinksCount.textContent = primaryLinks.length;
+      if (legacyLinksCount) legacyLinksCount.textContent = legacyLinks.length;
+      if (primaryClicksCount) primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      if (legacyClicksCount) legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+    }
+
+    async function checkOneBackendHealth(backend) {
+      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
+      if (health.ok) return health;
+      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
+    }
+
+    async function checkBackendHealth() {
+      const [p, l] = await Promise.all([
+        checkOneBackendHealth("primary"),
+        checkOneBackendHealth("legacy")
+      ]);
+
+      if (primaryHealth) {
+        primaryHealth.innerHTML = p.ok
+          ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+      }
+
+      if (legacyHealth) {
+        legacyHealth.innerHTML = l.ok
+          ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      }
+    }
+
+    async function loadLinks(showLoading = false) {
+      if (loadingLinks) return;
+      loadingLinks = true;
+
+      if (showLoading) {
+        setBusy(refreshBtn, true, "Loading...");
+        setResult("Loading links...", false);
+      }
+
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/list", { method: "GET" }, "primary", false),
+        authorizedFetch("/list", { method: "GET" }, "legacy", false)
+      ]);
+
+      loadingLinks = false;
+      setBusy(refreshBtn, false);
+
+      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+
+      dataStore = mergeLinks(primaryItems, legacyItems);
+
+      const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+      if (totalLinks) totalLinks.textContent = dataStore.length;
+      if (totalClicks) totalClicks.textContent = total;
+      if (avgClicks) avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+
+      updateMiniStats();
+      renderTable();
+      drawChart();
+      renderRanking();
+
+      if (showLoading) {
+        const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
+        const primaryMsg = primaryRes.ok ? "Backend2 OK" : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
+        setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
+      }
+    }
+
+    function renderTable() {
+      if (!table) return;
+      const q = (searchInput?.value || "").trim().toLowerCase();
+      const backendOnly = backendFilter?.value || "all";
+
+      const filtered = dataStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        const backend = String(item.backend || "").toLowerCase();
+
+        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q);
+
+        return backendMatch && queryMatch;
+      });
+
+      if (!filtered.length) {
+        table.innerHTML = `<tr><td colspan="8" class="muted">No links found</td></tr>`;
+        return;
+      }
+
+      table.innerHTML = filtered.map(item => {
+        const publicLink = buildPublicLink(item.slug, item.backend);
+
+        return `
+          <tr>
+            <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+            <td>
+              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+              <div class="muted">${escapeHtml(item.url || "")}</div>
+            </td>
+            <td>${getStatus(item)}</td>
+            <td>${fmtExpire(item.expire)}</td>
+            <td>${fmtDate(item.createdAt)}</td>
+            <td>
+              <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
+              <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
+              <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
+              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>
+              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>
+              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
+      document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
+      document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
+      document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend));
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("chart");
+      if (!canvas) return;
+      if (chart) chart.destroy();
+
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+      chart = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
+          datasets: [{
+            label: "Clicks",
+            data: sorted.map(i => Number(i.clicks || 0)),
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
+          scales: {
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+          }
+        }
+      });
+    }
+
+    function renderRanking() {
+      if (!ranking) return;
+      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (!sorted.length) {
+        ranking.innerHTML = `<div class="muted">No links yet</div>`;
+        return;
+      }
+
+      ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
+        <div class="ranking-item">
+          <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+          <div>Clicks: ${Number(item.clicks || 0)}</div>
+          <div>Score: ${scoreLink(item)}/100</div>
+          <div>${detectFraud(item)}</div>
+        </div>
+      `).join("");
+    }
+
+    function getCreatePayload() {
+      const url = urlInput?.value.trim();
+      const slug = slugInput?.value.trim();
+      const expireHours = expireInput?.value.trim();
+
+      if (!url) {
+        setResult("Enter URL", true);
+        return null;
+      }
+
+      const body = { url };
+      if (slug) body.slug = slug;
+
+      if (expireHours) {
+        const hours = Number(expireHours);
+        if (!Number.isFinite(hours) || hours <= 0) {
+          setResult("Expire must be a positive number", true);
+          return null;
+        }
+        body.expire = Date.now() + hours * 60 * 60 * 1000;
+      }
+
+      return body;
+    }
+
+    async function createLinkForBackend(backend) {
+      const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
+      const body = getCreatePayload();
+      if (!body) return;
+
+      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+      setResult(`Creating ${backendLabel(backend)} link...`, false);
+
+      let res = await authorizedFetch("/create", {
+        method: "POST",
+        body: JSON.stringify(body)
+      }, backend, false);
+
+      if (res.status === 401) {
+        await verifyMainSession(false);
+        res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify(body)
+        }, backend, false);
+      }
+
+      setBusy(button, false);
+
+      if (!res.ok) {
+        if (res.status === 402) {
+          await loadMe(false);
+          openUpgradeModal();
+        }
+        setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
+        return;
+      }
+
+      const link = res.data?.link || "Success";
+      const trialAfter = res.data?.trialRemainingAfter;
+      setResult(`${backendLabel(backend)} created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
+
+      if (urlInput) urlInput.value = "";
+      if (slugInput) slugInput.value = "";
+      if (expireInput) expireInput.value = "";
+
+      await Promise.all([loadLinks(false), loadMe(false)]);
+    }
+
+    async function bulkCreateForBackend(backend) {
+      const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
+      const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
+      const count = Number(countInput?.value || 0);
+      const body = getCreatePayload();
+      if (!body) return;
+      if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
+
+      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+      setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
+
+      let success = 0;
+      for (let i = 0; i < count; i++) {
+        const requestBody = { ...body };
+        if (!requestBody.slug) delete requestBody.slug;
+
+        let res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify(requestBody)
+        }, backend, false);
+
+        if (res.status === 401) {
+          await verifyMainSession(false);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify(requestBody)
+          }, backend, false);
+        }
+
+        if (!res.ok) {
+          setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
+          break;
+        }
+
+        success++;
+        setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
+      }
+
+      setBusy(button, false);
+      await Promise.all([loadLinks(false), loadMe(false)]);
+    }
+
+    async function deleteLink(slug, backend) {
+      if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
+
+      let res = await authorizedFetch("/delete", {
+        method: "POST",
+        body: JSON.stringify({ slug })
+      }, backend, false);
+
+      if (res.status === 401) {
+        await verifyMainSession(false);
+        res = await authorizedFetch("/delete", {
+          method: "POST",
+          body: JSON.stringify({ slug })
+        }, backend, false);
+      }
+
+      if (!res.ok) {
+        showToast(`Delete failed on ${backendLabel(backend)}`);
+        return;
+      }
+
+      showToast(`Deleted from ${backendLabel(backend)}`);
+      await loadLinks(false);
+    }
+
+    async function copyLink(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    function openLink(link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+
+    function showQR(link) {
+      window.open(
+        "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+
+    async function getGeo(ip) {
+      if (!ip || ip === "unknown") {
+        return { country_name: "Unknown", latitude: 20, longitude: 0 };
+      }
+
+      try {
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+        const data = await res.json();
+        return {
+          country_name: data.country_name || "Unknown",
+          latitude: data.latitude || 20,
+          longitude: data.longitude || 0
+        };
+      } catch {
+        return { country_name: "Error", latitude: 20, longitude: 0 };
+      }
+    }
+
+    function destroyMap() {
+      if (map) {
+        map.remove();
+        map = null;
+      }
+    }
+
+    function closePanel() {
+      if (panel) panel.style.display = "none";
+      if (panelContent) panelContent.innerHTML = "";
+      destroyMap();
+      if (statsChartInstance) {
+        statsChartInstance.destroy();
+        statsChartInstance = null;
+      }
+    }
+
+    function openInfoPanel(type) {
+      if (!panel || !panelContent) return;
+      panel.style.display = "block";
+
+      if (type === "about") {
+        panelContent.innerHTML = `
+          <h3>ℹ️ About Rattle Link</h3>
+          <div class="muted">
+            Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.
+          </div>
+          <div class="info-box" style="margin-top:12px;">
+            <b>What it does</b>
+            <div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div>
+          </div>
+          <div class="info-box">
+            <b>Why two backends</b>
+            <div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div>
+          </div>
+          <div class="info-box">
+            <b>Main purpose</b>
+            <div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div>
+          </div>
+        `;
+      }
+
+      if (type === "legal") {
+        panelContent.innerHTML = `
+          <h3>📜 Legal</h3>
+          <div class="info-box">
+            <b>Acceptable Use</b>
+            <div class="muted">Do not use Rattle Link for spam, phishing, malware, scams, harmful redirects, or illegal content.</div>
+          </div>
+          <div class="info-box">
+            <b>Privacy</b>
+            <div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div>
+          </div>
+          <div class="info-box">
+            <b>Billing</b>
+            <div class="muted">Paid access activates after payment verification. Subscription status may change when expired, paused, or manually updated by admin.</div>
+          </div>
+          <div class="info-box">
+            <b>User Responsibility</b>
+            <div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div>
+          </div>
+        `;
+      }
+    }
+
+    function openSupportPanel() {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🆘 Support Center</h3>
@@ -1354,271 +2358,115 @@
         <div class="info-box">
           <b>Contact Support</b>
           <div class="support-list" style="margin-top:8px;">
-            <a href="mailto:${esc(info.email || "")}">Email: ${esc(info.email || "-")}</a>
-            ${info.telegram ? `<a href="${esc(info.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>` : ""}
-            ${info.discord ? `<a href="${esc(info.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>` : ""}
-            ${info.phone ? `<a href="tel:${esc(String(info.phone).replace(/\s+/g,''))}">Phone: ${esc(info.phone)}</a>` : ""}
+            <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
+            <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
+            <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
+            <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g,''))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
           </div>
         </div>
 
         <div class="info-box">
-          <b>Create Ticket</b>
-          <div class="form-row" style="margin-top:10px;">
-            <input id="supportEmailInput" value="${esc(meState.username || "")}" placeholder="Your email" />
+          <b>Common Help Topics</b>
+          <div class="muted" style="margin-top:8px;">
+            • login/session problems<br>
+            • payment verification delay<br>
+            • link paused or expired<br>
+            • link analytics questions<br>
+            • account verification help
           </div>
-          <div class="form-row">
-            <input id="supportSubjectInput" placeholder="Subject" />
-          </div>
-          <div class="form-row">
-            <textarea id="supportMessageInput" placeholder="Describe your issue"></textarea>
-          </div>
-          <div class="form-row">
-            <button type="button" id="submitSupportBtn">Submit Ticket</button>
-            <button type="button" class="ghost-btn" id="reloadSupportBtn">Reload Tickets</button>
-          </div>
-          <div id="supportSubmitResult" class="result"></div>
         </div>
 
         <div class="info-box">
-          <b>My Tickets</b>
-          <div id="supportTicketList" style="margin-top:10px;">${renderTicketListHtml()}</div>
+          <b>Before contacting support</b>
+          <div class="muted" style="margin-top:8px;">
+            Include your email, payment ID if relevant, backend used, and a short explanation of the problem.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <b>Quick Buttons</b>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn" href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email Support</a>
+            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord</a>
+          </div>
         </div>
       `;
+    }
 
-      const submitBtn = document.getElementById("submitSupportBtn");
-      const reloadBtn = document.getElementById("reloadSupportBtn");
-      const supportSubmitResult = document.getElementById("supportSubmitResult");
+    function toggleAllFaq(open) {
+      document.querySelectorAll(".faq-item").forEach(item => {
+        item.classList.toggle("open", !!open);
+      });
+    }
 
-      if (submitBtn) {
-        submitBtn.onclick = async () => {
-          const email = document.getElementById("supportEmailInput")?.value.trim();
-          const subject = document.getElementById("supportSubjectInput")?.value.trim();
-          const message = document.getElementById("supportMessageInput")?.value.trim();
-
-          submitBtn.disabled = true;
-          submitBtn.textContent = "Submitting...";
-
-          const res = await callPrimary("/support/contact", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, subject, message })
-          });
-
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Submit Ticket";
-
-          if (!res.ok) {
-            setResultSafe(res.data?.message || "Failed to submit ticket", true, supportSubmitResult);
-            return;
-          }
-
-          setResultSafe(`Ticket submitted: ${res.data?.id || ""}`, false, supportSubmitResult);
-          await loadSupportResources();
-          window.openSupportPanel();
-        };
-      }
-
-      if (reloadBtn) {
-        reloadBtn.onclick = async () => {
-          reloadBtn.disabled = true;
-          reloadBtn.textContent = "Reloading...";
-          await loadSupportResources();
-          reloadBtn.disabled = false;
-          reloadBtn.textContent = "Reload Tickets";
-          window.openSupportPanel();
-        };
-      }
-    };
-  }
-
-  function patchInfoPanel() {
-    const original = window.openInfoPanel;
-    window.openInfoPanel = function (type) {
-      const panel = document.getElementById("panel");
-      const panelContent = document.getElementById("panelContent");
-      if (!panel || !panelContent) {
-        if (typeof original === "function") return original(type);
-        return;
-      }
-
-      panel.style.display = "block";
-
-      if (type === "about") {
-        panelContent.innerHTML = `
-          <h3>ℹ️ About</h3>
-          <div class="info-box">
-            <b>Company</b>
-            <div class="muted" style="margin-top:8px;">${esc(patchState.about?.company || patchState.supportInfo?.company || "Rattle Link")}</div>
-          </div>
-          <div class="info-box">
-            <b>Description</b>
-            <div class="muted" style="margin-top:8px;">${esc(patchState.about?.description || "Shorten links, host landing pages, and track analytics securely.")}</div>
-          </div>
-        `;
-        return;
-      }
-
-      if (type === "legal") {
-        panelContent.innerHTML = `
-          <h3>📜 Legal</h3>
-          <div class="info-box">
-            <b>Terms</b>
-            <div class="muted" style="margin-top:8px;">${esc(patchState.legal?.terms || "Use responsibly.")}</div>
-          </div>
-          <div class="info-box">
-            <b>Privacy</b>
-            <div class="muted" style="margin-top:8px;">${esc(patchState.legal?.privacy || "We respect your privacy.")}</div>
-          </div>
-          <div class="info-box">
-            <b>Summary</b>
-            <div class="muted" style="margin-top:8px;">${esc(patchState.legal?.summary || "")}</div>
-          </div>
-        `;
-        return;
-      }
-
-      if (typeof original === "function") return original(type);
-    };
-  }
-
-  function patchLinkHelpers() {
-    window.buildPublicLink = function (itemOrSlug, backend) {
-      if (typeof itemOrSlug === "object" && itemOrSlug) {
-        if (itemOrSlug.publicLink) return itemOrSlug.publicLink;
-
-        if ((itemOrSlug.backend || backend) === "primary") {
-          if (itemOrSlug.domain) {
-            return `https://${itemOrSlug.domain}/${itemOrSlug.slug}`;
-          }
-          return `${PRIMARY_API.replace(/\/+$/, "")}/${itemOrSlug.slug}`;
-        }
-
-        const base = backend === "legacy" || itemOrSlug.backend === "legacy"
-          ? (window.LEGACY_API || "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production")
-          : PRIMARY_API;
-
-        return `${String(base).replace(/\/+$/, "")}/${itemOrSlug.slug}`;
-      }
-
-      const base = backend === "legacy"
-        ? (window.LEGACY_API || "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production")
-        : PRIMARY_API;
-
-      return `${String(base).replace(/\/+$/, "")}/${itemOrSlug}`;
-    };
-
-    const originalNormalize = window.normalizeLinkItem;
-    window.normalizeLinkItem = function (item, backend) {
-      const base = typeof originalNormalize === "function"
-        ? originalNormalize(item, backend)
-        : { ...item, backend };
-
-      return {
-        ...base,
-        id: item.id || null,
-        domain: item.domain || null,
-        source: item.source || (backend === "primary" ? "backend2" : "aws"),
-        linkType: item.linkType || item.link_type || "redirect",
-        publicLink: item.publicLink || item.link || null,
-        landingTitle: item.landingTitle || "",
-        landingDescription: item.landingDescription || "",
-        landingImage: item.landingImage || "",
-        landingTheme: item.landingTheme || "",
-        landingButtons: Array.isArray(item.landingButtons) ? item.landingButtons : [],
-        landingCtaLabel: item.landingCtaLabel || "",
-        landingCtaUrl: item.landingCtaUrl || "",
-        landingFooter: item.landingFooter || "",
-        landingHtml: item.landingHtml || "",
-        landingCss: item.landingCss || "",
-        landingJs: item.landingJs || "",
-        landingMetaTitle: item.landingMetaTitle || "",
-        landingMetaDescription: item.landingMetaDescription || ""
-      };
-    };
-
-    const originalCreatePayload = window.getCreatePayload;
-    window.getCreatePayload = function () {
-      const body = typeof originalCreatePayload === "function" ? originalCreatePayload() : null;
-      if (!body) return body;
-      const select = document.getElementById("primaryDomainSelect");
-      if (select && select.value) {
-        body.domain = select.value;
-      }
-      return body;
-    };
-
-    const originalDeleteLink = window.deleteLink;
-    window.deleteLink = async function (slug, backend, domain = "") {
-      if (!confirm(`Delete ${slug} from ${backend === "legacy" ? "AWS" : "Backend2"}?`)) return;
-
-      const body = { slug };
-      if (domain) body.domain = domain;
-
-      if (typeof window.authorizedFetch === "function") {
-        let res = await window.authorizedFetch("/delete", {
-          method: "POST",
-          body: JSON.stringify(body)
-        }, backend, false);
-
-        if (res.status === 401 && typeof window.verifyMainSession === "function") {
-          await window.verifyMainSession(false);
-          res = await window.authorizedFetch("/delete", {
-            method: "POST",
-            body: JSON.stringify(body)
-          }, backend, false);
-        }
-
-        if (!res.ok) {
-          showToastSafe(`Delete failed on ${backend === "legacy" ? "AWS" : "Backend2"}`);
-          return;
-        }
-
-        showToastSafe(`Deleted from ${backend === "legacy" ? "AWS" : "Backend2"}`);
-        if (typeof window.loadLinks === "function") await window.loadLinks(false);
-        return;
-      }
-
-      if (typeof originalDeleteLink === "function") {
-        return originalDeleteLink(slug, backend, domain);
-      }
-    };
-
-    const originalShowHistory = window.showHistory;
-    window.showHistory = async function (slug, backend, domain = "") {
-      if (!(typeof window.authorizedFetch === "function")) {
-        if (typeof originalShowHistory === "function") return originalShowHistory(slug, backend, domain);
-        return;
-      }
-
-      const panel = document.getElementById("panel");
-      const panelContent = document.getElementById("panelContent");
-      if (!panel || !panelContent) {
-        if (typeof originalShowHistory === "function") return originalShowHistory(slug, backend, domain);
-        return;
-      }
-
+    async function showGeo(slug, backend) {
+      if (!panel || !panelContent) return;
       panel.style.display = "block";
       panelContent.innerHTML = `
-        <h3>📊 Live Analytics: ${esc(slug)}</h3>
-        <div class="muted">Backend: ${esc(backend === "legacy" ? "AWS" : "Backend2")}</div>
-        ${domain ? `<div class="muted">Domain: ${esc(domain)}</div>` : ""}
+        <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
+        <div class="muted">Loading location data...</div>
+        <div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
+      `;
+
+      await new Promise(r => setTimeout(r, 60));
+      destroyMap();
+
+      const mapEl = document.getElementById("map");
+      if (!mapEl) return;
+      map = L.map(mapEl).setView([20, 0], 2);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
+      const history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+      if (!history.length) {
+        L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
+        return;
+      }
+
+      let offset = 0;
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
+        let lat = Number(geo.latitude || 20);
+        let lng = Number(geo.longitude || 0);
+        lat += offset * 0.25;
+        lng += offset * 0.25;
+        offset++;
+
+        L.circle([lat, lng], {
+          radius: 45000,
+          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`
+          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
+          ${escapeHtml(h.ip || "unknown")}<br>
+          Risk: ${Number(h.risk || 0)}
+        `);
+      }
+    }
+
+    async function showHistory(slug, backend) {
+      if (!panel || !panelContent) return;
+      panel.style.display = "block";
+      panelContent.innerHTML = `
+        <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
         <canvas id="statsChart" height="120"></canvas>
         <div id="statsBody" style="margin-top:14px;"></div>
         <h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4>
         <div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>
       `;
 
-      if (typeof window.destroyMap === "function") window.destroyMap();
       await new Promise(r => setTimeout(r, 60));
+      destroyMap();
 
-      const qs = new URLSearchParams({ slug });
-      if (domain) qs.set("domain", domain);
-
-      const res = await window.authorizedFetch(`/history?${qs.toString()}`, { method: "GET" }, backend, false);
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
-      const link = Array.isArray(window.dataStore)
-        ? window.dataStore.find(l => l.slug === slug && l.backend === backend && (l.domain || "") === (domain || ""))
-        : null;
+      const link = dataStore.find(l => l.slug === slug && l.backend === backend);
 
       if (!history.length && link && Number(link.clicks || 0) > 0) {
         history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
@@ -1647,14 +2495,11 @@
       const labels = history.map(h => new Date(h.time).toLocaleTimeString());
       const dataPoints = history.map((_, i) => i + 1);
 
-      if (window.statsChartInstance) {
-        window.statsChartInstance.destroy();
-        window.statsChartInstance = null;
-      }
+      if (statsChartInstance) statsChartInstance.destroy();
 
       const statsCanvas = document.getElementById("statsChart");
-      if (statsCanvas && window.Chart) {
-        window.statsChartInstance = new Chart(statsCanvas, {
+      if (statsCanvas) {
+        statsChartInstance = new Chart(statsCanvas, {
           type: "line",
           data: {
             labels,
@@ -1678,13 +2523,15 @@
       const stats = {};
       for (const h of history) {
         if (!stats[h.ip]) {
-          stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot };
+          stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
         }
         stats[h.ip].count++;
         stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
+        stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
       }
 
       const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
+
       let html = `
         <div><b>Total Clicks:</b> ${history.length}</div>
         <div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>
@@ -1700,7 +2547,7 @@
             background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};
             border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};
           ">
-            <b>${esc(ip)}</b>
+            <b>${escapeHtml(ip)}</b>
             ${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}
             ${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}
             ${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}
@@ -1709,134 +2556,260 @@
           </div>
         `;
       });
+
       if (statsBody) statsBody.innerHTML = html;
-    };
-  }
 
-  function patchTableRenderer() {
-    const originalRenderTable = window.renderTable;
-    window.renderTable = function () {
-      if (typeof originalRenderTable === "function") originalRenderTable();
+      const mapEl = document.getElementById("map");
+      if (!mapEl) return;
+      map = L.map(mapEl).setView([20, 0], 2);
 
-      const rows = document.querySelectorAll("#table tr");
-      const filtered = Array.isArray(window.dataStore) ? window.dataStore : [];
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
 
-      rows.forEach((row, idx) => {
-        const item = filtered[idx];
-        if (!item) return;
+      let offset = 0;
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
+        let lat = Number(geo.latitude || (Math.random() * 140 - 70));
+        let lng = Number(geo.longitude || (Math.random() * 360 - 180));
 
-        const publicLink = window.buildPublicLink ? window.buildPublicLink(item, item.backend) : null;
-        if (!publicLink) return;
+        lat += offset * 0.22;
+        lng += offset * 0.22;
+        offset++;
 
-        const anchor = row.querySelector('td:nth-child(4) a');
-        if (anchor) {
-          anchor.href = publicLink;
-          anchor.textContent = publicLink;
+        L.circle([lat, lng], {
+          radius: 40000,
+          color: h.risk > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(map).bindPopup(`
+          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
+          ${escapeHtml(h.ip || "unknown")}<br>
+          Risk: ${Number(h.risk || 0)}
+        `);
+      }
+    }
+
+    async function processFile(file, backend) {
+      if (!file) return setResult("Choose a CSV file first", true);
+
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return setResult("CSV is empty", true);
+
+      let urls = [];
+      if (lines[0].toLowerCase().includes("url")) {
+        const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+        const urlIndex = header.indexOf("url");
+        if (urlIndex >= 0) {
+          urls = lines.slice(1).map(line => {
+            const cols = line.split(",");
+            return (cols[urlIndex] || "").trim();
+          }).filter(Boolean);
+        }
+      } else {
+        urls = lines;
+      }
+
+      urls = urls.filter(Boolean);
+      if (!urls.length) return setResult("No URLs found in file", true);
+
+      const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
+      setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
+      setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
+
+      let okCount = 0;
+      for (const url of urls) {
+        let res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify({ url })
+        }, backend, false);
+
+        if (res.status === 401) {
+          await verifyMainSession(false);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify({ url })
+          }, backend, false);
         }
 
-        const copyBtn = row.querySelector(".copy-btn");
-        const openBtn = row.querySelector(".open-btn");
-        const qrBtn = row.querySelector(".qr-btn");
-        if (copyBtn) {
-          copyBtn.dataset.link = publicLink;
-          copyBtn.onclick = () => window.copyLink?.(publicLink);
-        }
-        if (openBtn) {
-          openBtn.dataset.link = publicLink;
-          openBtn.onclick = () => window.openLink?.(publicLink);
-        }
-        if (qrBtn) {
-          qrBtn.dataset.link = publicLink;
-          qrBtn.onclick = () => window.showQR?.(publicLink);
+        if (!res.ok) {
+          setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
+          break;
         }
 
-        const slugCell = row.querySelector('td:nth-child(2)');
-        if (slugCell && !slugCell.querySelector(".pill")) {
-          const meta = document.createElement("div");
-          meta.style.marginTop = "6px";
-          meta.innerHTML = `
-            <span class="pill ${String(item.linkType || "").toLowerCase() === "landing" ? "awaiting" : "live"}">${esc(item.linkType || "redirect")}</span>
-            ${item.domain ? `<span class="pill trial">${esc(item.domain)}</span>` : ""}
-          `;
-          slugCell.appendChild(meta);
-        }
+        okCount++;
+        setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
+      }
 
-        const statsBtn = row.querySelector(".stats-btn");
-        const geoBtn = row.querySelector(".geo-btn");
-        const deleteBtn = row.querySelector(".delete-btn");
+      setBusy(button, false);
+      if (backend === "legacy" && csvFileLegacy) csvFileLegacy.value = "";
+      if (backend === "primary" && csvFilePrimary) csvFilePrimary.value = "";
+      await Promise.all([loadLinks(false), loadMe(false)]);
+    }
 
-        if (statsBtn) statsBtn.onclick = () => window.showHistory?.(item.slug, item.backend, item.domain || "");
-        if (geoBtn) geoBtn.onclick = () => window.showGeo?.(item.slug, item.backend, item.domain || "");
-        if (deleteBtn) deleteBtn.onclick = () => window.deleteLink?.(item.slug, item.backend, item.domain || "");
+    async function uploadCSVForBackend(backend) {
+      const file = backend === "legacy" ? csvFileLegacy?.files?.[0] : csvFilePrimary?.files?.[0];
+      await processFile(file, backend);
+    }
+
+    function refreshNow() {
+      Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
+    }
+
+    function logout() {
+      stopPaymentPolling();
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("preferredBackend");
+      localStorage.removeItem("sessionBackend");
+      localStorage.removeItem("waitingPaymentId");
+      window.location.href = "index.html";
+    }
+
+    function setupKeyboardShortcuts() {
+      [urlInput, slugInput, expireInput].forEach(el => {
+        if (!el) return;
+        el.addEventListener("keydown", e => {
+          if (e.key === "Enter") createLinkForBackend(preferredBackend);
+        });
       });
 
-      updateLandingStats();
-    };
-  }
-
-  async function loadAllEnhancements() {
-    await Promise.all([
-      loadDomains().catch(() => {}),
-      loadSupportResources().catch(() => {})
-    ]);
-    updateLandingStats();
-    updatePrimaryDomainStat();
-  }
-
-  onReady(async function () {
-    ensureMiniCards();
-    ensurePrimaryDomainPicker();
-    patchInfoPanel();
-    patchSupportPanel();
-    patchLinkHelpers();
-    patchTableRenderer();
-
-    const domainCenterBtn = document.getElementById("domainCenterBtn");
-    const openDomainPanelBtn = document.getElementById("openDomainPanelBtn");
-    const refreshDomainsBtn = document.getElementById("refreshDomainsBtn");
-    const landingCenterBtn = document.getElementById("landingCenterBtn");
-    const openLandingPanelBtn = document.getElementById("openLandingPanelBtn");
-    const viewLandingLinksBtn = document.getElementById("viewLandingLinksBtn");
-
-    domainCenterBtn?.addEventListener("click", async () => { await loadDomains(); }, true);
-    openDomainPanelBtn?.addEventListener("click", async () => { await loadDomains(); }, true);
-    refreshDomainsBtn?.addEventListener("click", async () => { await loadDomains(); }, true);
-    landingCenterBtn?.addEventListener("click", () => updateLandingStats(), true);
-    openLandingPanelBtn?.addEventListener("click", () => updateLandingStats(), true);
-    viewLandingLinksBtn?.addEventListener("click", () => updateLandingStats(), true);
-
-    await loadAllEnhancements();
-
-    const refreshNow = window.refreshNow;
-    if (typeof refreshNow === "function") {
-      window.refreshNow = function () {
-        const result = refreshNow.apply(this, arguments);
-        loadAllEnhancements();
-        return result;
-      };
+      if (searchInput) searchInput.addEventListener("input", renderTable);
+      if (backendFilter) backendFilter.addEventListener("change", renderTable);
     }
 
-    const loadLinks = window.loadLinks;
-    if (typeof loadLinks === "function") {
-      window.loadLinks = async function () {
-        const result = await loadLinks.apply(this, arguments);
-        updateLandingStats();
-        return result;
-      };
+    function wireDropZone(zone, backend) {
+      if (!zone) return;
+
+      ["dragenter", "dragover"].forEach(eventName => {
+        zone.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "dragend", "drop"].forEach(eventName => {
+        zone.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove("dragover");
+        });
+      });
+
+      zone.addEventListener("drop", async e => {
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        await processFile(file, backend);
+      });
     }
 
-    const loadMe = window.loadMe;
-    if (typeof loadMe === "function") {
-      window.loadMe = async function () {
-        const result = await loadMe.apply(this, arguments);
-        updatePrimaryDomainStat();
-        return result;
-      };
+    function setPreferredBackend(next) {
+      preferredBackend = next === "legacy" ? "legacy" : "primary";
+      localStorage.setItem("preferredBackend", preferredBackend);
+      setTopBackendBadge();
+      showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
     }
 
-    showToastSafe("Dashboard backend2 upgrade loaded");
-  });
-})();
-</script>
+    function setupFaq() {
+      document.querySelectorAll(".faq-q").forEach(btn => {
+        btn.addEventListener("click", () => {
+          btn.parentElement.classList.toggle("open");
+        });
+      });
+    }
+
+    function goToLandingPage() {
+      window.location.href = "landing.html";
+    }
+
+    function goToDomainManager() {
+      window.location.href = "domain-manager.html";
+    }
+
+    if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
+    if (upgradeBtn) upgradeBtn.addEventListener("click", openUpgradeModal);
+    if (createLegacyBtn) createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
+    if (createPrimaryBtn) createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
+    if (bulkLegacyBtn) bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
+    if (bulkPrimaryBtn) bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
+    if (uploadLegacyBtn) uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
+    if (uploadPrimaryBtn) uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
+    if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
+    if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
+    if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+
+    if (verifySessionBtn) {
+      verifySessionBtn.addEventListener("click", async () => {
+        setBusy(verifySessionBtn, true, "Checking...");
+        await verifyMainSession(true);
+        setBusy(verifySessionBtn, false);
+      });
+    }
+
+    if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
+    if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
+    if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", goToLandingPage);
+    if (viewLandingLinksBtn) {
+      viewLandingLinksBtn.addEventListener("click", () => {
+        setExtraResult("Opening landing.html ...");
+        goToLandingPage();
+      });
+    }
+    if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
+    if (refreshDomainsBtn) {
+      refreshDomainsBtn.addEventListener("click", () => {
+        setExtraResult("Opening domain-manager.html ...");
+        goToDomainManager();
+      });
+    }
+
+    (async function init() {
+      if (!ensureAuth()) return;
+
+      setTopBackendBadge();
+      setupKeyboardShortcuts();
+      setupFaq();
+      wireDropZone(dropZoneLegacy, "legacy");
+      wireDropZone(dropZonePrimary, "primary");
+
+      await Promise.all([
+        loadPlans(false),
+        loadMe(true),
+        loadLinks(true),
+        loadPayments(false),
+        checkBackendHealth()
+      ]);
+
+      if (waitingPaymentId) {
+        const p = paymentsStore.find(x => x.id === waitingPaymentId);
+        if (p) startPaymentPolling(p.id, p.backend);
+      }
+
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (document.hidden) return;
+        loadMe(false);
+        loadLinks(false);
+        loadPayments(false);
+        checkBackendHealth();
+      }, 15000);
+    })();
+
+    window.openSupportPanel = openSupportPanel;
+    window.openInfoPanel = openInfoPanel;
+    window.toggleAllFaq = toggleAllFaq;
+    window.copyLink = copyLink;
+    window.showPaymentDetails = showPaymentDetails;
+    window.closePanel = closePanel;
+    window.openUpgradeModal = openUpgradeModal;
+    window.closeUpgradeModal = closeUpgradeModal;
+    window.loadPayments = loadPayments;
+    window.loadPlans = loadPlans;
+    window.logout = logout;
+    window.markPaymentSent = markPaymentSent;
+    window.showToast = showToast;
+    window.goToLandingPage = goToLandingPage;
+    window.goToDomainManager = goToDomainManager;
+  </script>
 </body>
 </html>
