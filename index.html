@@ -9,196 +9,419 @@
 
   <style>
     :root{
-      --bg:#020617;
-      --bg2:#000000;
-      --card:#020617;
-      --text:#e2e8f0;
-      --muted:#94a3b8;
-      --cyan:#00ffff;
-      --green:#22c55e;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-      --border:rgba(0,255,255,0.2);
+      --bg:#07111f;
+      --bg-soft:#0d1a2d;
+      --surface:#ffffff;
+      --surface-2:#f7fafc;
+      --text:#0f172a;
+      --text-soft:#475569;
+      --line:#dbe4f0;
+      --primary:#2563eb;
+      --primary-strong:#1d4ed8;
+      --accent:#06b6d4;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warning:#d97706;
+      --shadow:0 30px 80px rgba(2, 6, 23, .18);
+      --radius-xl:28px;
+      --radius-lg:18px;
+      --radius-md:14px;
     }
 
-    body.light{
-      --bg:#e2e8f0;
-      --bg2:#f8fafc;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --border:rgba(15,23,42,0.12);
+    body.dark{
+      --bg:#020617;
+      --bg-soft:#071223;
+      --surface:#06101d;
+      --surface-2:#0b1728;
+      --text:#e2e8f0;
+      --text-soft:#94a3b8;
+      --line:rgba(148,163,184,.18);
+      --primary:#00d5ff;
+      --primary-strong:#00b8dc;
+      --accent:#60a5fa;
+      --success:#22c55e;
+      --danger:#ef4444;
+      --warning:#f59e0b;
+      --shadow:0 28px 90px rgba(0, 0, 0, .48);
     }
 
     *{ box-sizing:border-box; }
 
+    html, body{
+      min-height:100%;
+    }
+
     body{
       margin:0;
       font-family:Inter, Arial, sans-serif;
-      background:radial-gradient(circle at top, var(--bg), var(--bg2));
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(6,182,212,.18), transparent 24%),
+        linear-gradient(180deg, var(--bg), var(--bg-soft));
       color:var(--text);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      min-height:100vh;
-      padding:20px;
+      padding:32px 20px;
       transition:.25s ease;
     }
 
-    .theme-toggle{
+    body.dark::before{
+      content:"";
       position:fixed;
-      top:18px;
-      right:18px;
-      width:auto;
-      padding:10px 12px;
-      z-index:50;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.4), transparent 80%);
     }
 
-    .wrapper{
+    .page{
+      max-width:1180px;
+      margin:0 auto;
+    }
+
+    .topbar{
       display:flex;
-      width:960px;
-      max-width:100%;
-      border-radius:18px;
-      overflow:hidden;
-      box-shadow:0 20px 60px rgba(0,0,0,.45);
-      border:1px solid var(--border);
-      background:var(--card);
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      margin-bottom:22px;
+      flex-wrap:wrap;
     }
 
-    .left{
-      flex:1;
-      min-height:700px;
-      background:linear-gradient(135deg,#2563eb,#06b6d4);
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
       color:#fff;
-      padding:36px 28px;
+    }
+
+    .brand-badge{
+      width:44px;
+      height:44px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--accent));
+      color:#001018;
+      font-weight:900;
+      box-shadow:0 12px 30px rgba(37,99,235,.28);
+      font-size:20px;
+    }
+
+    .brand-copy h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+      color:#fff;
+      letter-spacing:.2px;
+    }
+
+    .brand-copy p{
+      margin:2px 0 0;
+      font-size:12px;
+      color:rgba(255,255,255,.72);
+    }
+
+    .topbar-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .theme-toggle,
+    .ghost-link{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      padding:11px 14px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+      text-decoration:none;
+      transition:.2s ease;
+      backdrop-filter:blur(10px);
+    }
+
+    .theme-toggle:hover,
+    .ghost-link:hover{
+      background:rgba(255,255,255,.14);
+      border-color:rgba(255,255,255,.24);
+    }
+
+    .shell{
+      display:grid;
+      grid-template-columns:1.04fr .96fr;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius-xl);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      min-height:760px;
+    }
+
+    .hero{
+      position:relative;
+      padding:48px 42px;
+      background:
+        radial-gradient(circle at top right, rgba(96,165,250,.22), transparent 26%),
+        radial-gradient(circle at bottom left, rgba(6,182,212,.18), transparent 26%),
+        linear-gradient(160deg, #06203f 0%, #0b2f62 44%, #06203f 100%);
+      color:#fff;
       display:flex;
       flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
+      justify-content:space-between;
+      overflow:hidden;
     }
 
-    .left h1{
-      margin:0 0 10px;
-      font-size:34px;
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:auto -70px -90px auto;
+      width:260px;
+      height:260px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(255,255,255,.18), transparent 68%);
+      filter:blur(2px);
+      pointer-events:none;
     }
 
-    .left p{
-      margin:0;
-      opacity:.92;
-      line-height:1.6;
-      max-width:300px;
-    }
-
-    .features{
-      margin-top:24px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      justify-content:center;
-    }
-
-    .features span{
-      border:1px solid rgba(255,255,255,.4);
-      background:rgba(255,255,255,.12);
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-    }
-
-    .card{
-      flex:1;
-      background:var(--card);
-      padding:30px;
+    .hero-top{
       position:relative;
+      z-index:1;
     }
 
-    .auth-header h2{
-      margin:0 0 6px;
-      color:var(--cyan);
-      text-shadow:0 0 10px rgba(0,255,255,.35);
-    }
-
-    body.light .auth-header h2{
-      text-shadow:none;
-    }
-
-    .sub{
-      margin:0 0 18px;
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
       font-size:12px;
-      color:var(--muted);
+      font-weight:700;
+      letter-spacing:.2px;
+      margin-bottom:22px;
+    }
+
+    .hero h2{
+      margin:0 0 14px;
+      font-size:52px;
+      line-height:1.05;
+      letter-spacing:-1.5px;
+      max-width:520px;
+    }
+
+    .hero p.lead{
+      margin:0;
+      max-width:500px;
+      font-size:17px;
+      line-height:1.7;
+      color:rgba(255,255,255,.82);
+    }
+
+    .hero-points{
+      margin-top:30px;
+      display:grid;
+      gap:12px;
+      max-width:520px;
+    }
+
+    .hero-point{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      padding:14px 16px;
+      border-radius:16px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(8px);
+    }
+
+    .hero-point-icon{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.14);
+      font-size:16px;
+      flex:0 0 34px;
+    }
+
+    .hero-point strong{
+      display:block;
+      margin-bottom:4px;
+      font-size:14px;
+    }
+
+    .hero-point span{
+      display:block;
+      color:rgba(255,255,255,.72);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .hero-bottom{
+      position:relative;
+      z-index:1;
+      margin-top:26px;
+    }
+
+    .mini-stats{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+
+    .mini-stat{
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .mini-stat b{
+      display:block;
+      font-size:24px;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .mini-stat span{
+      font-size:12px;
+      color:rgba(255,255,255,.74);
       line-height:1.5;
     }
 
-    .tabs{
+    .auth{
+      padding:36px 34px 28px;
+      background:var(--surface);
+      display:flex;
+      flex-direction:column;
+    }
+
+    .auth-head{
+      margin-bottom:18px;
+    }
+
+    .auth-head h3{
+      margin:0 0 8px;
+      font-size:32px;
+      line-height:1.1;
+      letter-spacing:-1px;
+      color:var(--text);
+    }
+
+    .auth-head p{
+      margin:0;
+      color:var(--text-soft);
+      font-size:14px;
+      line-height:1.7;
+      max-width:520px;
+    }
+
+    .mode-switch{
       display:flex;
       gap:8px;
-      margin-bottom:18px;
+      margin:18px 0 22px;
+      padding:6px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      border-radius:16px;
       flex-wrap:wrap;
     }
 
     .tab{
-      flex:1;
-      padding:10px;
-      border-radius:10px;
-      border:1px solid var(--border);
+      appearance:none;
+      border:none;
       background:transparent;
-      color:var(--text);
+      color:var(--text-soft);
+      font-weight:700;
+      padding:12px 14px;
+      border-radius:12px;
       cursor:pointer;
-      font-weight:600;
-      min-width:110px;
+      flex:1;
+      min-width:120px;
+      transition:.18s ease;
+      font-size:13px;
     }
 
     .tab.active{
-      background:var(--cyan);
-      color:#000;
-      border-color:var(--cyan);
+      background:var(--surface);
+      color:var(--text);
+      box-shadow:0 6px 18px rgba(15,23,42,.08);
+      border:1px solid var(--line);
+    }
+
+    body.dark .tab.active{
+      box-shadow:none;
+      background:rgba(255,255,255,.04);
+    }
+
+    .form-card{
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      background:var(--surface);
+    }
+
+    .field-grid{
+      display:grid;
+      gap:14px;
     }
 
     .input-group{
       position:relative;
-      margin-bottom:14px;
     }
 
     .input-group input{
       width:100%;
-      padding:14px 12px;
-      border-radius:10px;
-      border:1px solid var(--border);
-      background:#000;
-      color:var(--cyan);
+      padding:17px 15px 17px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      color:var(--text);
       outline:none;
-      transition:.2s ease;
+      transition:.18s ease;
+      font-size:15px;
     }
 
-    body.light .input-group input{
-      background:#fff;
-      color:#0f172a;
+    .input-group input::placeholder{
+      color:transparent;
     }
 
     .input-group input:focus{
-      box-shadow:0 0 10px rgba(0,255,255,.3);
-      border-color:var(--cyan);
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    body.dark .input-group input:focus{
+      box-shadow:0 0 0 4px rgba(0,213,255,.10);
     }
 
     .input-group label{
       position:absolute;
       left:12px;
-      top:13px;
-      font-size:12px;
-      color:var(--muted);
+      top:15px;
+      padding:0 6px;
+      color:var(--text-soft);
+      background:var(--surface);
+      font-size:13px;
       pointer-events:none;
-      transition:.18s ease;
-      background:transparent;
-      padding:0 4px;
+      transition:.16s ease;
     }
 
     .input-group input:focus + label,
     .input-group input:not(:placeholder-shown) + label{
       top:-8px;
-      font-size:10px;
-      color:var(--cyan);
-      background:var(--card);
+      font-size:11px;
+      color:var(--primary);
+      font-weight:700;
     }
 
     .password-box{
@@ -212,20 +435,29 @@
       transform:translateY(-50%);
       cursor:pointer;
       user-select:none;
-      color:var(--cyan);
+      color:var(--text-soft);
       font-size:14px;
+      padding:6px 8px;
+      border-radius:10px;
+      transition:.18s ease;
+    }
+
+    .toggle:hover{
+      background:var(--surface-2);
+      color:var(--text);
+    }
+
+    .strength-wrap{
+      margin-top:-4px;
     }
 
     .strength-bar{
-      height:6px;
+      height:8px;
       border-radius:999px;
       overflow:hidden;
-      background:#111827;
+      background:var(--surface-2);
+      border:1px solid var(--line);
       margin-bottom:8px;
-    }
-
-    body.light .strength-bar{
-      background:#e2e8f0;
     }
 
     #strengthFill{
@@ -239,179 +471,221 @@
     .strong{ background:#22c55e; }
 
     .strength-text{
-      font-size:11px;
-      color:var(--muted);
-      margin-bottom:10px;
       min-height:16px;
+      font-size:12px;
+      color:var(--text-soft);
     }
 
     .row{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      gap:10px;
-      font-size:12px;
-      margin:10px 0 14px;
-      color:var(--muted);
+      gap:12px;
       flex-wrap:wrap;
+      margin:6px 0 2px;
+      font-size:13px;
+      color:var(--text-soft);
     }
 
-    .row .link,
-    .link{
-      color:#60a5fa;
-      cursor:pointer;
-      text-decoration:none;
-    }
-
-    .link:hover{
-      text-decoration:underline;
-    }
-
-    .captcha-wrap{
-      margin:12px 0 10px;
+    .remember-wrap{
       display:flex;
-      justify-content:center;
-      min-height:78px;
-      width:100%;
-    }
-
-    button{
-      width:100%;
-      padding:12px 14px;
-      border:none;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:700;
-      transition:.2s ease;
-      margin-top:8px;
-    }
-
-    .primary{
-      background:var(--cyan);
-      color:#000;
-      display:flex;
-      justify-content:center;
       align-items:center;
       gap:8px;
     }
 
-    .primary:hover{
-      box-shadow:0 0 24px rgba(0,255,255,.4);
-      transform:translateY(-1px);
-    }
-
-    .secondary{
-      background:transparent;
-      border:1px solid var(--border);
-      color:var(--text);
-    }
-
-    .secondary:hover{
-      border-color:var(--cyan);
-      color:var(--cyan);
-    }
-
-    .switch{
-      margin-top:14px;
-      font-size:12px;
-      color:var(--muted);
-      text-align:center;
-    }
-
-    .switch span{
-      color:var(--cyan);
+    .row input[type="checkbox"]{
+      width:16px;
+      height:16px;
+      accent-color:var(--primary);
       cursor:pointer;
-      margin-left:4px;
     }
 
-    .error{
-      color:var(--red);
+    .link,
+    .text-link{
+      color:var(--primary);
+      text-decoration:none;
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .link:hover,
+    .text-link:hover{
+      text-decoration:underline;
+    }
+
+    .captcha-panel{
+      margin-top:4px;
+      padding:14px;
+      border:1px dashed var(--line);
+      border-radius:16px;
+      background:var(--surface-2);
+    }
+
+    .captcha-title{
+      margin:0 0 10px;
       font-size:12px;
-      margin-top:12px;
-      min-height:18px;
-      text-align:center;
-      line-height:1.5;
-      white-space:pre-wrap;
+      font-weight:700;
+      color:var(--text-soft);
+      text-transform:uppercase;
+      letter-spacing:.08em;
     }
 
-    .success-text{
-      color:var(--green);
+    .captcha-wrap{
+      min-height:78px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
     }
 
-    .warn-text{
-      color:var(--yellow);
+    .primary-btn,
+    .secondary-btn{
+      width:100%;
+      appearance:none;
+      border:none;
+      border-radius:14px;
+      padding:15px 18px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:14px;
+      transition:.18s ease;
     }
 
-    .helper{
-      margin-top:8px;
-      font-size:11px;
-      color:var(--muted);
-      text-align:center;
-      line-height:1.6;
+    .primary-btn{
+      margin-top:16px;
+      background:var(--primary);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      box-shadow:0 10px 28px rgba(37,99,235,.20);
+    }
+
+    .primary-btn:hover{
+      transform:translateY(-1px);
+      background:var(--primary-strong);
+    }
+
+    .secondary-btn{
+      margin-top:10px;
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .secondary-btn:hover{
+      border-color:var(--primary);
+      color:var(--primary);
     }
 
     .loading{
-      opacity:.65;
+      opacity:.72;
       pointer-events:none;
     }
 
     .spinner{
-      width:14px;
-      height:14px;
-      border:2px solid #000;
-      border-top:2px solid transparent;
+      width:15px;
+      height:15px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top:2px solid #fff;
       border-radius:50%;
+      display:none;
       animation:spin 1s linear infinite;
-      display:none;
     }
 
-    .status-card{
-      margin-top:14px;
-      padding:14px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:rgba(0,255,255,.04);
+    .approval-box{
       display:none;
+      margin-top:16px;
+      padding:18px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(37,99,235,.08), rgba(6,182,212,.05));
+      border:1px solid rgba(37,99,235,.18);
     }
 
-    .status-card h3{
+    body.dark .approval-box{
+      background:linear-gradient(180deg, rgba(0,213,255,.08), rgba(96,165,250,.06));
+      border:1px solid rgba(0,213,255,.18);
+    }
+
+    .approval-box h4{
       margin:0 0 8px;
-      font-size:14px;
-      color:var(--cyan);
+      font-size:15px;
+      color:var(--text);
     }
 
-    .status-card p{
-      margin:0 0 10px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.6;
+    .approval-box p{
+      margin:0 0 12px;
+      color:var(--text-soft);
+      font-size:13px;
+      line-height:1.7;
     }
 
-    .status-actions{
+    .approval-actions{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
     }
 
-    .status-actions button{
+    .approval-actions button{
       margin-top:0;
       flex:1;
-      min-width:120px;
+      min-width:130px;
     }
 
     .timer{
       margin-top:10px;
       font-size:12px;
-      color:var(--yellow);
-      text-align:center;
+      color:var(--warning);
       min-height:16px;
+      font-weight:700;
     }
 
     .small-note{
       margin-top:8px;
-      font-size:11px;
-      color:var(--muted);
+      font-size:12px;
+      color:var(--text-soft);
+    }
+
+    .switch{
+      margin-top:16px;
       text-align:center;
+      font-size:13px;
+      color:var(--text-soft);
+    }
+
+    .error{
+      min-height:22px;
+      margin-top:14px;
+      font-size:13px;
+      line-height:1.6;
+      text-align:center;
+      white-space:pre-wrap;
+      color:var(--danger);
+      font-weight:600;
+    }
+
+    .success-text{ color:var(--success) !important; }
+    .warn-text{ color:var(--warning) !important; }
+
+    .helper{
+      margin-top:10px;
+      text-align:center;
+      font-size:12px;
+      color:var(--text-soft);
+      line-height:1.7;
+    }
+
+    .footer-note{
+      margin-top:auto;
+      padding-top:18px;
+      font-size:12px;
+      color:var(--text-soft);
+      line-height:1.7;
+      text-align:center;
+    }
+
+    .footer-note b{
+      color:var(--text);
     }
 
     .hidden{
@@ -422,140 +696,266 @@
       to{ transform:rotate(360deg); }
     }
 
-    @keyframes shake {
-      0%{transform:translateX(0);}
-      25%{transform:translateX(-5px);}
-      50%{transform:translateX(5px);}
-      75%{transform:translateX(-5px);}
-      100%{transform:translateX(0);}
+    @keyframes shake{
+      0%{ transform:translateX(0); }
+      25%{ transform:translateX(-5px); }
+      50%{ transform:translateX(5px); }
+      75%{ transform:translateX(-5px); }
+      100%{ transform:translateX(0); }
     }
 
     .shake{
-      animation:shake .3s;
+      animation:shake .28s;
     }
 
-    @media (max-width: 760px){
-      .wrapper{
-        flex-direction:column;
+    @media (max-width: 980px){
+      .shell{
+        grid-template-columns:1fr;
       }
 
-      .left{
+      .hero{
         min-height:auto;
-        padding:28px 20px;
+        padding:34px 24px 28px;
       }
 
-      .card{
-        padding:22px 18px;
+      .hero h2{
+        font-size:40px;
       }
 
-      .status-actions{
+      .mini-stats{
+        grid-template-columns:1fr 1fr 1fr;
+      }
+
+      .auth{
+        padding:24px 20px 24px;
+      }
+    }
+
+    @media (max-width: 680px){
+      body{
+        padding:16px;
+      }
+
+      .topbar{
+        margin-bottom:14px;
+      }
+
+      .brand-copy h1{
+        font-size:16px;
+      }
+
+      .hero{
+        padding:28px 20px 22px;
+      }
+
+      .hero h2{
+        font-size:34px;
+      }
+
+      .hero p.lead{
+        font-size:15px;
+      }
+
+      .mini-stats{
+        grid-template-columns:1fr;
+      }
+
+      .auth-head h3{
+        font-size:28px;
+      }
+
+      .mode-switch{
+        gap:6px;
+      }
+
+      .tab{
+        min-width:100%;
+      }
+
+      .form-card{
+        padding:16px;
+        border-radius:18px;
+      }
+
+      .approval-actions{
         flex-direction:column;
       }
     }
   </style>
 </head>
-<body>
-  <button class="theme-toggle secondary" type="button" onclick="toggleTheme()">🌗</button>
+<body class="dark">
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge">🐍</div>
+        <div class="brand-copy">
+          <h1>Rattle Link</h1>
+          <p>Short links, landing pages, analytics</p>
+        </div>
+      </div>
 
-  <div class="wrapper">
-    <div class="left">
-      <h1>🐍 Rattle Link</h1>
-      <p>Shorten links, track performance, and manage your traffic from one place.</p>
-
-      <div class="features">
-        <span>⚡ Fast</span>
-        <span>📊 Analytics</span>
-        <span>🔐 Secure</span>
-        <span>🌍 Geo Stats</span>
-        <span>✨ Magic Login</span>
+      <div class="topbar-actions">
+        <a class="ghost-link" href="index.html">Home</a>
+        <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 Theme</button>
       </div>
     </div>
 
-    <div class="card" id="card">
-      <div class="auth-header">
-        <h2 id="title">Login</h2>
-        <p class="sub" id="subText">Welcome back 👋</p>
-      </div>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-top">
+          <div class="eyebrow">⚡ Built for fast link operations</div>
 
-      <div class="tabs">
-        <button class="tab active" id="loginTab" type="button" onclick="setMode('login')">Login</button>
-        <button class="tab" id="signupTab" type="button" onclick="setMode('signup')">Sign Up</button>
-        <button class="tab" id="magicTab" type="button" onclick="setMode('magic')">Magic Link</button>
-      </div>
+          <h2>Login to manage every click with clarity.</h2>
 
-      <div class="input-group">
-        <input id="username" placeholder=" " autocomplete="username email" />
-        <label>Email</label>
-      </div>
+          <p class="lead">
+            Create branded short links, monitor performance, verify domains, and manage landing pages from one secure workspace.
+          </p>
 
-      <div id="passwordArea">
-        <div class="input-group password-box">
-          <input id="password" type="password" placeholder=" " autocomplete="current-password" oninput="checkStrength()" />
-          <label>Password</label>
-          <span class="toggle" onclick="togglePass('password')">👁</span>
-        </div>
+          <div class="hero-points">
+            <div class="hero-point">
+              <div class="hero-point-icon">🔗</div>
+              <div>
+                <strong>Shorten and brand links</strong>
+                <span>Create fast links with custom slugs, expiry control, and domain support.</span>
+              </div>
+            </div>
 
-        <div id="confirmWrap" class="hidden">
-          <div class="input-group password-box">
-            <input id="confirm" type="password" placeholder=" " autocomplete="new-password" />
-            <label>Confirm Password</label>
-            <span class="toggle" onclick="togglePass('confirm')">👁</span>
+            <div class="hero-point">
+              <div class="hero-point-icon">📊</div>
+              <div>
+                <strong>Track traffic and activity</strong>
+                <span>See clicks, geo activity, suspicious traffic signals, and performance history.</span>
+              </div>
+            </div>
+
+            <div class="hero-point">
+              <div class="hero-point-icon">✨</div>
+              <div>
+                <strong>Use password or magic login</strong>
+                <span>Secure sign-in with email approval, verification flows, and flexible backend fallback.</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div id="strengthWrap" class="hidden">
-          <div class="strength-bar">
-            <div id="strengthFill"></div>
+        <div class="hero-bottom">
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <b>Fast</b>
+              <span>Shorten links and access your dashboard in seconds.</span>
+            </div>
+            <div class="mini-stat">
+              <b>Secure</b>
+              <span>Email verification, magic approval, and captcha protection built in.</span>
+            </div>
+            <div class="mini-stat">
+              <b>Flexible</b>
+              <span>Backend2 first, legacy fallback only when needed.</span>
+            </div>
           </div>
-          <div id="strength" class="strength-text"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="row" id="optionsRow">
-        <label>
-          <input type="checkbox" id="remember" />
-          Remember me
-        </label>
-        <span onclick="goForgot()" class="link">Forgot password?</span>
-      </div>
-
-      <div class="captcha-wrap" id="captchaWrap">
-        <div id="recaptchaBox"></div>
-      </div>
-
-      <button class="primary" id="mainBtn" type="button" onclick="handleMainAction()">
-        <span id="btnText">Login</span>
-        <span id="spinner" class="spinner"></span>
-      </button>
-
-      <button class="secondary" id="secondaryBtn" type="button" onclick="secondaryAction()">
-        🔑 Reset Password
-      </button>
-
-      <div id="approvalBox" class="status-card">
-        <h3>Login approval required</h3>
-        <p id="approvalText">
-          Check your email and approve this sign-in. This page will keep checking until approval is complete.
-        </p>
-        <div class="status-actions">
-          <button class="secondary" type="button" id="checkStatusBtn" onclick="checkMagicStatus(true)">Check Status</button>
-          <button class="secondary" type="button" onclick="openMagicPage()">Open Magic Page</button>
-          <button class="secondary" type="button" onclick="clearPendingMagic()">Clear Pending</button>
+      <section class="auth">
+        <div class="auth-head">
+          <h3 id="title">Welcome back</h3>
+          <p id="subText">Sign in to access your Rattle Link dashboard and keep your links under control.</p>
         </div>
-        <div id="statusTimer" class="timer"></div>
-        <div id="backendUsedNote" class="small-note"></div>
-      </div>
 
-      <div class="switch" id="switchBox">
-        <span id="switchText">Don't have an account?</span>
-        <span id="switchBtn" onclick="toggleLoginSignup()">Sign up</span>
-      </div>
+        <div class="mode-switch">
+          <button class="tab active" id="loginTab" type="button" onclick="setMode('login')">Login</button>
+          <button class="tab" id="signupTab" type="button" onclick="setMode('signup')">Create account</button>
+          <button class="tab" id="magicTab" type="button" onclick="setMode('magic')">Magic login</button>
+        </div>
 
-      <div id="error" class="error"></div>
+        <div class="form-card" id="card">
+          <div class="field-grid">
+            <div class="input-group">
+              <input id="username" placeholder="Email" autocomplete="username email" />
+              <label>Email address</label>
+            </div>
 
-      <div class="helper" id="helperText">
-        Use your email and password to access your dashboard.
-      </div>
+            <div id="passwordArea">
+              <div class="input-group password-box">
+                <input id="password" type="password" placeholder="Password" autocomplete="current-password" oninput="checkStrength()" />
+                <label>Password</label>
+                <span class="toggle" onclick="togglePass('password')">👁</span>
+              </div>
+
+              <div id="confirmWrap" class="hidden">
+                <div class="input-group password-box" style="margin-top:14px;">
+                  <input id="confirm" type="password" placeholder="Confirm password" autocomplete="new-password" />
+                  <label>Confirm password</label>
+                  <span class="toggle" onclick="togglePass('confirm')">👁</span>
+                </div>
+              </div>
+
+              <div id="strengthWrap" class="hidden strength-wrap">
+                <div class="strength-bar">
+                  <div id="strengthFill"></div>
+                </div>
+                <div id="strength" class="strength-text"></div>
+              </div>
+            </div>
+
+            <div class="row" id="optionsRow">
+              <label class="remember-wrap">
+                <input type="checkbox" id="remember" />
+                <span>Remember me</span>
+              </label>
+
+              <span onclick="goForgot()" class="text-link">Forgot password?</span>
+            </div>
+
+            <div class="captcha-panel" id="captchaWrap">
+              <div class="captcha-title">Security check</div>
+              <div class="captcha-wrap">
+                <div id="recaptchaBox"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="primary-btn" id="mainBtn" type="button" onclick="handleMainAction()">
+            <span id="btnText">Login</span>
+            <span id="spinner" class="spinner"></span>
+          </button>
+
+          <button class="secondary-btn" id="secondaryBtn" type="button" onclick="secondaryAction()">
+            Reset password
+          </button>
+
+          <div id="approvalBox" class="approval-box">
+            <h4>Approval required</h4>
+            <p id="approvalText">
+              Check your email and approve this sign-in. This page will keep checking until approval is complete.
+            </p>
+
+            <div class="approval-actions">
+              <button class="secondary-btn" type="button" id="checkStatusBtn" onclick="checkMagicStatus(true)">Check status</button>
+              <button class="secondary-btn" type="button" onclick="openMagicPage()">Open magic page</button>
+              <button class="secondary-btn" type="button" onclick="clearPendingMagic()">Clear pending</button>
+            </div>
+
+            <div id="statusTimer" class="timer"></div>
+            <div id="backendUsedNote" class="small-note"></div>
+          </div>
+
+          <div class="switch" id="switchBox">
+            <span id="switchText">Don’t have an account?</span>
+            <span id="switchBtn" class="text-link" onclick="toggleLoginSignup()">Create one</span>
+          </div>
+
+          <div id="error" class="error"></div>
+
+          <div class="helper" id="helperText">
+            Use your email and password to access your dashboard.
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <b>Note:</b> sign-in checks Backend2 first and only falls back to legacy AWS when needed.
+        </div>
+      </section>
     </div>
   </div>
 
@@ -618,16 +1018,17 @@
     }
 
     function toggleTheme() {
-      document.body.classList.toggle("light");
+      document.body.classList.toggle("dark");
       localStorage.setItem(
         "theme",
-        document.body.classList.contains("light") ? "light" : "dark"
+        document.body.classList.contains("dark") ? "dark" : "light"
       );
     }
 
     function loadTheme() {
       const theme = localStorage.getItem("theme");
-      if (theme === "light") document.body.classList.add("light");
+      if (theme === "light") document.body.classList.remove("dark");
+      else document.body.classList.add("dark");
     }
 
     function showError(msg = "", type = "error") {
@@ -659,7 +1060,7 @@
         button.textContent = "Checking...";
       } else {
         button.disabled = false;
-        button.textContent = button.dataset.originalText || "Check Status";
+        button.textContent = button.dataset.originalText || "Check status";
       }
     }
 
@@ -736,28 +1137,28 @@
       switchBox.style.display = mode === "magic" ? "none" : "block";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
       passwordArea.style.display = mode === "magic" ? "none" : "block";
-      captchaWrap.style.display = shouldUseCaptcha() ? "flex" : "none";
+      captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
 
       if (mode === "login") {
-        title.textContent = "Login";
-        subText.textContent = "Welcome back 👋";
+        title.textContent = "Welcome back";
+        subText.textContent = "Sign in to access your dashboard and continue managing your links.";
         btnText.textContent = "Login";
-        switchText.textContent = "Don't have an account?";
-        switchBtn.textContent = "Sign up";
+        switchText.textContent = "Don’t have an account?";
+        switchBtn.textContent = "Create one";
         helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS only when needed.";
-        secondaryBtn.textContent = "🔑 Reset Password";
+        secondaryBtn.textContent = "Reset password";
       } else if (mode === "signup") {
-        title.textContent = "Create Account";
-        subText.textContent = "Start using Rattle Link 🚀";
-        btnText.textContent = "Create Account";
+        title.textContent = "Create your account";
+        subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
+        btnText.textContent = "Create account";
         switchText.textContent = "Already have an account?";
         switchBtn.textContent = "Login";
         helperText.textContent = "New signups go to Backend 2 only.";
-        secondaryBtn.textContent = "📩 Resend Verify";
+        secondaryBtn.textContent = "Resend verification";
       } else {
-        title.textContent = "Magic Link Login";
-        subText.textContent = "Passwordless access ✨";
-        btnText.textContent = "Send Magic Login";
+        title.textContent = "Passwordless magic login";
+        subText.textContent = "Request a login approval email and finish signing in without entering your password.";
+        btnText.textContent = "Send magic login";
         helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
       }
 
@@ -1122,7 +1523,7 @@
       const tick = () => {
         const left = pendingMagicExpiresAt - Date.now();
         if (left <= 0) {
-          statusTimer.textContent = "⛔ Approval request expired";
+          statusTimer.textContent = "Approval request expired";
           stopMagicTimer();
           stopMagicPolling();
           return;
@@ -1130,7 +1531,7 @@
 
         const m = Math.floor(left / 60000);
         const s = Math.floor((left % 60000) / 1000);
-        statusTimer.textContent = `⏱ Expires in ${m}:${String(s).padStart(2, "0")}`;
+        statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
       };
 
       tick();
@@ -1158,12 +1559,12 @@
 
         if (!result.ok || !data.token) {
           if (data.status === "pending") {
-            showError("Approval is still pending ⏳", "warn");
+            showError("Approval is still pending.", "warn");
             return;
           }
 
           if (data.requiresEmailVerification) {
-            showError("Verify your email first before login ✅", "warn");
+            showError("Verify your email first before login.", "warn");
             setTimeout(() => {
               const next = new URLSearchParams({
                 email: username.value.trim().toLowerCase(),
@@ -1174,7 +1575,7 @@
             return;
           }
 
-          showError(data.message || "Could not complete login ❌");
+          showError(data.message || "Could not complete login.");
           return;
         }
 
@@ -1188,21 +1589,21 @@
         }
 
         clearPendingMagic();
-        showError(`Login successful via ${backendLabel(result.backend)} ✅`, "success");
+        showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
 
         setTimeout(() => {
           window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
         }, 500);
       } catch (e) {
         console.error("MAGIC FINISH ERROR:", e);
-        showError("Could not complete login ❌");
+        showError("Could not complete login.");
       }
     }
 
     async function checkMagicStatus(showFeedback = true) {
       const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
       if (!requestId) {
-        if (showFeedback) showError("No pending approval request found ❌");
+        if (showFeedback) showError("No pending approval request found.");
         return;
       }
 
@@ -1229,7 +1630,7 @@
         backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
 
         if (!result.ok) {
-          if (showFeedback) showError(data.message || "Could not check status ❌");
+          if (showFeedback) showError(data.message || "Could not check status.");
           return;
         }
 
@@ -1240,24 +1641,24 @@
 
         if (data.status === "approved") {
           approvalText.textContent = "Login approved. Finishing sign-in now.";
-          showError(`Login approved on ${backendLabel(pendingMagicBackend)} ✅`, "success");
+          showError(`Login approved on ${backendLabel(pendingMagicBackend)}.`, "success");
           stopMagicPolling();
           await finishMagicLogin(requestId);
           return;
         }
 
         if (data.status === "expired") {
-          showError("Approval request expired. Start again ⛔", "warn");
+          showError("Approval request expired. Start again.", "warn");
           clearPendingMagic();
           return;
         }
 
         if (showFeedback) {
-          showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)} ⏳`, "warn");
+          showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)}.`, "warn");
         }
       } catch (e) {
         console.error("STATUS ERROR:", e);
-        if (showFeedback) showError("Status check failed ❌");
+        if (showFeedback) showError("Status check failed.");
       } finally {
         if (showFeedback) setMiniLoading(checkStatusBtn, false);
       }
@@ -1285,19 +1686,19 @@
       const captchaToken = getCaptchaToken();
 
       if (!user) {
-        showError("Enter email ❌");
+        showError("Enter email.");
         setLoading(false);
         return;
       }
 
       if (!pass) {
-        showError("Enter password ❌");
+        showError("Enter password.");
         setLoading(false);
         return;
       }
 
       if (shouldUseCaptcha() && !captchaToken) {
-        showError("Complete CAPTCHA ❌");
+        showError("Complete CAPTCHA.");
         setLoading(false);
         return;
       }
@@ -1318,7 +1719,7 @@
         if (!result.ok) {
           if (data.requiresEmailVerification) {
             setChosenBackend(result.backend || "primary");
-            showError("Check your email and verify your account first ✅", "warn");
+            showError("Check your email and verify your account first.", "warn");
             setTimeout(() => {
               const next = new URLSearchParams({
                 email: user,
@@ -1327,7 +1728,7 @@
               window.location.href = "verify-email.html?" + next.toString();
             }, 1200);
           } else {
-            showError(data.message || "Invalid login ❌");
+            showError(data.message || "Invalid login.");
           }
 
           resetCaptcha();
@@ -1337,14 +1738,14 @@
 
         if (data.requiresApproval && data.requestId) {
           savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
-          showError(`Approval email sent from ${backendLabel(result.backend)} ✅`, "warn");
+          showError(`Approval email sent from ${backendLabel(result.backend)}.`, "warn");
           resetCaptcha();
           setLoading(false);
           return;
         }
 
         if (!data.token) {
-          showError(data.message || "Login failed ❌");
+          showError(data.message || "Login failed.");
           resetCaptcha();
           setLoading(false);
           return;
@@ -1361,14 +1762,14 @@
           localStorage.removeItem("rememberUser");
         }
 
-        showError(`Login successful via ${backendLabel(result.backend)} ✅`, "success");
+        showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
 
         setTimeout(() => {
           window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
         }, 500);
       } catch (e) {
         console.error("LOGIN ERROR:", e);
-        showError("Server error ❌");
+        showError("Server error.");
       }
 
       resetCaptcha();
@@ -1385,31 +1786,31 @@
       const captchaToken = getCaptchaToken();
 
       if (!user) {
-        showError("Enter email ❌");
+        showError("Enter email.");
         setLoading(false);
         return;
       }
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
-        showError("Enter a valid email ❌");
+        showError("Enter a valid email.");
         setLoading(false);
         return;
       }
 
       if (pass.length < 6) {
-        showError("Password must be at least 6 characters ❌");
+        showError("Password must be at least 6 characters.");
         setLoading(false);
         return;
       }
 
       if (pass !== confirm) {
-        showError("Passwords do not match ❌");
+        showError("Passwords do not match.");
         setLoading(false);
         return;
       }
 
       if (shouldUseCaptcha() && !captchaToken) {
-        showError("Complete CAPTCHA ❌");
+        showError("Complete CAPTCHA.");
         setLoading(false);
         return;
       }
@@ -1435,7 +1836,7 @@
         const data = result.data || {};
 
         if (!result.ok) {
-          showError(data.message || "Signup failed ❌");
+          showError(data.message || "Signup failed.");
           resetCaptcha();
           setLoading(false);
           return;
@@ -1443,7 +1844,7 @@
 
         setChosenBackend("primary");
         showError(
-          data.message || "Account created ✅ Verify your email before first login.",
+          data.message || "Account created. Verify your email before first login.",
           "success"
         );
 
@@ -1460,7 +1861,7 @@
         }, 1200);
       } catch (e) {
         console.error("SIGNUP ERROR:", e);
-        showError("Signup failed ❌");
+        showError("Signup failed.");
       }
 
       resetCaptcha();
@@ -1474,7 +1875,7 @@
       const user = username.value.trim().toLowerCase();
 
       if (!user) {
-        showError("Enter email ❌");
+        showError("Enter email.");
         setLoading(false);
         return;
       }
@@ -1498,7 +1899,7 @@
         if (!result.ok) {
           if (data.requiresEmailVerification) {
             setChosenBackend(result.backend || "primary");
-            showError("Verify your email first before magic login ✅", "warn");
+            showError("Verify your email first before magic login.", "warn");
             setTimeout(() => {
               const next = new URLSearchParams({
                 email: user,
@@ -1507,7 +1908,7 @@
               window.location.href = "verify-email.html?" + next.toString();
             }, 1200);
           } else {
-            showError(data.message || "Failed to send magic login ❌");
+            showError(data.message || "Failed to send magic login.");
           }
           setLoading(false);
           return;
@@ -1517,10 +1918,10 @@
           savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
         }
 
-        showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)} ✅`, "success");
+        showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)}.`, "success");
       } catch (e) {
         console.error("MAGIC LINK ERROR:", e);
-        showError("Failed to send magic login ❌");
+        showError("Failed to send magic login.");
       }
 
       setLoading(false);
@@ -1530,26 +1931,26 @@
       const user = username.value.trim().toLowerCase();
 
       if (!user) {
-        showError("Enter your email first ❌");
+        showError("Enter your email first.");
         return;
       }
 
-      showError("Sending verification email... ⏳", "warn");
+      showError("Sending verification email...", "warn");
 
       try {
         const result = await resendVerifyHybrid(user);
         const data = result.data || {};
 
         if (!result.ok) {
-          showError(data.message || "Could not resend verification ❌");
+          showError(data.message || "Could not resend verification.");
           return;
         }
 
         if (result.backend) setChosenBackend(result.backend);
-        showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)} ✅`, "success");
+        showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)}.`, "success");
       } catch (e) {
         console.error("RESEND VERIFY ERROR:", e);
-        showError("Could not resend verification ❌");
+        showError("Could not resend verification.");
       }
     }
 
@@ -1602,7 +2003,7 @@
           backend || localStorage.getItem("magicBackend") || "primary",
           email || localStorage.getItem("magicEmail") || ""
         );
-        showError("Resuming pending login approval ⏳", "warn");
+        showError("Resuming pending login approval.", "warn");
       }
     }
 
