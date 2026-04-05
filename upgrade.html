@@ -10,6 +10,7 @@
       --bg:#020617;
       --bg2:#000;
       --card:rgba(2,6,23,.86);
+      --card-soft:rgba(15,23,42,.55);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -69,6 +70,7 @@
       color:var(--muted);
       font-size:12px;
       margin-top:6px;
+      line-height:1.6;
     }
 
     .actions{
@@ -101,6 +103,7 @@
     .muted{
       color:var(--muted);
       font-size:12px;
+      line-height:1.6;
     }
 
     .badge{
@@ -124,6 +127,7 @@
     .status-pending{ color:var(--yellow); background:#2b1a00; }
     .status-awaiting{ color:#60a5fa; background:#172554; }
     .status-verified{ color:var(--green); background:#052e16; }
+    .status-cancelled{ color:var(--red); background:#2b0000; }
 
     button, a.btn{
       background:#020617;
@@ -235,6 +239,14 @@
       margin:8px 0;
     }
 
+    .plan ul{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
     .crypto-grid{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
@@ -329,6 +341,14 @@
       font-size:13px;
     }
 
+    tbody tr[data-id]{
+      cursor:pointer;
+    }
+
+    tbody tr[data-id]:hover{
+      background:rgba(15,23,42,.55);
+    }
+
     .table-wrap{
       overflow:auto;
       width:100%;
@@ -373,6 +393,22 @@
       border:1px solid rgba(59,130,246,.35);
     }
 
+    .confirm-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.35);
+    }
+
+    .expired-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(239,68,68,.12);
+      border:1px solid rgba(239,68,68,.35);
+    }
+
     .spinner{
       width:18px;
       height:18px;
@@ -387,14 +423,6 @@
 
     @keyframes spin{
       to{ transform:rotate(360deg); }
-    }
-
-    .confirm-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(34,197,94,.12);
-      border:1px solid rgba(34,197,94,.35);
     }
 
     @media (max-width: 980px){
@@ -412,7 +440,7 @@
     <div class="topbar">
       <div>
         <h1>💎 Upgrade & Payments</h1>
-        <div class="sub">Start with 3 free trial links, then upgrade with crypto for unlimited access.</div>
+        <div class="sub">Start with 3 free trial links, then upgrade with crypto for more access and higher limits.</div>
       </div>
 
       <div class="actions">
@@ -449,6 +477,9 @@
           <div class="summary" style="margin-top:14px;">
             <div><b>Subscription Expires:</b> <span id="meExpires">-</span></div>
             <div style="margin-top:8px;"><b>Can Generate Links:</b> <span id="meCanGenerate">-</span></div>
+            <div style="margin-top:8px;"><b>Email Verified:</b> <span id="meEmailVerified">-</span></div>
+            <div style="margin-top:8px;"><b>Usage:</b> <span id="meUsage">-</span></div>
+            <div style="margin-top:8px;"><b>Primary Domain:</b> <span id="mePrimaryDomain">-</span></div>
           </div>
         </div>
 
@@ -499,6 +530,8 @@
                   <div style="margin-top:8px;"><b>Asset:</b> <span id="paymentAsset">-</span></div>
                   <div style="margin-top:8px;"><b>Network:</b> <span id="paymentNetwork">-</span></div>
                   <div style="margin-top:8px;"><b>Status:</b> <span id="paymentStatus">-</span></div>
+                  <div style="margin-top:8px;"><b>Created:</b> <span id="paymentCreated">-</span></div>
+                  <div style="margin-top:8px;"><b>Expires:</b> <span id="paymentExpires">-</span></div>
                 </div>
 
                 <div class="copy-row">
@@ -533,6 +566,13 @@
                     Your subscription is active. Redirecting back to dashboard...
                   </div>
                 </div>
+
+                <div id="expiredBox" class="expired-box hidden">
+                  <div><b>⛔ Payment request expired or cancelled</b></div>
+                  <div class="muted" style="margin-top:8px;">
+                    Create a new payment request to continue.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -561,7 +601,7 @@
   </div>
 
   <script>
-    const API = "https://rattleshortapi.it.com";
+    const API = "https://api.rattleshortapi.it.com";
 
     const meUser = document.getElementById("meUser");
     const meStatusWrap = document.getElementById("meStatusWrap");
@@ -569,6 +609,9 @@
     const mePlan = document.getElementById("mePlan");
     const meExpires = document.getElementById("meExpires");
     const meCanGenerate = document.getElementById("meCanGenerate");
+    const meEmailVerified = document.getElementById("meEmailVerified");
+    const meUsage = document.getElementById("meUsage");
+    const mePrimaryDomain = document.getElementById("mePrimaryDomain");
 
     const plansBox = document.getElementById("plansBox");
     const cryptoBox = document.getElementById("cryptoBox");
@@ -589,11 +632,14 @@
     const paymentAddress = document.getElementById("paymentAddress");
     const paymentQrText = document.getElementById("paymentQrText");
     const paymentTimer = document.getElementById("paymentTimer");
+    const paymentCreated = document.getElementById("paymentCreated");
+    const paymentExpires = document.getElementById("paymentExpires");
     const paymentsTable = document.getElementById("paymentsTable");
 
     const iTransferredBtn = document.getElementById("iTransferredBtn");
     const waitingBox = document.getElementById("waitingBox");
     const confirmedBox = document.getElementById("confirmedBox");
+    const expiredBox = document.getElementById("expiredBox");
     const pollStatusText = document.getElementById("pollStatusText");
 
     let plansData = [];
@@ -606,12 +652,12 @@
     let paymentPoller = null;
     let redirectTimer = null;
 
-    function authHeaders(){
+    function authHeaders(includeJson = true){
       const token = localStorage.getItem("token") || "";
-      return {
-        "Content-Type": "application/json",
-        "Authorization": token
-      };
+      const headers = {};
+      if (includeJson) headers["Content-Type"] = "application/json";
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
     }
 
     function ensureAuth(){
@@ -627,7 +673,7 @@
       try{
         const res = await fetch(url, {
           method,
-          headers: authHeaders(),
+          headers: authHeaders(method !== "GET"),
           body: body ? JSON.stringify(body) : null
         });
 
@@ -662,7 +708,9 @@
     function logout(){
       stopPaymentCountdown();
       stopPaymentPolling();
-      localStorage.clear();
+      localStorage.removeItem("waitingPaymentId");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
       window.location.href = "index.html";
     }
 
@@ -685,6 +733,7 @@
       if(s === "verified") return `<span class="badge status-verified">VERIFIED</span>`;
       if(s === "awaiting_confirmation") return `<span class="badge status-awaiting">AWAITING CONFIRMATION</span>`;
       if(s === "pending") return `<span class="badge status-pending">PENDING</span>`;
+      if(s === "cancelled") return `<span class="badge status-cancelled">CANCELLED</span>`;
       return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
     }
 
@@ -699,16 +748,45 @@
       meCanGenerate.innerHTML = meData.canGenerateLinks
         ? `<span class="success">Yes ✅</span>`
         : `<span class="error">No ❌</span>`;
+      meEmailVerified.innerHTML = meData.emailVerified
+        ? `<span class="success">Verified ✅</span>`
+        : `<span class="warn">Not verified</span>`;
+      mePrimaryDomain.textContent = meData.primaryDomain || "-";
+
+      const usage = meData.planUsage;
+      if (usage) {
+        meUsage.textContent =
+          `${Number(usage.linksUsed || 0)}/${Number(usage.linksLimit || 0)} links • ` +
+          `${Number(usage.landingUsed || 0)}/${Number(usage.landingLimit || 0)} landings`;
+      } else {
+        meUsage.textContent = `${Number(meData.trialLinksUsed || 0)}/${Number(meData.trialLinksLimit || 0)} trial links used`;
+      }
     }
 
     function renderPlans(){
-      plansBox.innerHTML = plansData.map(plan => `
-        <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
-          <div class="muted">${plan.label}</div>
-          <div class="price">$${plan.amountUsd}</div>
-          <div class="muted">Billing cycle: ${plan.code}</div>
-        </div>
-      `).join("");
+      plansBox.innerHTML = plansData.map(plan => {
+        const limits = plan.features || {};
+        const linksText =
+          limits.linksPerWeek ? `${limits.linksPerWeek} links / week` :
+          limits.linksPerMonth ? `${limits.linksPerMonth} links / month` :
+          "Links included";
+        const landingsText =
+          limits.customLandingPagesPerWeek ? `${limits.customLandingPagesPerWeek} landing pages / week` :
+          limits.customLandingPagesPerMonth ? `${limits.customLandingPagesPerMonth} landing pages / month` :
+          "Landing pages included";
+
+        return `
+          <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
+            <div class="muted">${plan.label}</div>
+            <div class="price">$${plan.amountUsd}</div>
+            <div class="muted">Billing cycle: ${plan.code}</div>
+            <ul>
+              <li>${linksText}</li>
+              <li>${landingsText}</li>
+            </ul>
+          </div>
+        `;
+      }).join("");
 
       plansBox.querySelectorAll(".plan").forEach(el => {
         el.onclick = () => {
@@ -767,6 +845,7 @@
     function resetWaitingState(){
       waitingBox.classList.add("hidden");
       confirmedBox.classList.add("hidden");
+      expiredBox.classList.add("hidden");
       iTransferredBtn.disabled = false;
       iTransferredBtn.textContent = "I Made a Transfer";
     }
@@ -779,6 +858,8 @@
         if(left <= 0){
           paymentTimer.textContent = "⛔ Payment request expired";
           stopPaymentCountdown();
+          expiredBox.classList.remove("hidden");
+          waitingBox.classList.add("hidden");
           return;
         }
         const h = Math.floor(left / 3600000);
@@ -794,34 +875,61 @@
     function setWaitingMode(enabled){
       waitingBox.classList.toggle("hidden", !enabled);
       confirmedBox.classList.add("hidden");
+      expiredBox.classList.add("hidden");
       iTransferredBtn.disabled = enabled;
       iTransferredBtn.textContent = enabled ? "Waiting for Confirmation..." : "I Made a Transfer";
     }
 
     function setConfirmedMode(){
       waitingBox.classList.add("hidden");
+      expiredBox.classList.add("hidden");
       confirmedBox.classList.remove("hidden");
       iTransferredBtn.disabled = true;
       iTransferredBtn.textContent = "Payment Confirmed";
     }
 
-    function openPayment(payment){
+    function setExpiredMode(){
+      waitingBox.classList.add("hidden");
+      confirmedBox.classList.add("hidden");
+      expiredBox.classList.remove("hidden");
+      iTransferredBtn.disabled = true;
+      iTransferredBtn.textContent = "Unavailable";
+    }
+
+    function normalizePayment(payment){
+      return {
+        ...payment,
+        billingCycle: payment.billingCycle || payment.billing_cycle || "-",
+        amountUsd: Number(payment.amountUsd || payment.amount_usd || 0),
+        cryptoCode: payment.cryptoCode || payment.crypto_code || "-",
+        networkCode: payment.networkCode || payment.network_code || "-",
+        createdAt: Number(payment.createdAt || payment.created_at || 0),
+        expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
+        verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null
+      };
+    }
+
+    function openPayment(rawPayment){
+      const payment = normalizePayment(rawPayment);
       latestPayment = payment;
+
       emptyPaymentState.classList.add("hidden");
       paymentState.classList.remove("hidden");
 
       paymentQr.src = payment.qrImageUrl || "";
       paymentId.textContent = payment.id || "-";
-      paymentPlan.textContent = payment.billingCycle || payment.billing_cycle || "-";
-      paymentAmount.textContent = `$${Number(payment.amountUsd || payment.amount_usd || 0)}`;
-      paymentAsset.textContent = payment.cryptoCode || payment.crypto_code || "-";
-      paymentNetwork.textContent = payment.networkCode || payment.network_code || "-";
+      paymentPlan.textContent = payment.billingCycle || "-";
+      paymentAmount.textContent = `$${payment.amountUsd}`;
+      paymentAsset.textContent = payment.cryptoCode || "-";
+      paymentNetwork.textContent = payment.networkCode || "-";
       paymentStatus.innerHTML = paymentStatusBadge(payment.status);
       paymentAddress.textContent = payment.address || "-";
       paymentQrText.textContent = payment.qrText || payment.qr_text || "-";
+      paymentCreated.textContent = formatDate(payment.createdAt);
+      paymentExpires.textContent = formatDate(payment.expiresAt);
 
-      if(payment.expiresAt || payment.expires_at){
-        startPaymentCountdown(payment.expiresAt || payment.expires_at);
+      if(payment.expiresAt){
+        startPaymentCountdown(payment.expiresAt);
       } else {
         paymentTimer.textContent = "";
       }
@@ -831,6 +939,11 @@
 
       if(paymentStatusValue === "verified"){
         setConfirmedMode();
+        return;
+      }
+
+      if(paymentStatusValue === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())){
+        setExpiredMode();
         return;
       }
 
@@ -862,16 +975,15 @@
       paymentsTable.innerHTML = list.map(p => `
         <tr data-id="${p.id}">
           <td>${p.id}</td>
-          <td>${p.billingCycle || p.billing_cycle || "-"}</td>
-          <td>$${Number(p.amountUsd || p.amount_usd || 0)}</td>
-          <td>${p.cryptoCode || p.crypto_code || "-"} / ${p.networkCode || p.network_code || "-"}</td>
+          <td>${p.billingCycle || "-"}</td>
+          <td>$${Number(p.amountUsd || 0)}</td>
+          <td>${p.cryptoCode || "-"} / ${p.networkCode || "-"}</td>
           <td>${paymentStatusBadge(p.status)}</td>
-          <td>${formatDate(p.createdAt || p.created_at)}</td>
+          <td>${formatDate(p.createdAt)}</td>
         </tr>
       `).join("");
 
       paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
-        row.style.cursor = "pointer";
         row.onclick = () => {
           const item = window.__payments.find(x => x.id === row.dataset.id);
           if(item) openPayment(item);
@@ -908,7 +1020,7 @@
     }
 
     function prioritizePayments(payments){
-      return [...payments].sort((a, b) => {
+      return [...payments].map(normalizePayment).sort((a, b) => {
         const sa = String(a.status || "").toLowerCase();
         const sb = String(b.status || "").toLowerCase();
 
@@ -916,13 +1028,14 @@
           if (s === "awaiting_confirmation") return 0;
           if (s === "pending") return 1;
           if (s === "verified") return 2;
-          return 3;
+          if (s === "cancelled") return 3;
+          return 4;
         };
 
         const diff = rank(sa) - rank(sb);
         if(diff !== 0) return diff;
 
-        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
       });
     }
 
@@ -930,7 +1043,7 @@
       const res = await safeFetch(`${API}/payments/me`);
       if(!res.ok){
         showMsg(res.data?.message || "Failed to load payments", "error");
-        return;
+        return null;
       }
 
       const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : [];
@@ -967,6 +1080,7 @@
       latestPayment = null;
       emptyPaymentState.classList.remove("hidden");
       paymentState.classList.add("hidden");
+      resetWaitingState();
       return null;
     }
 
@@ -1014,13 +1128,14 @@
     }
 
     async function loadLatestPending(){
-      await loadPayments(true);
-      showMsg("Latest pending payment loaded", "success");
+      const payment = await loadPayments(true);
+      if(payment) showMsg("Latest pending payment loaded", "success");
+      else showMsg("No pending payment found", "warn");
     }
 
     async function copyText(text, okMessage){
       try{
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(String(text || ""));
         showMsg(okMessage, "success");
       }catch{
         showMsg("Copy failed", "error");
@@ -1066,6 +1181,14 @@
           return;
         }
 
+        if(status === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())){
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          setExpiredMode();
+          showMsg("Payment expired or cancelled. Create a new one.", "error");
+          return;
+        }
+
         if(status === "awaiting_confirmation"){
           pollStatusText.textContent = `Payment submitted. Waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
           return;
@@ -1088,6 +1211,12 @@
       if(currentStatus === "verified"){
         showMsg("This payment is already verified", "success");
         setConfirmedMode();
+        return;
+      }
+
+      if(currentStatus === "cancelled" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())){
+        showMsg("This payment is expired or cancelled. Create a new one.", "error");
+        setExpiredMode();
         return;
       }
 
@@ -1155,10 +1284,17 @@
           if(existing){
             openPayment(existing);
             pollPaymentUntilVerified(waitingPaymentId);
+          } else {
+            localStorage.removeItem("waitingPaymentId");
           }
         }
       }
     })();
+
+    window.addEventListener("beforeunload", () => {
+      stopPaymentCountdown();
+      stopPaymentPolling();
+    });
   </script>
 </body>
 </html>
