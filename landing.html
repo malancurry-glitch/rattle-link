@@ -687,6 +687,9 @@
                 <select id="landingDomain">
                   <option value="">Default domain</option>
                 </select>
+                <button id="setPrimaryDomainBtn" type="button" class="success-btn" style="margin-top:8px;width:100%;">
+                 Set as Primary
+                 </button>
               </div>
               <div class="field">
                 <label for="landingTheme">Theme color</label>
@@ -1305,6 +1308,27 @@
 
       return buttons.concat(getDynamicButtons());
     }
+    async function setPrimaryDomain() {
+  const domain = normalizeDomain(landingDomain.value);
+
+  if (!domain) {
+    showToast("Select a domain first");
+    return;
+  }
+
+  const res = await authorizedFetch("/domains/set-primary", {
+    method: "POST",
+    body: JSON.stringify({ domain })
+  });
+
+  if (!res.ok) {
+    showToast(res.data?.message || "Failed to set primary");
+    return;
+  }
+
+  showToast("Primary domain updated");
+  await loadDomains(); // refresh dropdown + badge
+}
 
     function collectDraft() {
       return {
@@ -2166,6 +2190,8 @@ ${customCss}
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => setTab(btn.dataset.tab));
       });
+      document.getElementById("setPrimaryDomainBtn")
+      .addEventListener("click", setPrimaryDomain);
 
       document.querySelectorAll(".template-card").forEach(card => {
         card.addEventListener("click", () => applyTemplate(card.dataset.template));
