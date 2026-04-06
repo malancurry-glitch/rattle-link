@@ -265,7 +265,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1420px;
+      min-width:1520px;
     }
 
     th,td{
@@ -335,7 +335,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:640px;
+      width:700px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -527,7 +527,7 @@
     <button class="nav-btn active" id="navOverview"><span>📊 Overview</span><span class="tiny">Home</span></button>
     <button class="nav-btn" id="navUsers"><span>👥 Users</span><span class="tiny" id="navUsersCount">0</span></button>
     <button class="nav-btn" id="navPayments"><span>💳 Payments</span><span class="tiny" id="navPaymentsCount">0</span></button>
-    <button class="nav-btn" id="navLinks"><span>🔗 Links</span><span class="tiny" id="navLinksCount">0</span></button>
+    <button class="nav-btn" id="navLinks"><span>🔗 Items</span><span class="tiny" id="navLinksCount">0</span></button>
     <button class="nav-btn" id="navDomains"><span>🌐 Domains</span><span class="tiny" id="navDomainsCount">0</span></button>
     <button class="nav-btn" id="navLanding"><span>🪄 Landing Pages</span><span class="tiny" id="navLandingCount">0</span></button>
     <button class="nav-btn" id="navAudit"><span>📜 Audit</span><span class="tiny">Logs</span></button>
@@ -546,7 +546,7 @@
       <button id="openBroadcastBtn">📣 Broadcast</button>
       <button id="openSettingsBtn">⚙️ Settings</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
-      <button id="exportLinksBtn">⬇️ Export Links</button>
+      <button id="exportLinksBtn">⬇️ Export Items</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
       <button id="exportDomainsBtn">⬇️ Export Domains</button>
       <button id="exportLandingBtn">⬇️ Export Landing</button>
@@ -568,7 +568,7 @@
     <div class="header">
       <div>
         <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, custom domains, landing pages, subscriptions, payment verification, and risk review.</div>
+        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, custom domains, landing pages, slot-based subscriptions, payment verification, and risk review.</div>
       </div>
 
       <div class="header-actions">
@@ -588,9 +588,9 @@
         </div>
 
         <div class="card stat">
-          <div class="label">Total Links</div>
+          <div class="label">Total Items</div>
           <div class="value" id="statLinks">0</div>
-          <div class="delta" id="statLinksMeta">Short links created</div>
+          <div class="delta" id="statLinksMeta">Short links + landing pages</div>
         </div>
 
         <div class="card stat">
@@ -739,7 +739,7 @@
         </div>
 
         <div class="section-note">
-          Users from both backends are merged. Source backend is shown so admin actions always hit the correct server.
+          Users from both backends are merged. Source backend is shown so admin actions always hit the correct server. Backend2 users should expose plan limits, active slot usage, and remaining slots.
         </div>
 
         <div class="table-wrap">
@@ -749,7 +749,8 @@
                 <th>User</th>
                 <th>Status</th>
                 <th>Role</th>
-                <th>Trial</th>
+                <th>Short Links</th>
+                <th>Landing Pages</th>
                 <th>Subscription</th>
                 <th>Source</th>
                 <th>Requests</th>
@@ -777,13 +778,13 @@
             <option value="">All plans</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
+            <option value="premium_monthly">Premium Monthly</option>
           </select>
           <button id="bulkVerifyAwaitingBtn" class="btn-action">Verify Visible Awaiting</button>
         </div>
 
         <div class="highlight-box">
-          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>.
+          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>. Backend2 payment rows also support quantity-based purchases.
         </div>
 
         <div class="table-wrap">
@@ -793,6 +794,7 @@
                 <th>Payment ID</th>
                 <th>User</th>
                 <th>Plan</th>
+                <th>Quantity</th>
                 <th>Amount</th>
                 <th>Crypto</th>
                 <th>Status</th>
@@ -812,9 +814,14 @@
         <div class="toolbar">
           <input id="linkSearch" placeholder="Search slug, url, user, domain..." />
           <select id="linkFilterStatus">
-            <option value="">All link status</option>
+            <option value="">All item status</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>
+          </select>
+          <select id="linkTypeFilter">
+            <option value="">All types</option>
+            <option value="redirect">Short Links</option>
+            <option value="landing">Landing Pages</option>
           </select>
           <select id="linkSort">
             <option value="clicks_desc">Sort: Clicks high to low</option>
@@ -897,7 +904,7 @@
         </div>
 
         <div class="section-note">
-          Landing pages are link records with <b>linkType = landing</b>. You can preview, inspect, and remove them here.
+          Landing pages are link records with <b>linkType = landing</b>. You can preview, inspect, and remove them here. Backend2 landing deletes should use <b>/landing/delete</b>.
         </div>
 
         <div class="table-wrap">
@@ -934,7 +941,7 @@
     <section id="securitySection" class="hidden">
       <div class="card">
         <h3>🛡 Security Center</h3>
-        <div class="section-note">Review elevated traffic, unusually high click volume, and suspicious activity markers inferred from loaded records.</div>
+        <div class="section-note">Review elevated traffic, unusually high click volume, suspicious activity markers inferred from loaded records, and payments awaiting manual approval.</div>
         <div id="securityPanelContent" class="grid-2"></div>
       </div>
     </section>
@@ -1034,6 +1041,7 @@
     const userFilterStatus = $("userFilterStatus");
     const linkSearch = $("linkSearch");
     const linkFilterStatus = $("linkFilterStatus");
+    const linkTypeFilter = $("linkTypeFilter");
     const linkSort = $("linkSort");
     const paymentSearch = $("paymentSearch");
     const paymentStatusFilter = $("paymentStatusFilter");
@@ -1056,7 +1064,7 @@
       return headers;
     }
 
-    function setBackendBadge(text = "Merged View • Backend 2 + Legacy AWS") {
+    function setBackendBadge(text = "Merged View • Backend2 + Legacy AWS") {
       backendBadge.textContent = text;
     }
 
@@ -1218,7 +1226,7 @@
     }
 
     function getSourceBadge(source) {
-      return source === "legacy" ? `<span class="badge legacy-source">LEGACY AWS</span>` : `<span class="badge primary-source">BACKEND 2</span>`;
+      return source === "legacy" ? `<span class="badge legacy-source">LEGACY AWS</span>` : `<span class="badge primary-source">BACKEND2</span>`;
     }
 
     function defaultHostBySource(source) {
@@ -1239,15 +1247,54 @@
       return `<div>${new Date(n).toLocaleString()}</div><div class="muted">${Math.floor(left / 3600000)}h left</div>`;
     }
 
+    function normalizePlanLabel(plan) {
+      const code = String(plan || "").toLowerCase();
+      if (!code) return "-";
+      if (code === "premium_monthly") return "Premium Monthly";
+      if (code === "monthly") return "Monthly";
+      if (code === "weekly") return "Weekly";
+      if (code === "free_trial") return "Free Trial";
+      return code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase());
+    }
+
+    function formatActiveUsage(user, key) {
+      const usage = user.usage || {};
+      const limits = user.planLimits || {};
+      const remaining = user.remaining || {};
+      const used = Number(usage[key] || 0);
+      const limit = Number(limits[key] || 0);
+      const left = Number(remaining[key] || Math.max(0, limit - used) || 0);
+      return `${used}/${limit} used • ${left} left`;
+    }
+
     function formatTrial(user) {
+      if (user.source === "primary" && user.planLimits && user.usage) {
+        return formatActiveUsage(user, "activeShortLinks");
+      }
       const limit = Number(user.trialLinksLimit || user.trial_links_limit || 0);
       const used = Number(user.trialLinksUsed || user.trial_links_used || 0);
       const remain = Math.max(0, limit - used);
       return `${used}/${limit} used • ${remain} left`;
     }
 
+    function formatLandingUsage(user) {
+      if (user.source === "primary" && user.planLimits && user.usage) {
+        return formatActiveUsage(user, "activeLandingPages");
+      }
+      return "-";
+    }
+
     function normalizeUser(item, source) {
-      return { ...item, source, username: item.username || "", role: item.role || "user", banned: !!item.banned };
+      return {
+        ...item,
+        source,
+        username: item.username || "",
+        role: item.role || "user",
+        banned: !!item.banned,
+        planLimits: item.planLimits || item.plan_limits || null,
+        usage: item.usage || null,
+        remaining: item.remaining || null
+      };
     }
 
     function normalizeLink(item, source) {
@@ -1276,7 +1323,15 @@
     }
 
     function normalizePayment(item, source) {
-      return { ...item, source, id: item.id || "", username: item.username || "", amountUsd: Number(item.amountUsd || item.amount_usd || 0) };
+      return {
+        ...item,
+        source,
+        id: item.id || "",
+        username: item.username || "",
+        amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+        quantity: Number(item.quantity || 1),
+        planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || ""
+      };
     }
 
     function normalizeDomain(item) {
@@ -1409,10 +1464,10 @@
       statAdmins.textContent = admins;
 
       $("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
-      $("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
+      $("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active items`;
       $("statLandingMeta").textContent = `${totalLanding} landing pages found`;
       $("statDomainsMeta").textContent = `${domainsData.filter(d => String(d.status).toLowerCase() === "verified").length} verified domains`;
-      $("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
+      $("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per item`;
       $("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
       $("statAwaitingPaymentsMeta").textContent = `${awaitingPayments} submitted by users`;
       $("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
@@ -1439,9 +1494,9 @@
       const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
       const verified = paymentsData.filter(p => String(p.status || "").toLowerCase() === "verified");
       const cancelled = paymentsData.filter(p => String(p.status || "").toLowerCase() === "cancelled");
-      const weekly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
-      const monthly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
-      const yearly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "yearly").length;
+      const weekly = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
+      const monthly = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
+      const premium = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "premium_monthly").length;
       const verifiedRevenue = verified.reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
       const pendingValue = [...pending, ...awaiting].reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
 
@@ -1452,7 +1507,7 @@
         <div><b>Cancelled:</b> ${cancelled.length}</div>
         <div><b>Weekly:</b> ${weekly}</div>
         <div><b>Monthly:</b> ${monthly}</div>
-        <div><b>Yearly:</b> ${yearly}</div>
+        <div><b>Premium Monthly:</b> ${premium}</div>
         <div><b>Verified Revenue:</b> $${verifiedRevenue.toFixed(2)}</div>
         <div><b>Pending Value:</b> $${pendingValue.toFixed(2)}</div>
       `;
@@ -1465,7 +1520,7 @@
       riskStats.innerHTML = `
         <div><b>High Risk Links:</b> ${high}</div>
         <div><b>Medium Risk Links:</b> ${medium}</div>
-        <div><b>Paused Links:</b> ${paused}</div>
+        <div><b>Paused Items:</b> ${paused}</div>
         <div><b>Awaiting Payments:</b> ${paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').length}</div>
       `;
     }
@@ -1491,7 +1546,7 @@
           <span class="badge awaiting">AWAITING CONFIRMATION</span>
           ${getSourceBadge(p.source)}
           <div class="muted">Payment: ${escapeHtml(p.id || '-')}</div>
-          <div class="muted">Plan: ${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</div>
+          <div class="muted">Plan: ${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))} • Qty ${Number(p.quantity || 1)}</div>
         </div>
       `).join('') : `<div>No awaiting confirmations</div>`;
 
@@ -1518,7 +1573,7 @@
     function renderActivityStream() {
       const activity = [
         ...paymentsData.slice(0, 8).map(p => ({ time: Number(p.createdAt || p.created_at || 0), text: `Payment ${p.id} • ${p.username}` })),
-        ...linksData.slice(0, 8).map(l => ({ time: Number(l.createdAt || 0), text: `Link ${l.slug} • ${l.user}` })),
+        ...linksData.slice(0, 8).map(l => ({ time: Number(l.createdAt || 0), text: `Item ${l.slug} • ${l.user}` })),
         ...domainsData.slice(0, 8).map(d => ({ time: Number(d.createdAt || 0), text: `Domain ${d.domain} • ${d.username}` }))
       ].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 12);
 
@@ -1630,7 +1685,8 @@
           <td>${getUserStatusBadge(u)} ${(u.emailVerified || u.email_verified) ? `<span class="badge active">EMAIL OK</span>` : `<span class="badge pending">UNVERIFIED</span>`}</td>
           <td>${getRoleBadge(u.role || 'user')}</td>
           <td>${escapeHtml(formatTrial(u))}</td>
-          <td>${getSubscriptionBadge(u)}<div class="muted">Plan: ${escapeHtml(u.subscriptionPlan || u.subscription_plan || '-')}<br>Expires: ${fmtDate(u.subscriptionExpiresAt || u.subscription_expires_at)}</div></td>
+          <td>${escapeHtml(formatLandingUsage(u))}</td>
+          <td>${getSubscriptionBadge(u)}<div class="muted">Plan: ${escapeHtml(normalizePlanLabel(u.subscriptionPlan || u.subscription_plan || '-'))}<br>Expires: ${fmtDate(u.subscriptionExpiresAt || u.subscription_expires_at)}</div></td>
           <td>${getSourceBadge(u.source)}</td>
           <td>${Number(u.requests || 0)}</td>
           <td>
@@ -1645,7 +1701,7 @@
             </div>
           </td>
         </tr>
-      `).join('') : `<tr><td colspan="8" class="muted">No users found</td></tr>`;
+      `).join('') : `<tr><td colspan="9" class="muted">No users found</td></tr>`;
     }
 
     function getFilteredPayments() {
@@ -1657,7 +1713,7 @@
         const text = `${p.id || ''} ${p.username || ''} ${p.planCode || p.plan_code || ''} ${p.billingCycle || p.billing_cycle || ''} ${p.cryptoCode || p.crypto_code || ''}`.toLowerCase();
         const matchesQ = !q || text.includes(q);
         const matchesStatus = !status || String(p.status || '').toLowerCase() === status;
-        const matchesPlan = !plan || String(p.billingCycle || p.billing_cycle || '').toLowerCase() === plan;
+        const matchesPlan = !plan || String(p.planCode || p.billingCycle || p.billing_cycle || '').toLowerCase() === plan;
         const awaitingOnly = onlyAwaitingToggle?.checked ? String(p.status || '').toLowerCase() === 'awaiting_confirmation' : true;
         return matchesQ && matchesStatus && matchesPlan && awaitingOnly;
       });
@@ -1681,7 +1737,8 @@
           <tr class="${isAwaiting ? 'payment-awaiting-row' : isCancelled ? 'payment-cancelled-row' : ''}">
             <td><code>${escapeHtml(p.id)}</code></td>
             <td>${escapeHtml(p.username)}</td>
-            <td><span class="badge">${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</span><div class="muted">${escapeHtml(p.planCode || p.plan_code || '-')}</div></td>
+            <td><span class="badge">${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))}</span><div class="muted">${escapeHtml(p.planCode || p.plan_code || '-')}</div></td>
+            <td>${Number(p.quantity || 1)}</td>
             <td>${Number(p.amountUsd || p.amount_usd || 0).toFixed(2)} USD</td>
             <td>${escapeHtml(p.cryptoCode || p.crypto_code || '-')}<div class="muted">${escapeHtml(p.networkCode || p.network_code || '-')}</div></td>
             <td>${getPaymentStatusBadge(p)}<div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || 'new')}</div></td>
@@ -1698,18 +1755,20 @@
             </td>
           </tr>
         `;
-      }).join('') : `<tr><td colspan="9" class="muted">No payments found</td></tr>`;
+      }).join('') : `<tr><td colspan="10" class="muted">No payments found</td></tr>`;
     }
 
     function getFilteredLinks() {
       const q = String(linkSearch?.value || '').trim().toLowerCase();
       const status = linkFilterStatus?.value || '';
+      const type = linkTypeFilter?.value || '';
       const sort = linkSort?.value || 'clicks_desc';
       let list = getGlobalFilteredData(linksData).filter(l => {
         const blob = `${l.slug || ''} ${l.url || ''} ${l.user || l.username || ''} ${l.domain || ''} ${l.linkType || ''} ${l.landingTitle || ''}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
         const matchesStatus = !status || (status === 'active' && !l.paused) || (status === 'paused' && !!l.paused);
-        return matchesQ && matchesStatus;
+        const matchesType = !type || String(l.linkType || '').toLowerCase() === type;
+        return matchesQ && matchesStatus && matchesType;
       });
       if (sort === 'clicks_desc') list.sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0));
       if (sort === 'clicks_asc') list.sort((a,b) => Number(a.clicks || 0) - Number(b.clicks || 0));
@@ -1728,7 +1787,7 @@
             <td>${escapeHtml(l.slug || '')}</td>
             <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
             <td>${getLinkTypeBadge(l)}</td>
-            <td><a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a><div class="muted">${escapeHtml(l.linkType === 'landing' ? (l.landingTitle || l.url || '') : (l.url || ''))}</div></td>
+            <td><a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a><div class="muted">${escapeHtml(String(l.linkType || '').toLowerCase() === 'landing' ? (l.landingTitle || l.url || '') : (l.url || ''))}</div></td>
             <td>${Number(l.clicks || 0)} ${Number(l.maxRisk || 0) > 80 ? `<span class="badge risk-high">RISK ${Number(l.maxRisk || 0)}</span>` : Number(l.maxRisk || 0) > 50 ? `<span class="badge risk-med">RISK ${Number(l.maxRisk || 0)}</span>` : ``}</td>
             <td>${getLinkStatusBadge(l)}</td>
             <td>${formatExpire(l.expire)}</td>
@@ -1737,14 +1796,14 @@
               <div class="actions">
                 <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
                 <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
-                ${l.linkType === 'landing' ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
+                ${String(l.linkType || '').toLowerCase() === 'landing' ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
                 ${l.paused ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>` : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`}
                 <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Delete</button>
               </div>
             </td>
           </tr>
         `;
-      }).join('') : `<tr><td colspan="10" class="muted">No links found</td></tr>`;
+      }).join('') : `<tr><td colspan="10" class="muted">No items found</td></tr>`;
     }
 
     function getFilteredDomains() {
@@ -1822,12 +1881,12 @@
       const paymentAlerts = paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').slice(0, 20);
       securityPanelContent.innerHTML = `
         <div class="card" style="margin:0;">
-          <h4>High Risk Links</h4>
-          <div class="list-box">${highRisk.length ? highRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-high">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No high risk links</div>`}</div>
+          <h4>High Risk Items</h4>
+          <div class="list-box">${highRisk.length ? highRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-high">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No high risk items</div>`}</div>
         </div>
         <div class="card" style="margin:0;">
-          <h4>Medium Risk Links</h4>
-          <div class="list-box">${medRisk.length ? medRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-med">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No medium risk links</div>`}</div>
+          <h4>Medium Risk Items</h4>
+          <div class="list-box">${medRisk.length ? medRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-med">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No medium risk items</div>`}</div>
         </div>
         <div class="card" style="margin:0;">
           <h4>Awaiting Payment Alerts</h4>
@@ -1837,7 +1896,7 @@
           <h4>Recommendations</h4>
           <div class="list-box">
             <div>Review all awaiting confirmation payments first.</div>
-            <div>Check high risk links before resuming any paused traffic.</div>
+            <div>Check high risk items before resuming any paused traffic.</div>
             <div>Verify pending domains using TXT records only.</div>
             <div>Review landing pages with unusual click spikes.</div>
           </div>
@@ -1855,8 +1914,9 @@
         <div><b>Status:</b> ${u?.banned ? 'Banned' : 'Active'}</div>
         <div><b>Email Verified:</b> ${(u?.emailVerified || u?.email_verified) ? 'Yes' : 'No'}</div>
         <div><b>Requests:</b> ${Number(u?.requests || 0)}</div>
-        <div><b>Trial:</b> ${escapeHtml(formatTrial(u || {}))}</div>
-        <div><b>Subscription:</b> ${escapeHtml(u?.subscriptionPlan || u?.subscription_plan || 'trial')}</div>
+        <div><b>Short Link Usage:</b> ${escapeHtml(formatTrial(u || {}))}</div>
+        <div><b>Landing Usage:</b> ${escapeHtml(formatLandingUsage(u || {}))}</div>
+        <div><b>Subscription:</b> ${escapeHtml(normalizePlanLabel(u?.subscriptionPlan || u?.subscription_plan || 'trial'))}</div>
         <div><b>Subscription Status:</b> ${escapeHtml(u?.subscriptionStatus || u?.subscription_status || 'trial')}</div>
         <div><b>Subscription Expires:</b> ${fmtDate(u?.subscriptionExpiresAt || u?.subscription_expires_at)}</div>
         <div><b>Source:</b> ${escapeHtml(u?.source || 'primary')}</div>
@@ -1883,7 +1943,8 @@
         ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ''}
         <div><b>Payment ID:</b> <code>${escapeHtml(payment.id)}</code></div>
         <div><b>User:</b> ${escapeHtml(payment.username || '-')}</div>
-        <div><b>Plan:</b> ${escapeHtml(payment.billingCycle || payment.billing_cycle || '-')}</div>
+        <div><b>Plan:</b> ${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle || payment.billing_cycle || '-'))}</div>
+        <div><b>Quantity:</b> ${Number(payment.quantity || 1)}</div>
         <div><b>Amount:</b> ${Number(payment.amountUsd || payment.amount_usd || 0).toFixed(2)} USD</div>
         <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || payment.crypto_code || '-')} (${escapeHtml(payment.networkCode || payment.network_code || '-')})</div>
         <div><b>Status:</b> ${getPaymentStatusBadge(payment)}</div>
@@ -2045,20 +2106,20 @@
 
     async function pauseLink(slug, source) {
       const res = await fetchBySource(source || 'primary', `/admin/pause`, 'POST', { slug }, false);
-      if (res.ok) { await logAudit('PAUSE LINK', slug); showToast('Link paused'); await loadAdmin(); }
+      if (res.ok) { await logAudit('PAUSE LINK', slug); showToast('Item paused'); await loadAdmin(); }
       else showToast(res.data?.message || 'Pause failed');
     }
 
     async function resumeLink(slug, source) {
       const res = await fetchBySource(source || 'primary', `/admin/resume`, 'POST', { slug }, false);
-      if (res.ok) { await logAudit('RESUME LINK', slug); showToast('Link resumed'); await loadAdmin(); }
+      if (res.ok) { await logAudit('RESUME LINK', slug); showToast('Item resumed'); await loadAdmin(); }
       else showToast(res.data?.message || 'Resume failed');
     }
 
     async function deleteLink(slug, source, domain = '') {
       if (!confirm(`Delete ${slug}?`)) return;
       const res = await fetchBySource(source || 'primary', `/delete`, 'POST', { slug, domain }, false);
-      if (res.ok) { await logAudit('DELETE LINK', slug); showToast('Link deleted'); await loadAdmin(); }
+      if (res.ok) { await logAudit('DELETE LINK', slug); showToast('Item deleted'); await loadAdmin(); }
       else showToast(res.data?.message || 'Delete failed');
     }
 
@@ -2098,8 +2159,8 @@
     }
 
     function exportVisibleLinks() {
-      exportJson('visible-links.json', getFilteredLinks());
-      showToast('Visible links exported');
+      exportJson('visible-items.json', getFilteredLinks());
+      showToast('Visible items exported');
     }
 
     function openCreateUser() {
@@ -2111,7 +2172,7 @@
           <input id="newPass" type="password" placeholder="Password" />
           <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
           <select id="newEmailVerified"><option value="false">Email Not Verified</option><option value="true">Email Verified</option></select>
-          <select id="newCreateSource"><option value="primary">Backend 2</option><option value="legacy">Legacy AWS</option></select>
+          <select id="newCreateSource"><option value="primary">Backend2</option><option value="legacy">Legacy AWS</option></select>
           <button id="submitCreateUserBtn" class="btn-primary">Create User</button>
         </div>
       `;
@@ -2135,7 +2196,8 @@
         if (!p) { resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`; return; }
         resultBox.innerHTML = `
           <div><b>User:</b> ${escapeHtml(p.username || '-')}</div>
-          <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</div>
+          <div><b>Plan:</b> ${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))}</div>
+          <div><b>Quantity:</b> ${Number(p.quantity || 1)}</div>
           <div><b>Status:</b> ${getPaymentStatusBadge(p)}</div>
           <div><b>Source:</b> ${escapeHtml(p.source || '-')}</div>
           <div class="actions" style="margin-top:10px;">
@@ -2259,7 +2321,7 @@
 
         const stateSummary = [
           `Users P:${usersPair.primary.ok ? 'OK' : usersPair.primary.status} L:${usersPair.legacy.ok ? 'OK' : usersPair.legacy.status}`,
-          `Links P:${linksPair.primary.ok ? 'OK' : linksPair.primary.status} L:${linksPair.legacy.ok ? 'OK' : linksPair.legacy.status}`,
+          `Items P:${linksPair.primary.ok ? 'OK' : linksPair.primary.status} L:${linksPair.legacy.ok ? 'OK' : linksPair.legacy.status}`,
           `Payments P:${paymentsPair.primary.ok ? 'OK' : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? 'OK' : paymentsPair.legacy.status}`,
           `Domains P:${domainsRes.ok ? 'OK' : domainsRes.status}`,
           `Audit P:${auditPair.primary.ok ? 'OK' : auditPair.primary.status} L:${auditPair.legacy.ok ? 'OK' : auditPair.legacy.status}`
@@ -2280,7 +2342,7 @@
         renderSecuritySection();
         drawChart();
 
-        setBackendBadge('Merged View • Backend 2 + Legacy AWS');
+        setBackendBadge('Merged View • Backend2 + Legacy AWS');
         addTerminal('Dashboard refreshed');
       } catch (error) {
         console.error(error);
@@ -2299,7 +2361,7 @@
     function setupFilters() {
       [userSearch, userFilterRole, userFilterStatus].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderUsers));
       [paymentSearch, paymentStatusFilter, paymentPlanFilter, onlyAwaitingToggle].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', renderPayments));
-      [linkSearch, linkFilterStatus, linkSort].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLinks));
+      [linkSearch, linkFilterStatus, linkTypeFilter, linkSort].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLinks));
       [domainSearch, domainStatusFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderDomains));
       [landingSearch, landingSourceFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLandingPages));
       if (auditSearch) auditSearch.addEventListener('input', renderAuditLogs);
@@ -2366,7 +2428,7 @@
       $('logoutBtn').onclick = logout;
 
       $('exportUsersBtn').onclick = () => { exportJson('users.json', usersData); showToast('Users exported'); };
-      $('exportLinksBtn').onclick = () => { exportJson('links.json', linksData); showToast('Links exported'); };
+      $('exportLinksBtn').onclick = () => { exportJson('items.json', linksData); showToast('Items exported'); };
       $('exportPaymentsBtn').onclick = () => { exportJson('payments.json', paymentsData); showToast('Payments exported'); };
       $('exportDomainsBtn').onclick = () => { exportJson('domains.json', domainsData); showToast('Domains exported'); };
       $('exportLandingBtn').onclick = () => { exportJson('landing-pages.json', landingData); showToast('Landing pages exported'); };
