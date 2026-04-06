@@ -27,7 +27,7 @@
       --danger:#dc2626;
       --warning:#d97706;
       --shadow:0 32px 90px rgba(15, 23, 42, .14);
-      --shadow-soft:0 16px 42px rgba(37, 99, 235, .14);
+      --shadow-soft:0 16px 42px rgba(37,99,235,.14);
       --radius-2xl:32px;
       --radius-xl:24px;
       --radius-lg:18px;
@@ -93,15 +93,14 @@
 
     body.dark::after{
       content:"";
-      position:fixed;
-      inset:-20% auto auto -10%;
-      width:480px;
-      height:480px;
+      position:absolute;
+      inset:auto auto 28% -90px;
+      width:240px;
+      height:240px;
       border-radius:50%;
-      background:radial-gradient(circle, rgba(0,213,255,.14), transparent 62%);
-      filter:blur(20px);
+      background:radial-gradient(circle, rgba(96,165,250,.28), transparent 64%);
+      filter:blur(8px);
       pointer-events:none;
-      z-index:0;
     }
 
     .page{
@@ -128,8 +127,8 @@
     }
 
     .brand-badge{
-      width:48px;
-      height:48px;
+      width:72px;
+      height:72px;
       border-radius:16px;
       display:grid;
       place-items:center;
@@ -137,14 +136,14 @@
         linear-gradient(135deg, var(--primary), var(--accent));
       color:#02131c;
       font-weight:900;
-      font-size:22px;
+      font-size:32px;
       box-shadow:0 12px 34px rgba(37,99,235,.24);
-      flex:0 0 48px;
+      flex:0 0 72px;
     }
 
     .brand-copy h1{
       margin:0;
-      font-size:19px;
+      font-size:29px;
       line-height:1.1;
       letter-spacing:.2px;
       color:#fff;
@@ -152,7 +151,7 @@
 
     .brand-copy p{
       margin:4px 0 0;
-      font-size:12px;
+      font-size:16px;
       color:rgba(255,255,255,.72);
     }
 
@@ -1576,7 +1575,7 @@
       </section>
     </div>
   </div>
-
+  
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
