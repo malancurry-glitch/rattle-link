@@ -4,118 +4,323 @@
   <meta charset="UTF-8" />
   <title>Verify Email - Rattle Link</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
+    :root {
+      --bg-1: #020617;
+      --bg-2: #000814;
+      --card: rgba(2, 12, 27, 0.94);
+      --card-2: rgba(3, 18, 38, 0.94);
+      --line: rgba(0, 255, 255, 0.16);
+      --line-strong: rgba(0, 255, 255, 0.28);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    }
+
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Inter, Arial, sans-serif;
-      background: radial-gradient(circle at top, #020617, #000);
-      color: #e2e8f0;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      padding: 20px;
+      justify-content: center;
+      padding: 22px;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 22%),
+        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.14), transparent 20%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 88%);
     }
 
     .card {
       width: 100%;
-      max-width: 460px;
-      background: #020617;
-      padding: 30px;
-      border-radius: 16px;
-      border: 1px solid rgba(0, 255, 255, 0.18);
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      max-width: 560px;
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
     }
 
-    h2 {
-      color: #00ffff;
-      margin: 0 0 10px;
+    .hero {
+      padding: 30px 28px 18px;
+      text-align: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 180px;
+      background: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 70%);
+      pointer-events: none;
+    }
+
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-badge {
+      width: 86px;
+      height: 86px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #04131b;
+      font-size: 40px;
+      font-weight: 900;
+      box-shadow: 0 18px 44px rgba(34, 211, 238, 0.18);
+      border: 1px solid rgba(255,255,255,.22);
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: 35px;
+      line-height: 1.02;
+      letter-spacing: -1px;
+      color: #ecfeff;
     }
 
     .sub {
+      position: relative;
+      z-index: 1;
+      margin: 12px auto 0;
+      max-width: 440px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .body {
+      padding: 22px 24px 24px;
+    }
+
+    .banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
       font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 18px;
-      line-height: 1.6;
+      line-height: 1.65;
+      border: 1px solid var(--line);
+      background: rgba(34, 211, 238, 0.05);
+      color: var(--text);
     }
 
-    input {
-      width: 100%;
-      padding: 13px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      background: #000;
-      color: #0ff;
+    .banner.show { display: block; }
+
+    .panel {
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(2, 12, 27, 0.72);
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .panel + .panel { margin-top: 14px; }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 12px;
-      outline: none;
     }
 
-    input:focus {
-      box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.12);
+    .panel-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ecfeff;
     }
 
-    button, a.btn {
+    .backend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--cyan);
+      border: 1px solid var(--line);
+      background: rgba(34, 211, 238, 0.05);
+      white-space: nowrap;
+    }
+
+    .panel-copy {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.75;
+      margin: 0 0 14px;
+    }
+
+    .input {
       width: 100%;
-      display: block;
-      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,255,255,.18);
+      background: rgba(0,0,0,.42);
+      color: var(--cyan);
+      outline: none;
+      padding: 15px 14px;
+      font-size: 15px;
+      transition: .18s ease;
+    }
+
+    .input:focus {
+      border-color: var(--line-strong);
+      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
+    }
+
+    .actions { display: grid; gap: 10px; }
+
+    .btn {
+      appearance: none;
       border: none;
-      border-radius: 10px;
-      background: #0ff;
-      color: #000;
-      font-weight: 700;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 800;
       cursor: pointer;
-      margin-top: 8px;
+      transition: .18s ease;
+      text-align: center;
       text-decoration: none;
-      transition: 0.2s ease;
+      display: block;
+      width: 100%;
     }
 
-    button:hover, a.btn:hover {
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
-      transform: translateY(-1px);
-    }
+    .btn:hover { transform: translateY(-1px); }
 
-    button:disabled {
-      opacity: 0.6;
+    .btn:disabled {
+      opacity: .65;
       cursor: not-allowed;
       transform: none;
-      box-shadow: none;
     }
 
-    .secondary {
-      background: #020617;
-      color: #0ff;
-      border: 1px solid #0ff;
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), #18e2ff);
+      color: #04131b;
+      box-shadow: 0 14px 34px rgba(34, 211, 238, 0.14);
     }
 
-    .error {
-      color: #ef4444;
-      font-size: 13px;
+    .btn-secondary {
+      background: transparent;
+      color: var(--cyan);
+      border: 1px solid var(--line-strong);
+    }
+
+    .msg {
+      min-height: 22px;
       margin-top: 14px;
-      line-height: 1.5;
+      font-size: 13px;
+      line-height: 1.65;
+      text-align: center;
+      font-weight: 700;
+      white-space: pre-wrap;
     }
 
-    .success {
-      color: #22c55e;
-      font-size: 13px;
+    .msg.error { color: var(--danger); }
+    .msg.success { color: var(--success); }
+    .msg.warn { color: var(--warn); }
+
+    .quick-links {
+      display: grid;
+      gap: 10px;
       margin-top: 14px;
-      line-height: 1.5;
     }
 
-    .warn {
-      color: #f59e0b;
-      font-size: 13px;
-      margin-top: 14px;
-      line-height: 1.5;
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 16px;
     }
+
+    .help-box {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,.12);
+      background: rgba(255,255,255,.02);
+    }
+
+    .help-box b {
+      display: block;
+      font-size: 12px;
+      color: #ecfeff;
+      margin-bottom: 5px;
+    }
+
+    .help-box span {
+      display: block;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .muted {
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.75;
+      text-align: center;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 14px;
+      color: #93c5fd;
+      font-size: 12px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .back-link:hover { text-decoration: underline; }
 
     .spinner {
       width: 14px;
       height: 14px;
-      border: 2px solid #000;
+      border: 2px solid rgba(4, 19, 27, 0.35);
       border-top: 2px solid transparent;
       border-radius: 50%;
       display: inline-block;
@@ -124,109 +329,91 @@
       vertical-align: middle;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .divider {
-      height: 1px;
-      background: rgba(148, 163, 184, 0.15);
-      margin: 18px 0;
-    }
-
-    .muted {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 14px;
-      line-height: 1.6;
-    }
-
-    .status-card {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(0, 255, 255, 0.15);
-      background: rgba(0, 255, 255, 0.04);
-      text-align: left;
-    }
-
-    .status-card h3 {
-      margin: 0 0 8px;
-      color: #00ffff;
-      font-size: 14px;
-    }
-
-    .status-card p {
-      margin: 0 0 8px;
-      font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.6;
-    }
-
-    .backend-badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      color: #00ffff;
-      margin-top: 4px;
-    }
-
-    .back-link {
-      display: block;
-      margin-top: 14px;
-      color: #60a5fa;
-      font-size: 12px;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .back-link:hover {
-      text-decoration: underline;
+    @media (max-width: 640px) {
+      body { padding: 14px; }
+      .hero { padding: 24px 18px 18px; }
+      .body { padding: 16px; }
+      .logo-badge { width: 74px; height: 74px; font-size: 34px; border-radius: 20px; }
+      h1 { font-size: 30px; }
+      .help-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
   <div class="card">
-    <h2>✅ Verify Email</h2>
-    <div class="sub">
-      Verify your email before your first login.
+    <div class="hero">
+      <div class="logo-wrap">
+        <div class="logo-badge">✅</div>
+      </div>
+      <div class="brand">Rattle Link Account Security</div>
+      <h1>Verify Email</h1>
+      <div class="sub">
+        Complete email verification before first login. If you opened this page from your email, it will try to verify automatically.
+      </div>
     </div>
 
-    <div id="autoVerifyBox" class="status-card">
-      <h3>Automatic verification</h3>
-      <p>
-        If you opened this page from your email, verification will run automatically.
-      </p>
-      <div id="backendBadge" class="backend-badge hidden"></div>
-    </div>
+    <div class="body">
+      <div id="banner" class="banner"></div>
 
-    <div class="divider"></div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Automatic verification</div>
+          <div id="backendBadge" class="backend-badge hidden"></div>
+        </div>
+        <p class="panel-copy">
+          Opened from your email? Keep this page open. If a valid token exists in the URL, verification runs automatically.
+        </p>
+      </div>
 
-    <div id="manualSection">
-      <input id="tokenInput" placeholder="Paste verification token" />
-      <button id="verifyBtn" onclick="verifyToken()">Verify Email</button>
+      <div class="panel" id="manualSection">
+        <div class="panel-head">
+          <div class="panel-title">Manual verification and resend</div>
+        </div>
+        <p class="panel-copy">
+          If the email app stripped the token or opened the wrong link, paste the token manually or resend a fresh verification email.
+        </p>
 
-      <div class="divider"></div>
+        <div class="actions">
+          <input id="tokenInput" class="input" placeholder="Paste verification token" />
+          <button id="verifyBtn" class="btn btn-primary" onclick="verifyToken()">Verify Email</button>
+          <input id="emailInput" class="input" type="email" placeholder="Enter your email to resend verification" />
+          <button id="resendBtn" class="btn btn-secondary" onclick="resendVerification()">Resend Verification Email</button>
+        </div>
+      </div>
 
-      <input id="emailInput" type="email" placeholder="Enter your email to resend verification" />
-      <button id="resendBtn" class="secondary" onclick="resendVerification()">Resend Verification Email</button>
-    </div>
+      <div class="quick-links">
+        <a id="loginLink" class="btn btn-primary hidden" href="index.html">Go to Login</a>
+        <a id="magicLink" class="btn btn-secondary hidden" href="magic-login.html">Go to Magic Login</a>
+      </div>
 
-    <a id="loginLink" class="btn hidden" href="index.html">Go to Login</a>
-    <a id="magicLink" class="btn secondary hidden" href="magic-login.html">Go to Magic Login</a>
-    <a id="backToIndexLink" class="back-link" href="index.html">← Back to Login</a>
+      <div class="help-grid">
+        <div class="help-box">
+          <b>Auto verify</b>
+          <span>If token is present in the URL, verification starts by itself.</span>
+        </div>
+        <div class="help-box">
+          <b>No token?</b>
+          <span>Some email apps remove or break query params. Paste token manually or resend.</span>
+        </div>
+        <div class="help-box">
+          <b>Next step</b>
+          <span>After success, go straight to login or magic login with the same backend.</span>
+        </div>
+      </div>
 
-    <div id="msg"></div>
+      <div id="msg" class="msg"></div>
 
-    <div class="muted">
-      This page uses the selected backend if provided in the email link, otherwise it tries Backend 2 first and only falls back when needed.
+      <div style="text-align:center;">
+        <a id="backToIndexLink" class="back-link" href="index.html">← Back to Login</a>
+      </div>
+
+      <div class="muted">
+        This page uses the backend selected in the email link when present. Otherwise it tries Backend 2 first and only falls back when needed.
+      </div>
     </div>
   </div>
 
@@ -243,6 +430,7 @@
     const magicLink = document.getElementById("magicLink");
     const backToIndexLink = document.getElementById("backToIndexLink");
     const backendBadge = document.getElementById("backendBadge");
+    const banner = document.getElementById("banner");
 
     let forcedBackend = null;
 
@@ -256,12 +444,11 @@
 
     function isUsableApiUrl(url) {
       const clean = normalizeApiUrl(url);
-      if (!clean) return false;
-      return /^https?:\/\//i.test(clean);
+      return !!clean && /^https?:\/\//i.test(clean);
     }
 
     function backendLabel(name) {
-      return name === "primary" ? "Backend 2" : "Legacy AWS";
+      return name === "legacy" ? "Legacy AWS" : "Backend 2";
     }
 
     function showBackendBadge(backend) {
@@ -274,9 +461,19 @@
       backendBadge.textContent = `Using ${backendLabel(backend)}`;
     }
 
+    function showBanner(text = "") {
+      if (!text) {
+        banner.textContent = "";
+        banner.className = "banner";
+        return;
+      }
+      banner.textContent = text;
+      banner.className = "banner show";
+    }
+
     function showMessage(text, type = "error") {
       msg.textContent = text;
-      msg.className = type;
+      msg.className = `msg ${type}`;
     }
 
     function setLoading(button, text) {
@@ -315,7 +512,6 @@
 
     async function callApi(baseUrl, path, options = {}) {
       const url = normalizeApiUrl(baseUrl);
-
       if (!isUsableApiUrl(url)) {
         return {
           ok: false,
@@ -329,20 +525,10 @@
       const timeout = setTimeout(() => controller.abort(), 15000);
 
       try {
-        const res = await fetch(url + path, {
-          ...options,
-          signal: controller.signal
-        });
-
+        const res = await fetch(url + path, { ...options, signal: controller.signal });
         clearTimeout(timeout);
-
         const data = await safeBody(res);
-        return {
-          ok: res.ok,
-          status: res.status,
-          data,
-          networkError: false
-        };
+        return { ok: res.ok, status: res.status, data, networkError: false };
       } catch (error) {
         clearTimeout(timeout);
         return {
@@ -376,14 +562,8 @@
       }
 
       const first = await callApi(primary, path, options);
-      if (first.ok) {
-        return { ...first, backend: "primary" };
-      }
-
-      if (!shouldFallback(first.status, first.networkError)) {
-        return { ...first, backend: "primary" };
-      }
-
+      if (first.ok) return { ...first, backend: "primary" };
+      if (!shouldFallback(first.status, first.networkError)) return { ...first, backend: "primary" };
       const second = await callApi(legacy, path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
@@ -430,14 +610,11 @@
 
     function redirectToDashboard(token, role) {
       if (!token) return false;
-
       localStorage.setItem("token", token);
       localStorage.setItem("role", role || "user");
 
       const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
-      if (email) {
-        localStorage.setItem("lastUser", email);
-      }
+      if (email) localStorage.setItem("lastUser", email);
 
       const target = role === "admin" ? "admin.html" : "dashboard.html";
       window.location.href = target;
@@ -449,7 +626,8 @@
       const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
 
       if (!token) {
-        return showMessage("Missing verification token ❌", "error");
+        showBanner("Your page opened without a token. This usually means the email app stripped the query string. Paste the token manually or resend verification.");
+        return showMessage("Missing verification token.", "error");
       }
 
       setLoading(verifyBtn, "Verifying");
@@ -472,40 +650,30 @@
           syncUrl(email, forcedBackend, token);
 
           const data = result.data || {};
-
-          showMessage(
-            `Email verified successfully on ${backendLabel(forcedBackend)} ✅ Redirecting to dashboard...`,
-            "success"
-          );
-
+          showBanner("Verification succeeded. You can continue to login or magic login.");
+          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}. Redirecting to dashboard...`, "success");
           resetButton(verifyBtn, "Verify Email");
 
           if (data.token) {
-            setTimeout(() => {
-              redirectToDashboard(data.token, data.role || "user");
-            }, 800);
+            setTimeout(() => redirectToDashboard(data.token, data.role || "user"), 800);
             return;
           }
-
           return;
         }
 
         showBackendBadge(result.backend || forcedBackend || null);
-        showMessage(`${friendlyError(result)} ❌`, "error");
+        showMessage(friendlyError(result), "error");
       } catch (error) {
         console.error(error);
-        showMessage("Server error ❌", "error");
+        showMessage("Server error.", "error");
       }
 
       resetButton(verifyBtn, "Verify Email");
     }
 
     async function resendVerification() {
-      const email = String(emailInput.value || "").trim().toLowerCase();
-
-      if (!email) {
-        return showMessage("Enter your email first ❌", "error");
-      }
+      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
+      if (!email) return showMessage("Enter your email first.", "error");
 
       setLoading(resendBtn, "Sending");
 
@@ -525,21 +693,17 @@
           showBackendBadge(forcedBackend);
           showPostVerifyActions(email, forcedBackend);
           syncUrl(email, forcedBackend);
-
-          showMessage(
-            `${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)} ✅`,
-            "success"
-          );
-
+          showBanner("A fresh verification email was sent. Open the new email and use its verify button.");
+          showMessage(`${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)}.`, "success");
           resetButton(resendBtn, "Resend Verification Email");
           return;
         }
 
         showBackendBadge(result.backend || forcedBackend || null);
-        showMessage(`${friendlyError(result)} ❌`, "error");
+        showMessage(friendlyError(result), "error");
       } catch (error) {
         console.error(error);
-        showMessage("Server error ❌", "error");
+        showMessage("Server error.", "error");
       }
 
       resetButton(resendBtn, "Resend Verification Email");
@@ -549,10 +713,11 @@
       const token = String(params().get("token") || "").trim();
       const email = String(params().get("email") || "").trim().toLowerCase();
       const backend = String(params().get("backend") || "").trim().toLowerCase();
+      const urlToken = String(params().get("token") || "").trim();
+      const urlRole = String(params().get("role") || "").trim();
+      const verified = String(params().get("verified") || "").trim();
 
-      if (email) {
-        emailInput.value = email;
-      }
+      if (email) emailInput.value = email;
 
       if (backend === "primary" || backend === "legacy") {
         forcedBackend = backend;
@@ -563,22 +728,23 @@
 
       updateNavigation(email, forcedBackend || "");
 
-      const urlToken = String(params().get("token") || "").trim();
-      const urlRole = String(params().get("role") || "").trim();
-      const verified = String(params().get("verified") || "").trim();
-
       if (urlToken && verified === "1") {
-        showMessage("Email already verified ✅ Redirecting...", "success");
-        setTimeout(() => {
-          redirectToDashboard(urlToken, urlRole || "user");
-        }, 500);
+        showBanner("Email already verified. Redirecting to dashboard.");
+        showMessage("Email already verified. Redirecting...", "success");
+        setTimeout(() => redirectToDashboard(urlToken, urlRole || "user"), 500);
         return;
       }
 
-      if (!token) return;
+      if (!token) {
+        if (email) {
+          showBanner("No token was found in this page URL. If you expected auto verification, your email app may have removed the token. Paste it manually or resend verification.");
+        }
+        return;
+      }
 
       tokenInput.value = token;
-      showMessage("Verifying your email... ⏳", "warn");
+      showBanner("Verification token found. Running automatic verification now.");
+      showMessage("Verifying your email...", "warn");
       await verifyToken(token);
     }
 
