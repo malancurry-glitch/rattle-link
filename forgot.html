@@ -346,7 +346,6 @@
   </div>
 
   <script>
-    // ================= HYBRID CONFIG =================
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
@@ -368,7 +367,6 @@
     const successText = document.getElementById("successText");
     const backToIndexBtn = document.getElementById("backToIndexBtn");
 
-    // ================= UI =================
     function toggleTheme(){
       document.body.classList.toggle("light");
       localStorage.setItem(
@@ -497,7 +495,8 @@
         if(
           msg.includes("backend url not configured") ||
           msg.includes("network request failed") ||
-          msg.includes("failed to fetch")
+          msg.includes("failed to fetch") ||
+          msg.includes("account not found in backend2")
         ){
           return true;
         }
@@ -541,16 +540,21 @@
       return "Failed";
     }
 
-    // ================= COOLDOWN =================
     function startCooldown(seconds = 30){
       cooldown = seconds;
       clearInterval(cooldownTimer);
+
+      btn.disabled = true;
+      btnText.style.display = "inline";
+      spinner.style.display = "none";
+      btnText.textContent = `Wait ${cooldown}s`;
 
       cooldownTimer = setInterval(() => {
         cooldown--;
         if(cooldown <= 0){
           clearInterval(cooldownTimer);
           cooldown = 0;
+          btn.disabled = false;
           btnText.textContent = "Send Reset Link";
         } else {
           btnText.textContent = `Wait ${cooldown}s`;
@@ -558,9 +562,8 @@
       }, 1000);
     }
 
-    // ================= ACTIONS =================
     async function sendReset(){
-      if(btn.disabled) return;
+      if(btn.disabled && cooldown > 0) return;
 
       const user = username.value.trim().toLowerCase();
 
@@ -602,6 +605,7 @@
 
         lastEmail = user;
         lastBackend = result.backend || "primary";
+        localStorage.setItem("lastUser", lastEmail);
 
         formBox.classList.add("hidden");
         successBox.classList.remove("hidden");
@@ -611,13 +615,14 @@
         successText.textContent = `Your reset request was accepted by ${backendLabel(lastBackend)}. Check your inbox and spam folder.`;
         updateBackLinks(lastEmail, lastBackend);
 
+        show(`Reset link requested successfully via ${backendLabel(lastBackend)} ✅`, "success");
+        setLoading(false);
         startCooldown(30);
       }catch(e){
         console.error("ERROR:", e);
         show("Network error ❌");
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     async function sendAgain(){
@@ -650,11 +655,17 @@
 
     function autoFillEmail(){
       const params = new URLSearchParams(window.location.search);
-      const email = (params.get("email") || localStorage.getItem("rememberUser") || "").trim().toLowerCase();
+      const email = (params.get("email") || localStorage.getItem("rememberUser") || localStorage.getItem("lastUser") || "").trim().toLowerCase();
       const backend = (params.get("backend") || "").trim().toLowerCase();
 
       if(email){
         username.value = email;
+        lastEmail = email;
+      }
+
+      if(backend === "primary" || backend === "legacy"){
+        lastBackend = backend;
+        showBackendBadge(backendBadge, lastBackend);
       }
 
       updateBackLinks(email, backend);
