@@ -19,6 +19,8 @@
       --blue:#3b82f6;
       --border:rgba(0,255,255,0.18);
       --soft:rgba(15,23,42,0.45);
+      --radius:16px;
+      --shadow:0 0 10px rgba(0,255,255,0.10), inset 0 0 15px rgba(0,255,255,0.03);
     }
 
     *{ box-sizing:border-box; }
@@ -86,12 +88,10 @@
       background:var(--card);
       border:1px solid var(--border);
       backdrop-filter:blur(12px);
-      border-radius:16px;
+      border-radius:var(--radius);
       padding:16px;
       margin-bottom:18px;
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.10),
-        inset 0 0 15px rgba(0,255,255,0.03);
+      box-shadow:var(--shadow);
     }
 
     .card h2,
@@ -125,13 +125,8 @@
       line-height:1.6;
     }
 
-    .small{
-      font-size:12px;
-    }
-
-    .tiny{
-      font-size:11px;
-    }
+    .small{ font-size:12px; }
+    .tiny{ font-size:11px; }
 
     .info-box{
       padding:12px;
@@ -205,13 +200,8 @@
       margin-bottom:10px;
     }
 
-    .field{
-      flex:1 1 220px;
-    }
-
-    .field.wide{
-      flex:1 1 100%;
-    }
+    .field{ flex:1 1 220px; }
+    .field.wide{ flex:1 1 100%; }
 
     .field label{
       display:block;
@@ -230,9 +220,7 @@
       outline:none;
     }
 
-    input::placeholder, textarea::placeholder{
-      color:var(--muted);
-    }
+    input::placeholder, textarea::placeholder{ color:var(--muted); }
 
     input:focus, select:focus, textarea:focus{
       box-shadow:0 0 10px rgba(0,255,255,0.4);
@@ -255,9 +243,7 @@
     button:hover, .btn:hover{
       color:#fff;
       border-color:var(--cyan);
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.4),
-        0 0 24px rgba(0,255,255,0.15);
+      box-shadow:0 0 10px rgba(0,255,255,0.4), 0 0 24px rgba(0,255,255,0.15);
       transform:translateY(-1px);
     }
 
@@ -268,33 +254,11 @@
       box-shadow:none;
     }
 
-    .success-btn{
-      background:var(--green);
-      color:#000;
-      border-color:var(--green);
-    }
-
-    .danger-btn{
-      background:var(--red);
-      color:#fff;
-      border-color:var(--red);
-    }
-
-    .backend2-btn{
-      background:#0f172a;
-      color:#22c55e;
-      border-color:#22c55e;
-    }
-
-    .ghost-btn{
-      color:#cbd5e1;
-      border-color:#475569;
-    }
-
-    .copy{
-      color:var(--green);
-      border-color:var(--green);
-    }
+    .success-btn{ background:var(--green); color:#000; border-color:var(--green); }
+    .danger-btn{ background:var(--red); color:#fff; border-color:var(--red); }
+    .backend2-btn{ background:#0f172a; color:#22c55e; border-color:#22c55e; }
+    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
+    .copy{ color:var(--green); border-color:var(--green); }
 
     .result{
       margin-top:10px;
@@ -389,9 +353,7 @@
       gap:8px;
     }
 
-    .record-grid .full{
-      grid-column:1 / -1;
-    }
+    .record-grid .full{ grid-column:1 / -1; }
 
     .record-label{
       font-size:11px;
@@ -436,16 +398,11 @@
     }
 
     @media (max-width: 980px){
-      .two-col,
-      .three-col{
-        grid-template-columns:1fr;
-      }
+      .two-col, .three-col{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 860px){
-      .record-grid{
-        grid-template-columns:1fr;
-      }
+      .record-grid{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -523,7 +480,7 @@
 
         <div class="info-box">
           <b>Step 3</b>
-          <div class="muted" style="margin-top:8px;">Create the connect record that points traffic to your VPS.</div>
+          <div class="muted" style="margin-top:8px;">Create the connect record that points traffic to your proxy or origin setup.</div>
         </div>
 
         <div class="info-box">
@@ -558,7 +515,7 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const PRIMARY_API = "https://rattleshortapi.it.com";
     let domainsStore = [];
     let activeDnsProvider = "cloudflare";
 
@@ -600,7 +557,12 @@
         .toLowerCase()
         .replace(/^https?:\/\//i, "")
         .replace(/\/+$/g, "")
-        .replace(/^www\./, (m) => m);
+        .replace(/^\*\./, "");
+    }
+
+    function isValidDomain(domain) {
+      const d = normalizeDomain(domain);
+      return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d) && !d.startsWith(".") && !d.endsWith(".");
     }
 
     function escapeHtml(str) {
@@ -679,18 +641,21 @@
           return { ok: false, status: 401, data };
         }
 
-        return {
-          ok: res.ok,
-          status: res.status,
-          data
-        };
+        return { ok: res.ok, status: res.status, data };
       } catch (e) {
-        return {
-          ok: false,
-          status: 0,
-          data: { message: e?.message || "Failed to fetch" }
-        };
+        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" } };
       }
+    }
+
+    function mergeDnsInstructionData(domain, dnsInfo) {
+      if (!dnsInfo || typeof dnsInfo !== "object") return domain;
+      return {
+        ...domain,
+        verificationTarget: dnsInfo.verificationTarget || domain.verificationTarget || `_rattle_verify.${domain.domain}`,
+        verifyToken: dnsInfo.verifyToken || domain.verifyToken || "",
+        dns: dnsInfo.dns || domain.dns || {},
+        examples: dnsInfo.examples || domain.examples || {}
+      };
     }
 
     function updateStats() {
@@ -721,21 +686,18 @@
       const examples = domain.examples || {};
 
       const cloudflare = examples.cloudflare || [
-        { type: "TXT", name: "_rattle_verify", value: verifyToken, proxied: false },
-        { type: "A", name: "@", value: dns.connect?.value || "-", proxied: true },
-        { type: "CNAME", name: "www", value: "@", proxied: true }
+        { type: "TXT", name: verificationTarget, value: verifyToken, proxied: false },
+        { type: "CNAME", name: domain.domain, value: dns.connect?.value || "-", proxied: true }
       ];
 
       const namecheap = examples.namecheap || [
-        { type: "TXT", host: "_rattle_verify", value: verifyToken },
-        { type: "A", host: "@", value: dns.connect?.value || "-" },
-        { type: "CNAME", host: "www", value: domain.domain || "-" }
+        { type: "TXT", host: verificationTarget, value: verifyToken },
+        { type: "CNAME", host: domain.domain, value: dns.connect?.value || "-" }
       ];
 
       const generic = examples.generic || [
         { type: "TXT", name: verificationTarget, value: verifyToken },
-        { type: "A", name: domain.domain || "-", value: dns.connect?.value || "-" },
-        { type: "CNAME", name: `www.${domain.domain || ""}`, value: domain.domain || "-" }
+        { type: dns.connect?.type || "CNAME", name: domain.domain || "-", value: dns.connect?.value || "-" }
       ];
 
       const recordBlock = (title, rows) => `
@@ -755,13 +717,9 @@
       `;
 
       let providerHtml = "";
-      if (activeDnsProvider === "cloudflare") {
-        providerHtml = recordBlock("Cloudflare records", cloudflare);
-      } else if (activeDnsProvider === "namecheap") {
-        providerHtml = recordBlock("Namecheap records", namecheap);
-      } else {
-        providerHtml = recordBlock("Generic DNS records", generic);
-      }
+      if (activeDnsProvider === "cloudflare") providerHtml = recordBlock("Cloudflare records", cloudflare);
+      else if (activeDnsProvider === "namecheap") providerHtml = recordBlock("Namecheap records", namecheap);
+      else providerHtml = recordBlock("Generic DNS records", generic);
 
       return `
         ${renderProviderTabs(domain.domain)}
@@ -795,10 +753,8 @@
       const filtered = domainsStore.filter(domain => {
         const domainName = String(domain.domain || "").toLowerCase();
         const domainStatus = String(domain.status || "pending").toLowerCase();
-
         const qMatch = !q || domainName.includes(q);
         const statusMatch = status === "all" ? true : domainStatus === status;
-
         return qMatch && statusMatch;
       });
 
@@ -817,23 +773,17 @@
               <div>
                 <div style="font-size:18px;font-weight:700;">${escapeHtml(d.domain)}</div>
                 <div style="margin-top:8px;">
-                  ${isVerified
-                    ? '<span class="badge verified">Verified</span>'
-                    : '<span class="badge pending">Pending</span>'}
+                  ${isVerified ? '<span class="badge verified">Verified</span>' : '<span class="badge pending">Pending</span>'}
                   ${d.isPrimary ? '<span class="badge live">Primary</span>' : ''}
                 </div>
               </div>
-              <div class="small muted">
-                Created: ${fmtDate(d.createdAt)}
-              </div>
+              <div class="small muted">Created: ${fmtDate(d.createdAt)}</div>
             </div>
 
             <div style="margin-top:12px;">
-              ${
-                isVerified
-                  ? `<div class="success-box">This domain is verified and ready to use.</div>`
-                  : `<div class="notice">DNS is still pending. Add the records below, wait for propagation, then verify.</div>`
-              }
+              ${isVerified
+                ? `<div class="success-box">This domain is verified and ready to use.</div>`
+                : `<div class="notice">DNS is still pending. Add the records below, wait for propagation, then verify.</div>`}
             </div>
 
             <div class="three-col">
@@ -875,6 +825,21 @@
       }).join("");
     }
 
+    async function loadDnsInstructionsForDomain(domain) {
+      const res = await safeFetch(`/domains/dns-instructions?domain=${encodeURIComponent(domain)}`, { method: "GET" });
+      if (!res.ok) return null;
+      return res.data || null;
+    }
+
+    async function enrichDomainsWithDnsInfo() {
+      const updated = [];
+      for (const domain of domainsStore) {
+        const dnsInfo = await loadDnsInstructionsForDomain(domain.domain);
+        updated.push(mergeDnsInstructionData(domain, dnsInfo));
+      }
+      domainsStore = updated;
+    }
+
     async function loadDomains(showToastMessage = false) {
       const res = await safeFetch("/domains/me", { method: "GET" });
 
@@ -887,46 +852,35 @@
       }
 
       const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
-
       domainsStore = domains.map(d => ({
         ...d,
         domain: normalizeDomain(d.domain || ""),
         status: d.status || "pending",
-        isPrimary: !!d.isPrimary,
+        isPrimary: !!(d.isPrimary || d.is_primary),
         createdAt: Number(d.createdAt || d.created_at || 0),
-        verifiedAt: Number(d.verifiedAt || d.verified_at || 0) || null
+        verifiedAt: Number(d.verifiedAt || d.verified_at || 0) || null,
+        verificationTarget: d.verificationTarget || d.verification_target || `_rattle_verify.${normalizeDomain(d.domain || "")}`,
+        verifyToken: d.verifyToken || d.verify_token || "",
+        dns: d.dns || {},
+        examples: d.examples || {}
       })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
+      await enrichDomainsWithDnsInfo();
       updateStats();
       renderDomains();
-
       if (showToastMessage) showToast("Domains refreshed");
-    }
-
-    async function loadDnsInstructionsForDomain(domain) {
-      const res = await safeFetch(`/domains/dns-instructions?domain=${encodeURIComponent(domain)}`, {
-        method: "GET"
-      });
-
-      if (!res.ok) return null;
-      return res.data || null;
     }
 
     async function addDomain() {
       const domain = normalizeDomain(domainInput.value);
-
-      if (!domain) {
-        setResult("Enter a domain first", true);
-        return;
-      }
+      if (!domain) return setResult("Enter a domain first", true);
+      if (!isValidDomain(domain)) return setResult("Enter a valid domain", true);
 
       setBusy(addDomainBtn, true, "Adding...");
-
       const res = await safeFetch("/domains/add", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
-
       setBusy(addDomainBtn, false);
 
       if (!res.ok) {
@@ -934,12 +888,12 @@
         return;
       }
 
-      const txtName = res.data?.verificationTarget || "";
-      const txtValue = res.data?.verifyToken || "";
-      const connectValue = res.data?.instructions?.step2?.cloudflare?.value || "";
+      const txtName = res.data?.verificationTarget || res.data?.verification_target || `_rattle_verify.${domain}`;
+      const txtValue = res.data?.verifyToken || res.data?.verify_token || "";
+      const connectValue = res.data?.instructions?.step2?.cloudflare?.value || res.data?.dns?.connect?.value || "-";
 
       setResult(
-        `Domain added successfully.
+`Domain added successfully.
 
 TXT Host:
 ${txtName}
@@ -947,12 +901,10 @@ ${txtName}
 TXT Value:
 ${txtValue}
 
-Point traffic to:
+Connect Value:
 ${connectValue}
 
-Now create the DNS records, wait a bit, then click Verify.`,
-        false
-      );
+Now create the DNS records, wait for propagation, then click Verify.`, false);
 
       domainInput.value = "";
       await loadDomains(false);
@@ -961,10 +913,17 @@ Now create the DNS records, wait a bit, then click Verify.`,
     async function refreshDomain(domain) {
       if (!domain) return;
 
-      const res = await safeFetch("/domains/refresh", {
+      let res = await safeFetch("/domains/refresh", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
+
+      if (!res.ok) {
+        res = await safeFetch("/domains/verify", {
+          method: "POST",
+          body: JSON.stringify({ domain, refreshOnly: true })
+        });
+      }
 
       if (!res.ok) {
         showToast(res.data?.message || "Refresh failed");
@@ -977,7 +936,6 @@ Now create the DNS records, wait a bit, then click Verify.`,
 
     async function verifyDomain(domain) {
       if (!domain) return;
-
       const res = await safeFetch("/domains/verify", {
         method: "POST",
         body: JSON.stringify({ domain })
@@ -994,7 +952,6 @@ Now create the DNS records, wait a bit, then click Verify.`,
 
     async function setPrimaryDomain(domain) {
       if (!domain) return;
-
       const res = await safeFetch("/domains/set-primary", {
         method: "POST",
         body: JSON.stringify({ domain })
@@ -1065,16 +1022,6 @@ Now create the DNS records, wait a bit, then click Verify.`,
     (async function init() {
       if (!ensureAuth()) return;
       await loadDomains(false);
-
-      for (let i = 0; i < domainsStore.length; i += 1) {
-        const domain = domainsStore[i];
-        const dnsInfo = await loadDnsInstructionsForDomain(domain.domain);
-        if (dnsInfo) {
-          domainsStore[i] = { ...domainsStore[i], ...dnsInfo };
-        }
-      }
-
-      renderDomains();
     })();
   </script>
 </body>
