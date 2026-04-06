@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two-Factor Authentication - Rattle Link</title>
+  <meta name="description" content="Set up, verify, and manage two-factor authentication for your Rattle Link account." />
+  <style>
+    :root{
+      --bg:#eef4ff;
+      --bg-soft:#f8fbff;
+      --surface:#ffffff;
+      --surface-2:#f7faff;
+      --surface-3:#eef5ff;
+      --text:#0f172a;
+      --text-soft:#475569;
+      --muted:#64748b;
+      --line:#d7e3f4;
+      --line-strong:#c2d5ed;
+      --primary:#2563eb;
+      --primary-strong:#1d4ed8;
+      --accent:#06b6d4;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warning:#d97706;
+      --shadow:0 28px 80px rgba(15,23,42,.14);
+      --shadow-soft:0 16px 42px rgba(37,99,235,.14);
+      --radius-2xl:32px;
+      --radius-xl:24px;
+      --radius-lg:18px;
+      --radius-md:14px;
+      --radius-sm:12px;
+    }
+
+    body.dark{
+      --bg:#030914;
+      --bg-soft:#07111f;
+      --surface:#081221;
+      --surface-2:#0d1728;
+      --surface-3:#101d31;
+      --text:#e2e8f0;
+      --text-soft:#9fb1c9;
+      --muted:#7f94b0;
+      --line:rgba(148,163,184,.15);
+      --line-strong:rgba(148,163,184,.24);
+      --primary:#00d5ff;
+      --primary-strong:#00b8dc;
+      --accent:#60a5fa;
+      --success:#22c55e;
+      --danger:#ef4444;
+      --warning:#f59e0b;
+      --shadow:0 35px 100px rgba(0,0,0,.52);
+      --shadow-soft:0 20px 55px rgba(0,213,255,.12);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ min-height:100%; scroll-behavior:smooth; }
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 26%),
+        radial-gradient(circle at 85% 15%, rgba(6,182,212,.14), transparent 18%),
+        radial-gradient(circle at bottom right, rgba(37,99,235,.10), transparent 22%),
+        linear-gradient(180deg, var(--bg), var(--bg-soft));
+      overflow-x:hidden;
+    }
+
+    .wrap{ max-width:1240px; margin:0 auto; padding:20px; }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:14px; text-decoration:none; }
+    .brand-badge{
+      width:58px;
+      height:58px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--accent));
+      color:#02131c;
+      font-weight:900;
+      font-size:28px;
+      box-shadow:0 12px 34px rgba(37,99,235,.24);
+      flex:0 0 58px;
+    }
+    .brand-copy h1{
+      margin:0;
+      font-size:22px;
+      line-height:1;
+      color:var(--text);
+    }
+    .brand-copy p{
+      margin:4px 0 0;
+      font-size:13px;
+      color:var(--text-soft);
+    }
+
+    .top-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .btn,
+    button{
+      appearance:none;
+      border:none;
+      border-radius:16px;
+      padding:13px 16px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+    .btn-primary{
+      background:linear-gradient(135deg, var(--primary), var(--primary-strong));
+      color:#fff;
+      box-shadow:0 14px 32px rgba(37,99,235,.22);
+    }
+    body.dark .btn-primary{ color:#03121b; }
+    .btn-secondary{
+      background:var(--surface);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+    .btn-danger{
+      background:rgba(220,38,38,.10);
+      color:var(--danger);
+      border:1px solid rgba(220,38,38,.20);
+    }
+    .btn-warning{
+      background:rgba(217,119,6,.10);
+      color:var(--warning);
+      border:1px solid rgba(217,119,6,.20);
+    }
+    .btn:hover,
+    button:hover{ transform:translateY(-1px); }
+    .btn:disabled,
+    button:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:20px;
+      margin-bottom:22px;
+    }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-soft);
+    }
+
+    .hero-left{
+      padding:28px;
+      background:
+        radial-gradient(circle at top right, rgba(37,99,235,.12), transparent 26%),
+        linear-gradient(180deg, var(--surface), var(--surface));
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      color:var(--primary);
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:16px;
+    }
+    .hero-left h2{
+      margin:0 0 12px;
+      font-size:48px;
+      line-height:1.02;
+      letter-spacing:-1.5px;
+    }
+    .hero-left p{
+      margin:0;
+      color:var(--text-soft);
+      font-size:16px;
+      line-height:1.8;
+      max-width:760px;
+    }
+    .hero-points{
+      display:grid;
+      gap:12px;
+      margin-top:22px;
+    }
+    .hero-point{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px;
+      border-radius:18px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+    }
+    .hero-point-icon{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      font-size:20px;
+      background:linear-gradient(135deg, rgba(37,99,235,.12), rgba(6,182,212,.12));
+      color:var(--primary);
+      flex:0 0 42px;
+    }
+    .hero-point strong{ display:block; margin-bottom:4px; font-size:14px; }
+    .hero-point span{ display:block; color:var(--text-soft); font-size:13px; line-height:1.7; }
+
+    .hero-right{ padding:24px; }
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      font-size:12px;
+      font-weight:800;
+      color:var(--text-soft);
+      margin-bottom:14px;
+    }
+    .status-pill.good{
+      color:var(--success);
+      border-color:rgba(34,197,94,.20);
+      background:rgba(34,197,94,.08);
+    }
+    .status-pill.warn{
+      color:var(--warning);
+      border-color:rgba(217,119,6,.20);
+      background:rgba(217,119,6,.08);
+    }
+
+    .mini-kpis{ display:grid; gap:12px; margin-top:10px; }
+    .mini-kpi{
+      border-radius:18px;
+      padding:16px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+    }
+    .mini-kpi b{ display:block; font-size:26px; margin-bottom:6px; }
+    .mini-kpi span{ display:block; color:var(--text-soft); font-size:13px; line-height:1.7; }
+
+    .layout{
+      display:grid;
+      grid-template-columns:1fr 360px;
+      gap:20px;
+      align-items:start;
+    }
+
+    .main-stack,
+    .side-stack{ display:flex; flex-direction:column; gap:20px; }
+
+    .section-card{ padding:24px; }
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+    .section-head h3{
+      margin:0 0 6px;
+      font-size:24px;
+      line-height:1.1;
+    }
+    .section-head p{
+      margin:0;
+      color:var(--text-soft);
+      font-size:13px;
+      line-height:1.8;
+      max-width:620px;
+    }
+
+    .steps{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .step{
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      position:relative;
+    }
+    .step-number{
+      width:30px;
+      height:30px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--primary-strong));
+      color:#fff;
+      font-size:12px;
+      font-weight:900;
+      margin-bottom:10px;
+    }
+    body.dark .step-number{ color:#03121b; }
+    .step h4{ margin:0 0 8px; font-size:16px; }
+    .step p{ margin:0; color:var(--text-soft); font-size:13px; line-height:1.7; }
+
+    .grid-2,
+    .grid-3{ display:grid; gap:14px; }
+    .grid-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .grid-3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .field label{
+      font-size:12px;
+      font-weight:800;
+      color:var(--text-soft);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .field input,
+    .field select,
+    .field textarea{
+      width:100%;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      color:var(--text);
+      padding:14px 14px;
+      outline:none;
+      font-size:15px;
+      transition:.18s ease;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+    body.dark .field input:focus,
+    body.dark .field select:focus,
+    body.dark .field textarea:focus{
+      box-shadow:0 0 0 4px rgba(0,213,255,.10);
+    }
+
+    .mode-switch{
+      display:flex;
+      gap:8px;
+      padding:6px;
+      border-radius:18px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+    .tab{
+      flex:1;
+      min-width:120px;
+      appearance:none;
+      border:none;
+      background:transparent;
+      color:var(--text-soft);
+      font-size:13px;
+      font-weight:800;
+      border-radius:13px;
+      padding:13px 14px;
+      cursor:pointer;
+    }
+    .tab.active{
+      background:var(--surface);
+      color:var(--text);
+      border:1px solid var(--line);
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
+    }
+    body.dark .tab.active{ box-shadow:none; background:rgba(255,255,255,.03); }
+
+    .panel{
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      border-radius:20px;
+      padding:18px;
+    }
+
+    .secret-box,
+    .backup-box,
+    .code-box{
+      word-break:break-all;
+      border-radius:16px;
+      border:1px dashed var(--line-strong);
+      background:var(--surface);
+      padding:16px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size:14px;
+      line-height:1.7;
+      color:var(--text);
+    }
+
+    .qr-wrap{
+      display:grid;
+      place-items:center;
+      min-height:260px;
+      border-radius:20px;
+      border:1px dashed var(--line-strong);
+      background:var(--surface);
+      padding:18px;
+    }
+    .qr-inner{
+      width:220px;
+      height:220px;
+      border-radius:20px;
+      display:grid;
+      place-items:center;
+      background:
+        linear-gradient(90deg, rgba(15,23,42,.05) 10px, transparent 10px) 0 0/20px 20px,
+        linear-gradient(rgba(15,23,42,.05) 10px, transparent 10px) 0 0/20px 20px,
+        var(--surface);
+      border:1px solid var(--line);
+      position:relative;
+      overflow:hidden;
+    }
+    .qr-center{
+      width:68px;
+      height:68px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--accent));
+      color:#02131c;
+      font-weight:900;
+      font-size:24px;
+      box-shadow:0 12px 24px rgba(37,99,235,.18);
+    }
+
+    .otp-inputs{
+      display:grid;
+      grid-template-columns:repeat(6, minmax(0, 1fr));
+      gap:10px;
+    }
+    .otp-inputs input{
+      text-align:center;
+      font-size:24px;
+      font-weight:900;
+      letter-spacing:1px;
+    }
+
+    .actions,
+    .inline-actions,
+    .badge-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .notice,
+    .success-box,
+    .warn-box,
+    .danger-box,
+    .info-box{
+      padding:14px 16px;
+      border-radius:16px;
+      font-size:13px;
+      line-height:1.8;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+    }
+    .success-box{
+      color:var(--success);
+      border-color:rgba(34,197,94,.18);
+      background:rgba(34,197,94,.08);
+    }
+    .warn-box{
+      color:var(--warning);
+      border-color:rgba(217,119,6,.18);
+      background:rgba(217,119,6,.08);
+    }
+    .danger-box{
+      color:var(--danger);
+      border-color:rgba(220,38,38,.18);
+      background:rgba(220,38,38,.08);
+    }
+
+    .result{
+      min-height:22px;
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.7;
+      white-space:pre-wrap;
+      color:var(--text-soft);
+    }
+
+    .backup-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-top:14px;
+    }
+    .backup-item{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      font-family:ui-monospace, monospace;
+      font-size:14px;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .status-list{
+      display:grid;
+      gap:12px;
+    }
+    .status-item{
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+    }
+    .status-item b{ display:block; margin-bottom:6px; font-size:14px; }
+    .status-item span{ color:var(--text-soft); font-size:13px; line-height:1.7; }
+
+    .toggle-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:14px 0;
+      border-bottom:1px solid var(--line);
+    }
+    .toggle-row:last-child{ border-bottom:none; }
+
+    .switch{
+      position:relative;
+      width:58px;
+      height:32px;
+      display:inline-block;
+    }
+    .switch input{ display:none; }
+    .slider{
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      background:var(--line-strong);
+      cursor:pointer;
+      transition:.2s ease;
+    }
+    .slider::before{
+      content:"";
+      position:absolute;
+      width:24px;
+      height:24px;
+      left:4px;
+      top:4px;
+      border-radius:50%;
+      background:#fff;
+      transition:.2s ease;
+      box-shadow:0 4px 14px rgba(15,23,42,.12);
+    }
+    .switch input:checked + .slider{ background:linear-gradient(135deg, var(--primary), var(--primary-strong)); }
+    .switch input:checked + .slider::before{ transform:translateX(26px); }
+
+    .tiny{ font-size:12px; color:var(--text-soft); line-height:1.7; }
+    .hidden{ display:none !important; }
+
+    @media (max-width: 1100px){
+      .hero,
+      .layout{ grid-template-columns:1fr; }
+      .steps,
+      .grid-3{ grid-template-columns:1fr; }
+      .grid-2{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 760px){
+      .wrap{ padding:14px; }
+      .hero-left h2{ font-size:34px; }
+      .section-card,
+      .hero-left,
+      .hero-right{ padding:18px; }
+      .otp-inputs{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+      .backup-grid{ grid-template-columns:1fr; }
+      .top-actions{ width:100%; }
+      .top-actions > *{ flex:1 1 auto; }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="index.html">
+        <div class="brand-badge">🐍</div>
+        <div class="brand-copy">
+          <h1>Rattle Link</h1>
+          <p>Two-factor authentication security center</p>
+        </div>
+      </a>
+
+      <div class="top-actions">
+        <button class="btn-secondary" type="button" onclick="goBackDashboard()">Dashboard</button>
+        <button class="btn-secondary" type="button" onclick="toggleTheme()">🌗 Theme</button>
+        <button class="btn-primary" type="button" onclick="refresh2FAStatus(true)">Refresh Status</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="card hero-left">
+        <div class="eyebrow">🔐 Account security</div>
+        <h2>Protect your Rattle Link account with production-ready 2FA.</h2>
+        <p>
+          Add authenticator app protection, recovery codes, trusted device controls, and step-up verification before sensitive dashboard actions. This page is designed to fit your existing login, dashboard, and backend-aware auth flow.
+        </p>
+
+        <div class="hero-points">
+          <div class="hero-point">
+            <div class="hero-point-icon">📱</div>
+            <div>
+              <strong>Authenticator app setup</strong>
+              <span>Scan a QR code or copy a secret key into Google Authenticator, Authy, 1Password, Microsoft Authenticator, or a similar TOTP app.</span>
+            </div>
+          </div>
+          <div class="hero-point">
+            <div class="hero-point-icon">🧾</div>
+            <div>
+              <strong>Backup recovery codes</strong>
+              <span>Generate one-time recovery codes so you can still access your account if you lose your phone or your app resets.</span>
+            </div>
+          </div>
+          <div class="hero-point">
+            <div class="hero-point-icon">🛡️</div>
+            <div>
+              <strong>Step-up protection</strong>
+              <span>Use 2FA before enabling billing changes, custom domain updates, API-sensitive actions, and account security updates.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hero-right">
+        <div id="statusPill" class="status-pill warn">● 2FA not enabled</div>
+        <div class="mini-kpis">
+          <div class="mini-kpi">
+            <b id="securityScore">72%</b>
+            <span>Account security score based on password login, email verification, and 2FA state.</span>
+          </div>
+          <div class="mini-kpi">
+            <b id="recoveryCount">0</b>
+            <span>Recovery codes currently available for emergency account access.</span>
+          </div>
+          <div class="mini-kpi">
+            <b id="trustedDevicesCount">1</b>
+            <span>Trusted devices remembered for lower-friction login after successful 2FA verification.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="main-stack">
+        <div class="card section-card">
+          <div class="section-head">
+            <div>
+              <h3>Setup flow</h3>
+              <p>Use the full setup flow below to generate your secret, scan the QR code, verify your first code, and download or copy your recovery codes.</p>
+            </div>
+            <div class="badge-row">
+              <span id="backendBadge" class="status-pill">Backend: Checking...</span>
+            </div>
+          </div>
+
+          <div class="steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <h4>Generate secret</h4>
+              <p>Create a unique 2FA secret for your account from the active authenticated backend.</p>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <h4>Scan and add</h4>
+              <p>Add the QR code or secret key to your authenticator app on your phone or password manager.</p>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <h4>Verify and enable</h4>
+              <p>Enter the current 6-digit code to finalize setup and activate two-factor protection.</p>
+            </div>
+          </div>
+
+          <div class="mode-switch">
+            <button id="setupTab" class="tab active" type="button" onclick="switchMode('setup')">Setup 2FA</button>
+            <button id="verifyTab" class="tab" type="button" onclick="switchMode('verify')">Verify Login Code</button>
+            <button id="recoveryTab" class="tab" type="button" onclick="switchMode('recovery')">Recovery Codes</button>
+          </div>
+
+          <div id="setupPanel">
+            <div class="grid-2">
+              <div class="panel">
+                <div class="section-head" style="margin-bottom:12px;">
+                  <div>
+                    <h3 style="font-size:20px;margin-bottom:4px;">Authenticator app pairing</h3>
+                    <p>Generate a new setup payload and pair it with your account.</p>
+                  </div>
+                </div>
+
+                <div class="actions" style="margin-bottom:14px;">
+                  <button id="generateSecretBtn" class="btn-primary" type="button" onclick="generate2FASecret()">Generate Secret</button>
+                  <button class="btn-secondary" type="button" onclick="copySecretKey()">Copy Secret</button>
+                </div>
+
+                <div class="field" style="margin-bottom:12px;">
+                  <label>Secret key</label>
+                  <div id="secretKeyBox" class="secret-box">Generate a secret to begin setup.</div>
+                </div>
+
+                <div class="field" style="margin-bottom:12px;">
+                  <label>OTP Auth URI</label>
+                  <div id="otpauthBox" class="code-box">No OTP URI generated yet.</div>
+                </div>
+
+                <div class="field">
+                  <label>Account label</label>
+                  <input id="issuerLabel" value="Rattle Link" />
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="section-head" style="margin-bottom:12px;">
+                  <div>
+                    <h3 style="font-size:20px;margin-bottom:4px;">QR preview</h3>
+                    <p>This is a styled placeholder preview. Replace the QR source with your backend QR image or generated canvas data in production.</p>
+                  </div>
+                </div>
+                <div class="qr-wrap">
+                  <div class="qr-inner" id="qrInner">
+                    <div class="qr-center">2FA</div>
+                  </div>
+                </div>
+                <div class="tiny" style="margin-top:12px;">
+                  Production note: wire this panel to a backend endpoint like <code>/2fa/setup</code> that returns an <code>otpauth://</code> URI and optional QR image payload.
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top:14px;">
+              <div class="section-head" style="margin-bottom:12px;">
+                <div>
+                  <h3 style="font-size:20px;margin-bottom:4px;">Verify your first code</h3>
+                  <p>Enter the current 6-digit code from your authenticator app to enable two-factor authentication.</p>
+                </div>
+              </div>
+
+              <div class="otp-inputs" style="margin-bottom:14px;">
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+                <input maxlength="1" class="otp-digit" inputmode="numeric" />
+              </div>
+
+              <div class="actions">
+                <button id="enable2FABtn" class="btn-primary" type="button" onclick="enable2FA()">Enable 2FA</button>
+                <button class="btn-secondary" type="button" onclick="clearOtpInputs()">Clear Code</button>
+              </div>
+
+              <div id="setupResult" class="result"></div>
+            </div>
+          </div>
+
+          <div id="verifyPanel" class="hidden">
+            <div class="panel">
+              <div class="section-head" style="margin-bottom:12px;">
+                <div>
+                  <h3 style="font-size:20px;margin-bottom:4px;">Verify a login challenge</h3>
+                  <p>Use this form after password login if your auth flow redirects the user here for step-two verification.</p>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label>Challenge token</label>
+                  <input id="challengeToken" placeholder="Paste pending 2FA challenge token" />
+                </div>
+                <div class="field">
+                  <label>Remember this device</label>
+                  <select id="rememberDeviceSelect">
+                    <option value="1">Yes, trust this device</option>
+                    <option value="0">No, require 2FA again next time</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="otp-inputs" style="margin:14px 0;">
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+                <input maxlength="1" class="verify-digit" inputmode="numeric" />
+              </div>
+
+              <div class="actions">
+                <button id="verifyLoginBtn" class="btn-primary" type="button" onclick="verify2FALogin()">Verify Login</button>
+                <button class="btn-secondary" type="button" onclick="clearVerifyInputs()">Clear Code</button>
+              </div>
+
+              <div class="notice" style="margin-top:14px;">
+                Production note: connect this to a login step endpoint like <code>/2fa/verify-login</code> and exchange the challenge token plus the TOTP code for a final session token.
+              </div>
+
+              <div id="verifyResult" class="result"></div>
+            </div>
+          </div>
+
+          <div id="recoveryPanel" class="hidden">
+            <div class="panel">
+              <div class="section-head" style="margin-bottom:12px;">
+                <div>
+                  <h3 style="font-size:20px;margin-bottom:4px;">Recovery codes</h3>
+                  <p>Save these one-time emergency codes in a secure password manager or an offline backup. Each code should work once.</p>
+                </div>
+              </div>
+
+              <div class="actions" style="margin-bottom:14px;">
+                <button id="generateRecoveryBtn" class="btn-primary" type="button" onclick="generateRecoveryCodes()">Generate Recovery Codes</button>
+                <button class="btn-secondary" type="button" onclick="copyRecoveryCodes()">Copy Codes</button>
+                <button class="btn-secondary" type="button" onclick="downloadRecoveryCodes()">Download .txt</button>
+              </div>
+
+              <div id="recoveryCodesWrap" class="backup-grid"></div>
+
+              <div id="recoveryResult" class="result"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <div class="section-head">
+            <div>
+              <h3>Security preferences</h3>
+              <p>These controls let you define when 2FA should be required and how trusted devices should behave across your account.</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="toggle-row">
+              <div>
+                <b>Require 2FA on every login</b>
+                <div class="tiny">Ignore trusted device memory and always ask for a code.</div>
+              </div>
+              <label class="switch"><input id="alwaysRequireToggle" type="checkbox" /><span class="slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <b>Remember trusted devices for 30 days</b>
+                <div class="tiny">Reduce friction on your personal device after a successful 2FA verification.</div>
+              </div>
+              <label class="switch"><input id="trustedDevicesToggle" type="checkbox" checked /><span class="slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <b>Require 2FA for billing and security changes</b>
+                <div class="tiny">Step-up verification before plan upgrades, payment actions, password changes, and domain security actions.</div>
+              </div>
+              <label class="switch"><input id="stepUpToggle" type="checkbox" checked /><span class="slider"></span></label>
+            </div>
+
+            <div class="actions" style="margin-top:16px;">
+              <button class="btn-primary" type="button" onclick="save2FAPreferences()">Save Preferences</button>
+            </div>
+
+            <div id="prefsResult" class="result"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-stack">
+        <div class="card section-card">
+          <div class="section-head" style="margin-bottom:12px;">
+            <div>
+              <h3>Current 2FA status</h3>
+              <p>Live overview of your account protection state.</p>
+            </div>
+          </div>
+          <div class="status-list">
+            <div class="status-item">
+              <b id="enabledStateText">Authenticator app not enabled</b>
+              <span id="enabledStateSub">Generate a secret and verify your first code to turn on 2FA.</span>
+            </div>
+            <div class="status-item">
+              <b id="lastVerifiedText">Last verified: Never</b>
+              <span>Updated after successful setup or after step-two login verification.</span>
+            </div>
+            <div class="status-item">
+              <b id="trustedDevicesText">Trusted devices: 1</b>
+              <span>Clear trusted devices if you signed in on a shared or lost device.</span>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:16px;">
+            <button class="btn-warning" type="button" onclick="clearTrustedDevices()">Clear Trusted Devices</button>
+            <button class="btn-danger" type="button" onclick="disable2FA()">Disable 2FA</button>
+          </div>
+          <div id="statusResult" class="result"></div>
+        </div>
+
+        <div class="card section-card">
+          <div class="section-head" style="margin-bottom:12px;">
+            <div>
+              <h3>Production endpoints</h3>
+              <p>Suggested endpoint names to connect your frontend to Backend2 and optional legacy flows.</p>
+            </div>
+          </div>
+          <div class="info-box">
+            <b>Suggested Backend2 routes</b><br>
+            <code>POST /2fa/setup</code><br>
+            <code>POST /2fa/enable</code><br>
+            <code>POST /2fa/verify-login</code><br>
+            <code>POST /2fa/recovery-codes</code><br>
+            <code>POST /2fa/disable</code><br>
+            <code>POST /2fa/clear-trusted-devices</code><br>
+            <code>GET /2fa/status</code>
+          </div>
+          <div class="warn-box" style="margin-top:12px;">
+            Do not fully trust local frontend state for real 2FA. Final enforcement must happen on the server when password login succeeds but before issuing a final dashboard session.
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <div class="section-head" style="margin-bottom:12px;">
+            <div>
+              <h3>Best practices</h3>
+              <p>Small things that make 2FA safer in production.</p>
+            </div>
+          </div>
+          <div class="status-list">
+            <div class="status-item"><b>Use TOTP secrets server-side</b><span>Generate and store a secret on the backend, ideally encrypted at rest.</span></div>
+            <div class="status-item"><b>Rate-limit verification</b><span>Lock or slow repeated invalid 2FA attempts to reduce brute-force risk.</span></div>
+            <div class="status-item"><b>Invalidate old recovery codes</b><span>Regenerate recovery codes as a new set and revoke any previous unused list.</span></div>
+            <div class="status-item"><b>Require 2FA after password reset</b><span>Trusted-device memory should be revoked after password changes or sensitive account updates.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    let pageMode = "setup";
+    let activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let twoFAEnabled = false;
+    let currentSecret = "";
+    let currentOtpAuth = "";
+    let recoveryCodes = [];
+    let trustedDevicesCount = 1;
+    let lastVerifiedAt = null;
+
+    const $ = id => document.getElementById(id);
+    const statusPill = $("statusPill");
+    const securityScore = $("securityScore");
+    const recoveryCount = $("recoveryCount");
+    const trustedDevicesCountEl = $("trustedDevicesCount");
+    const backendBadge = $("backendBadge");
+    const secretKeyBox = $("secretKeyBox");
+    const otpauthBox = $("otpauthBox");
+    const setupResult = $("setupResult");
+    const verifyResult = $("verifyResult");
+    const recoveryResult = $("recoveryResult");
+    const prefsResult = $("prefsResult");
+    const statusResult = $("statusResult");
+    const recoveryCodesWrap = $("recoveryCodesWrap");
+    const enabledStateText = $("enabledStateText");
+    const enabledStateSub = $("enabledStateSub");
+    const lastVerifiedText = $("lastVerifiedText");
+    const trustedDevicesText = $("trustedDevicesText");
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") document.body.classList.remove("dark");
+      else document.body.classList.add("dark");
+    }
+
+    function goBackDashboard() {
+      window.location.href = "dashboard.html";
+    }
+
+    function backendLabel(backend) {
+      return backend === "legacy" ? "Legacy AWS" : "Backend2";
+    }
+
+    function authHeaders() {
+      const token = localStorage.getItem("token") || "";
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    function apiBaseForBackend(backend) {
+      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    }
+
+    function setResult(el, message, type = "") {
+      if (!el) return;
+      el.textContent = message;
+      el.className = "result" + (type ? ` ${type}` : "");
+    }
+
+    function generateRandomBase32(length = 32) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+      let out = "";
+      for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+
+    function formatTime(ts) {
+      return ts ? new Date(ts).toLocaleString() : "Never";
+    }
+
+    function updateStatusUI() {
+      if (backendBadge) {
+        backendBadge.textContent = `Backend: ${backendLabel(activeBackend)}`;
+        backendBadge.className = "status-pill";
+      }
+
+      const baseScore = 72;
+      const score = twoFAEnabled ? 96 : baseScore;
+      securityScore.textContent = `${score}%`;
+      recoveryCount.textContent = String(recoveryCodes.length);
+      trustedDevicesCountEl.textContent = String(trustedDevicesCount);
+
+      if (twoFAEnabled) {
+        statusPill.textContent = "● 2FA enabled";
+        statusPill.className = "status-pill good";
+        enabledStateText.textContent = "Authenticator app enabled";
+        enabledStateSub.textContent = "Your account now requires a time-based one-time password for protected sign-ins or step-up checks.";
+      } else {
+        statusPill.textContent = "● 2FA not enabled";
+        statusPill.className = "status-pill warn";
+        enabledStateText.textContent = "Authenticator app not enabled";
+        enabledStateSub.textContent = "Generate a secret and verify your first code to turn on 2FA.";
+      }
+
+      lastVerifiedText.textContent = `Last verified: ${formatTime(lastVerifiedAt)}`;
+      trustedDevicesText.textContent = `Trusted devices: ${trustedDevicesCount}`;
+    }
+
+    function switchMode(nextMode) {
+      pageMode = nextMode;
+      $("setupPanel").classList.toggle("hidden", nextMode !== "setup");
+      $("verifyPanel").classList.toggle("hidden", nextMode !== "verify");
+      $("recoveryPanel").classList.toggle("hidden", nextMode !== "recovery");
+      $("setupTab").classList.toggle("active", nextMode === "setup");
+      $("verifyTab").classList.toggle("active", nextMode === "verify");
+      $("recoveryTab").classList.toggle("active", nextMode === "recovery");
+    }
+
+    function getOtpFromInputs(selector) {
+      return Array.from(document.querySelectorAll(selector)).map(i => i.value.trim()).join("");
+    }
+
+    function clearOtpInputs() {
+      document.querySelectorAll(".otp-digit").forEach(i => i.value = "");
+    }
+
+    function clearVerifyInputs() {
+      document.querySelectorAll(".verify-digit").forEach(i => i.value = "");
+    }
+
+    function wireOtpInputs(selector) {
+      const inputs = Array.from(document.querySelectorAll(selector));
+      inputs.forEach((input, index) => {
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/\D/g, "").slice(0, 1);
+          if (input.value && inputs[index + 1]) inputs[index + 1].focus();
+        });
+        input.addEventListener("keydown", e => {
+          if (e.key === "Backspace" && !input.value && inputs[index - 1]) inputs[index - 1].focus();
+        });
+        input.addEventListener("paste", e => {
+          const text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, inputs.length);
+          if (!text) return;
+          e.preventDefault();
+          text.split("").forEach((ch, i) => { if (inputs[i]) inputs[i].value = ch; });
+          const last = inputs[Math.min(text.length, inputs.length) - 1];
+          if (last) last.focus();
+        });
+      });
+    }
+
+    async function safeFetch(path, options = {}, backend = activeBackend) {
+      const headers = { ...authHeaders(), ...(options.headers || {}) };
+      const method = String(options.method || "GET").toUpperCase();
+      if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
+
+      try {
+        const res = await fetch(apiBaseForBackend(backend).replace(/\/+$/, "") + path, { ...options, headers });
+        const raw = await res.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
+        return { ok: res.ok, status: res.status, data, backend };
+      } catch (e) {
+        return { ok: false, status: 0, data: { message: e?.message || "Request failed" }, backend };
+      }
+    }
+
+    async function refresh2FAStatus(showFeedback = false) {
+      activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+      const res = await safeFetch("/2fa/status", { method: "GET" }, activeBackend);
+
+      if (res.ok) {
+        const data = res.data || {};
+        twoFAEnabled = !!data.enabled;
+        trustedDevicesCount = Number(data.trustedDevicesCount || trustedDevicesCount || 0);
+        lastVerifiedAt = data.lastVerifiedAt || lastVerifiedAt;
+        recoveryCodes = Array.isArray(data.recoveryCodesPreview) ? data.recoveryCodesPreview : recoveryCodes;
+        updateRecoveryGrid();
+        updateStatusUI();
+        if (showFeedback) setResult(statusResult, `2FA status refreshed from ${backendLabel(res.backend)}.`);
+        return;
+      }
+
+      updateStatusUI();
+      if (showFeedback) setResult(statusResult, `Could not load 2FA status. Using current page state. ${res.data?.message || ""}`.trim());
+    }
+
+    async function generate2FASecret() {
+      setResult(setupResult, "Generating 2FA secret...");
+      const issuer = $("issuerLabel").value.trim() || "Rattle Link";
+      const email = localStorage.getItem("lastUser") || localStorage.getItem("rememberUser") || "user@rattlelink.local";
+      const fallbackSecret = generateRandomBase32(32);
+      const fallbackOtp = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${fallbackSecret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+
+      const res = await safeFetch("/2fa/setup", {
+        method: "POST",
+        body: JSON.stringify({ issuer, label: email })
+      }, activeBackend);
+
+      if (res.ok) {
+        currentSecret = String(res.data?.secret || fallbackSecret);
+        currentOtpAuth = String(res.data?.otpauthUrl || fallbackOtp);
+        secretKeyBox.textContent = currentSecret;
+        otpauthBox.textContent = currentOtpAuth;
+        setResult(setupResult, `Secret generated from ${backendLabel(res.backend)}.`);
+        return;
+      }
+
+      currentSecret = fallbackSecret;
+      currentOtpAuth = fallbackOtp;
+      secretKeyBox.textContent = currentSecret;
+      otpauthBox.textContent = currentOtpAuth;
+      setResult(setupResult, `Using local preview secret because the setup endpoint is not connected yet.`);
+    }
+
+    async function enable2FA() {
+      const code = getOtpFromInputs(".otp-digit");
+      if (!currentSecret) {
+        setResult(setupResult, "Generate a secret first.");
+        return;
+      }
+      if (code.length !== 6) {
+        setResult(setupResult, "Enter a full 6-digit code from your authenticator app.");
+        return;
+      }
+
+      const res = await safeFetch("/2fa/enable", {
+        method: "POST",
+        body: JSON.stringify({ secret: currentSecret, code })
+      }, activeBackend);
+
+      if (res.ok) {
+        twoFAEnabled = true;
+        lastVerifiedAt = Date.now();
+        recoveryCodes = Array.isArray(res.data?.recoveryCodes) ? res.data.recoveryCodes : generateRecoverySet();
+        updateRecoveryGrid();
+        updateStatusUI();
+        switchMode("recovery");
+        setResult(setupResult, `2FA enabled successfully on ${backendLabel(res.backend)}.`);
+        setResult(recoveryResult, "Save your recovery codes now. Each code should work once.");
+        return;
+      }
+
+      twoFAEnabled = true;
+      lastVerifiedAt = Date.now();
+      recoveryCodes = generateRecoverySet();
+      updateRecoveryGrid();
+      updateStatusUI();
+      switchMode("recovery");
+      setResult(setupResult, "2FA preview enabled locally. Connect the backend enable endpoint to make this real.");
+      setResult(recoveryResult, "Recovery codes generated locally for preview.");
+    }
+
+    async function verify2FALogin() {
+      const code = getOtpFromInputs(".verify-digit");
+      const challengeToken = $("challengeToken").value.trim();
+      const rememberDevice = $("rememberDeviceSelect").value === "1";
+
+      if (!challengeToken) {
+        setResult(verifyResult, "Enter a pending challenge token.");
+        return;
+      }
+      if (code.length !== 6) {
+        setResult(verifyResult, "Enter the full 6-digit code.");
+        return;
+      }
+
+      const res = await safeFetch("/2fa/verify-login", {
+        method: "POST",
+        body: JSON.stringify({ challengeToken, code, rememberDevice })
+      }, activeBackend);
+
+      if (res.ok) {
+        lastVerifiedAt = Date.now();
+        if (rememberDevice) trustedDevicesCount = Math.max(1, trustedDevicesCount);
+        updateStatusUI();
+        setResult(verifyResult, `2FA login verification succeeded on ${backendLabel(res.backend)}.`);
+        return;
+      }
+
+      lastVerifiedAt = Date.now();
+      updateStatusUI();
+      setResult(verifyResult, "2FA preview verification passed locally. Replace with final login token exchange in production.");
+    }
+
+    function generateRecoverySet() {
+      return Array.from({ length: 8 }, () => {
+        const partA = Math.random().toString(36).slice(2, 6).toUpperCase();
+        const partB = Math.random().toString(36).slice(2, 6).toUpperCase();
+        return `${partA}-${partB}`;
+      });
+    }
+
+    async function generateRecoveryCodes() {
+      const res = await safeFetch("/2fa/recovery-codes", { method: "POST" }, activeBackend);
+      if (res.ok && Array.isArray(res.data?.codes)) {
+        recoveryCodes = res.data.codes;
+        updateRecoveryGrid();
+        updateStatusUI();
+        setResult(recoveryResult, `Recovery codes regenerated on ${backendLabel(res.backend)}.`);
+        return;
+      }
+      recoveryCodes = generateRecoverySet();
+      updateRecoveryGrid();
+      updateStatusUI();
+      setResult(recoveryResult, "Recovery codes generated locally for preview.");
+    }
+
+    function updateRecoveryGrid() {
+      if (!recoveryCodesWrap) return;
+      if (!recoveryCodes.length) {
+        recoveryCodesWrap.innerHTML = `<div class="tiny">No recovery codes generated yet.</div>`;
+        return;
+      }
+      recoveryCodesWrap.innerHTML = recoveryCodes.map(code => `<div class="backup-item">${code}</div>`).join("");
+    }
+
+    async function copySecretKey() {
+      if (!currentSecret) {
+        setResult(setupResult, "No secret to copy yet.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(currentSecret);
+        setResult(setupResult, "Secret key copied.");
+      } catch {
+        setResult(setupResult, "Copy failed.");
+      }
+    }
+
+    async function copyRecoveryCodes() {
+      if (!recoveryCodes.length) {
+        setResult(recoveryResult, "No recovery codes available.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(recoveryCodes.join("\n"));
+        setResult(recoveryResult, "Recovery codes copied.");
+      } catch {
+        setResult(recoveryResult, "Copy failed.");
+      }
+    }
+
+    function downloadRecoveryCodes() {
+      if (!recoveryCodes.length) {
+        setResult(recoveryResult, "No recovery codes available.");
+        return;
+      }
+      const text = [
+        "Rattle Link Recovery Codes",
+        "Store these in a safe place.",
+        "Each code can be used once.",
+        "",
+        ...recoveryCodes
+      ].join("\n");
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rattle-link-recovery-codes.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+      setResult(recoveryResult, "Recovery codes downloaded.");
+    }
+
+    async function save2FAPreferences() {
+      const payload = {
+        alwaysRequire2FA: $("alwaysRequireToggle").checked,
+        allowTrustedDevices: $("trustedDevicesToggle").checked,
+        requireStepUpForSensitiveActions: $("stepUpToggle").checked
+      };
+
+      const res = await safeFetch("/2fa/preferences", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }, activeBackend);
+
+      if (res.ok) {
+        setResult(prefsResult, `2FA preferences saved on ${backendLabel(res.backend)}.`);
+        return;
+      }
+
+      setResult(prefsResult, "Preferences saved locally for preview. Wire this to your backend preferences endpoint.");
+    }
+
+    async function clearTrustedDevices() {
+      const res = await safeFetch("/2fa/clear-trusted-devices", { method: "POST" }, activeBackend);
+      trustedDevicesCount = 0;
+      updateStatusUI();
+      if (res.ok) {
+        setResult(statusResult, `Trusted devices cleared on ${backendLabel(res.backend)}.`);
+        return;
+      }
+      setResult(statusResult, "Trusted devices cleared locally for preview.");
+    }
+
+    async function disable2FA() {
+      const confirmed = confirm("Disable two-factor authentication for this account?");
+      if (!confirmed) return;
+
+      const res = await safeFetch("/2fa/disable", { method: "POST" }, activeBackend);
+      twoFAEnabled = false;
+      recoveryCodes = [];
+      currentSecret = "";
+      currentOtpAuth = "";
+      secretKeyBox.textContent = "Generate a secret to begin setup.";
+      otpauthBox.textContent = "No OTP URI generated yet.";
+      updateRecoveryGrid();
+      updateStatusUI();
+      clearOtpInputs();
+      clearVerifyInputs();
+
+      if (res.ok) {
+        setResult(statusResult, `2FA disabled on ${backendLabel(res.backend)}.`);
+        return;
+      }
+      setResult(statusResult, "2FA disabled locally for preview. Connect the backend disable endpoint for production.");
+    }
+
+    loadTheme();
+    wireOtpInputs(".otp-digit");
+    wireOtpInputs(".verify-digit");
+    updateRecoveryGrid();
+    updateStatusUI();
+    refresh2FAStatus(false);
+  </script>
+</body>
+</html>
