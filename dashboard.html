@@ -111,19 +111,48 @@
       color:var(--cyan);
     }
 
-    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
-    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
-    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-    .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-    .grid-5{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:14px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+    }
+
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+    }
+
+    .grid-5{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
+    }
 
     .stat-card{ text-align:center; }
-    .stat-card h3{ margin:0 0 8px; font-size:30px; color:var(--cyan); }
+    .stat-card h3{
+      margin:0 0 8px;
+      font-size:30px;
+      color:var(--cyan);
+    }
     .stat-card p{ margin:0; color:var(--muted); font-size:13px; }
 
     .two-col{ display:grid; grid-template-columns:1.25fr .75fr; gap:18px; }
     .three-col{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
     .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
     .stack{ display:flex; flex-direction:column; gap:12px; }
 
     .form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
@@ -139,7 +168,11 @@
       outline:none;
     }
 
-    input[type="checkbox"]{ width:auto; accent-color:var(--cyan); }
+    input[type="checkbox"]{
+      width:auto;
+      accent-color:var(--cyan);
+    }
+
     textarea{ min-height:110px; resize:vertical; }
     input::placeholder, textarea::placeholder{ color:var(--muted); }
     input:focus, select:focus, textarea:focus{ box-shadow:0 0 10px rgba(0,255,255,0.4); }
@@ -177,7 +210,11 @@
     .backend2-btn{ background:#0f172a; color:#22c55e; border-color:#22c55e; }
     .pink-btn{ background:#111827; color:#f472b6; border-color:#f472b6; }
 
-    .backend-active{ box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08); transform:translateY(-1px); font-weight:700; }
+    .backend-active{
+      box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08);
+      transform:translateY(-1px);
+      font-weight:700;
+    }
 
     .copy{ color:var(--green); border-color:var(--green); }
     .open{ color:var(--blue); border-color:var(--blue); }
@@ -186,7 +223,14 @@
     .ghost-btn{ color:#cbd5e1; border-color:#475569; }
     .warn-btn{ color:#f59e0b; border-color:#f59e0b; }
 
-    .badge, .pill, .chip{ display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid currentColor; }
+    .badge, .pill, .chip{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+    }
+
     .live{ color:var(--green); }
     .paused{ color:var(--yellow); }
     .expired{ color:var(--red); }
@@ -202,7 +246,9 @@
     .success{ color:var(--green); }
     .error{ color:var(--red); }
 
-    .links-header, .section-head, .section-subhead{
+    .links-header,
+    .section-head,
+    .section-subhead{
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -212,13 +258,22 @@
     }
 
     .table-wrap{ overflow:auto; width:100%; }
+
     table{ width:100%; border-collapse:collapse; min-width:1400px; }
     th, td{ padding:10px; border-bottom:1px solid #334155; text-align:left; vertical-align:top; font-size:13px; }
     th{ color:var(--cyan); font-weight:600; position:sticky; top:0; background:#020617; z-index:1; }
     tr:hover{ background:#020617; }
 
     .plan-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:8px; }
-    .plan-card, .create-box, .mini-stat, .health-item, .resource-card, .insight-card, .activity-item, .domain-summary-card, .landing-summary-card, .auth-box{
+    .plan-card,
+    .create-box,
+    .mini-stat,
+    .health-item,
+    .resource-card,
+    .insight-card,
+    .activity-item,
+    .domain-summary-card,
+    .landing-summary-card{
       border:1px solid rgba(0,255,255,0.16);
       border-radius:14px;
       padding:14px;
@@ -226,29 +281,71 @@
     }
 
     .plan-card{ cursor:pointer; transition:.2s ease; }
-    .plan-card.active{ border-color:var(--cyan); box-shadow:0 0 16px rgba(0,255,255,0.22); background:rgba(0,255,255,0.05); }
+    .plan-card.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 16px rgba(0,255,255,0.22);
+      background:rgba(0,255,255,0.05);
+    }
 
-    .drop-zone{ border:2px dashed rgba(0,255,255,0.24); padding:14px; text-align:center; margin-top:10px; border-radius:12px; transition:.2s ease; }
-    .drop-zone.dragover{ background:#020617; border-color:var(--cyan); box-shadow:0 0 15px rgba(0,255,255,0.2) inset; }
+    .drop-zone{
+      border:2px dashed rgba(0,255,255,0.24);
+      padding:14px;
+      text-align:center;
+      margin-top:10px;
+      border-radius:12px;
+      transition:.2s ease;
+    }
+    .drop-zone.dragover{
+      background:#020617;
+      border-color:var(--cyan);
+      box-shadow:0 0 15px rgba(0,255,255,0.2) inset;
+    }
 
     .panel{
-      position:fixed; right:0; top:0; width:460px; max-width:100%; height:100%; background:#000;
-      border-left:1px solid rgba(0,255,255,0.3); box-shadow:-10px 0 40px rgba(0,255,255,0.18);
-      padding:20px; display:none; overflow:auto; z-index:1000;
+      position:fixed;
+      right:0;
+      top:0;
+      width:460px;
+      max-width:100%;
+      height:100%;
+      background:#000;
+      border-left:1px solid rgba(0,255,255,0.3);
+      box-shadow:-10px 0 40px rgba(0,255,255,0.18);
+      padding:20px;
+      display:none;
+      overflow:auto;
+      z-index:1000;
     }
 
     .toast{
-      position:fixed; bottom:20px; right:20px; background:var(--cyan); color:#000; padding:12px 14px;
-      border-radius:10px; display:none; z-index:2000; font-weight:700; box-shadow:0 0 15px rgba(0,255,255,0.4); max-width:80vw;
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
+      border-radius:10px;
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 15px rgba(0,255,255,0.4);
+      max-width:80vw;
     }
 
     .payment-box{ display:grid; grid-template-columns:220px 1fr; gap:16px; align-items:start; }
     .payment-qr{ background:#fff; border-radius:12px; padding:10px; width:100%; max-width:220px; }
     .payment-qr img{ width:100%; display:block; border-radius:8px; }
 
-    .address-box, .code-box{
-      word-break:break-all; background:#000; border:1px solid rgba(0,255,255,0.2);
-      border-radius:12px; padding:12px; margin:8px 0; color:var(--cyan); font-size:13px;
+    .address-box,
+    .code-box{
+      word-break:break-all;
+      background:#000;
+      border:1px solid rgba(0,255,255,0.2);
+      border-radius:12px;
+      padding:12px;
+      margin:8px 0;
+      color:var(--cyan);
+      font-size:13px;
     }
 
     .ranking-item{ padding:10px; border-radius:10px; margin-bottom:10px; background:rgba(15,23,42,0.65); border:1px solid rgba(0,255,255,0.12); }
@@ -256,15 +353,41 @@
     .backend-legacy{ color:#facc15; border-color:#facc15; }
     .backend-primary{ color:#22c55e; border-color:#22c55e; }
 
-    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; z-index:999; }
-    .upgrade-modal, .modal{
-      position:fixed; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:min(980px,94vw);
-      max-height:88vh; overflow:auto; background:#000; border:1px solid rgba(0,255,255,0.28);
-      border-radius:18px; padding:18px; display:none; z-index:1001; box-shadow:0 0 40px rgba(0,255,255,0.18);
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.65);
+      display:none;
+      z-index:999;
     }
 
-    .notice, .info-box, .alert-box, .waiting-box, .confirm-box{
-      padding:12px; border-radius:12px; font-size:13px; line-height:1.6; margin-bottom:12px;
+    .upgrade-modal,
+    .modal{
+      position:fixed;
+      inset:50% auto auto 50%;
+      transform:translate(-50%,-50%);
+      width:min(980px,94vw);
+      max-height:88vh;
+      overflow:auto;
+      background:#000;
+      border:1px solid rgba(0,255,255,0.28);
+      border-radius:18px;
+      padding:18px;
+      display:none;
+      z-index:1001;
+      box-shadow:0 0 40px rgba(0,255,255,0.18);
+    }
+
+    .notice,
+    .info-box,
+    .alert-box,
+    .waiting-box,
+    .confirm-box{
+      padding:12px;
+      border-radius:12px;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
     }
 
     .notice{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); color:#fcd34d; }
@@ -283,21 +406,88 @@
     .faq-a{ display:none; padding:14px; color:var(--muted); font-size:13px; line-height:1.7; }
     .faq-item.open .faq-a{ display:block; }
 
+    .footer-links{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
     .support-list a{ display:block; margin-bottom:8px; color:var(--cyan); text-decoration:none; word-break:break-word; }
     .support-list a:hover{ text-decoration:underline; }
 
-    .spinner{ width:18px; height:18px; border:2px solid rgba(255,255,255,.2); border-top:2px solid var(--cyan); border-radius:50%; display:inline-block; animation:spin 1s linear infinite; vertical-align:middle; margin-right:8px; }
-    .progress{ width:100%; height:8px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.08); margin-top:8px; }
-    .progress > span{ display:block; height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,var(--cyan),var(--green)); }
+    .spinner{
+      width:18px;
+      height:18px;
+      border:2px solid rgba(255,255,255,.2);
+      border-top:2px solid var(--cyan);
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      vertical-align:middle;
+      margin-right:8px;
+    }
 
-    .kanban{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-    .kanban-col{ background:rgba(15,23,42,.35); border:1px solid rgba(0,255,255,.12); border-radius:14px; padding:12px; }
-    .kanban-card{ background:rgba(2,6,23,.8); border:1px solid rgba(0,255,255,.12); border-radius:12px; padding:10px; margin-top:10px; }
-    .quick-links{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
-    .toggle-wrap{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .progress{
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      margin-top:8px;
+    }
+    .progress > span{
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--cyan),var(--green));
+    }
 
-    .timeline-item{ position:relative; padding-left:18px; margin-bottom:10px; }
-    .timeline-item::before{ content:""; position:absolute; left:0; top:6px; width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 10px rgba(0,255,255,.5); }
+    .kanban{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .kanban-col{
+      background:rgba(15,23,42,.35);
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .kanban-card{
+      background:rgba(2,6,23,.8);
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:12px;
+      padding:10px;
+      margin-top:10px;
+    }
+
+    .quick-links{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
+
+    .toggle-wrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .timeline-item{
+      position:relative;
+      padding-left:18px;
+      margin-bottom:10px;
+    }
+    .timeline-item::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:6px;
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--cyan);
+      box-shadow:0 0 10px rgba(0,255,255,.5);
+    }
 
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
@@ -341,18 +531,45 @@
     </div>
 
     <div class="grid-5">
-      <div class="card stat-card"><h3 id="totalLinks">0</h3><p>Total Items</p></div>
-      <div class="card stat-card"><h3 id="totalClicks">0</h3><p>Total Clicks</p></div>
-      <div class="card stat-card"><h3 id="avgClicks">0</h3><p>Avg Clicks</p></div>
-      <div class="card stat-card"><h3 id="activeShortLinksRemaining">0</h3><p>Short Link Slots Left</p></div>
-      <div class="card stat-card"><h3 id="liveThreatCount">0</h3><p>Risky IP Flags</p></div>
+      <div class="card stat-card">
+        <h3 id="totalLinks">0</h3>
+        <p>Total Items</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="totalClicks">0</h3>
+        <p>Total Clicks</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="avgClicks">0</h3>
+        <p>Avg Clicks</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="activeShortLinksRemaining">0</h3>
+        <p>Short Link Slots Left</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="liveThreatCount">0</h3>
+        <p>Risky IP Flags</p>
+      </div>
     </div>
 
     <div class="four-col">
-      <div class="card mini-stat"><div class="muted">Backend2 Links</div><div id="primaryLinksCount" style="font-size:24px;color:#22c55e;">0</div></div>
-      <div class="card mini-stat"><div class="muted">AWS Links</div><div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div></div>
-      <div class="card mini-stat"><div class="muted">Backend2 Clicks</div><div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div></div>
-      <div class="card mini-stat"><div class="muted">AWS Clicks</div><div id="legacyClicksCount" style="font-size:24px;color:#facc15;">0</div></div>
+      <div class="card mini-stat">
+        <div class="muted">Backend2 Links</div>
+        <div id="primaryLinksCount" style="font-size:24px;color:#22c55e;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">AWS Links</div>
+        <div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">Backend2 Clicks</div>
+        <div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div>
+      </div>
+      <div class="card mini-stat">
+        <div class="muted">AWS Clicks</div>
+        <div id="legacyClicksCount" style="font-size:24px;color:#facc15;">0</div>
+      </div>
     </div>
 
     <div class="two-col">
@@ -364,20 +581,18 @@
           </div>
 
           <div class="three-col">
-            <div><div class="muted">Email</div><div id="meEmail">-</div></div>
-            <div><div class="muted">Plan</div><div id="mePlan">Free Trial</div></div>
-            <div><div class="muted">Expires</div><div id="meExpire">-</div></div>
-          </div>
-
-          <div class="grid-3" style="margin-top:14px;">
-            <div><div class="muted">Role</div><div id="meRole">-</div></div>
-            <div><div class="muted">Email Verified</div><div id="meEmailVerified">-</div></div>
-            <div><div class="muted">Primary Domain</div><div id="mePrimaryDomain">-</div></div>
-          </div>
-
-          <div class="grid-2" style="margin-top:14px;">
-            <div><div class="muted">2FA Enabled</div><div id="meTwoFactor">-</div></div>
-            <div><div class="muted">2FA Method</div><div id="meTwoFactorMethod">-</div></div>
+            <div>
+              <div class="muted">Email</div>
+              <div id="meEmail">-</div>
+            </div>
+            <div>
+              <div class="muted">Plan</div>
+              <div id="mePlan">Free Trial</div>
+            </div>
+            <div>
+              <div class="muted">Expires</div>
+              <div id="meExpire">-</div>
+            </div>
           </div>
 
           <div style="margin-top:14px;" class="grid-2">
@@ -421,9 +636,34 @@
           </div>
 
           <div class="grid-3">
-            <div><div class="muted">Date Range</div><select id="dateRangeFilter"><option value="all">All time</option><option value="24h">Last 24 hours</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option></select></div>
-            <div><div class="muted">Status</div><select id="statusFilter"><option value="all">All statuses</option><option value="live">Live</option><option value="paused">Paused</option><option value="expired">Expired</option></select></div>
-            <div><div class="muted">Sort</div><select id="sortFilter"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="clicks_desc">Clicks high to low</option><option value="clicks_asc">Clicks low to high</option><option value="slug_asc">Slug A-Z</option></select></div>
+            <div>
+              <div class="muted">Date Range</div>
+              <select id="dateRangeFilter">
+                <option value="all">All time</option>
+                <option value="24h">Last 24 hours</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+            <div>
+              <div class="muted">Status</div>
+              <select id="statusFilter">
+                <option value="all">All statuses</option>
+                <option value="live">Live</option>
+                <option value="paused">Paused</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+            <div>
+              <div class="muted">Sort</div>
+              <select id="sortFilter">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="clicks_desc">Clicks high to low</option>
+                <option value="clicks_asc">Clicks low to high</option>
+                <option value="slug_asc">Slug A-Z</option>
+              </select>
+            </div>
           </div>
 
           <div class="toggle-wrap" style="margin-top:14px;">
@@ -457,14 +697,20 @@
       <div class="card">
         <h3>🛰 Backend Health</h3>
         <div class="health-list">
-          <div class="health-item"><div class="muted">Backend2</div><div id="primaryHealth" style="margin-top:6px;">Checking...</div></div>
-          <div class="health-item"><div class="muted">AWS Legacy</div><div id="legacyHealth" style="margin-top:6px;">Checking...</div></div>
+          <div class="health-item">
+            <div class="muted">Backend2</div>
+            <div id="primaryHealth" style="margin-top:6px;">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="muted">AWS Legacy</div>
+            <div id="legacyHealth" style="margin-top:6px;">Checking...</div>
+          </div>
         </div>
       </div>
 
       <div class="card">
         <h3>🧠 Session Notes</h3>
-        <div class="muted">Preferred backend is manual only. Security and account state come from your active valid session.</div>
+        <div class="muted">Preferred backend is manual only. Session checks stay isolated from your selected preference.</div>
         <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
       </div>
     </div>
@@ -496,24 +742,45 @@
       <div class="form-row">
         <input id="campaignInput" placeholder="Campaign tag (optional)" />
         <input id="noteInput" placeholder="Internal note (optional)" />
-        <select id="riskModeSelect"><option value="standard">Standard traffic mode</option><option value="strict">Strict monitoring mode</option></select>
+        <select id="riskModeSelect">
+          <option value="standard">Standard traffic mode</option>
+          <option value="strict">Strict monitoring mode</option>
+        </select>
       </div>
 
       <div class="split-create">
         <div class="create-box">
           <h4>☁️ Create AWS Link</h4>
           <div class="muted">Creates short links on the legacy AWS backend.</div>
-          <div class="form-row" style="margin-top:10px;"><button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button></div>
-          <div class="form-row"><input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" /><button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button></div>
-          <div class="drop-zone" id="dropZoneLegacy"><p>📂 Upload CSV for <b>AWS links</b></p><input type="file" id="csvFileLegacy" accept=".csv,.txt" /><button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button></div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button>
+          </div>
+          <div class="form-row">
+            <input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button>
+          </div>
+          <div class="drop-zone" id="dropZoneLegacy">
+            <p>📂 Upload CSV for <b>AWS links</b></p>
+            <input type="file" id="csvFileLegacy" accept=".csv,.txt" />
+            <button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button>
+          </div>
         </div>
 
         <div class="create-box">
           <h4>🟢 Create Backend2 Link</h4>
           <div class="muted">Creates short links on the Backend2 server with active-slot limits.</div>
-          <div class="form-row" style="margin-top:10px;"><button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button></div>
-          <div class="form-row"><input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" /><button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button></div>
-          <div class="drop-zone" id="dropZonePrimary"><p>📂 Upload CSV for <b>Backend2 links</b></p><input type="file" id="csvFilePrimary" accept=".csv,.txt" /><button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button></div>
+          <div class="form-row" style="margin-top:10px;">
+            <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
+          </div>
+          <div class="form-row">
+            <input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" />
+            <button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button>
+          </div>
+          <div class="drop-zone" id="dropZonePrimary">
+            <p>📂 Upload CSV for <b>Backend2 links</b></p>
+            <input type="file" id="csvFilePrimary" accept=".csv,.txt" />
+            <button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button>
+          </div>
         </div>
       </div>
 
@@ -527,19 +794,31 @@
           <div class="create-box">
             <h4>Landing Pages</h4>
             <div class="muted">Manage landing pages with optional custom HTML/CSS/JS and plan-based active slots.</div>
-            <div class="form-row" style="margin-top:10px;"><button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button><button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button></div>
+            <div class="form-row" style="margin-top:10px;">
+              <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
+              <button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button>
+            </div>
           </div>
 
           <div class="create-box">
             <h4>Custom Domains</h4>
             <div class="muted">TXT verification only. Optimized for Cloudflare proxy mode.</div>
-            <div class="form-row" style="margin-top:10px;"><button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button><button id="refreshDomainsBtn" class="ghost-btn" type="button">Open domain-manager.html</button></div>
+            <div class="form-row" style="margin-top:10px;">
+              <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
+              <button id="refreshDomainsBtn" class="ghost-btn" type="button">Open domain-manager.html</button>
+            </div>
           </div>
         </div>
 
         <div class="grid-2" style="margin-top:12px;">
-          <div class="landing-summary-card"><div class="muted">Landing pages snapshot</div><div id="landingSummaryText" style="margin-top:8px;">No landing summary loaded yet.</div></div>
-          <div class="domain-summary-card"><div class="muted">Domains snapshot</div><div id="domainSummaryText" style="margin-top:8px;">No domain summary loaded yet.</div></div>
+          <div class="landing-summary-card">
+            <div class="muted">Landing pages snapshot</div>
+            <div id="landingSummaryText" style="margin-top:8px;">No landing summary loaded yet.</div>
+          </div>
+          <div class="domain-summary-card">
+            <div class="muted">Domains snapshot</div>
+            <div id="domainSummaryText" style="margin-top:8px;">No domain summary loaded yet.</div>
+          </div>
         </div>
 
         <div id="backend2ExtraResult" class="result"></div>
@@ -552,8 +831,16 @@
       <div class="links-header">
         <h3>🔗 Your Links</h3>
         <div class="toolbar-actions">
-          <select id="backendFilter" style="max-width:180px;"><option value="all">All backends</option><option value="primary">Backend2 only</option><option value="legacy">AWS only</option></select>
-          <select id="itemTypeFilter" style="max-width:180px;"><option value="all">All item types</option><option value="redirect">Short links</option><option value="landing">Landing pages</option></select>
+          <select id="backendFilter" style="max-width:180px;">
+            <option value="all">All backends</option>
+            <option value="primary">Backend2 only</option>
+            <option value="legacy">AWS only</option>
+          </select>
+          <select id="itemTypeFilter" style="max-width:180px;">
+            <option value="all">All item types</option>
+            <option value="redirect">Short links</option>
+            <option value="landing">Landing pages</option>
+          </select>
           <input id="search" placeholder="Search slug or URL..." style="max-width:280px;" />
         </div>
       </div>
@@ -572,7 +859,18 @@
         <table>
           <thead>
             <tr>
-              <th>Select</th><th>Backend</th><th>Type</th><th>Slug</th><th>Clicks</th><th>Score</th><th>Fraud</th><th>Link</th><th>Status</th><th>Expire</th><th>Created</th><th>Actions</th>
+              <th>Select</th>
+              <th>Backend</th>
+              <th>Type</th>
+              <th>Slug</th>
+              <th>Clicks</th>
+              <th>Score</th>
+              <th>Fraud</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th>Expire</th>
+              <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="table"></tbody>
@@ -585,28 +883,58 @@
         <div class="card">
           <div class="section-head">
             <h3>📈 Performance Overview</h3>
-            <select id="chartMetricSelect" style="max-width:220px;"><option value="clicks">Clicks</option><option value="score">Performance Score</option></select>
+            <select id="chartMetricSelect" style="max-width:220px;">
+              <option value="clicks">Clicks</option>
+              <option value="score">Performance Score</option>
+            </select>
           </div>
           <canvas id="chart"></canvas>
         </div>
 
         <div class="card">
-          <div class="section-head"><h3>🕒 Activity Timeline</h3><button id="refreshActivityBtn" class="ghost-btn" type="button">Refresh</button></div>
+          <div class="section-head">
+            <h3>🕒 Activity Timeline</h3>
+            <button id="refreshActivityBtn" class="ghost-btn" type="button">Refresh</button>
+          </div>
           <div id="activityTimeline"></div>
         </div>
       </div>
 
       <div class="stack">
-        <div class="card"><h3>🏆 Top Performing Links</h3><div id="ranking"></div></div>
-        <div class="card"><h3>🛡 Security Insights</h3><div id="securityInsights" class="stack"></div></div>
+        <div class="card">
+          <h3>🏆 Top Performing Links</h3>
+          <div id="ranking"></div>
+        </div>
+
+        <div class="card">
+          <h3>🛡 Security Insights</h3>
+          <div id="securityInsights" class="stack"></div>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="section-head"><h3>🧾 Your Payment History</h3><button type="button" onclick="openUpgradeModal()">New Payment Request</button></div>
+      <div class="section-head">
+        <h3>🧾 Your Payment History</h3>
+        <button type="button" onclick="openUpgradeModal()">New Payment Request</button>
+      </div>
+
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Backend</th><th>ID</th><th>Plan</th><th>Quantity</th><th>Amount</th><th>Crypto</th><th>Status</th><th>Created</th><th>Expires</th><th>Actions</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Backend</th>
+              <th>ID</th>
+              <th>Plan</th>
+              <th>Quantity</th>
+              <th>Amount</th>
+              <th>Crypto</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody id="paymentsTable"></tbody>
         </table>
       </div>
@@ -614,21 +942,56 @@
 
     <div class="two-col">
       <div class="card">
-        <div class="section-head"><h3>📌 Operational Board</h3><button id="rebuildBoardBtn" type="button" class="ghost-btn">Rebuild</button></div>
+        <div class="section-head">
+          <h3>📌 Operational Board</h3>
+          <button id="rebuildBoardBtn" type="button" class="ghost-btn">Rebuild</button>
+        </div>
         <div class="kanban">
-          <div class="kanban-col"><div class="muted">Needs Review</div><div id="boardReview"></div></div>
-          <div class="kanban-col"><div class="muted">Healthy</div><div id="boardHealthy"></div></div>
-          <div class="kanban-col"><div class="muted">Attention</div><div id="boardAttention"></div></div>
+          <div class="kanban-col">
+            <div class="muted">Needs Review</div>
+            <div id="boardReview"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="muted">Healthy</div>
+            <div id="boardHealthy"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="muted">Attention</div>
+            <div id="boardAttention"></div>
+          </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="section-head"><h3>❓ FAQ</h3><button type="button" onclick="toggleAllFaq(true)">Open All</button></div>
-        <div class="faq-item"><button class="faq-q" type="button">How many short links can I create on free trial?</button><div class="faq-a">Free trial now allows 3 active short links on Backend2. When you delete one short link, that slot becomes available again.</div></div>
-        <div class="faq-item"><button class="faq-q" type="button">How do landing page limits work?</button><div class="faq-a">Landing pages use separate active-slot limits on Backend2 paid plans. Deleting a landing page frees that landing page slot.</div></div>
-        <div class="faq-item"><button class="faq-q" type="button">How do payments get verified?</button><div class="faq-a">Payments are created from the dashboard and then manually verified by admin after checking the transfer and wallet details.</div></div>
-        <div class="faq-item"><button class="faq-q" type="button">Can I buy multiple weeks or months?</button><div class="faq-a">Yes. Backend2 supports quantity-based payment requests like 2 weeks, 3 months, or 6 months.</div></div>
-        <div class="faq-item"><button class="faq-q" type="button">How do custom domains verify?</button><div class="faq-a">Backend2 custom domains verify using the TXT ownership record flow.</div></div>
+        <div class="section-head">
+          <h3>❓ FAQ</h3>
+          <button type="button" onclick="toggleAllFaq(true)">Open All</button>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How many short links can I create on free trial?</button>
+          <div class="faq-a">Free trial now allows 3 active short links on Backend2. When you delete one short link, that slot becomes available again.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How do landing page limits work?</button>
+          <div class="faq-a">Landing pages use separate active-slot limits on Backend2 paid plans. Deleting a landing page frees that landing page slot.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How do payments get verified?</button>
+          <div class="faq-a">Payments are created from the dashboard and then manually verified by admin after checking the transfer and wallet details.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">Can I buy multiple weeks or months?</button>
+          <div class="faq-a">Yes. Backend2 supports quantity-based payment requests like 2 weeks, 3 months, or 6 months.</div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" type="button">How do custom domains verify?</button>
+          <div class="faq-a">Backend2 custom domains should verify using a TXT record only. No A-record or direct VPS-IP check is required for the standard flow.</div>
+        </div>
       </div>
     </div>
 
@@ -641,25 +1004,49 @@
           <a href="https://discord.gg/xwGvhtjb" target="_blank" rel="noopener noreferrer">Discord: Join Discord Server</a>
           <a href="tel:+19547878220">Phone: +1 954 787 8220</a>
         </div>
-        <div class="muted" style="margin-top:10px;">Contact details shown here are live support details for your dashboard.</div>
-        <div style="margin-top:14px;"><button type="button" onclick="openSupportPanel()">Open Help Panel</button></div>
+
+        <div class="muted" style="margin-top:10px;">Replace the Telegram, Discord, and phone placeholders with your real contact details before production.</div>
+
+        <div style="margin-top:14px;">
+          <button type="button" onclick="openSupportPanel()">Open Help Panel</button>
+        </div>
       </div>
 
       <div class="card">
         <h3>📜 Legal Summary</h3>
-        <div class="info-box"><b>Acceptable Use:</b><div class="muted">Do not use Rattle Link for spam, phishing, malware, abuse, illegal content, or harmful redirection activity.</div></div>
-        <div class="info-box"><b>Privacy:</b><div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div></div>
-        <div class="info-box"><b>Billing:</b><div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new item creation.</div></div>
-        <div class="info-box"><b>Domains:</b><div class="muted">For Backend2 custom domains, TXT verification is expected to be used even when Cloudflare proxy mode is enabled.</div></div>
+        <div class="info-box">
+          <b>Acceptable Use:</b>
+          <div class="muted">Do not use Rattle Link for spam, phishing, malware, abuse, illegal content, or harmful redirection activity.</div>
+        </div>
+        <div class="info-box">
+          <b>Privacy:</b>
+          <div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div>
+        </div>
+        <div class="info-box">
+          <b>Billing:</b>
+          <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new item creation.</div>
+        </div>
+        <div class="info-box">
+          <b>Domains:</b>
+          <div class="muted">For Backend2 custom domains, TXT verification is expected to be used even when Cloudflare proxy mode is enabled.</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="panel" id="panel"><div id="panelContent"></div><button type="button" onclick="closePanel()">Close</button></div>
+  <div class="panel" id="panel">
+    <div id="panelContent"></div>
+    <button type="button" onclick="closePanel()">Close</button>
+  </div>
+
   <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
   <div class="upgrade-modal" id="upgradeModal">
-    <div class="section-head"><h3>🚀 Upgrade Center</h3><button type="button" onclick="closeUpgradeModal()">Close</button></div>
+    <div class="section-head">
+      <h3>🚀 Upgrade Center</h3>
+      <button type="button" onclick="closeUpgradeModal()">Close</button>
+    </div>
+
     <div class="notice">
       Backend2 active-slot plans:<br>
       • Free trial: 3 active short links<br>
@@ -672,28 +1059,68 @@
     <div class="plan-grid" id="planGrid"></div>
 
     <div class="grid-2" style="margin-top:14px;">
-      <div><div class="muted">Quantity</div><input id="planQuantity" type="number" min="1" max="24" value="1" placeholder="Quantity" /></div>
-      <div><div class="muted">Crypto Option</div><select id="cryptoSelect"></select></div>
+      <div>
+        <div class="muted">Quantity</div>
+        <input id="planQuantity" type="number" min="1" max="24" value="1" placeholder="Quantity" />
+      </div>
+      <div>
+        <div class="muted">Crypto Option</div>
+        <select id="cryptoSelect"></select>
+      </div>
     </div>
 
-    <div class="info-box" style="margin-top:12px;"><b>Billing preview</b><div id="billingPreview" class="muted" style="margin-top:8px;">Choose a plan and quantity.</div></div>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;"><button id="requestPaymentBtn" class="success-btn" type="button">Generate Payment Request</button><button type="button" onclick="loadPlans(true)">Reload Plans</button></div>
+    <div class="info-box" style="margin-top:12px;">
+      <b>Billing preview</b>
+      <div id="billingPreview" class="muted" style="margin-top:8px;">Choose a plan and quantity.</div>
+    </div>
+
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="requestPaymentBtn" class="success-btn" type="button">Generate Payment Request</button>
+      <button type="button" onclick="loadPlans(true)">Reload Plans</button>
+    </div>
+
     <div id="upgradeResult" class="result"></div>
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
 
   <div class="modal" id="settingsModal">
-    <div class="section-head"><h3>⚙️ Quick Settings</h3><button type="button" onclick="closeSettingsModal()">Close</button></div>
+    <div class="section-head">
+      <h3>⚙️ Quick Settings</h3>
+      <button type="button" onclick="closeSettingsModal()">Close</button>
+    </div>
+
     <div class="grid-2">
-      <div class="info-box"><b>Auto refresh</b><div class="toggle-wrap" style="margin-top:10px;"><label><input type="checkbox" id="modalAutoRefreshToggle" checked /> Enabled</label></div></div>
-      <div class="info-box"><b>Compact mode</b><div class="toggle-wrap" style="margin-top:10px;"><label><input type="checkbox" id="modalCompactModeToggle" /> Enabled</label></div></div>
-      <div class="info-box"><b>Chart metric</b><select id="modalChartMetricSelect" style="margin-top:10px;"><option value="clicks">Clicks</option><option value="score">Score</option></select></div>
-      <div class="info-box"><b>Search state</b><div class="muted" id="settingsSearchSummary" style="margin-top:10px;">No active search</div></div>
+      <div class="info-box">
+        <b>Auto refresh</b>
+        <div class="toggle-wrap" style="margin-top:10px;">
+          <label><input type="checkbox" id="modalAutoRefreshToggle" checked /> Enabled</label>
+        </div>
+      </div>
+      <div class="info-box">
+        <b>Compact mode</b>
+        <div class="toggle-wrap" style="margin-top:10px;">
+          <label><input type="checkbox" id="modalCompactModeToggle" /> Enabled</label>
+        </div>
+      </div>
+      <div class="info-box">
+        <b>Chart metric</b>
+        <select id="modalChartMetricSelect" style="margin-top:10px;">
+          <option value="clicks">Clicks</option>
+          <option value="score">Score</option>
+        </select>
+      </div>
+      <div class="info-box">
+        <b>Search state</b>
+        <div class="muted" id="settingsSearchSummary" style="margin-top:10px;">No active search</div>
+      </div>
     </div>
   </div>
 
   <div class="modal" id="securityModal">
-    <div class="section-head"><h3>🛡 Security Center</h3><button type="button" onclick="closeSecurityModal()">Close</button></div>
+    <div class="section-head">
+      <h3>🛡 Security Center</h3>
+      <button type="button" onclick="closeSecurityModal()">Close</button>
+    </div>
     <div id="securityModalContent"></div>
   </div>
 
@@ -702,10 +1129,6 @@
   <script>
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-
-    const AUTH_STORAGE_KEY = "rattle_token";
-    const ROLE_STORAGE_KEY = "rattle_role";
-    const USER_STORAGE_KEY = "rattle_user";
 
     const SUPPORT_CONFIG = {
       telegram: "https://t.me/Rtslik",
@@ -731,6 +1154,7 @@
     let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
     let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
     let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
+
     let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
     let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
 
@@ -768,11 +1192,6 @@
     const meEmail = $("meEmail");
     const mePlan = $("mePlan");
     const meExpire = $("meExpire");
-    const meRole = $("meRole");
-    const meEmailVerified = $("meEmailVerified");
-    const mePrimaryDomain = $("mePrimaryDomain");
-    const meTwoFactor = $("meTwoFactor");
-    const meTwoFactorMethod = $("meTwoFactorMethod");
     const accessSummary = $("accessSummary");
     const subscriptionBadge = $("subscriptionBadge");
     const latestPaymentBox = $("latestPaymentBox");
@@ -856,41 +1275,22 @@
     const landingSummaryText = $("landingSummaryText");
     const domainSummaryText = $("domainSummaryText");
 
-    function getToken() { return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || ""; }
-    function getRole() { return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || ""; }
-    function getUsername() { return localStorage.getItem(USER_STORAGE_KEY) || ""; }
-
-    function setSession(token, role = "", username = "") {
-      if (token) {
-        localStorage.setItem(AUTH_STORAGE_KEY, token);
-        localStorage.setItem("token", token);
-      }
-      if (role) {
-        localStorage.setItem(ROLE_STORAGE_KEY, role);
-        localStorage.setItem("role", role);
-      }
-      if (username) localStorage.setItem(USER_STORAGE_KEY, username);
-    }
-
-    function clearSession() {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      localStorage.removeItem(ROLE_STORAGE_KEY);
-      localStorage.removeItem(USER_STORAGE_KEY);
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("preferredBackend");
-      localStorage.removeItem("sessionBackend");
-      localStorage.removeItem("waitingPaymentId");
-    }
-
     function authHeaders() {
-      const token = getToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
+      const token = localStorage.getItem("token") || "";
+      return token ? { "Authorization": `Bearer ${token}` } : {};
     }
 
-    function apiBaseForBackend(backend) { return backend === "legacy" ? LEGACY_API : PRIMARY_API; }
-    function backendLabel(backend) { return backend === "legacy" ? "AWS" : "Backend2"; }
-    function backendClass(backend) { return backend === "legacy" ? "backend-legacy" : "backend-primary"; }
+    function apiBaseForBackend(backend) {
+      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    }
+
+    function backendLabel(backend) {
+      return backend === "legacy" ? "AWS" : "Backend2";
+    }
+
+    function backendClass(backend) {
+      return backend === "legacy" ? "backend-legacy" : "backend-primary";
+    }
 
     function buildPublicLink(itemOrSlug, backend) {
       const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
@@ -906,7 +1306,9 @@
       if (!backendBadgeTop) return;
       backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
       backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-      if (sessionNote) sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      if (sessionNote) {
+        sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+      }
       updatePreferredButtons();
     }
 
@@ -922,7 +1324,9 @@
       toast.textContent = message;
       toast.style.display = "block";
       clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => { toast.style.display = "none"; }, 1800);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
     }
 
     function pushNotification(message, type = "info") {
@@ -982,7 +1386,9 @@
       return new Date(n).toLocaleString();
     }
 
-    function fmtMoney(v) { return `$${Number(v || 0).toFixed(2)}`; }
+    function fmtMoney(v) {
+      return `$${Number(v || 0).toFixed(2)}`;
+    }
 
     function fmtExpire(ts) {
       const n = Number(ts || 0);
@@ -1018,8 +1424,15 @@
       return parts.length === 2 ? Math.max(1, Number(parts[1] || 1)) : 1;
     }
 
-    function getItemType(item) { return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect"; }
-    function getStatusKey(link) { if (link.paused) return "paused"; if (link.expire && Number(link.expire) <= Date.now()) return "expired"; return "live"; }
+    function getItemType(item) {
+      return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect";
+    }
+
+    function getStatusKey(link) {
+      if (link.paused) return "paused";
+      if (link.expire && Number(link.expire) <= Date.now()) return "expired";
+      return "live";
+    }
 
     function getStatus(link) {
       const key = getStatusKey(link);
@@ -1049,7 +1462,7 @@
     }
 
     function ensureAuth() {
-      const token = getToken();
+      const token = localStorage.getItem("token");
       if (!token) {
         window.location.href = "index.html";
         return false;
@@ -1062,7 +1475,8 @@
         const res = await fetch(base.replace(/\/+$/, "") + path, options);
         const raw = await res.text();
         let data = {};
-        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
+        try { data = raw ? JSON.parse(raw) : {}; }
+        catch { data = { message: raw }; }
         return { ok: res.ok, status: res.status, data, raw };
       } catch (e) {
         return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
@@ -1075,16 +1489,13 @@
       return safeFetchRaw(apiBaseForBackend(backend), path, { ...options, headers });
     }
 
-    async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
+    async function authorizedFetch(path, options = {}, backend, autoLogout = false) {
       const targetBackend = backend || sessionBackend;
       const method = String(options.method || "GET").toUpperCase();
       const headers = { ...authHeaders(), ...(options.headers || {}) };
       if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
       const res = await callBackend(targetBackend, path, { ...options, headers });
-      if (res.status === 401 && autoLogout) {
-        clearSession();
-        window.location.href = "index.html";
-      }
+      if (autoLogout && res.status === 401) logout();
       return { ...res, backend: targetBackend };
     }
 
@@ -1185,19 +1596,18 @@
       const total = Number(plan.amountUsd || 0) * qty;
       const cycleLabel = plan.code === "weekly" ? `${qty} week${qty === 1 ? "" : "s"}` : `${qty} month${qty === 1 ? "" : "s"}`;
       const limits = plan.limits || {};
-      billingPreview.innerHTML = `${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
+      billingPreview.innerHTML = `
+        ${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>
+        Total: <b>${fmtMoney(total)}</b><br>
+        Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages
+      `;
     }
 
     function renderMe() {
       if (!meState) return;
-      if (meEmail) meEmail.textContent = meState.username || getUsername() || "-";
+      if (meEmail) meEmail.textContent = meState.username || "-";
       if (mePlan) mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
       if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-      if (meRole) meRole.textContent = meState.role || getRole() || "-";
-      if (meEmailVerified) meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
-      if (mePrimaryDomain) mePrimaryDomain.textContent = meState.primaryDomain || "-";
-      if (meTwoFactor) meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
-      if (meTwoFactorMethod) meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
 
       const status = String(meState.subscriptionStatus || "trial").toLowerCase();
       const paused = !!meState.subscriptionPaused;
@@ -1238,10 +1648,6 @@
         badgeText = "Trial";
         summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
       }
-
-      if (meState.emailVerified === false) summary += " Email verification is still incomplete.";
-      if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
-      if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
 
       if (subscriptionBadge) {
         subscriptionBadge.className = `badge ${badgeClass}`;
@@ -1295,7 +1701,9 @@
     function renderCryptoOptions() {
       if (!cryptoSelect) return;
       const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
-      cryptoSelect.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("");
+      cryptoSelect.innerHTML = options.map(opt => `
+        <option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>
+      `).join("");
     }
 
     function stopPaymentPolling() {
@@ -1319,12 +1727,16 @@
         latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
         return;
       }
+
       const status = String(payment.status || "").toLowerCase();
       const waiting = status === "awaiting_confirmation";
       const verified = status === "verified";
+
       latestPaymentBox.innerHTML = `
         <div class="payment-box">
-          <div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code"></div>
+          <div class="payment-qr">
+            <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
+          </div>
           <div>
             <div>
               <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
@@ -1357,6 +1769,7 @@
         renderLatestPayment(null);
         return;
       }
+
       paymentsTable.innerHTML = paymentsStore.map(p => `
         <tr>
           <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
@@ -1375,6 +1788,7 @@
           </td>
         </tr>
       `).join("");
+
       renderLatestPayment(getLatestInterestingPayment());
     }
 
@@ -1383,8 +1797,14 @@
         authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
         authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
       ]);
-      const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments) ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary")) : [];
-      const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments) ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy")) : [];
+
+      const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments)
+        ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
+        : [];
+      const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments)
+        ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
+        : [];
+
       paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
       renderPaymentsTable();
 
@@ -1397,6 +1817,7 @@
           stopPaymentPolling();
         }
       }
+
       if (showMessage) showToast("Payments refreshed");
     }
 
@@ -1405,10 +1826,13 @@
       const status = String(payment.status || "").toLowerCase();
       const waiting = status === "awaiting_confirmation";
       const verified = status === "verified";
+
       paymentRequestBox.innerHTML = `
         <div class="card" style="margin:0;">
           <div class="payment-box">
-            <div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code"></div>
+            <div class="payment-qr">
+              <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
+            </div>
             <div>
               <div>
                 <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
@@ -1444,21 +1868,31 @@
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
-      let res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+      let res = await authorizedFetch("/payment-request", {
+        method: "POST",
+        body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
+      }, preferredBackend, false);
+
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+        res = await authorizedFetch("/payment-request", {
+          method: "POST",
+          body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
+        }, preferredBackend, false);
       }
+
       setBusy(requestPaymentBtn, false);
       if (!res.ok) {
         setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
         return;
       }
+
       const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend) : null;
       if (!payment) {
         setResult("Payment request created, but response was empty", true, upgradeResult);
         return;
       }
+
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
@@ -1471,20 +1905,34 @@
       const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
       if (!payment) return;
       const status = String(payment.status || "").toLowerCase();
-      if (status === "verified") return showToast("This payment is already verified");
+      if (status === "verified") {
+        showToast("This payment is already verified");
+        return;
+      }
       if (status === "awaiting_confirmation") {
         waitingPaymentId = payment.id;
         localStorage.setItem("waitingPaymentId", payment.id);
         renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
         startPaymentPolling(payment.id, payment.backend);
-        return showToast("Already waiting for confirmation");
+        showToast("Already waiting for confirmation");
+        return;
       }
-      const res = await authorizedFetch("/payment-i-made", { method: "POST", body: JSON.stringify({ paymentId }) }, backend, false);
-      if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+
+      const res = await authorizedFetch("/payment-i-made", {
+        method: "POST",
+        body: JSON.stringify({ paymentId })
+      }, backend, false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+        return;
+      }
+
       waitingPaymentId = payment.id;
       localStorage.setItem("waitingPaymentId", payment.id);
       showToast("Transfer submitted");
       await loadPayments(false);
+
       const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
       renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
       startPaymentPolling(updated.id, updated.backend);
@@ -1515,7 +1963,9 @@
       const run = async () => {
         const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
         if (!res.ok) return;
-        const incoming = Array.isArray(res.data?.payments) ? res.data.payments.map(p => normalizePaymentItem(p, backend)) : [];
+        const incoming = Array.isArray(res.data?.payments)
+          ? res.data.payments.map(p => normalizePaymentItem(p, backend))
+          : [];
         const current = incoming.find(p => p.id === paymentId);
         if (!current) return;
         const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
@@ -1550,7 +2000,10 @@
       if (p) renderPaymentRequestBox(p);
     }
 
-    function closeUpgradeModal() { if (upgradeModal) upgradeModal.style.display = "none"; syncOverlay(); }
+    function closeUpgradeModal() {
+      if (upgradeModal) upgradeModal.style.display = "none";
+      syncOverlay();
+    }
 
     function openSettingsModal() {
       if (overlay) overlay.style.display = "block";
@@ -1561,10 +2014,27 @@
       if (settingsSearchSummary) settingsSearchSummary.textContent = searchInput?.value?.trim() ? `Searching for: ${searchInput.value.trim()}` : "No active search";
     }
 
-    function closeSettingsModal() { if (settingsModal) settingsModal.style.display = "none"; syncOverlay(); }
-    function openSecurityModal() { if (overlay) overlay.style.display = "block"; if (securityModal) securityModal.style.display = "block"; renderSecurityModal(); }
-    function closeSecurityModal() { if (securityModal) securityModal.style.display = "none"; syncOverlay(); }
-    function closeAllModals() { closeUpgradeModal(); closeSettingsModal(); closeSecurityModal(); }
+    function closeSettingsModal() {
+      if (settingsModal) settingsModal.style.display = "none";
+      syncOverlay();
+    }
+
+    function openSecurityModal() {
+      if (overlay) overlay.style.display = "block";
+      if (securityModal) securityModal.style.display = "block";
+      renderSecurityModal();
+    }
+
+    function closeSecurityModal() {
+      if (securityModal) securityModal.style.display = "none";
+      syncOverlay();
+    }
+
+    function closeAllModals() {
+      closeUpgradeModal();
+      closeSettingsModal();
+      closeSecurityModal();
+    }
 
     function syncOverlay() {
       const anyOpen = [upgradeModal, settingsModal, securityModal].some(m => m && m.style.display === "block");
@@ -1596,8 +2066,16 @@
 
     async function checkBackendHealth() {
       const [p, l] = await Promise.all([checkOneBackendHealth("primary"), checkOneBackendHealth("legacy")]);
-      if (primaryHealth) primaryHealth.innerHTML = p.ok ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>` : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-      if (legacyHealth) legacyHealth.innerHTML = l.ok ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>` : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      if (primaryHealth) {
+        primaryHealth.innerHTML = p.ok
+          ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
+      }
+      if (legacyHealth) {
+        legacyHealth.innerHTML = l.ok
+          ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
+          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      }
     }
 
     function getFilteredData() {
@@ -1619,10 +2097,12 @@
         const typeMatch = itemTypeOnly === "all" ? true : itemType === itemTypeOnly;
         const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
         const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
+
         let dateMatch = true;
         if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
         if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
         if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
+
         return queryMatch && backendMatch && typeMatch && statusMatch && dateMatch && riskMatch;
       });
 
@@ -1634,6 +2114,7 @@
         if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
         return Number(b.createdAt || 0) - Number(a.createdAt || 0);
       });
+
       return filtered;
     }
 
@@ -1644,15 +2125,18 @@
         setBusy(refreshBtn, true, "Loading...");
         setResult("Loading links...", false);
       }
+
       const [primaryRes, legacyRes] = await Promise.all([
         authorizedFetch("/list", { method: "GET" }, "primary", false),
         authorizedFetch("/list", { method: "GET" }, "legacy", false)
       ]);
+
       loadingLinks = false;
       setBusy(refreshBtn, false);
 
       const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
       const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+
       dataStore = mergeLinks(primaryItems, legacyItems);
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
       if (totalLinks) totalLinks.textContent = dataStore.length;
@@ -1693,11 +2177,18 @@
             <td><input class="row-select" type="checkbox" data-key="${escapeHtml(item.backend)}:${escapeHtml(item.slug)}" ${checked} /></td>
             <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
             <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
-            <td><b>${escapeHtml(item.slug)}</b>${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}</td>
+            <td>
+              <b>${escapeHtml(item.slug)}</b>
+              ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
+            </td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
             <td>${scoreLink(item)}/100</td>
             <td>${detectFraud(item)}</td>
-            <td><a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a><div class="muted">${escapeHtml(item.url || "")}</div>${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}</td>
+            <td>
+              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+              <div class="muted">${escapeHtml(item.url || "")}</div>
+              ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
+            </td>
             <td>${getStatus(item)}</td>
             <td>${fmtExpire(item.expire)}</td>
             <td>${fmtDate(item.createdAt)}</td>
@@ -1750,9 +2241,17 @@
       const filtered = getFilteredData();
       const metric = chartMetricSelect?.value || "clicks";
       const sorted = [...filtered].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 12);
+
       chart = new Chart(canvas, {
         type: "line",
-        data: { labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`), datasets: [{ label: metric === "score" ? "Performance Score" : "Clicks", data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)), tension: 0.35 }] },
+        data: {
+          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
+          datasets: [{
+            label: metric === "score" ? "Performance Score" : "Clicks",
+            data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
+            tension: 0.35
+          }]
+        },
         options: {
           responsive: true,
           plugins: { legend: { labels: { color: "#e2e8f0" } } },
@@ -1788,6 +2287,7 @@
       const paused = dataStore.filter(x => x.paused).length;
       const expired = dataStore.filter(x => getStatusKey(x) === "expired").length;
       const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+
       securityInsights.innerHTML = `
         <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
         <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
@@ -1796,115 +2296,21 @@
       `;
     }
 
-    function getRiskSummaryText() {
-      const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60);
-      return `${risky.length} items currently show elevated risk markers.`;
-    }
-
-    function renderRiskItemsHtml() {
-      const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60).sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-      if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
-      return risky.map(item => `
-        <div class="info-box">
-          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-            ${getItemType(item) === "redirect" ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>` : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
-            <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function showTwoFactorBox(html) {
-      const box = $("twoFactorSetupBox");
-      if (box) box.innerHTML = html;
-    }
-
-    async function startTotpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "totp" }) }, "primary", true);
-      if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start TOTP setup")}</div>`);
-      showTwoFactorBox(`
-        <div class="info-box">
-          <div><b>TOTP Secret</b></div>
-          <div class="code-box">${escapeHtml(res.data.secret || "")}</div>
-          <div class="muted">Add this secret to Google Authenticator, Authy, or another TOTP app. Then enter the generated code below.</div>
-          <div style="margin-top:10px;">
-            <input id="totpEnableCode" placeholder="Enter 6-digit code from app" />
-            <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableTotp()">Enable TOTP</button>
-          </div>
-          ${res.data.otpauthUrl ? `<div class="muted" style="margin-top:10px;">otpauth URL:</div><div class="code-box">${escapeHtml(res.data.otpauthUrl)}</div>` : ""}
-        </div>
-      `);
-    }
-
-    async function enableTotp() {
-      const code = $("totpEnableCode")?.value?.trim();
-      if (!code) return showToast("Enter the TOTP code");
-      const res = await authorizedFetch("/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "totp", code }) }, "primary", true);
-      if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable TOTP")}</div>`);
-      showTwoFactorBox(`
-        <div class="confirm-box">
-          <b>✅ TOTP enabled</b>
-          <div class="muted" style="margin-top:8px;">Backup codes:</div>
-          <div class="code-box">${(res.data.backupCodes || []).map(escapeHtml).join("<br>")}</div>
-        </div>
-      `);
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
-    async function startEmailOtpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "email_otp" }) }, "primary", true);
-      if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start email OTP setup")}</div>`);
-      showTwoFactorBox(`
-        <div class="info-box">
-          <div><b>Email OTP setup started</b></div>
-          <div class="muted">A code was sent to your email. Enter it below.</div>
-          <div style="margin-top:10px;">
-            <input id="emailOtpEnableCode" placeholder="Enter email code" />
-            <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableEmailOtp()">Enable Email OTP</button>
-          </div>
-        </div>
-      `);
-    }
-
-    async function enableEmailOtp() {
-      const code = $("emailOtpEnableCode")?.value?.trim();
-      if (!code) return showToast("Enter the email OTP code");
-      const res = await authorizedFetch("/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "email_otp", code }) }, "primary", true);
-      if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable email OTP")}</div>`);
-      showTwoFactorBox(`<div class="confirm-box"><b>✅ Email OTP enabled</b></div>`);
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
-    async function disableTwoFactor() {
-      if (!confirm("Disable two-factor authentication?")) return;
-      const res = await authorizedFetch("/security/2fa/disable", { method: "POST" }, "primary", true);
-      if (!res.ok) return showToast(res.data?.message || "Could not disable 2FA");
-      showToast("2FA disabled");
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
     function renderSecurityModal() {
       if (!securityModalContent) return;
-      const twoFactorEnabled = !!meState?.twoFactorEnabled;
-      const twoFactorMethod = meState?.twoFactorMethod || "";
+      const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60).sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
       securityModalContent.innerHTML = `
-        <div class="info-box">
-          <b>Two-Factor Authentication</b>
-          <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
-          <div class="grid-2" style="margin-top:12px;">
-            <div class="auth-box"><div class="muted">Setup TOTP</div><button type="button" class="pink-btn" onclick="startTotpSetup()">Start TOTP Setup</button></div>
-            <div class="auth-box"><div class="muted">Setup Email OTP</div><button type="button" class="pink-btn" onclick="startEmailOtpSetup()">Start Email OTP Setup</button></div>
+        <div class="alert-box"><b>Security overview</b><br>${risky.length} items currently show elevated risk markers.</div>
+        ${risky.length ? risky.map(item => `
+          <div class="info-box">
+            <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+            <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              ${getItemType(item) === "redirect" ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>` : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
+              <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
+            </div>
           </div>
-          <div id="twoFactorSetupBox" style="margin-top:14px;"></div>
-          ${twoFactorEnabled ? `<div style="margin-top:14px;"><button type="button" class="danger-btn" onclick="disableTwoFactor()">Disable 2FA</button></div>` : ""}
-        </div>
-        <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-        ${renderRiskItemsHtml()}
+        `).join("") : `<div class="muted">No elevated risk items found.</div>`}
       `;
     }
 
@@ -1924,12 +2330,18 @@
       const healthy = $("boardHealthy");
       const attention = $("boardAttention");
       if (!review || !healthy || !attention) return;
+
       const needsReview = dataStore.filter(x => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
       const healthyItems = dataStore.filter(x => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
       const attentionItems = dataStore.filter(x => x.paused || getStatusKey(x) === "expired").slice(0, 4);
+
       const makeCards = arr => arr.length ? arr.map(item => `
-        <div class="kanban-card"><div><b>${escapeHtml(item.slug)}</b></div><div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div></div>
+        <div class="kanban-card">
+          <div><b>${escapeHtml(item.slug)}</b></div>
+          <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
+        </div>
       `).join("") : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
+
       review.innerHTML = makeCards(needsReview);
       healthy.innerHTML = makeCards(healthyItems);
       attention.innerHTML = makeCards(attentionItems);
@@ -1950,16 +2362,26 @@
       const campaign = campaignInput?.value.trim();
       const note = noteInput?.value.trim();
       const riskMode = riskModeSelect?.value || "standard";
-      if (!url) { setResult("Enter URL", true); return null; }
+
+      if (!url) {
+        setResult("Enter URL", true);
+        return null;
+      }
+
       const body = { url, riskMode };
       if (slug) body.slug = slug;
       if (campaign) body.campaign = campaign;
       if (note) body.note = note;
+
       if (expireHours) {
         const hours = Number(expireHours);
-        if (!Number.isFinite(hours) || hours <= 0) { setResult("Expire must be a positive number", true); return null; }
+        if (!Number.isFinite(hours) || hours <= 0) {
+          setResult("Expire must be a positive number", true);
+          return null;
+        }
         body.expire = Date.now() + hours * 60 * 60 * 1000;
       }
+
       return body;
     }
 
@@ -1967,30 +2389,48 @@
       const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
       const body = getCreatePayload();
       if (!body) return;
+
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Creating ${backendLabel(backend)} link...`, false);
-      let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
+
+      let res = await authorizedFetch("/create", {
+        method: "POST",
+        body: JSON.stringify(body)
+      }, backend, false);
+
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
+        res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify(body)
+        }, backend, false);
       }
+
       setBusy(button, false);
       if (!res.ok) {
-        if (res.status === 402) { await loadMe(false); openUpgradeModal(); }
+        if (res.status === 402) {
+          await loadMe(false);
+          openUpgradeModal();
+        }
         setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
         return;
       }
+
       const link = res.data?.link || "Success";
       const usage = res.data?.usage || null;
       const limits = res.data?.limits || null;
       let summary = `${backendLabel(backend)} created: ${link}`;
-      if (backend === "primary" && usage && limits) summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
+      if (backend === "primary" && usage && limits) {
+        summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
+      }
       setResult(summary, false);
+
       if (urlInput) urlInput.value = "";
       if (slugInput) slugInput.value = "";
       if (expireInput) expireInput.value = "";
       if (campaignInput) campaignInput.value = "";
       if (noteInput) noteInput.value = "";
+
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
@@ -2001,39 +2441,66 @@
       const body = getCreatePayload();
       if (!body) return;
       if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
+
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
+
       let success = 0;
       for (let i = 0; i < count; i++) {
         const requestBody = { ...body };
         if (!requestBody.slug) delete requestBody.slug;
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
+
+        let res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify(requestBody)
+        }, backend, false);
+
         if (res.status === 401) {
           await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify(requestBody)
+          }, backend, false);
         }
+
         if (!res.ok) {
           setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
           break;
         }
+
         success++;
         setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
       }
+
       setBusy(button, false);
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    function getDeletePath(itemType) { return itemType === "landing" ? "/landing/delete" : "/delete"; }
+    function getDeletePath(itemType) {
+      return itemType === "landing" ? "/landing/delete" : "/delete";
+    }
 
     async function deleteLink(slug, backend, itemType = "redirect") {
       const label = itemType === "landing" ? "landing page" : "short link";
       if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
-      let res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
+      let res = await authorizedFetch(getDeletePath(itemType), {
+        method: "POST",
+        body: JSON.stringify({ slug })
+      }, backend, false);
+
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
+        res = await authorizedFetch(getDeletePath(itemType), {
+          method: "POST",
+          body: JSON.stringify({ slug })
+        }, backend, false);
       }
-      if (!res.ok) return showToast(`Delete failed on ${backendLabel(backend)}`);
+
+      if (!res.ok) {
+        showToast(`Delete failed on ${backendLabel(backend)}`);
+        return;
+      }
+
       selectedLinks.delete(`${backend}:${slug}`);
       showToast(`Deleted from ${backendLabel(backend)}`);
       await Promise.all([loadLinks(false), loadMe(false)]);
@@ -2066,11 +2533,22 @@
       try {
         await navigator.clipboard.writeText(text);
         showToast("Copied!");
-      } catch { showToast("Copy failed"); }
+      } catch {
+        showToast("Copy failed");
+      }
     }
 
-    function openLink(link) { window.open(link, "_blank", "noopener,noreferrer"); }
-    function showQR(link) { window.open("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link), "_blank", "noopener,noreferrer"); }
+    function openLink(link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+
+    function showQR(link) {
+      window.open(
+        "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
 
     function downloadTextFile(filename, content, mime) {
       const blob = new Blob([content], { type: mime });
@@ -2086,30 +2564,81 @@
       const rows = getFilteredData();
       const header = ["backend","type","slug","url","clicks","score","fraud","status","expire","createdAt"];
       const lines = [header.join(",")].concat(rows.map(item => {
-        const values = [backendLabel(item.backend), getItemType(item), item.slug || "", item.url || "", Number(item.clicks || 0), scoreLink(item), detectFraud(item), getStatusKey(item), item.expire || "", item.createdAt || ""];
+        const values = [
+          backendLabel(item.backend),
+          getItemType(item),
+          item.slug || "",
+          item.url || "",
+          Number(item.clicks || 0),
+          scoreLink(item),
+          detectFraud(item),
+          getStatusKey(item),
+          item.expire || "",
+          item.createdAt || ""
+        ];
         return values.map(v => `"${String(v).replaceAll('"','""')}"`).join(",");
       }));
       downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
     }
 
-    function exportVisibleAsJson() { downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8"); }
+    function exportVisibleAsJson() {
+      downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
+    }
 
     async function getGeo(ip) {
       if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
       try {
         const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
         const data = await res.json();
-        return { country_name: data.country_name || "Unknown", latitude: data.latitude || 20, longitude: data.longitude || 0 };
-      } catch { return { country_name: "Error", latitude: 20, longitude: 0 }; }
+        return {
+          country_name: data.country_name || "Unknown",
+          latitude: data.latitude || 20,
+          longitude: data.longitude || 0
+        };
+      } catch {
+        return { country_name: "Error", latitude: 20, longitude: 0 };
+      }
     }
 
-    function destroyMap() { if (map) { map.remove(); map = null; } }
+    function destroyMap() {
+      if (map) {
+        map.remove();
+        map = null;
+      }
+    }
 
     function closePanel() {
       if (panel) panel.style.display = "none";
       if (panelContent) panelContent.innerHTML = "";
       destroyMap();
-      if (statsChartInstance) { statsChartInstance.destroy(); statsChartInstance = null; }
+      if (statsChartInstance) {
+        statsChartInstance.destroy();
+        statsChartInstance = null;
+      }
+    }
+
+    function openInfoPanel(type) {
+      if (!panel || !panelContent) return;
+      panel.style.display = "block";
+      if (type === "about") {
+        panelContent.innerHTML = `
+          <h3>ℹ️ About Rattle Link</h3>
+          <div class="muted">Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.</div>
+          <div class="info-box" style="margin-top:12px;"><b>What it does</b><div class="muted">Shorten links, manage expiry, review analytics, track clicks, run landing pages, and control payments/subscriptions through one dashboard.</div></div>
+          <div class="info-box"><b>Why two backends</b><div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div></div>
+          <div class="info-box"><b>Main purpose</b><div class="muted">Fast link creation, clean analytics, billing control, landing page management, and better operational visibility for users and admins.</div></div>
+        `;
+      }
+      if (type === "legal") {
+        panelContent.innerHTML = `
+          <h3>📜 Legal</h3>
+          <div class="info-box"><b>Acceptable Use</b><div class="muted">Do not use Rattle Link for spam, phishing, malware, scams, harmful redirects, or illegal content.</div></div>
+          <div class="info-box"><b>Privacy</b><div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div></div>
+          <div class="info-box"><b>Billing</b><div class="muted">Paid access activates after payment verification. Subscription status may change when expired, paused, or manually updated by admin.</div></div>
+          <div class="info-box"><b>User Responsibility</b><div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div></div>
+          <div class="info-box"><b>Domains</b><div class="muted">Backend2 custom domain verification is expected to rely on TXT records rather than direct A-record or VPS-IP checks in the standard setup.</div></div>
+        `;
+      }
     }
 
     function openSupportPanel() {
@@ -2131,23 +2660,34 @@
       `;
     }
 
-    function toggleAllFaq(open) { document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open)); }
-    function goToLandingPage() { window.location.href = "landing.html"; }
-    function goToDomainManager() { window.location.href = "domain-manager.html"; }
+    function toggleAllFaq(open) {
+      document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
+    }
 
     async function showGeo(slug, backend) {
       if (!panel || !panelContent) return;
       panel.style.display = "block";
-      panelContent.innerHTML = `<h3>🌍 Geo Map: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><div class="muted">Loading location data...</div><div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>`;
+      panelContent.innerHTML = `
+        <h3>🌍 Geo Map: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
+        <div class="muted">Loading location data...</div>
+        <div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
+      `;
+
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
       const mapEl = $("map");
       if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+
       const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
-      if (!history.length) return L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
+      if (!history.length) {
+        L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
+        return;
+      }
+
       let offset = 0;
       for (const h of history) {
         const geo = await getGeo(h.ip);
@@ -2156,36 +2696,67 @@
         lat += offset * 0.25;
         lng += offset * 0.25;
         offset++;
-        L.circle([lat, lng], { radius: 45000, color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff" }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
+        L.circle([lat, lng], { radius: 45000, color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff" })
+          .addTo(map)
+          .bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
       }
     }
 
     async function showHistory(slug, backend) {
       if (!panel || !panelContent) return;
       panel.style.display = "block";
-      panelContent.innerHTML = `<h3>📊 Live Analytics: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><canvas id="statsChart" height="120"></canvas><div id="statsBody" style="margin-top:14px;"></div><h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4><div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>`;
+      panelContent.innerHTML = `
+        <h3>📊 Live Analytics: ${escapeHtml(slug)}</h3>
+        <div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div>
+        <canvas id="statsChart" height="120"></canvas>
+        <div id="statsBody" style="margin-top:14px;"></div>
+        <h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4>
+        <div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>
+      `;
+
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
+
       const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
       const link = dataStore.find(l => l.slug === slug && l.backend === backend);
+
       if (!history.length && link && Number(link.clicks || 0) > 0) {
-        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({ ip: "unknown", time: Date.now() - (i * 30000), risk: Number(link.maxRisk || 0), vpn: false, bot: false }));
+        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+          ip: "unknown",
+          time: Date.now() - (i * 30000),
+          risk: Number(link.maxRisk || 0),
+          vpn: false,
+          bot: false
+        }));
       }
+
       const statsBody = $("statsBody");
       if (!history.length) {
         if (statsBody) statsBody.innerHTML = "<p class='muted'>No clicks recorded</p>";
         return;
       }
-      history = history.map(h => ({ ip: h.ip || "unknown", time: Number(h.time || Date.now()), risk: Number(h.risk || 0), vpn: !!h.vpn, bot: !!h.bot })).sort((a, b) => a.time - b.time);
+
+      history = history.map(h => ({
+        ip: h.ip || "unknown",
+        time: Number(h.time || Date.now()),
+        risk: Number(h.risk || 0),
+        vpn: !!h.vpn,
+        bot: !!h.bot
+      })).sort((a, b) => a.time - b.time);
+
       const labels = history.map(h => new Date(h.time).toLocaleTimeString());
       const dataPoints = history.map((_, i) => i + 1);
+
       if (statsChartInstance) statsChartInstance.destroy();
       const statsCanvas = $("statsChart");
       if (statsCanvas) {
         statsChartInstance = new Chart(statsCanvas, {
           type: "line",
-          data: { labels, datasets: [{ label: "Clicks Timeline", data: dataPoints, tension: 0.4 }] },
+          data: {
+            labels,
+            datasets: [{ label: "Clicks Timeline", data: dataPoints, tension: 0.4 }]
+          },
           options: {
             responsive: true,
             plugins: { legend: { labels: { color: "#e2e8f0" } } },
@@ -2204,11 +2775,21 @@
         stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
         stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
       }
+
       const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
       let html = `<div><b>Total Clicks:</b> ${history.length}</div><div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>`;
       sorted.slice(0, 10).forEach(([ip, data]) => {
         const danger = data.risk > 70;
-        html += `<div style="margin-bottom:10px;padding:10px;border-radius:10px;background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};"><b>${escapeHtml(ip)}</b>${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}<br><small>Clicks: ${data.count}</small><br><small>Risk: ${data.risk}</small></div>`;
+        html += `
+          <div style="margin-bottom:10px;padding:10px;border-radius:10px;background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};">
+            <b>${escapeHtml(ip)}</b>
+            ${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}
+            ${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}
+            ${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}
+            <br><small>Clicks: ${data.count}</small>
+            <br><small>Risk: ${data.risk}</small>
+          </div>
+        `;
       });
       if (statsBody) statsBody.innerHTML = html;
 
@@ -2216,6 +2797,7 @@
       if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+
       let offset = 0;
       for (const h of history) {
         const geo = await getGeo(h.ip);
@@ -2224,7 +2806,9 @@
         lat += offset * 0.22;
         lng += offset * 0.22;
         offset++;
-        L.circle([lat, lng], { radius: 40000, color: h.risk > 70 ? "#ef4444" : "#00ffff" }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
+        L.circle([lat, lng], { radius: 40000, color: h.risk > 70 ? "#ef4444" : "#00ffff" })
+          .addTo(map)
+          .bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
       }
     }
 
@@ -2233,24 +2817,43 @@
       const text = await file.text();
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (!lines.length) return setResult("CSV is empty", true);
+
       let urls = [];
       if (lines[0].toLowerCase().includes("url")) {
         const header = lines[0].split(",").map(h => h.trim().toLowerCase());
         const urlIndex = header.indexOf("url");
-        if (urlIndex >= 0) urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
-      } else urls = lines;
+        if (urlIndex >= 0) {
+          urls = lines.slice(1).map(line => {
+            const cols = line.split(",");
+            return (cols[urlIndex] || "").trim();
+          }).filter(Boolean);
+        }
+      } else {
+        urls = lines;
+      }
+
       urls = urls.filter(Boolean);
       if (!urls.length) return setResult("No URLs found in file", true);
+
       const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
       setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
       setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
+
       let okCount = 0;
       for (const url of urls) {
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
+        let res = await authorizedFetch("/create", {
+          method: "POST",
+          body: JSON.stringify({ url })
+        }, backend, false);
+
         if (res.status === 401) {
           await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
+          res = await authorizedFetch("/create", {
+            method: "POST",
+            body: JSON.stringify({ url })
+          }, backend, false);
         }
+
         if (!res.ok) {
           setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
           break;
@@ -2258,6 +2861,7 @@
         okCount++;
         setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
       }
+
       setBusy(button, false);
       if (backend === "legacy" && csvFileLegacy) csvFileLegacy.value = "";
       if (backend === "primary" && csvFilePrimary) csvFilePrimary.value = "";
@@ -2269,7 +2873,9 @@
       await processFile(file, backend);
     }
 
-    function refreshNow() { Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]); }
+    function refreshNow() {
+      Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
+    }
 
     function applyAutoRefreshState() {
       localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
@@ -2290,15 +2896,22 @@
 
     function logout() {
       stopPaymentPolling();
-      clearSession();
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("preferredBackend");
+      localStorage.removeItem("sessionBackend");
+      localStorage.removeItem("waitingPaymentId");
       window.location.href = "index.html";
     }
 
     function setupKeyboardShortcuts() {
       [urlInput, slugInput, expireInput, campaignInput, noteInput].forEach(el => {
         if (!el) return;
-        el.addEventListener("keydown", e => { if (e.key === "Enter") createLinkForBackend(preferredBackend); });
+        el.addEventListener("keydown", e => {
+          if (e.key === "Enter") createLinkForBackend(preferredBackend);
+        });
       });
+
       [searchInput, backendFilter, itemTypeFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
         if (!el) return;
         el.addEventListener("input", () => { renderTable(); drawChart(); });
@@ -2309,10 +2922,18 @@
     function wireDropZone(zone, backend) {
       if (!zone) return;
       ["dragenter", "dragover"].forEach(eventName => {
-        zone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); zone.classList.add("dragover"); });
+        zone.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add("dragover");
+        });
       });
       ["dragleave", "dragend", "drop"].forEach(eventName => {
-        zone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); zone.classList.remove("dragover"); });
+        zone.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove("dragover");
+        });
       });
       zone.addEventListener("drop", async e => {
         const file = e.dataTransfer?.files?.[0];
@@ -2328,7 +2949,19 @@
       showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
     }
 
-    function setupFaq() { document.querySelectorAll(".faq-q").forEach(btn => btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"))); }
+    function setupFaq() {
+      document.querySelectorAll(".faq-q").forEach(btn => {
+        btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
+      });
+    }
+
+    function goToLandingPage() {
+      window.location.href = "landing.html";
+    }
+
+    function goToDomainManager() {
+      window.location.href = "domain-manager.html";
+    }
 
     function clearFilters() {
       if (searchInput) searchInput.value = "";
@@ -2364,6 +2997,7 @@
     if (refreshActivityBtn) refreshActivityBtn.addEventListener("click", renderActivityTimeline);
     if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperationalBoard);
     if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
+
     if (planQuantityInput) planQuantityInput.addEventListener("input", updateBillingPreview);
     if (planQuantityInput) planQuantityInput.addEventListener("change", updateBillingPreview);
 
@@ -2379,13 +3013,38 @@
       });
     }
 
-    if (compactModeToggle) compactModeToggle.addEventListener("change", () => { compactModeEnabled = compactModeToggle.checked; applyCompactModeState(); });
-    if (autoRefreshToggle) autoRefreshToggle.addEventListener("change", () => { autoRefreshEnabled = autoRefreshToggle.checked; applyAutoRefreshState(); });
-    if (modalCompactModeToggle) modalCompactModeToggle.addEventListener("change", () => { compactModeEnabled = modalCompactModeToggle.checked; applyCompactModeState(); });
-    if (modalAutoRefreshToggle) modalAutoRefreshToggle.addEventListener("change", () => { autoRefreshEnabled = modalAutoRefreshToggle.checked; applyAutoRefreshState(); });
-    if (modalChartMetricSelect) modalChartMetricSelect.addEventListener("change", () => { if (chartMetricSelect) chartMetricSelect.value = modalChartMetricSelect.value; drawChart(); });
+    if (compactModeToggle) compactModeToggle.addEventListener("change", () => {
+      compactModeEnabled = compactModeToggle.checked;
+      applyCompactModeState();
+    });
 
-    if (verifySessionBtn) verifySessionBtn.addEventListener("click", async () => { setBusy(verifySessionBtn, true, "Checking..."); await verifyMainSession(true); setBusy(verifySessionBtn, false); });
+    if (autoRefreshToggle) autoRefreshToggle.addEventListener("change", () => {
+      autoRefreshEnabled = autoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    if (modalCompactModeToggle) modalCompactModeToggle.addEventListener("change", () => {
+      compactModeEnabled = modalCompactModeToggle.checked;
+      applyCompactModeState();
+    });
+
+    if (modalAutoRefreshToggle) modalAutoRefreshToggle.addEventListener("change", () => {
+      autoRefreshEnabled = modalAutoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    if (modalChartMetricSelect) modalChartMetricSelect.addEventListener("change", () => {
+      if (chartMetricSelect) chartMetricSelect.value = modalChartMetricSelect.value;
+      drawChart();
+    });
+
+    if (verifySessionBtn) {
+      verifySessionBtn.addEventListener("click", async () => {
+        setBusy(verifySessionBtn, true, "Checking...");
+        await verifyMainSession(true);
+        setBusy(verifySessionBtn, false);
+      });
+    }
 
     if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
     if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
@@ -2393,6 +3052,7 @@
     if (viewLandingLinksBtn) viewLandingLinksBtn.addEventListener("click", () => { setExtraResult("Opening landing.html ..."); goToLandingPage(); });
     if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
     if (refreshDomainsBtn) refreshDomainsBtn.addEventListener("click", () => { setExtraResult("Opening domain-manager.html ..."); goToDomainManager(); });
+
     if ($("quickCreatePrimary")) $("quickCreatePrimary").addEventListener("click", () => createLinkForBackend("primary"));
     if ($("quickCreateLegacy")) $("quickCreateLegacy").addEventListener("click", () => createLinkForBackend("legacy"));
     if ($("quickPaymentBtn")) $("quickPaymentBtn").addEventListener("click", openUpgradeModal);
@@ -2410,19 +3070,32 @@
       renderNotifications();
       wireDropZone(dropZoneLegacy, "legacy");
       wireDropZone(dropZonePrimary, "primary");
-      await Promise.all([loadPlans(false), loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
+
+      await Promise.all([
+        loadPlans(false),
+        loadMe(true),
+        loadLinks(true),
+        loadPayments(false),
+        checkBackendHealth()
+      ]);
+
       if (waitingPaymentId) {
         const p = paymentsStore.find(x => x.id === waitingPaymentId);
         if (p) startPaymentPolling(p.id, p.backend);
       }
+
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
         if (document.hidden || !autoRefreshEnabled) return;
-        loadMe(false); loadLinks(false); loadPayments(false); checkBackendHealth();
+        loadMe(false);
+        loadLinks(false);
+        loadPayments(false);
+        checkBackendHealth();
       }, 15000);
     })();
 
     window.openSupportPanel = openSupportPanel;
+    window.openInfoPanel = openInfoPanel;
     window.toggleAllFaq = toggleAllFaq;
     window.copyLink = copyLink;
     window.showPaymentDetails = showPaymentDetails;
@@ -2442,11 +3115,6 @@
     window.showHistory = showHistory;
     window.showGeo = showGeo;
     window.deleteLink = deleteLink;
-    window.startTotpSetup = startTotpSetup;
-    window.enableTotp = enableTotp;
-    window.startEmailOtpSetup = startEmailOtpSetup;
-    window.enableEmailOtp = enableEmailOtp;
-    window.disableTwoFactor = disableTwoFactor;
   </script>
 </body>
 </html>
