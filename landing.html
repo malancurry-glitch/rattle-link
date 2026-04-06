@@ -689,7 +689,7 @@
                 </select>
                 <button id="setPrimaryDomainBtn" type="button" class="success-btn" style="margin-top:8px;width:100%;">
                  Set as Primary
-                 </button>
+                </button>
               </div>
               <div class="field">
                 <label for="landingTheme">Theme color</label>
@@ -998,6 +998,7 @@
     let refreshTimer = null;
     let autosaveEnabled = true;
     let dynamicButtonsStore = [];
+    let restoredDraftDomain = "";
 
     const toast = document.getElementById("toast");
     const previewWrap = document.getElementById("previewWrap");
@@ -1057,6 +1058,7 @@
     const presetBlueBtn = document.getElementById("presetBlueBtn");
     const presetPinkBtn = document.getElementById("presetPinkBtn");
     const presetGreenBtn = document.getElementById("presetGreenBtn");
+    const setPrimaryDomainBtn = document.getElementById("setPrimaryDomainBtn");
 
     const formResult = document.getElementById("formResult");
     const landingTable = document.getElementById("landingTable");
@@ -1308,27 +1310,28 @@
 
       return buttons.concat(getDynamicButtons());
     }
+
     async function setPrimaryDomain() {
-  const domain = normalizeDomain(landingDomain.value);
+      const domain = normalizeDomain(landingDomain.value);
 
-  if (!domain) {
-    showToast("Select a domain first");
-    return;
-  }
+      if (!domain) {
+        showToast("Select a domain first");
+        return;
+      }
 
-  const res = await authorizedFetch("/domains/set-primary", {
-    method: "POST",
-    body: JSON.stringify({ domain })
-  });
+      const res = await authorizedFetch("/domains/set-primary", {
+        method: "POST",
+        body: JSON.stringify({ domain })
+      });
 
-  if (!res.ok) {
-    showToast(res.data?.message || "Failed to set primary");
-    return;
-  }
+      if (!res.ok) {
+        showToast(res.data?.message || "Failed to set primary");
+        return;
+      }
 
-  showToast("Primary domain updated");
-  await loadDomains(); // refresh dropdown + badge
-}
+      showToast("Primary domain updated");
+      await loadDomains();
+    }
 
     function collectDraft() {
       return {
@@ -1376,27 +1379,6 @@
         setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
       } catch {}
     }
-    async function setPrimaryDomain() {
-  const domain = normalizeDomain(landingDomain.value);
-
-  if (!domain) {
-    showToast("Select a domain first");
-    return;
-  }
-
-  const res = await authorizedFetch("/domains/set-primary", {
-    method: "POST",
-    body: JSON.stringify({ domain })
-  });
-
-  if (!res.ok) {
-    showToast(res.data?.message || "Failed to set primary");
-    return;
-  }
-
-  showToast("Primary domain updated");
-  await loadDomains(); // refresh dropdown + badge
-}
 
     function loadDraft() {
       try {
@@ -1407,7 +1389,7 @@
         if (!d) return false;
 
         landingSlug.value = d.slug || "";
-        landingDomain.value = d.domain || "";
+        restoredDraftDomain = d.domain || "";
         landingTitle.value = d.title || "";
         landingSubtitle.value = d.subtitle || "";
         landingDescription.value = d.description || "";
@@ -1459,6 +1441,7 @@
       const slug = landingSlug.value.trim();
       const domain = normalizeDomain(landingDomain.value);
       const title = landingTitle.value.trim();
+      const subtitle = landingSubtitle.value.trim();
       const description = landingDescription.value.trim();
       const image = landingImage.value.trim();
       const theme = landingTheme.value.trim() || "#00ffff";
@@ -1471,6 +1454,10 @@
       const js = landingJs.value;
       const metaTitle = landingMetaTitle.value.trim();
       const metaDescription = landingMetaDescription.value.trim();
+      const ogTitle = landingOgTitle.value.trim();
+      const ogDescription = landingOgDescription.value.trim();
+      const ogImage = landingOgImage.value.trim();
+      const canonicalUrl = landingCanonicalUrl.value.trim();
 
       if (!slug) {
         setResult("Landing slug is required", true);
@@ -1486,6 +1473,7 @@
         slug,
         domain,
         title,
+        subtitle,
         description,
         image,
         theme,
@@ -1497,7 +1485,11 @@
         landingCss: css,
         landingJs: js,
         metaTitle,
-        metaDescription
+        metaDescription,
+        ogTitle,
+        ogDescription,
+        ogImage,
+        canonicalUrl
       };
     }
 
@@ -1719,6 +1711,7 @@ ${customCss}
       cardStyle.value = "glass";
       buttonStyle.value = "rounded";
       dynamicButtonsStore = [];
+      restoredDraftDomain = "";
       renderDynamicButtons();
       landingPreviewFrame.srcdoc = "";
       setResult("Form cleared", false);
@@ -1730,7 +1723,7 @@ ${customCss}
       landingSlug.value = item.slug || "";
       landingDomain.value = item.domain || "";
       landingTitle.value = item.landingTitle || "";
-      landingSubtitle.value = "";
+      landingSubtitle.value = item.subtitle || "";
       landingDescription.value = item.landingDescription || "";
       landingImage.value = item.landingImage || "";
       landingTheme.value = item.landingTheme || "#00ffff";
@@ -1739,16 +1732,16 @@ ${customCss}
       landingFooter.value = item.landingFooter || "";
       landingMetaTitle.value = item.metaTitle || "";
       landingMetaDescription.value = item.metaDescription || "";
-      landingOgTitle.value = "";
-      landingOgDescription.value = "";
-      landingOgImage.value = "";
-      landingCanonicalUrl.value = "";
+      landingOgTitle.value = item.ogTitle || "";
+      landingOgDescription.value = item.ogDescription || "";
+      landingOgImage.value = item.ogImage || "";
+      landingCanonicalUrl.value = item.canonicalUrl || "";
       landingHtml.value = item.landingHtml || "";
       landingCss.value = item.landingCss || "";
       landingJs.value = item.landingJs || "";
-      bgStyle.value = "radial";
-      cardStyle.value = "glass";
-      buttonStyle.value = "rounded";
+      bgStyle.value = item.bgStyle || "radial";
+      cardStyle.value = item.cardStyle || "glass";
+      buttonStyle.value = item.buttonStyle || "rounded";
 
       const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
       landingButtonLabel1.value = buttons[0]?.label || "";
@@ -1861,7 +1854,7 @@ ${customCss}
         ...d,
         domain: normalizeDomain(d.domain || ""),
         status: String(d.status || "pending").toLowerCase(),
-        isPrimary: !!d.isPrimary,
+        isPrimary: !!(d.isPrimary || d.is_primary),
         createdAt: Number(d.createdAt || d.created_at || 0)
       })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
@@ -1872,7 +1865,7 @@ ${customCss}
       const verifiedDomains = domainsStore.filter(d => d.status === "verified");
       const primary = verifiedDomains.find(d => d.isPrimary);
 
-      const selectedDomain = landingDomain.value;
+      const selectedDomain = restoredDraftDomain || landingDomain.value;
       const selectedFilter = domainFilter.value;
 
       landingDomain.innerHTML = ['<option value="">Default domain</option>']
@@ -1889,7 +1882,11 @@ ${customCss}
 
       if ([...landingDomain.options].some(o => o.value === selectedDomain)) {
         landingDomain.value = selectedDomain;
+      } else {
+        landingDomain.value = "";
       }
+      restoredDraftDomain = "";
+
       if ([...domainFilter.options].some(o => o.value === selectedFilter)) {
         domainFilter.value = selectedFilter;
       }
@@ -2211,14 +2208,12 @@ ${customCss}
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => setTab(btn.dataset.tab));
       });
-      document.getElementById("setPrimaryDomainBtn")
-      .addEventListener("click", setPrimaryDomain);
+
+      setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
 
       document.querySelectorAll(".template-card").forEach(card => {
         card.addEventListener("click", () => applyTemplate(card.dataset.template));
       });
-      document.getElementById("setPrimaryDomainBtn")
-      .addEventListener("click", setPrimaryDomain);
 
       [landingSlug, landingTitle, landingDescription].forEach(el => {
         el.addEventListener("keydown", e => {
@@ -2238,8 +2233,8 @@ ${customCss}
       setupEvents();
       attachLivePreview();
       renderDynamicButtons();
-      await loadAll(false);
       loadDraft();
+      await loadAll(false);
       renderPreview();
       updatePreviewDevice("desktop");
 
