@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two-Factor Verification - Rattle Link</title>
+  <meta name="description" content="Enter your two-factor authentication code to finish logging in to Rattle Link." />
+  <style>
+    :root{
+      --bg:#eef4ff;
+      --bg-soft:#f8fbff;
+      --surface:#ffffff;
+      --surface-2:#f7faff;
+      --text:#0f172a;
+      --text-soft:#475569;
+      --muted:#64748b;
+      --line:#d7e3f4;
+      --line-strong:#c2d5ed;
+      --primary:#2563eb;
+      --primary-strong:#1d4ed8;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warning:#d97706;
+      --shadow:0 32px 90px rgba(15,23,42,.14);
+      --shadow-soft:0 16px 42px rgba(37,99,235,.14);
+      --radius-2xl:30px;
+      --radius-xl:24px;
+      --radius-lg:18px;
+      --radius-md:14px;
+    }
+
+    body.dark{
+      --bg:#030914;
+      --bg-soft:#07111f;
+      --surface:#081221;
+      --surface-2:#0d1728;
+      --text:#e2e8f0;
+      --text-soft:#9fb1c9;
+      --muted:#7f94b0;
+      --line:rgba(148,163,184,.15);
+      --line-strong:rgba(148,163,184,.24);
+      --primary:#00d5ff;
+      --primary-strong:#00b8dc;
+      --success:#22c55e;
+      --danger:#ef4444;
+      --warning:#f59e0b;
+      --shadow:0 35px 100px rgba(0,0,0,.52);
+      --shadow-soft:0 20px 55px rgba(0,213,255,.12);
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ min-height:100%; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 26%),
+        radial-gradient(circle at 85% 15%, rgba(0,213,255,.10), transparent 18%),
+        linear-gradient(180deg, var(--bg), var(--bg-soft));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .page{
+      width:100%;
+      max-width:1120px;
+      display:grid;
+      grid-template-columns:1fr 520px;
+      border-radius:var(--radius-2xl);
+      overflow:hidden;
+      border:1px solid var(--line);
+      background:var(--surface);
+      box-shadow:var(--shadow);
+    }
+
+    .hero{
+      padding:42px 36px;
+      color:#fff;
+      background:
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,.10), transparent 20%),
+        linear-gradient(145deg, #041a37 0%, #0a2d59 45%, #08182d 100%);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:24px;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.14);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.04em;
+      width:max-content;
+    }
+
+    .hero h1{
+      margin:16px 0 12px;
+      font-size:48px;
+      line-height:1;
+      letter-spacing:-1.6px;
+    }
+
+    .hero p{
+      margin:0;
+      max-width:520px;
+      color:rgba(255,255,255,.80);
+      line-height:1.8;
+      font-size:15px;
+    }
+
+    .hero-list{
+      display:grid;
+      gap:12px;
+      margin-top:22px;
+    }
+
+    .hero-item{
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .hero-item strong{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+    }
+
+    .hero-item span{
+      display:block;
+      font-size:12px;
+      line-height:1.7;
+      color:rgba(255,255,255,.72);
+    }
+
+    .auth{
+      padding:28px 24px;
+      background:var(--surface);
+      display:flex;
+      align-items:center;
+    }
+
+    .card{
+      width:100%;
+      border-radius:26px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      box-shadow:var(--shadow-soft);
+      padding:22px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      top:-40px;
+      left:-40px;
+      width:140px;
+      height:140px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(37,99,235,.08), transparent 68%);
+      pointer-events:none;
+    }
+
+    body.dark .card::before{
+      background:radial-gradient(circle, rgba(0,213,255,.08), transparent 68%);
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brand-badge{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      font-size:24px;
+      font-weight:900;
+      background:linear-gradient(135deg, var(--primary), var(--primary-strong));
+      color:#02131c;
+      box-shadow:0 12px 34px rgba(37,99,235,.24);
+    }
+
+    .brand-copy h2{
+      margin:0;
+      font-size:21px;
+      line-height:1;
+    }
+
+    .brand-copy p{
+      margin:5px 0 0;
+      font-size:12px;
+      color:var(--text-soft);
+    }
+
+    .theme-toggle,
+    .ghost-link{
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      color:var(--text);
+      padding:10px 13px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      text-decoration:none;
+      transition:.18s ease;
+    }
+
+    .theme-toggle:hover,
+    .ghost-link:hover{
+      border-color:var(--primary);
+      color:var(--primary);
+      transform:translateY(-1px);
+    }
+
+    .head{
+      margin:18px 0 16px;
+    }
+
+    .head h3{
+      margin:0 0 8px;
+      font-size:32px;
+      line-height:1.02;
+      letter-spacing:-1px;
+    }
+
+    .head p{
+      margin:0;
+      color:var(--text-soft);
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    .info-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .info-chip{
+      padding:8px 11px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      color:var(--text-soft);
+    }
+
+    .field-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .input-group{
+      position:relative;
+    }
+
+    .input-group input{
+      width:100%;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      color:var(--text);
+      padding:18px 15px;
+      outline:none;
+      font-size:15px;
+      transition:.18s ease;
+    }
+
+    .input-group input:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    body.dark .input-group input:focus{
+      box-shadow:0 0 0 4px rgba(0,213,255,.10);
+    }
+
+    .input-group label{
+      display:block;
+      margin-bottom:8px;
+      font-size:12px;
+      font-weight:800;
+      color:var(--text-soft);
+      letter-spacing:.03em;
+    }
+
+    .method-box,
+    .tip-box{
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+    }
+
+    .method-box b,
+    .tip-box b{
+      display:block;
+      margin-bottom:6px;
+      font-size:13px;
+      color:var(--text);
+    }
+
+    .method-box span,
+    .tip-box span{
+      display:block;
+      color:var(--text-soft);
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    .primary-btn,
+    .secondary-btn{
+      width:100%;
+      appearance:none;
+      border:none;
+      border-radius:16px;
+      padding:15px 18px;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:800;
+      transition:.18s ease;
+    }
+
+    .primary-btn{
+      margin-top:16px;
+      background:linear-gradient(135deg, var(--primary), var(--primary-strong));
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      box-shadow:0 14px 32px rgba(37,99,235,.24);
+    }
+
+    body.dark .primary-btn{
+      color:#03121b;
+      box-shadow:0 14px 34px rgba(0,213,255,.18);
+    }
+
+    .primary-btn:hover{ transform:translateY(-1px); }
+
+    .secondary-btn{
+      margin-top:10px;
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .secondary-btn:hover{
+      border-color:var(--primary);
+      color:var(--primary);
+      background:rgba(37,99,235,.03);
+    }
+
+    .spinner{
+      width:15px;
+      height:15px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top:2px solid #fff;
+      border-radius:50%;
+      display:none;
+      animation:spin 1s linear infinite;
+    }
+
+    body.dark .spinner{
+      border-color:rgba(3,18,27,.32);
+      border-top-color:#03121b;
+    }
+
+    .loading{
+      opacity:.74;
+      pointer-events:none;
+    }
+
+    .error{
+      min-height:22px;
+      margin-top:14px;
+      text-align:center;
+      white-space:pre-wrap;
+      font-size:13px;
+      line-height:1.7;
+      color:var(--danger);
+      font-weight:700;
+    }
+
+    .success-text{ color:var(--success) !important; }
+    .warn-text{ color:var(--warning) !important; }
+
+    .helper{
+      margin-top:10px;
+      text-align:center;
+      font-size:12px;
+      color:var(--text-soft);
+      line-height:1.7;
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    @media (max-width: 980px){
+      .page{
+        grid-template-columns:1fr;
+      }
+
+      .hero{
+        padding:30px 22px;
+      }
+
+      .hero h1{
+        font-size:36px;
+      }
+
+      .auth{
+        padding:18px;
+      }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="page">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">🔐 Secure two-factor access</div>
+        <h1>Finish your login with a verification code.</h1>
+        <p>
+          Enter the 2FA code from your authenticator app or from your email, depending on how your account security is configured.
+        </p>
+
+        <div class="hero-list">
+          <div class="hero-item">
+            <strong>TOTP app support</strong>
+            <span>Use the 6-digit code from Google Authenticator, Authy, or another authenticator app.</span>
+          </div>
+          <div class="hero-item">
+            <strong>Email OTP support</strong>
+            <span>If your account uses email OTP, enter the login code sent to your email address.</span>
+          </div>
+          <div class="hero-item">
+            <strong>Production-ready flow</strong>
+            <span>After verification, this page completes login and redirects to your dashboard automatically.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="auth">
+      <div class="card" id="card">
+        <div class="topbar">
+          <div class="brand">
+            <div class="brand-badge">🐍</div>
+            <div class="brand-copy">
+              <h2>Rattle Link</h2>
+              <p>Two-Factor Verification</p>
+            </div>
+          </div>
+
+          <div>
+            <a class="ghost-link" href="index.html">Back</a>
+            <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 Theme</button>
+          </div>
+        </div>
+
+        <div class="head">
+          <h3>Enter your security code</h3>
+          <p>
+            Verify your identity to complete login. This page supports both authenticator app codes and email OTP codes.
+          </p>
+        </div>
+
+        <div class="info-row">
+          <span class="info-chip" id="methodChip">Method: Detecting...</span>
+          <span class="info-chip" id="emailChip">User: Not set</span>
+        </div>
+
+        <div class="field-grid">
+          <div class="method-box">
+            <b>Current login method</b>
+            <span id="methodText">We will detect your two-factor method from the login response or URL.</span>
+          </div>
+
+          <div class="input-group">
+            <label for="username">Email address</label>
+            <input id="username" type="email" autocomplete="username email" placeholder="you@example.com" />
+          </div>
+
+          <div class="input-group">
+            <label for="code">Verification code</label>
+            <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 2FA code" maxlength="8" />
+          </div>
+
+          <div class="tip-box">
+            <b>Tip</b>
+            <span id="tipText">If you are using TOTP, enter the current 6-digit code from your authenticator app. If you are using email OTP, enter the code sent to your inbox.</span>
+          </div>
+        </div>
+
+        <button class="primary-btn" id="verifyBtn" type="button" onclick="verifyTwoFactor()">
+          <span id="btnText">Verify and continue</span>
+          <span id="spinner" class="spinner"></span>
+        </button>
+
+        <button class="secondary-btn" type="button" onclick="goBackToLogin()">
+          Back to login
+        </button>
+
+        <div id="error" class="error"></div>
+        <div class="helper">
+          After successful verification, you will be redirected automatically.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    let preferredBackend = null;
+    let detectedMethod = null;
+
+    const card = document.getElementById("card");
+    const errorBox = document.getElementById("error");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const btnText = document.getElementById("btnText");
+    const spinner = document.getElementById("spinner");
+    const username = document.getElementById("username");
+    const code = document.getElementById("code");
+    const methodChip = document.getElementById("methodChip");
+    const emailChip = document.getElementById("emailChip");
+    const methodText = document.getElementById("methodText");
+    const tipText = document.getElementById("tipText");
+
+    function qs() {
+      return new URLSearchParams(window.location.search);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") document.body.classList.remove("dark");
+      else document.body.classList.add("dark");
+    }
+
+    function showError(msg = "", type = "error") {
+      errorBox.textContent = msg;
+      errorBox.className = "error";
+      if (type === "success") errorBox.classList.add("success-text");
+      else if (type === "warn") errorBox.classList.add("warn-text");
+    }
+
+    function setLoading(state) {
+      verifyBtn.disabled = state;
+      card.classList.toggle("loading", state);
+      btnText.style.display = state ? "none" : "inline";
+      spinner.style.display = state ? "inline-block" : "none";
+    }
+
+    function normalizeApiUrl(url) {
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    function backendLabel(name) {
+      return name === "legacy" ? "Legacy AWS" : "Backend 2";
+    }
+
+    function buildHeaders(extra = {}) {
+      return { "Content-Type": "application/json", ...extra };
+    }
+
+    function getForcedBackend() {
+      const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
+      const localBackend = String(localStorage.getItem("authBackend") || "").trim().toLowerCase();
+      const magicBackend = String(localStorage.getItem("magicBackend") || "").trim().toLowerCase();
+
+      if (preferredBackend === "primary" || preferredBackend === "legacy") return preferredBackend;
+      if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
+      if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
+      if (localBackend === "primary" || localBackend === "legacy") return localBackend;
+      return "primary";
+    }
+
+    async function safeJson(res) {
+      try { return await res.json(); } catch { return {}; }
+    }
+
+    async function callApi(baseUrl, path, options = {}) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch(normalizeApiUrl(baseUrl) + path, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        const data = await safeJson(res);
+        return { ok: res.ok, status: res.status, data, networkError: false };
+      } catch (error) {
+        clearTimeout(timer);
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Network request failed" },
+          networkError: true
+        };
+      }
+    }
+
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
+      const primary = normalizeApiUrl(PRIMARY_API);
+      const legacy = normalizeApiUrl(LEGACY_API);
+
+      if (behavior === "primaryOnly") {
+        const result = await callApi(primary, path, options);
+        return { ...result, backend: "primary" };
+      }
+
+      if (behavior === "legacyOnly") {
+        const legacyOptions = {
+          ...options,
+          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
+        };
+        const result = await callApi(legacy, path, legacyOptions);
+        return { ...result, backend: "legacy" };
+      }
+
+      const forced = getForcedBackend();
+      if (forced === "legacy") {
+        const legacyOptions = {
+          ...options,
+          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
+        };
+        const result = await callApi(legacy, path, legacyOptions);
+        return { ...result, backend: "legacy" };
+      }
+
+      const primaryResult = await callApi(primary, path, options);
+      if (primaryResult.ok) return { ...primaryResult, backend: "primary" };
+
+      if (primaryResult.networkError || primaryResult.status === 404 || primaryResult.status >= 500) {
+        const legacyOptions = {
+          ...options,
+          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
+        };
+        const legacyResult = await callApi(legacy, path, legacyOptions);
+        return { ...legacyResult, backend: "legacy", firstAttempt: primaryResult };
+      }
+
+      return { ...primaryResult, backend: "primary" };
+    }
+
+    function updateMethodUi(method) {
+      detectedMethod = method || "unknown";
+
+      if (detectedMethod === "totp") {
+        methodChip.textContent = "Method: Authenticator app";
+        methodText.textContent = "Your account is using TOTP. Enter the current code from your authenticator app.";
+        tipText.textContent = "Open your authenticator app and enter the latest 6-digit code.";
+      } else if (detectedMethod === "email_otp") {
+        methodChip.textContent = "Method: Email OTP";
+        methodText.textContent = "Your account is using email OTP. Enter the code sent to your email inbox.";
+        tipText.textContent = "Check your email for the login code, then paste it here.";
+      } else {
+        methodChip.textContent = "Method: Verification code";
+        methodText.textContent = "Enter your two-factor code to complete login.";
+        tipText.textContent = "Use your authenticator app code or the email OTP code sent to your inbox.";
+      }
+    }
+
+    function updateEmailUi() {
+      const email = username.value.trim().toLowerCase();
+      emailChip.textContent = email ? `User: ${email}` : "User: Not set";
+    }
+
+    function loadInitialState() {
+      const emailFromQuery = String(qs().get("email") || "").trim().toLowerCase();
+      const methodFromQuery = String(qs().get("method") || "").trim().toLowerCase();
+      const backendFromQuery = String(qs().get("backend") || "").trim().toLowerCase();
+      const lastUser = String(localStorage.getItem("lastUser") || "").trim().toLowerCase();
+      const pendingEmail = String(localStorage.getItem("magicEmail") || "").trim().toLowerCase();
+      const lastMfaMethod = String(localStorage.getItem("pending2faMethod") || "").trim().toLowerCase();
+
+      if (backendFromQuery === "primary" || backendFromQuery === "legacy") {
+        preferredBackend = backendFromQuery;
+        localStorage.setItem("authBackend", backendFromQuery);
+      }
+
+      username.value = emailFromQuery || pendingEmail || lastUser || "";
+      updateEmailUi();
+
+      updateMethodUi(methodFromQuery || lastMfaMethod || "unknown");
+    }
+
+    async function verifyTwoFactor() {
+      showError("");
+      setLoading(true);
+
+      const user = username.value.trim().toLowerCase();
+      const enteredCode = code.value.trim();
+
+      if (!user) {
+        showError("Enter your email.");
+        setLoading(false);
+        return;
+      }
+
+      if (!enteredCode) {
+        showError("Enter your verification code.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const verifyResult = await apiHybrid(
+          "/login/2fa/verify",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({ username: user, code: enteredCode })
+          },
+          "primaryThenLegacy"
+        );
+
+        const verifyData = verifyResult.data || {};
+        if (!verifyResult.ok || !verifyData.exchange) {
+          showError(verifyData.message || "Two-factor verification failed.");
+          setLoading(false);
+          return;
+        }
+
+        preferredBackend = verifyResult.backend || "primary";
+        localStorage.setItem("authBackend", preferredBackend);
+
+        const loginBehavior = preferredBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+        const loginResult = await apiHybrid(
+          "/magic-login",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({ exchange: verifyData.exchange })
+          },
+          loginBehavior
+        );
+
+        const loginData = loginResult.data || {};
+        if (!loginResult.ok || !loginData.token) {
+          showError(loginData.message || "Code verified, but final login failed.");
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem("token", loginData.token);
+        localStorage.setItem("role", loginData.role || "user");
+        localStorage.setItem("lastUser", loginData.username || user);
+        localStorage.removeItem("pending2faMethod");
+
+        showError(`2FA verified via ${backendLabel(loginResult.backend)}. Redirecting...`, "success");
+
+        setTimeout(() => {
+          window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
+        }, 700);
+      } catch (error) {
+        console.error("2FA VERIFY ERROR:", error);
+        showError("Verification failed.");
+      }
+
+      setLoading(false);
+    }
+
+    function goBackToLogin() {
+      const params = new URLSearchParams();
+      const email = username.value.trim().toLowerCase();
+      const backend = getForcedBackend();
+
+      if (email) params.set("email", email);
+      if (backend) params.set("backend", backend);
+
+      window.location.href = "index.html" + (params.toString() ? `?${params.toString()}` : "");
+    }
+
+    username.addEventListener("input", updateEmailUi);
+    username.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyTwoFactor();
+    });
+
+    code.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyTwoFactor();
+    });
+
+    loadTheme();
+    loadInitialState();
+  </script>
+</body>
+</html>
