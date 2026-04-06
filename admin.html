@@ -23,7 +23,6 @@
 
       const token = localStorage.getItem("token");
       const role = localStorage.getItem("role");
-
       if (!token || role !== "admin") {
         window.location.href = "index.html";
       }
@@ -37,6 +36,7 @@
       --bg:#020617;
       --bg2:#0f172a;
       --card:rgba(2,6,23,.88);
+      --card2:rgba(15,23,42,.72);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --primary:#00ffff;
@@ -47,11 +47,14 @@
       --purple:#8b5cf6;
       --orange:#fb923c;
       --sky:#60a5fa;
+      --pink:#ec4899;
       --border:rgba(0,255,255,.15);
       --shadow:0 0 18px rgba(0,255,255,.10);
+      --radius:16px;
     }
 
     *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
 
     body{
       margin:0;
@@ -61,6 +64,10 @@
       display:flex;
       min-height:100vh;
     }
+
+    body.compact .card{ padding:12px; margin-bottom:14px; }
+    body.compact th, body.compact td{ padding:8px; }
+    body.compact .stat .value{ font-size:24px; }
 
     body::before{
       content:"";
@@ -74,7 +81,7 @@
     }
 
     .sidebar{
-      width:270px;
+      width:290px;
       min-height:100vh;
       background:#020617;
       border-right:1px solid var(--border);
@@ -117,12 +124,23 @@
       cursor:pointer;
       text-align:left;
       transition:.2s;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
     }
 
     .nav-btn:hover,
-    .sidebar button:hover{
-      transform:translateX(4px);
+    .sidebar button:hover,
+    button:hover{
+      transform:translateY(-1px);
       box-shadow:0 0 12px rgba(0,255,255,.18);
+    }
+
+    .nav-btn.active{
+      background:rgba(0,255,255,.08);
+      border-color:rgba(0,255,255,.35);
+      box-shadow:0 0 0 1px rgba(0,255,255,.18) inset;
     }
 
     .sidebar-section{
@@ -170,7 +188,11 @@
       line-height:1.6;
     }
 
-    .header-actions{
+    .header-actions,
+    .toolbar,
+    .actions,
+    .inline-actions,
+    .toggle-row{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
@@ -180,7 +202,7 @@
     .card{
       background:var(--card);
       border:1px solid var(--border);
-      border-radius:16px;
+      border-radius:var(--radius);
       padding:16px;
       margin-bottom:18px;
       box-shadow:var(--shadow);
@@ -193,46 +215,19 @@
       gap:16px;
     }
 
-    .grid-2{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:16px;
-    }
+    .grid-2{ display:grid; grid-template-columns:1.1fr .9fr; gap:16px; }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 
-    .stat{
-      min-height:120px;
-    }
+    .stat{ min-height:120px; }
+    .stat .label{ color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .stat .value{ font-size:30px; color:var(--primary); font-weight:700; }
+    .stat .delta{ margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5; }
 
-    .stat .label{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:8px;
-    }
-
-    .stat .value{
-      font-size:30px;
-      color:var(--primary);
-      font-weight:700;
-    }
-
-    .stat .delta{
-      margin-top:8px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.5;
-    }
-
-    h2,h3,h4{
-      margin-top:0;
-      color:var(--primary);
-    }
+    h2,h3,h4,h5{ margin-top:0; color:var(--primary); }
 
     .toolbar{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
       margin-bottom:12px;
-      align-items:center;
     }
 
     .toolbar input,
@@ -240,7 +235,8 @@
     .toolbar button,
     input,
     select,
-    textarea{
+    textarea,
+    button{
       border-radius:10px;
       border:1px solid var(--border);
       background:#020617;
@@ -248,38 +244,13 @@
       padding:10px 12px;
     }
 
-    input::placeholder,
-    textarea::placeholder{
-      color:var(--muted);
-    }
+    input, select, textarea{ width:100%; }
+    .toolbar input, .toolbar select{ width:auto; min-width:180px; }
+    input::placeholder, textarea::placeholder{ color:var(--muted); }
+    textarea{ width:100%; min-height:90px; resize:vertical; }
 
-    textarea{
-      width:100%;
-      min-height:90px;
-      resize:vertical;
-    }
-
-    button{
-      border-radius:10px;
-      border:1px solid var(--border);
-      background:#020617;
-      color:var(--primary);
-      padding:9px 12px;
-      cursor:pointer;
-      transition:.2s;
-    }
-
-    button:hover{
-      box-shadow:0 0 12px rgba(0,255,255,.18);
-      transform:translateY(-1px);
-    }
-
-    button:disabled{
-      opacity:.45;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
+    button{ cursor:pointer; transition:.2s; }
+    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
     .btn-primary{ color:#fff; background:var(--blue); border-color:var(--blue); }
     .btn-green{ color:var(--green); border-color:var(--green); }
@@ -287,16 +258,14 @@
     .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
     .btn-purple{ color:var(--purple); border-color:var(--purple); }
     .btn-action{ color:#fff; background:var(--orange); border-color:var(--orange); }
+    .btn-pink{ color:#fbcfe8; border-color:#ec4899; }
 
-    .table-wrap{
-      overflow:auto;
-      width:100%;
-    }
+    .table-wrap{ overflow:auto; width:100%; }
 
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1240px;
+      min-width:1420px;
     }
 
     th,td{
@@ -307,25 +276,19 @@
       vertical-align:top;
     }
 
-    tr:hover{
+    th{
+      position:sticky;
+      top:0;
       background:#020617;
+      z-index:1;
+      color:#a5f3fc;
     }
 
-    tr.payment-awaiting-row{
-      background:rgba(59,130,246,.08);
-    }
-
-    tr.payment-awaiting-row:hover{
-      background:rgba(59,130,246,.16);
-    }
-
-    tr.payment-cancelled-row{
-      background:rgba(239,68,68,.06);
-    }
-
-    tr.payment-cancelled-row:hover{
-      background:rgba(239,68,68,.12);
-    }
+    tr:hover{ background:#020617; }
+    tr.payment-awaiting-row{ background:rgba(59,130,246,.08); }
+    tr.payment-awaiting-row:hover{ background:rgba(59,130,246,.16); }
+    tr.payment-cancelled-row{ background:rgba(239,68,68,.06); }
+    tr.payment-cancelled-row:hover{ background:rgba(239,68,68,.12); }
 
     .badge{
       display:inline-block;
@@ -355,14 +318,12 @@
     .domain-verified{ background:#052e16; color:#86efac; }
     .landing-type{ background:#1e1b4b; color:#c4b5fd; }
     .redirect-type{ background:#03263a; color:#67e8f9; }
+    .risk-high{ background:#450a0a; color:#fecaca; }
+    .risk-med{ background:#451a03; color:#fdba74; }
+    .risk-low{ background:#052e16; color:#bbf7d0; }
 
     .muted{ color:var(--muted); }
-
-    .actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
+    .tiny{ font-size:11px; }
 
     .actions button{
       padding:6px 9px;
@@ -374,7 +335,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:560px;
+      width:640px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -405,7 +366,7 @@
       color:#22c55e;
       padding:12px;
       min-height:180px;
-      max-height:220px;
+      max-height:260px;
       overflow:auto;
       border-radius:12px;
       border:1px solid rgba(34,197,94,.22);
@@ -421,7 +382,7 @@
     }
 
     .list-box{
-      max-height:260px;
+      max-height:300px;
       overflow:auto;
       border:1px solid var(--border);
       border-radius:12px;
@@ -436,13 +397,8 @@
       line-height:1.55;
     }
 
-    .list-box > div:last-child{
-      border-bottom:none;
-    }
-
-    .hidden{
-      display:none !important;
-    }
+    .list-box > div:last-child{ border-bottom:none; }
+    .hidden{ display:none !important; }
 
     .backend-badge{
       display:inline-block;
@@ -501,6 +457,14 @@
       margin-bottom:12px;
     }
 
+    .success-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(34,197,94,.08);
+      border:1px solid rgba(34,197,94,.25);
+      margin-bottom:12px;
+    }
+
     .preview-frame{
       width:100%;
       min-height:520px;
@@ -509,16 +473,47 @@
       background:#fff;
     }
 
-    @media (max-width: 1000px){
+    .progress{
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      margin-top:8px;
+    }
+
+    .progress > span{
+      display:block;
+      height:100%;
+      background:linear-gradient(90deg,var(--primary),var(--green));
+      width:0%;
+      border-radius:999px;
+    }
+
+    .metric-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+      gap:12px;
+    }
+
+    .metric-item{
+      background:var(--card2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .pill-toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width: 1100px){
       body{ display:block; }
-      .sidebar{
-        width:100%;
-        min-height:auto;
-        position:static;
-      }
-      .grid-2{
-        grid-template-columns:1fr;
-      }
+      .sidebar{ width:100%; min-height:auto; position:static; }
+      .grid-2,.grid-3,.grid-4{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -529,13 +524,14 @@
       <p>Rattle Link Control Center</p>
     </div>
 
-    <button class="nav-btn" id="navOverview">📊 Overview</button>
-    <button class="nav-btn" id="navUsers">👥 Users</button>
-    <button class="nav-btn" id="navPayments">💳 Payments</button>
-    <button class="nav-btn" id="navLinks">🔗 Links</button>
-    <button class="nav-btn" id="navDomains">🌐 Domains</button>
-    <button class="nav-btn" id="navLanding">🪄 Landing Pages</button>
-    <button class="nav-btn" id="navAudit">📜 Audit</button>
+    <button class="nav-btn active" id="navOverview"><span>📊 Overview</span><span class="tiny">Home</span></button>
+    <button class="nav-btn" id="navUsers"><span>👥 Users</span><span class="tiny" id="navUsersCount">0</span></button>
+    <button class="nav-btn" id="navPayments"><span>💳 Payments</span><span class="tiny" id="navPaymentsCount">0</span></button>
+    <button class="nav-btn" id="navLinks"><span>🔗 Links</span><span class="tiny" id="navLinksCount">0</span></button>
+    <button class="nav-btn" id="navDomains"><span>🌐 Domains</span><span class="tiny" id="navDomainsCount">0</span></button>
+    <button class="nav-btn" id="navLanding"><span>🪄 Landing Pages</span><span class="tiny" id="navLandingCount">0</span></button>
+    <button class="nav-btn" id="navAudit"><span>📜 Audit</span><span class="tiny">Logs</span></button>
+    <button class="nav-btn" id="navSecurity"><span>🛡 Security</span><span class="tiny">Risk</span></button>
 
     <div class="sidebar-section">
       <h4>Quick Actions</h4>
@@ -547,6 +543,8 @@
       <button id="showVerifiedBtn">✅ Verified Payments</button>
       <button id="showDomainsBtn">🌐 View Domains</button>
       <button id="showLandingBtn">🪄 View Landing Pages</button>
+      <button id="openBroadcastBtn">📣 Broadcast</button>
+      <button id="openSettingsBtn">⚙️ Settings</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Links</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
@@ -554,17 +552,28 @@
       <button id="exportLandingBtn">⬇️ Export Landing</button>
       <button id="logoutBtn" class="btn-red">🚪 Logout</button>
     </div>
+
+    <div class="sidebar-section">
+      <h4>Live Controls</h4>
+      <div class="pill-toggle">
+        <label><input type="checkbox" id="compactModeToggle" /> Compact</label>
+      </div>
+      <div class="pill-toggle" style="margin-top:8px;">
+        <label><input type="checkbox" id="onlyAwaitingToggle" /> Awaiting only</label>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
     <div class="header">
       <div>
         <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, domains, and landing pages.</div>
+        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, custom domains, landing pages, subscriptions, payment verification, and risk review.</div>
       </div>
 
       <div class="header-actions">
         <span id="backendBadge" class="backend-badge">Merged Backend View</span>
+        <span id="riskBadge" class="badge risk-low">LOW RISK</span>
         <button id="autoRefreshBtn">⏱️ Auto Refresh: ON</button>
         <button id="refreshBtn" class="btn-primary">Refresh</button>
       </div>
@@ -627,9 +636,16 @@
         </div>
       </div>
 
-      <div class="grid-2">
+      <div class="grid-3">
         <div class="card">
           <h3>📈 Click Analytics</h3>
+          <div class="toolbar">
+            <select id="chartModeSelect">
+              <option value="clicks">Top Clicks</option>
+              <option value="users">User Request Volume</option>
+              <option value="payments">Payment Volume</option>
+            </select>
+          </div>
           <canvas id="chart"></canvas>
         </div>
 
@@ -637,16 +653,37 @@
           <h3>💳 Payment Snapshot</h3>
           <div id="paymentStats" class="list-box"></div>
         </div>
+
+        <div class="card">
+          <h3>🛡 Risk Snapshot</h3>
+          <div id="riskStats" class="list-box"></div>
+        </div>
       </div>
 
-      <div class="grid">
+      <div class="grid-2">
         <div class="card">
           <h3>🟢 Live Status</h3>
           <div id="liveStatus">System healthy</div>
           <div class="muted" id="lastRefreshText" style="margin-top:8px;">Not refreshed yet</div>
           <div class="muted" id="refreshStateText" style="margin-top:6px;">Waiting for first refresh</div>
+          <div class="progress"><span id="refreshProgress"></span></div>
         </div>
 
+        <div class="card">
+          <h3>⚙️ Quick Filters</h3>
+          <div class="toolbar">
+            <input id="globalSearch" placeholder="Global search users, links, domains, payments..." />
+            <select id="sourceFilterGlobal">
+              <option value="">All sources</option>
+              <option value="primary">Backend2</option>
+              <option value="legacy">Legacy AWS</option>
+            </select>
+            <button id="clearGlobalFiltersBtn">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3">
         <div class="card">
           <h3>⚡ Awaiting Confirmation</h3>
           <div id="awaitingList" class="list-box"></div>
@@ -660,6 +697,18 @@
         <div class="card">
           <h3>🪄 Latest Landing Pages</h3>
           <div id="landingList" class="list-box"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>📌 Subscription Summary</h3>
+          <div id="subscriptionStats" class="metric-grid"></div>
+        </div>
+
+        <div class="card">
+          <h3>🕒 Activity Stream</h3>
+          <div id="activityStream" class="list-box"></div>
         </div>
       </div>
 
@@ -686,6 +735,7 @@
             <option value="subscribed">Subscribed</option>
             <option value="paused">Paused Subscription</option>
           </select>
+          <button id="bulkVerifyUsersBtn">Bulk Verify Visible</button>
         </div>
 
         <div class="section-note">
@@ -729,6 +779,7 @@
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
           </select>
+          <button id="bulkVerifyAwaitingBtn" class="btn-action">Verify Visible Awaiting</button>
         </div>
 
         <div class="highlight-box">
@@ -771,6 +822,7 @@
             <option value="slug_asc">Sort: Slug A-Z</option>
             <option value="user_asc">Sort: User A-Z</option>
           </select>
+          <button id="exportVisibleLinksBtn">Export Visible</button>
         </div>
 
         <div class="table-wrap">
@@ -804,10 +856,11 @@
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
           </select>
+          <button id="refreshDomainsOnlyBtn">Refresh Domains</button>
         </div>
 
         <div class="section-note">
-          Domain data comes from Backend2. Admin can review, verify, and remove custom domains.
+          Domain data comes from Backend2. Admin can review, verify, and remove custom domains. Standard setup uses TXT verification only.
         </div>
 
         <div class="table-wrap">
@@ -840,10 +893,11 @@
             <option value="primary">Backend2</option>
             <option value="legacy">Legacy AWS</option>
           </select>
+          <button id="refreshLandingOnlyBtn">Refresh Landing</button>
         </div>
 
         <div class="section-note">
-          Landing pages are link records with <b>linkType = landing</b>. You can preview and remove them here.
+          Landing pages are link records with <b>linkType = landing</b>. You can preview, inspect, and remove them here.
         </div>
 
         <div class="table-wrap">
@@ -868,8 +922,20 @@
 
     <section id="auditSection" class="hidden">
       <div class="card">
+        <div class="toolbar">
+          <input id="auditSearch" placeholder="Search audit action or target..." />
+          <button id="refreshAuditBtn">Refresh Audit</button>
+        </div>
         <h3>📜 Audit Logs</h3>
-        <div id="auditLogs" class="list-box" style="max-height:420px;"></div>
+        <div id="auditLogs" class="list-box" style="max-height:520px;"></div>
+      </div>
+    </section>
+
+    <section id="securitySection" class="hidden">
+      <div class="card">
+        <h3>🛡 Security Center</h3>
+        <div class="section-note">Review elevated traffic, unusually high click volume, and suspicious activity markers inferred from loaded records.</div>
+        <div id="securityPanelContent" class="grid-2"></div>
       </div>
     </section>
   </main>
@@ -905,6 +971,7 @@
     let autoRefresh = true;
     let refreshTimer = null;
     let isLoading = false;
+    let compactMode = false;
 
     const lastGoodState = {
       usersData: [],
@@ -915,63 +982,76 @@
       landingData: []
     };
 
-    const statUsers = document.getElementById("statUsers");
-    const statLinks = document.getElementById("statLinks");
-    const statLanding = document.getElementById("statLanding");
-    const statDomains = document.getElementById("statDomains");
-    const statClicks = document.getElementById("statClicks");
-    const statPendingPayments = document.getElementById("statPendingPayments");
-    const statAwaitingPayments = document.getElementById("statAwaitingPayments");
-    const statActiveSubs = document.getElementById("statActiveSubs");
-    const statAdmins = document.getElementById("statAdmins");
+    const $ = id => document.getElementById(id);
 
-    const liveStatus = document.getElementById("liveStatus");
-    const lastRefreshText = document.getElementById("lastRefreshText");
-    const refreshStateText = document.getElementById("refreshStateText");
-    const usersEl = document.getElementById("users");
-    const linksEl = document.getElementById("links");
-    const paymentsEl = document.getElementById("payments");
-    const domainsEl = document.getElementById("domains");
-    const landingPagesEl = document.getElementById("landingPages");
-    const auditLogsEl = document.getElementById("auditLogs");
-    const awaitingList = document.getElementById("awaitingList");
-    const domainList = document.getElementById("domainList");
-    const landingList = document.getElementById("landingList");
-    const paymentStats = document.getElementById("paymentStats");
-    const panel = document.getElementById("panel");
-    const panelTitle = document.getElementById("panelTitle");
-    const panelContent = document.getElementById("panelContent");
-    const toast = document.getElementById("toast");
-    const backendBadge = document.getElementById("backendBadge");
-    const terminal = document.getElementById("terminal");
+    const statUsers = $("statUsers");
+    const statLinks = $("statLinks");
+    const statLanding = $("statLanding");
+    const statDomains = $("statDomains");
+    const statClicks = $("statClicks");
+    const statPendingPayments = $("statPendingPayments");
+    const statAwaitingPayments = $("statAwaitingPayments");
+    const statActiveSubs = $("statActiveSubs");
+    const statAdmins = $("statAdmins");
 
-    const overviewSection = document.getElementById("overviewSection");
-    const usersSection = document.getElementById("usersSection");
-    const paymentsSection = document.getElementById("paymentsSection");
-    const linksSection = document.getElementById("linksSection");
-    const domainsSection = document.getElementById("domainsSection");
-    const landingSection = document.getElementById("landingSection");
-    const auditSection = document.getElementById("auditSection");
+    const liveStatus = $("liveStatus");
+    const lastRefreshText = $("lastRefreshText");
+    const refreshStateText = $("refreshStateText");
+    const refreshProgress = $("refreshProgress");
+    const usersEl = $("users");
+    const linksEl = $("links");
+    const paymentsEl = $("payments");
+    const domainsEl = $("domains");
+    const landingPagesEl = $("landingPages");
+    const auditLogsEl = $("auditLogs");
+    const awaitingList = $("awaitingList");
+    const domainList = $("domainList");
+    const landingList = $("landingList");
+    const paymentStats = $("paymentStats");
+    const riskStats = $("riskStats");
+    const subscriptionStats = $("subscriptionStats");
+    const activityStream = $("activityStream");
+    const panel = $("panel");
+    const panelTitle = $("panelTitle");
+    const panelContent = $("panelContent");
+    const toast = $("toast");
+    const backendBadge = $("backendBadge");
+    const riskBadge = $("riskBadge");
+    const terminal = $("terminal");
+    const securityPanelContent = $("securityPanelContent");
 
-    const userSearch = document.getElementById("userSearch");
-    const userFilterRole = document.getElementById("userFilterRole");
-    const userFilterStatus = document.getElementById("userFilterStatus");
-    const linkSearch = document.getElementById("linkSearch");
-    const linkFilterStatus = document.getElementById("linkFilterStatus");
-    const linkSort = document.getElementById("linkSort");
-    const paymentSearch = document.getElementById("paymentSearch");
-    const paymentStatusFilter = document.getElementById("paymentStatusFilter");
-    const paymentPlanFilter = document.getElementById("paymentPlanFilter");
-    const domainSearch = document.getElementById("domainSearch");
-    const domainStatusFilter = document.getElementById("domainStatusFilter");
-    const landingSearch = document.getElementById("landingSearch");
-    const landingSourceFilter = document.getElementById("landingSourceFilter");
+    const overviewSection = $("overviewSection");
+    const usersSection = $("usersSection");
+    const paymentsSection = $("paymentsSection");
+    const linksSection = $("linksSection");
+    const domainsSection = $("domainsSection");
+    const landingSection = $("landingSection");
+    const auditSection = $("auditSection");
+    const securitySection = $("securitySection");
+
+    const userSearch = $("userSearch");
+    const userFilterRole = $("userFilterRole");
+    const userFilterStatus = $("userFilterStatus");
+    const linkSearch = $("linkSearch");
+    const linkFilterStatus = $("linkFilterStatus");
+    const linkSort = $("linkSort");
+    const paymentSearch = $("paymentSearch");
+    const paymentStatusFilter = $("paymentStatusFilter");
+    const paymentPlanFilter = $("paymentPlanFilter");
+    const domainSearch = $("domainSearch");
+    const domainStatusFilter = $("domainStatusFilter");
+    const landingSearch = $("landingSearch");
+    const landingSourceFilter = $("landingSourceFilter");
+    const auditSearch = $("auditSearch");
+    const globalSearch = $("globalSearch");
+    const sourceFilterGlobal = $("sourceFilterGlobal");
+    const onlyAwaitingToggle = $("onlyAwaitingToggle");
+    const compactModeToggle = $("compactModeToggle");
+    const chartModeSelect = $("chartModeSelect");
 
     function authHeaders(method = "GET") {
       const token = localStorage.getItem("token") || "";
-      const headers = {
-        "Authorization": token ? `Bearer ${token}` : ""
-      };
+      const headers = { "Authorization": token ? `Bearer ${token}` : "" };
       if (method !== "GET") headers["Content-Type"] = "application/json";
       return headers;
     }
@@ -1018,11 +1098,8 @@
 
         const text = await res.text();
         let data;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          data = { message: text };
-        }
+        try { data = text ? JSON.parse(text) : {}; }
+        catch { data = { message: text }; }
 
         if (allowLogout && res.status === 401) {
           logout();
@@ -1060,13 +1137,8 @@
     }
 
     function showSection(sectionName) {
-      overviewSection.classList.add("hidden");
-      usersSection.classList.add("hidden");
-      paymentsSection.classList.add("hidden");
-      linksSection.classList.add("hidden");
-      domainsSection.classList.add("hidden");
-      landingSection.classList.add("hidden");
-      auditSection.classList.add("hidden");
+      [overviewSection, usersSection, paymentsSection, linksSection, domainsSection, landingSection, auditSection, securitySection].forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
 
       if (sectionName === "overview") overviewSection.classList.remove("hidden");
       if (sectionName === "users") usersSection.classList.remove("hidden");
@@ -1075,6 +1147,20 @@
       if (sectionName === "domains") domainsSection.classList.remove("hidden");
       if (sectionName === "landing") landingSection.classList.remove("hidden");
       if (sectionName === "audit") auditSection.classList.remove("hidden");
+      if (sectionName === "security") securitySection.classList.remove("hidden");
+
+      const activeBtnMap = {
+        overview: "navOverview",
+        users: "navUsers",
+        payments: "navPayments",
+        links: "navLinks",
+        domains: "navDomains",
+        landing: "navLanding",
+        audit: "navAudit",
+        security: "navSecurity"
+      };
+      const btn = $(activeBtnMap[sectionName]);
+      if (btn) btn.classList.add("active");
     }
 
     function closePanel() {
@@ -1089,28 +1175,21 @@
     }
 
     function getLinkStatusBadge(link) {
-      return link.paused
-        ? `<span class="badge paused">PAUSED</span>`
-        : `<span class="badge active">ACTIVE</span>`;
+      return link.paused ? `<span class="badge paused">PAUSED</span>` : `<span class="badge active">ACTIVE</span>`;
     }
 
     function getUserStatusBadge(user) {
-      return user.banned
-        ? `<span class="badge banned">BANNED</span>`
-        : `<span class="badge active">ACTIVE</span>`;
+      return user.banned ? `<span class="badge banned">BANNED</span>` : `<span class="badge active">ACTIVE</span>`;
     }
 
     function getRoleBadge(role) {
-      return role === "admin"
-        ? `<span class="badge admin">ADMIN</span>`
-        : `<span class="badge">USER</span>`;
+      return role === "admin" ? `<span class="badge admin">ADMIN</span>` : `<span class="badge">USER</span>`;
     }
 
     function getSubscriptionBadge(user) {
       const status = String(user.subscriptionStatus || user.subscription_status || "trial").toLowerCase();
       const paused = !!(user.subscriptionPaused || user.subscription_paused);
       const expiresAt = Number(user.subscriptionExpiresAt || user.subscription_expires_at || 0);
-
       if (paused) return `<span class="badge paused">PAUSED</span>`;
       if (status === "active" && expiresAt > Date.now()) return `<span class="badge active">ACTIVE</span>`;
       if (status === "expired" || (expiresAt && expiresAt <= Date.now())) return `<span class="badge expired">EXPIRED</span>`;
@@ -1139,9 +1218,7 @@
     }
 
     function getSourceBadge(source) {
-      return source === "legacy"
-        ? `<span class="badge legacy-source">LEGACY AWS</span>`
-        : `<span class="badge primary-source">BACKEND 2</span>`;
+      return source === "legacy" ? `<span class="badge legacy-source">LEGACY AWS</span>` : `<span class="badge primary-source">BACKEND 2</span>`;
     }
 
     function defaultHostBySource(source) {
@@ -1159,10 +1236,7 @@
       if (!Number.isFinite(n)) return `<span class="muted">No expiry</span>`;
       const left = n - Date.now();
       if (left <= 0) return `<span class="badge expired">Expired</span>`;
-      return `
-        <div>${new Date(n).toLocaleString()}</div>
-        <div class="muted">${Math.floor(left / 3600000)}h left</div>
-      `;
+      return `<div>${new Date(n).toLocaleString()}</div><div class="muted">${Math.floor(left / 3600000)}h left</div>`;
     }
 
     function formatTrial(user) {
@@ -1173,13 +1247,7 @@
     }
 
     function normalizeUser(item, source) {
-      return {
-        ...item,
-        source,
-        username: item.username || "",
-        role: item.role || "user",
-        banned: !!item.banned
-      };
+      return { ...item, source, username: item.username || "", role: item.role || "user", banned: !!item.banned };
     }
 
     function normalizeLink(item, source) {
@@ -1201,18 +1269,14 @@
         landingButtons: item.landingButtons || item.landing_buttons || [],
         landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || "",
         landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || "",
-        landingFooter: item.landingFooter || item.landing_footer || ""
+        landingFooter: item.landingFooter || item.landing_footer || "",
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        maxRisk: Number(item.maxRisk || item.max_risk || 0)
       };
     }
 
     function normalizePayment(item, source) {
-      return {
-        ...item,
-        source,
-        id: item.id || "",
-        username: item.username || "",
-        amountUsd: Number(item.amountUsd || item.amount_usd || 0)
-      };
+      return { ...item, source, id: item.id || "", username: item.username || "", amountUsd: Number(item.amountUsd || item.amount_usd || 0) };
     }
 
     function normalizeDomain(item) {
@@ -1238,9 +1302,8 @@
       const map = new Map();
       for (const item of items) {
         const key = keyFn(item);
-        if (!map.has(key)) {
-          map.set(key, item);
-        } else {
+        if (!map.has(key)) map.set(key, item);
+        else {
           const existing = map.get(key);
           const preferNew = (item.source === "primary" && existing.source !== "primary");
           if (preferNew) map.set(key, { ...existing, ...item });
@@ -1251,30 +1314,22 @@
     }
 
     function mergeUsers(primaryUsers, legacyUsers) {
-      const merged = mergeByKey(
-        [
-          ...legacyUsers.map(u => normalizeUser(u, "legacy")),
-          ...primaryUsers.map(u => normalizeUser(u, "primary"))
-        ],
-        item => item.username
-      );
+      const merged = mergeByKey([
+        ...legacyUsers.map(u => normalizeUser(u, "legacy")),
+        ...primaryUsers.map(u => normalizeUser(u, "primary"))
+      ], item => item.username);
       merged.sort((a, b) => String(a.username).localeCompare(String(b.username)));
       return merged;
     }
 
     function mergeLinks(primaryLinks, legacyLinks) {
-      const merged = [
-        ...legacyLinks.map(l => normalizeLink(l, "legacy")),
-        ...primaryLinks.map(l => normalizeLink(l, "primary"))
-      ];
+      const merged = [...legacyLinks.map(l => normalizeLink(l, "legacy")), ...primaryLinks.map(l => normalizeLink(l, "primary"))];
       merged.sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
       return merged;
     }
 
     function mergeDomains(primaryDomains) {
-      return (Array.isArray(primaryDomains) ? primaryDomains : [])
-        .map(normalizeDomain)
-        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      return (Array.isArray(primaryDomains) ? primaryDomains : []).map(normalizeDomain).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
     }
 
     function paymentPriorityScore(p) {
@@ -1287,13 +1342,10 @@
     }
 
     function mergePayments(primaryPayments, legacyPayments) {
-      const merged = mergeByKey(
-        [
-          ...legacyPayments.map(p => normalizePayment(p, "legacy")),
-          ...primaryPayments.map(p => normalizePayment(p, "primary"))
-        ],
-        item => item.id
-      );
+      const merged = mergeByKey([
+        ...legacyPayments.map(p => normalizePayment(p, "legacy")),
+        ...primaryPayments.map(p => normalizePayment(p, "primary"))
+      ], item => item.id);
       merged.sort((a, b) => {
         const p = paymentPriorityScore(a) - paymentPriorityScore(b);
         if (p !== 0) return p;
@@ -1303,15 +1355,31 @@
     }
 
     function mergeAudits(primaryAudits, legacyAudits) {
-      const merged = mergeByKey(
-        [
-          ...legacyAudits.map(a => normalizeAudit(a, "legacy")),
-          ...primaryAudits.map(a => normalizeAudit(a, "primary"))
-        ],
-        item => `${item.id || ""}-${item.time || ""}-${item.action || ""}-${item.target || ""}`
-      );
+      const merged = mergeByKey([
+        ...legacyAudits.map(a => normalizeAudit(a, "legacy")),
+        ...primaryAudits.map(a => normalizeAudit(a, "primary"))
+      ], item => `${item.id || ""}-${item.time || ""}-${item.action || ""}-${item.target || ""}`);
       merged.sort((a, b) => Number(b.time || 0) - Number(a.time || 0));
       return merged;
+    }
+
+    function getGlobalFilteredData(list) {
+      const q = String(globalSearch?.value || "").trim().toLowerCase();
+      const source = String(sourceFilterGlobal?.value || "");
+      return list.filter(item => {
+        const text = JSON.stringify(item).toLowerCase();
+        const qMatch = !q || text.includes(q);
+        const sourceMatch = !source || String(item.source || "") === source;
+        return qMatch && sourceMatch;
+      });
+    }
+
+    function computeRiskLevel() {
+      const highRiskLinks = linksData.filter(l => Number(l.maxRisk || 0) > 80).length;
+      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").length;
+      if (highRiskLinks > 5 || awaiting > 10) return { label: "HIGH RISK", className: "risk-high" };
+      if (highRiskLinks > 0 || awaiting > 0) return { label: "MEDIUM RISK", className: "risk-med" };
+      return { label: "LOW RISK", className: "risk-low" };
     }
 
     function renderStats(refreshSummary = "") {
@@ -1340,22 +1408,30 @@
       statActiveSubs.textContent = activeSubs;
       statAdmins.textContent = admins;
 
-      document.getElementById("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
-      document.getElementById("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
-      document.getElementById("statLandingMeta").textContent = `${totalLanding} landing pages found`;
-      document.getElementById("statDomainsMeta").textContent = `${domainsData.filter(d => String(d.status).toLowerCase() === "verified").length} verified domains`;
-      document.getElementById("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
-      document.getElementById("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
-      document.getElementById("statAwaitingPaymentsMeta").textContent = `${awaitingPayments} submitted by users`;
-      document.getElementById("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
-      document.getElementById("statAdminsMeta").textContent = `${admins} admin accounts`;
+      $("statUsersMeta").textContent = `${usersData.filter(u => !u.banned).length} active accounts`;
+      $("statLinksMeta").textContent = `${linksData.filter(l => !l.paused).length} active links`;
+      $("statLandingMeta").textContent = `${totalLanding} landing pages found`;
+      $("statDomainsMeta").textContent = `${domainsData.filter(d => String(d.status).toLowerCase() === "verified").length} verified domains`;
+      $("statClicksMeta").textContent = `${Math.round(totalClicks / Math.max(totalLinks, 1))} avg per link`;
+      $("statPendingPaymentsMeta").textContent = `${pendingPayments} waiting verification`;
+      $("statAwaitingPaymentsMeta").textContent = `${awaitingPayments} submitted by users`;
+      $("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
+      $("statAdminsMeta").textContent = `${admins} admin accounts`;
 
-      liveStatus.innerHTML = awaitingPayments > 0
-        ? `🟠 Action needed • ${awaitingPayments} payment(s) awaiting confirmation`
-        : `🟢 Live • Admin system ready`;
-
+      liveStatus.innerHTML = awaitingPayments > 0 ? `🟠 Action needed • ${awaitingPayments} payment(s) awaiting confirmation` : `🟢 Live • Admin system ready`;
       lastRefreshText.textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
       refreshStateText.textContent = refreshSummary || "Merged refresh complete";
+      if (refreshProgress) refreshProgress.style.width = "100%";
+
+      $("navUsersCount").textContent = totalUsers;
+      $("navPaymentsCount").textContent = paymentsData.length;
+      $("navLinksCount").textContent = totalLinks;
+      $("navDomainsCount").textContent = totalDomains;
+      $("navLandingCount").textContent = totalLanding;
+
+      const risk = computeRiskLevel();
+      riskBadge.className = `badge ${risk.className}`;
+      riskBadge.textContent = risk.label;
     }
 
     function renderPaymentStats() {
@@ -1363,11 +1439,9 @@
       const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
       const verified = paymentsData.filter(p => String(p.status || "").toLowerCase() === "verified");
       const cancelled = paymentsData.filter(p => String(p.status || "").toLowerCase() === "cancelled");
-
       const weekly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
       const monthly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
       const yearly = paymentsData.filter(p => String(p.billingCycle || p.billing_cycle || "").toLowerCase() === "yearly").length;
-
       const verifiedRevenue = verified.reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
       const pendingValue = [...pending, ...awaiting].reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
 
@@ -1384,161 +1458,185 @@
       `;
     }
 
+    function renderRiskStats() {
+      const high = linksData.filter(l => Number(l.maxRisk || 0) > 80).length;
+      const medium = linksData.filter(l => Number(l.maxRisk || 0) > 50 && Number(l.maxRisk || 0) <= 80).length;
+      const paused = linksData.filter(l => l.paused).length;
+      riskStats.innerHTML = `
+        <div><b>High Risk Links:</b> ${high}</div>
+        <div><b>Medium Risk Links:</b> ${medium}</div>
+        <div><b>Paused Links:</b> ${paused}</div>
+        <div><b>Awaiting Payments:</b> ${paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').length}</div>
+      `;
+    }
+
+    function renderSubscriptionStats() {
+      const trial = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || 'trial').toLowerCase() === 'trial').length;
+      const active = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || '').toLowerCase() === 'active').length;
+      const paused = usersData.filter(u => !!(u.subscriptionPaused || u.subscription_paused)).length;
+      const expired = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || '').toLowerCase() === 'expired').length;
+      subscriptionStats.innerHTML = `
+        <div class="metric-item"><div class="muted">Trial</div><div style="font-size:24px;color:var(--primary);">${trial}</div></div>
+        <div class="metric-item"><div class="muted">Active</div><div style="font-size:24px;color:var(--green);">${active}</div></div>
+        <div class="metric-item"><div class="muted">Paused</div><div style="font-size:24px;color:var(--yellow);">${paused}</div></div>
+        <div class="metric-item"><div class="muted">Expired</div><div style="font-size:24px;color:var(--red);">${expired}</div></div>
+      `;
+    }
+
     function renderSideLists() {
-      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
-      awaitingList.innerHTML = awaiting.length
-        ? awaiting.slice(0, 25).map(p => `
-            <div>
-              <b>${escapeHtml(p.username || "unknown")}</b>
-              <br>
-              <span class="badge awaiting">AWAITING CONFIRMATION</span>
-              ${getSourceBadge(p.source)}
-              <div class="muted">Payment: ${escapeHtml(p.id || "-")}</div>
-              <div class="muted">Plan: ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
-            </div>
-          `).join("")
-        : `<div>No awaiting confirmations</div>`;
+      const awaiting = paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation');
+      awaitingList.innerHTML = awaiting.length ? awaiting.slice(0, 25).map(p => `
+        <div>
+          <b>${escapeHtml(p.username || 'unknown')}</b><br>
+          <span class="badge awaiting">AWAITING CONFIRMATION</span>
+          ${getSourceBadge(p.source)}
+          <div class="muted">Payment: ${escapeHtml(p.id || '-')}</div>
+          <div class="muted">Plan: ${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</div>
+        </div>
+      `).join('') : `<div>No awaiting confirmations</div>`;
 
-      domainList.innerHTML = domainsData.length
-        ? domainsData.slice(0, 25).map(d => `
-            <div>
-              <b>${escapeHtml(d.domain)}</b>
-              <br>
-              ${getDomainStatusBadge(d)}
-              ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
-              <div class="muted">User: ${escapeHtml(d.username || "-")}</div>
-            </div>
-          `).join("")
-        : `<div>No domains yet</div>`;
+      domainList.innerHTML = domainsData.length ? domainsData.slice(0, 25).map(d => `
+        <div>
+          <b>${escapeHtml(d.domain)}</b><br>
+          ${getDomainStatusBadge(d)}
+          ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
+          <div class="muted">User: ${escapeHtml(d.username || '-')}</div>
+        </div>
+      `).join('') : `<div>No domains yet</div>`;
 
-      landingList.innerHTML = landingData.length
-        ? landingData.slice(0, 25).map(l => `
-            <div>
-              <b>${escapeHtml(l.slug)}</b>
-              <br>
-              ${getSourceBadge(l.source)}
-              ${getLinkTypeBadge(l)}
-              <div class="muted">Domain: ${escapeHtml(l.domain || defaultHostBySource(l.source))}</div>
-              <div class="muted">Title: ${escapeHtml(l.landingTitle || "-")}</div>
-            </div>
-          `).join("")
-        : `<div>No landing pages yet</div>`;
+      landingList.innerHTML = landingData.length ? landingData.slice(0, 25).map(l => `
+        <div>
+          <b>${escapeHtml(l.slug)}</b><br>
+          ${getSourceBadge(l.source)}
+          ${getLinkTypeBadge(l)}
+          <div class="muted">Domain: ${escapeHtml(l.domain || defaultHostBySource(l.source))}</div>
+          <div class="muted">Title: ${escapeHtml(l.landingTitle || '-')}</div>
+        </div>
+      `).join('') : `<div>No landing pages yet</div>`;
+    }
+
+    function renderActivityStream() {
+      const activity = [
+        ...paymentsData.slice(0, 8).map(p => ({ time: Number(p.createdAt || p.created_at || 0), text: `Payment ${p.id} • ${p.username}` })),
+        ...linksData.slice(0, 8).map(l => ({ time: Number(l.createdAt || 0), text: `Link ${l.slug} • ${l.user}` })),
+        ...domainsData.slice(0, 8).map(d => ({ time: Number(d.createdAt || 0), text: `Domain ${d.domain} • ${d.username}` }))
+      ].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 12);
+
+      activityStream.innerHTML = activity.length ? activity.map(item => `
+        <div>
+          <b>${escapeHtml(item.text)}</b>
+          <div class="muted tiny">${fmtDate(item.time)}</div>
+        </div>
+      `).join('') : `<div>No recent activity</div>`;
     }
 
     function drawChart() {
-      const canvas = document.getElementById("chart");
+      const canvas = $("chart");
       if (!canvas) return;
       if (chart) chart.destroy();
 
-      const sorted = [...linksData]
-        .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
-        .slice(0, 15);
+      const mode = chartModeSelect?.value || 'clicks';
+      let labels = [];
+      let data = [];
+      let chartLabel = 'Clicks';
+
+      if (mode === 'clicks') {
+        const sorted = [...linksData].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 15);
+        labels = sorted.map(i => `${i.slug} (${i.source === 'legacy' ? 'AWS' : 'B2'})`);
+        data = sorted.map(i => Number(i.clicks || 0));
+        chartLabel = 'Clicks';
+      }
+
+      if (mode === 'users') {
+        const sorted = [...usersData].sort((a, b) => Number(b.requests || 0) - Number(a.requests || 0)).slice(0, 15);
+        labels = sorted.map(i => i.username);
+        data = sorted.map(i => Number(i.requests || 0));
+        chartLabel = 'Requests';
+      }
+
+      if (mode === 'payments') {
+        const buckets = { pending: 0, awaiting_confirmation: 0, verified: 0, cancelled: 0 };
+        paymentsData.forEach(p => {
+          const s = String(p.status || '').toLowerCase();
+          if (buckets[s] !== undefined) buckets[s]++;
+        });
+        labels = ['Pending', 'Awaiting', 'Verified', 'Cancelled'];
+        data = [buckets.pending, buckets.awaiting_confirmation, buckets.verified, buckets.cancelled];
+        chartLabel = 'Payments';
+      }
 
       chart = new Chart(canvas, {
-        type: "bar",
+        type: mode === 'payments' ? 'doughnut' : 'bar',
         data: {
-          labels: sorted.map(i => `${i.slug} (${i.source === "legacy" ? "AWS" : "B2"})`),
-          datasets: [{
-            label: "Clicks",
-            data: sorted.map(i => Number(i.clicks || 0))
-          }]
+          labels,
+          datasets: [{ label: chartLabel, data }]
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: {
-              labels: { color: "#e2e8f0" }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.08)" }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: "#94a3b8" },
-              grid: { color: "rgba(148,163,184,0.08)" }
-            }
+          plugins: { legend: { labels: { color: '#e2e8f0' } } },
+          scales: mode === 'payments' ? {} : {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } }
           }
         }
       });
     }
 
     function renderAuditLogs() {
-      auditLogsEl.innerHTML = auditData.length
-        ? [...auditData]
-            .sort((a, b) => Number(b.time || 0) - Number(a.time || 0))
-            .slice(0, 120)
-            .map(log => `
-              <div>
-                <b>${escapeHtml(log.action || "UNKNOWN")}</b> → ${escapeHtml(log.target || "UNKNOWN")}
-                <br>
-                <small>${new Date(Number(log.time || Date.now())).toLocaleString()}</small>
-                <br>
-                <span class="muted">${escapeHtml(log.source || "")}</span>
-              </div>
-            `).join("")
-        : `<div>No audit logs</div>`;
+      const q = String(auditSearch?.value || '').trim().toLowerCase();
+      const list = auditData.filter(log => {
+        const text = `${log.action || ''} ${log.target || ''} ${log.source || ''}`.toLowerCase();
+        return !q || text.includes(q);
+      });
+      auditLogsEl.innerHTML = list.length ? [...list].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 200).map(log => `
+        <div>
+          <b>${escapeHtml(log.action || 'UNKNOWN')}</b> → ${escapeHtml(log.target || 'UNKNOWN')}<br>
+          <small>${new Date(Number(log.time || Date.now())).toLocaleString()}</small><br>
+          <span class="muted">${escapeHtml(log.source || '')}</span>
+        </div>
+      `).join('') : `<div>No audit logs</div>`;
     }
 
     function getFilteredUsers() {
-      const q = userSearch.value.trim().toLowerCase();
-      const role = userFilterRole.value;
-      const status = userFilterStatus.value;
+      const q = String(userSearch?.value || '').trim().toLowerCase();
+      const role = userFilterRole?.value || '';
+      const status = userFilterStatus?.value || '';
+      const global = getGlobalFilteredData(usersData);
 
-      return usersData.filter(u => {
-        const username = String(u.username || "").toLowerCase();
+      return global.filter(u => {
+        const username = String(u.username || '').toLowerCase();
         const matchesQ = !q || username.includes(q);
-        const matchesRole = !role || (u.role || "user") === role;
-
+        const matchesRole = !role || (u.role || 'user') === role;
         let matchesStatus = true;
-        if (status === "active") matchesStatus = !u.banned;
-        if (status === "banned") matchesStatus = !!u.banned;
-        if (status === "trial") matchesStatus = String(u.subscriptionStatus || u.subscription_status || "trial").toLowerCase() === "trial";
-        if (status === "subscribed") {
+        if (status === 'active') matchesStatus = !u.banned;
+        if (status === 'banned') matchesStatus = !!u.banned;
+        if (status === 'trial') matchesStatus = String(u.subscriptionStatus || u.subscription_status || 'trial').toLowerCase() === 'trial';
+        if (status === 'subscribed') {
           const paused = !!(u.subscriptionPaused || u.subscription_paused);
-          const st = String(u.subscriptionStatus || u.subscription_status || "").toLowerCase();
+          const st = String(u.subscriptionStatus || u.subscription_status || '').toLowerCase();
           const exp = Number(u.subscriptionExpiresAt || u.subscription_expires_at || 0);
-          matchesStatus = !paused && st === "active" && exp > Date.now();
+          matchesStatus = !paused && st === 'active' && exp > Date.now();
         }
-        if (status === "paused") matchesStatus = !!(u.subscriptionPaused || u.subscription_paused);
-
+        if (status === 'paused') matchesStatus = !!(u.subscriptionPaused || u.subscription_paused);
         return matchesQ && matchesRole && matchesStatus;
       });
     }
 
     function renderUsers() {
       const list = getFilteredUsers();
-
       usersEl.innerHTML = list.length ? list.map(u => `
         <tr>
-          <td>
-            <b>${escapeHtml(u.username)}</b>
-            <div class="muted">Created: ${fmtDate(u.createdAt || u.created_at)}</div>
-          </td>
-          <td>
-            ${getUserStatusBadge(u)}
-            ${u.emailVerified || u.email_verified ? `<span class="badge active">EMAIL OK</span>` : `<span class="badge pending">UNVERIFIED</span>`}
-          </td>
-          <td>${getRoleBadge(u.role || "user")}</td>
+          <td><b>${escapeHtml(u.username)}</b><div class="muted">Created: ${fmtDate(u.createdAt || u.created_at)}</div></td>
+          <td>${getUserStatusBadge(u)} ${(u.emailVerified || u.email_verified) ? `<span class="badge active">EMAIL OK</span>` : `<span class="badge pending">UNVERIFIED</span>`}</td>
+          <td>${getRoleBadge(u.role || 'user')}</td>
           <td>${escapeHtml(formatTrial(u))}</td>
-          <td>
-            ${getSubscriptionBadge(u)}
-            <div class="muted">
-              Plan: ${escapeHtml(u.subscriptionPlan || u.subscription_plan || "-")}<br>
-              Expires: ${fmtDate(u.subscriptionExpiresAt || u.subscription_expires_at)}
-            </div>
-          </td>
+          <td>${getSubscriptionBadge(u)}<div class="muted">Plan: ${escapeHtml(u.subscriptionPlan || u.subscription_plan || '-')}<br>Expires: ${fmtDate(u.subscriptionExpiresAt || u.subscription_expires_at)}</div></td>
           <td>${getSourceBadge(u.source)}</td>
           <td>${Number(u.requests || 0)}</td>
           <td>
             <div class="actions">
               <button data-action="view-user" data-username="${escapeHtml(u.username)}">View</button>
-              ${u.banned
-                ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Enable</button>`
-                : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Disable</button>`
-              }
+              ${u.banned ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Enable</button>` : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Disable</button>`}
               <button class="btn-purple" data-action="make-admin" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Make Admin</button>
               <button class="btn-yellow" data-action="remove-admin" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Make User</button>
               <button class="btn-yellow" data-action="pause-subscription" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Pause Sub</button>
@@ -1547,151 +1645,91 @@
             </div>
           </td>
         </tr>
-      `).join("") : `
-        <tr>
-          <td colspan="8" class="muted">No users found</td>
-        </tr>
-      `;
+      `).join('') : `<tr><td colspan="8" class="muted">No users found</td></tr>`;
     }
 
     function getFilteredPayments() {
-      const q = paymentSearch.value.trim().toLowerCase();
-      const status = paymentStatusFilter.value;
-      const plan = paymentPlanFilter.value;
-
-      let list = paymentsData.filter(p => {
-        const text = `${p.id || ""} ${p.username || ""} ${p.planCode || p.plan_code || ""} ${p.billingCycle || p.billing_cycle || ""} ${p.cryptoCode || p.crypto_code || ""}`.toLowerCase();
+      const q = String(paymentSearch?.value || '').trim().toLowerCase();
+      const status = paymentStatusFilter?.value || '';
+      const plan = paymentPlanFilter?.value || '';
+      const global = getGlobalFilteredData(paymentsData);
+      let list = global.filter(p => {
+        const text = `${p.id || ''} ${p.username || ''} ${p.planCode || p.plan_code || ''} ${p.billingCycle || p.billing_cycle || ''} ${p.cryptoCode || p.crypto_code || ''}`.toLowerCase();
         const matchesQ = !q || text.includes(q);
-        const matchesStatus = !status || String(p.status || "").toLowerCase() === status;
-        const matchesPlan = !plan || String(p.billingCycle || p.billing_cycle || "").toLowerCase() === plan;
-        return matchesQ && matchesStatus && matchesPlan;
+        const matchesStatus = !status || String(p.status || '').toLowerCase() === status;
+        const matchesPlan = !plan || String(p.billingCycle || p.billing_cycle || '').toLowerCase() === plan;
+        const awaitingOnly = onlyAwaitingToggle?.checked ? String(p.status || '').toLowerCase() === 'awaiting_confirmation' : true;
+        return matchesQ && matchesStatus && matchesPlan && awaitingOnly;
       });
-
       list.sort((a, b) => {
         const p = paymentPriorityScore(a) - paymentPriorityScore(b);
         if (p !== 0) return p;
         return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
       });
-
       return list;
     }
 
     function renderPayments() {
       const list = getFilteredPayments();
-
       paymentsEl.innerHTML = list.length ? list.map(p => {
-        const status = String(p.status || "").toLowerCase();
-        const isAwaiting = status === "awaiting_confirmation";
-        const isCancelled = status === "cancelled";
+        const status = String(p.status || '').toLowerCase();
+        const isAwaiting = status === 'awaiting_confirmation';
+        const isCancelled = status === 'cancelled';
         const disableVerify = isCancelled;
-        const disableCancel = ["verified", "cancelled"].includes(status);
-
+        const disableCancel = ['verified', 'cancelled'].includes(status);
         return `
-          <tr class="${isAwaiting ? "payment-awaiting-row" : isCancelled ? "payment-cancelled-row" : ""}">
+          <tr class="${isAwaiting ? 'payment-awaiting-row' : isCancelled ? 'payment-cancelled-row' : ''}">
             <td><code>${escapeHtml(p.id)}</code></td>
             <td>${escapeHtml(p.username)}</td>
-            <td>
-              <span class="badge">${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</span>
-              <div class="muted">${escapeHtml(p.planCode || p.plan_code || "-")}</div>
-            </td>
+            <td><span class="badge">${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</span><div class="muted">${escapeHtml(p.planCode || p.plan_code || '-')}</div></td>
             <td>${Number(p.amountUsd || p.amount_usd || 0).toFixed(2)} USD</td>
-            <td>
-              ${escapeHtml(p.cryptoCode || p.crypto_code || "-")}
-              <div class="muted">${escapeHtml(p.networkCode || p.network_code || "-")}</div>
-            </td>
-            <td>
-              ${getPaymentStatusBadge(p)}
-              <div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || "new")}</div>
-            </td>
+            <td>${escapeHtml(p.cryptoCode || p.crypto_code || '-')}<div class="muted">${escapeHtml(p.networkCode || p.network_code || '-')}</div></td>
+            <td>${getPaymentStatusBadge(p)}<div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || 'new')}</div></td>
             <td>${getSourceBadge(p.source)}</td>
-            <td>
-              ${fmtDate(p.createdAt || p.created_at)}
-              <div class="muted">Expires: ${fmtDate(p.expiresAt || p.expires_at)}</div>
-            </td>
+            <td>${fmtDate(p.createdAt || p.created_at)}<div class="muted">Expires: ${fmtDate(p.expiresAt || p.expires_at)}</div></td>
             <td>
               <div class="actions">
                 <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
-
-                <button
-                  class="${isAwaiting ? "btn-action" : "btn-green"}"
-                  data-action="verify-payment"
-                  data-payment-id="${escapeHtml(p.id)}"
-                  data-source="${escapeHtml(p.source)}"
-                  ${disableVerify ? "disabled" : ""}>
-                  ${isAwaiting ? "Verify Now" : "Verify"}
-                </button>
-
-                <button
-                  class="btn-yellow"
-                  data-action="cancel-payment"
-                  data-payment-id="${escapeHtml(p.id)}"
-                  data-source="${escapeHtml(p.source)}"
-                  ${disableCancel ? "disabled" : ""}>
-                  Cancel
-                </button>
-
-                <button
-                  class="btn-red"
-                  data-action="delete-payment"
-                  data-payment-id="${escapeHtml(p.id)}"
-                  data-source="${escapeHtml(p.source)}">
-                  Delete
-                </button>
-
-                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">
-                  Copy Address
-                </button>
+                <button class="${isAwaiting ? 'btn-action' : 'btn-green'}" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}" ${disableVerify ? 'disabled' : ''}>${isAwaiting ? 'Verify Now' : 'Verify'}</button>
+                <button class="btn-yellow" data-action="cancel-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}" ${disableCancel ? 'disabled' : ''}>Cancel</button>
+                <button class="btn-red" data-action="delete-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}">Delete</button>
+                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || '')}">Copy Address</button>
               </div>
             </td>
           </tr>
         `;
-      }).join("") : `
-        <tr>
-          <td colspan="9" class="muted">No payments found</td>
-        </tr>
-      `;
+      }).join('') : `<tr><td colspan="9" class="muted">No payments found</td></tr>`;
     }
 
     function getFilteredLinks() {
-      const q = linkSearch.value.trim().toLowerCase();
-      const status = linkFilterStatus.value;
-      const sort = linkSort.value;
-
-      let list = linksData.filter(l => {
-        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || l.username || ""} ${l.domain || ""} ${l.linkType || ""} ${l.landingTitle || ""}`.toLowerCase();
+      const q = String(linkSearch?.value || '').trim().toLowerCase();
+      const status = linkFilterStatus?.value || '';
+      const sort = linkSort?.value || 'clicks_desc';
+      let list = getGlobalFilteredData(linksData).filter(l => {
+        const blob = `${l.slug || ''} ${l.url || ''} ${l.user || l.username || ''} ${l.domain || ''} ${l.linkType || ''} ${l.landingTitle || ''}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
-        const matchesStatus =
-          !status ||
-          (status === "active" && !l.paused) ||
-          (status === "paused" && !!l.paused);
-
+        const matchesStatus = !status || (status === 'active' && !l.paused) || (status === 'paused' && !!l.paused);
         return matchesQ && matchesStatus;
       });
-
-      if (sort === "clicks_desc") list.sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-      if (sort === "clicks_asc") list.sort((a,b) => Number(a.clicks || 0) - Number(b.clicks || 0));
-      if (sort === "slug_asc") list.sort((a,b) => String(a.slug || "").localeCompare(String(b.slug || "")));
-      if (sort === "user_asc") list.sort((a,b) => String(a.user || "").localeCompare(String(b.user || "")));
-
+      if (sort === 'clicks_desc') list.sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (sort === 'clicks_asc') list.sort((a,b) => Number(a.clicks || 0) - Number(b.clicks || 0));
+      if (sort === 'slug_asc') list.sort((a,b) => String(a.slug || '').localeCompare(String(b.slug || '')));
+      if (sort === 'user_asc') list.sort((a,b) => String(a.user || '').localeCompare(String(b.user || '')));
       return list;
     }
 
     function renderLinks() {
       const list = getFilteredLinks();
-
       linksEl.innerHTML = list.length ? list.map(l => {
         const full = buildPublicLink(l);
         return `
           <tr>
-            <td>${escapeHtml(l.user || l.username || "")}</td>
-            <td>${escapeHtml(l.slug || "")}</td>
+            <td>${escapeHtml(l.user || l.username || '')}</td>
+            <td>${escapeHtml(l.slug || '')}</td>
             <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
             <td>${getLinkTypeBadge(l)}</td>
-            <td>
-              <a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a>
-              <div class="muted">${escapeHtml(l.linkType === "landing" ? (l.landingTitle || l.url || "") : (l.url || ""))}</div>
-            </td>
-            <td>${Number(l.clicks || 0)}</td>
+            <td><a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a><div class="muted">${escapeHtml(l.linkType === 'landing' ? (l.landingTitle || l.url || '') : (l.url || ''))}</div></td>
+            <td>${Number(l.clicks || 0)} ${Number(l.maxRisk || 0) > 80 ? `<span class="badge risk-high">RISK ${Number(l.maxRisk || 0)}</span>` : Number(l.maxRisk || 0) > 50 ? `<span class="badge risk-med">RISK ${Number(l.maxRisk || 0)}</span>` : ``}</td>
             <td>${getLinkStatusBadge(l)}</td>
             <td>${formatExpire(l.expire)}</td>
             <td>${getSourceBadge(l.source)}</td>
@@ -1699,110 +1737,111 @@
               <div class="actions">
                 <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
                 <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
-                ${l.linkType === "landing" ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
-                ${l.paused
-                  ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>`
-                  : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`
-                }
-                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Delete</button>
+                ${l.linkType === 'landing' ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
+                ${l.paused ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>` : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`}
+                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Delete</button>
               </div>
             </td>
           </tr>
         `;
-      }).join("") : `
-        <tr>
-          <td colspan="10" class="muted">No links found</td>
-        </tr>
-      `;
+      }).join('') : `<tr><td colspan="10" class="muted">No links found</td></tr>`;
     }
 
     function getFilteredDomains() {
-      const q = domainSearch.value.trim().toLowerCase();
-      const status = domainStatusFilter.value;
-
-      return domainsData.filter(d => {
-        const blob = `${d.domain || ""} ${d.username || ""} ${d.verifyToken || ""}`.toLowerCase();
+      const q = String(domainSearch?.value || '').trim().toLowerCase();
+      const status = domainStatusFilter?.value || '';
+      return getGlobalFilteredData(domainsData).filter(d => {
+        const blob = `${d.domain || ''} ${d.username || ''} ${d.verifyToken || ''}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
-        const matchesStatus = !status || String(d.status || "").toLowerCase() === status;
+        const matchesStatus = !status || String(d.status || '').toLowerCase() === status;
         return matchesQ && matchesStatus;
       });
     }
 
     function renderDomains() {
       const list = getFilteredDomains();
-
       domainsEl.innerHTML = list.length ? list.map(d => `
         <tr>
           <td><b>${escapeHtml(d.domain)}</b></td>
-          <td>${escapeHtml(d.username || "-")}</td>
-          <td>
-            ${getDomainStatusBadge(d)}
-            ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
-          </td>
+          <td>${escapeHtml(d.username || '-')}</td>
+          <td>${getDomainStatusBadge(d)} ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}</td>
           <td><code>${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</code></td>
-          <td><code>${escapeHtml(d.verifyToken || "-")}</code></td>
+          <td><code>${escapeHtml(d.verifyToken || '-')}</code></td>
           <td>${fmtDate(d.createdAt)}</td>
           <td>${fmtDate(d.verifiedAt)}</td>
-          <td>${d.isPrimary ? "Yes" : "No"}</td>
+          <td>${d.isPrimary ? 'Yes' : 'No'}</td>
           <td>
             <div class="actions">
               <button data-action="view-domain" data-domain="${escapeHtml(d.domain)}">View</button>
-              ${String(d.status).toLowerCase() !== "verified"
-                ? `<button class="btn-green" data-action="verify-domain" data-domain="${escapeHtml(d.domain)}">Verify</button>`
-                : ``
-              }
-              ${!d.isPrimary && String(d.status).toLowerCase() === "verified"
-                ? `<button class="btn-yellow" data-action="set-primary-domain" data-domain="${escapeHtml(d.domain)}">Set Primary</button>`
-                : ``
-              }
+              ${String(d.status).toLowerCase() !== 'verified' ? `<button class="btn-green" data-action="verify-domain" data-domain="${escapeHtml(d.domain)}">Verify</button>` : ``}
+              ${!d.isPrimary && String(d.status).toLowerCase() === 'verified' ? `<button class="btn-yellow" data-action="set-primary-domain" data-domain="${escapeHtml(d.domain)}">Set Primary</button>` : ``}
               <button class="btn-red" data-action="delete-domain" data-domain="${escapeHtml(d.domain)}">Delete</button>
-              <button data-action="copy-domain-token" data-token="${escapeHtml(d.verifyToken || "")}">Copy Token</button>
+              <button data-action="copy-domain-token" data-token="${escapeHtml(d.verifyToken || '')}">Copy Token</button>
             </div>
           </td>
         </tr>
-      `).join("") : `
-        <tr>
-          <td colspan="9" class="muted">No domains found</td>
-        </tr>
-      `;
+      `).join('') : `<tr><td colspan="9" class="muted">No domains found</td></tr>`;
     }
 
     function getFilteredLandingPages() {
-      const q = landingSearch.value.trim().toLowerCase();
-      const source = landingSourceFilter.value;
-
-      return landingData.filter(l => {
-        const blob = `${l.slug || ""} ${l.domain || ""} ${l.user || ""} ${l.landingTitle || ""}`.toLowerCase();
+      const q = String(landingSearch?.value || '').trim().toLowerCase();
+      const source = landingSourceFilter?.value || '';
+      return getGlobalFilteredData(landingData).filter(l => {
+        const blob = `${l.slug || ''} ${l.domain || ''} ${l.user || ''} ${l.landingTitle || ''}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
-        const matchesSource = !source || String(l.source || "") === source;
+        const matchesSource = !source || String(l.source || '') === source;
         return matchesQ && matchesSource;
       });
     }
 
     function renderLandingPages() {
       const list = getFilteredLandingPages();
-
       landingPagesEl.innerHTML = list.length ? list.map(l => `
         <tr>
-          <td>${escapeHtml(l.user || l.username || "")}</td>
+          <td>${escapeHtml(l.user || l.username || '')}</td>
           <td><b>${escapeHtml(l.slug)}</b></td>
           <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
-          <td>${escapeHtml(l.landingTitle || "-")}</td>
-          <td>${escapeHtml(l.landingTheme || "-")}</td>
+          <td>${escapeHtml(l.landingTitle || '-')}</td>
+          <td>${escapeHtml(l.landingTheme || '-')}</td>
           <td>${Number(l.clicks || 0)}</td>
           <td>${getSourceBadge(l.source)}</td>
           <td>
             <div class="actions">
-              <button data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Preview</button>
-              <button data-action="view-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Details</button>
-              <button class="btn-red" data-action="delete-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}" data-source="${escapeHtml(l.source)}">Delete</button>
+              <button data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>
+              <button data-action="view-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Details</button>
+              <button class="btn-red" data-action="delete-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Delete</button>
             </div>
           </td>
         </tr>
-      `).join("") : `
-        <tr>
-          <td colspan="8" class="muted">No landing pages found</td>
-        </tr>
+      `).join('') : `<tr><td colspan="8" class="muted">No landing pages found</td></tr>`;
+    }
+
+    function renderSecuritySection() {
+      const highRisk = [...linksData].filter(l => Number(l.maxRisk || 0) > 80).slice(0, 20);
+      const medRisk = [...linksData].filter(l => Number(l.maxRisk || 0) > 50 && Number(l.maxRisk || 0) <= 80).slice(0, 20);
+      const paymentAlerts = paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').slice(0, 20);
+      securityPanelContent.innerHTML = `
+        <div class="card" style="margin:0;">
+          <h4>High Risk Links</h4>
+          <div class="list-box">${highRisk.length ? highRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-high">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No high risk links</div>`}</div>
+        </div>
+        <div class="card" style="margin:0;">
+          <h4>Medium Risk Links</h4>
+          <div class="list-box">${medRisk.length ? medRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-med">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No medium risk links</div>`}</div>
+        </div>
+        <div class="card" style="margin:0;">
+          <h4>Awaiting Payment Alerts</h4>
+          <div class="list-box">${paymentAlerts.length ? paymentAlerts.map(p => `<div><b>${escapeHtml(p.username)}</b><br><code>${escapeHtml(p.id)}</code><br>${getPaymentStatusBadge(p)}</div>`).join('') : `<div>No awaiting alerts</div>`}</div>
+        </div>
+        <div class="card" style="margin:0;">
+          <h4>Recommendations</h4>
+          <div class="list-box">
+            <div>Review all awaiting confirmation payments first.</div>
+            <div>Check high risk links before resuming any paused traffic.</div>
+            <div>Verify pending domains using TXT records only.</div>
+            <div>Review landing pages with unusual click spikes.</div>
+          </div>
+        </div>
       `;
     }
 
@@ -1812,53 +1851,53 @@
       panelTitle.textContent = "User Details";
       panelContent.innerHTML = `
         <div><b>Email:</b> ${escapeHtml(u?.username || username)}</div>
-        <div><b>Role:</b> ${escapeHtml(u?.role || "user")}</div>
-        <div><b>Status:</b> ${u?.banned ? "Banned" : "Active"}</div>
-        <div><b>Email Verified:</b> ${(u?.emailVerified || u?.email_verified) ? "Yes" : "No"}</div>
+        <div><b>Role:</b> ${escapeHtml(u?.role || 'user')}</div>
+        <div><b>Status:</b> ${u?.banned ? 'Banned' : 'Active'}</div>
+        <div><b>Email Verified:</b> ${(u?.emailVerified || u?.email_verified) ? 'Yes' : 'No'}</div>
         <div><b>Requests:</b> ${Number(u?.requests || 0)}</div>
         <div><b>Trial:</b> ${escapeHtml(formatTrial(u || {}))}</div>
-        <div><b>Subscription:</b> ${escapeHtml(u?.subscriptionPlan || u?.subscription_plan || "trial")}</div>
-        <div><b>Subscription Status:</b> ${escapeHtml(u?.subscriptionStatus || u?.subscription_status || "trial")}</div>
+        <div><b>Subscription:</b> ${escapeHtml(u?.subscriptionPlan || u?.subscription_plan || 'trial')}</div>
+        <div><b>Subscription Status:</b> ${escapeHtml(u?.subscriptionStatus || u?.subscription_status || 'trial')}</div>
         <div><b>Subscription Expires:</b> ${fmtDate(u?.subscriptionExpiresAt || u?.subscription_expires_at)}</div>
-        <div><b>Source:</b> ${escapeHtml(u?.source || "primary")}</div>
+        <div><b>Source:</b> ${escapeHtml(u?.source || 'primary')}</div>
+        <div class="actions" style="margin-top:12px;">
+          <button class="btn-yellow" onclick="pauseSubscription('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Pause Sub</button>
+          <button class="btn-green" onclick="resumeSubscription('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Resume Sub</button>
+          <button onclick="verifyUser('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Verify Email</button>
+        </div>
       `;
     }
 
     async function openPayment(paymentId) {
       const payment = paymentsData.find(p => p.id === paymentId);
       if (!payment) return;
-
-      const status = String(payment.status || "").toLowerCase();
-      const isAwaiting = status === "awaiting_confirmation";
-      const isCancelled = status === "cancelled";
+      const status = String(payment.status || '').toLowerCase();
+      const isAwaiting = status === 'awaiting_confirmation';
+      const isCancelled = status === 'cancelled';
       const disableVerify = isCancelled;
-      const disableCancel = ["verified", "cancelled"].includes(status);
-
+      const disableCancel = ['verified', 'cancelled'].includes(status);
       panel.style.display = "block";
       panelTitle.textContent = "Payment Details";
       panelContent.innerHTML = `
-        ${isAwaiting ? `<div class="highlight-box"><b>Needs Action:</b> This payment was marked by the user as sent.</div>` : ""}
-        ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ""}
+        ${isAwaiting ? `<div class="highlight-box"><b>Needs Action:</b> This payment was marked by the user as sent.</div>` : ''}
+        ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ''}
         <div><b>Payment ID:</b> <code>${escapeHtml(payment.id)}</code></div>
-        <div><b>User:</b> ${escapeHtml(payment.username || "-")}</div>
-        <div><b>Plan:</b> ${escapeHtml(payment.billingCycle || payment.billing_cycle || "-")}</div>
+        <div><b>User:</b> ${escapeHtml(payment.username || '-')}</div>
+        <div><b>Plan:</b> ${escapeHtml(payment.billingCycle || payment.billing_cycle || '-')}</div>
         <div><b>Amount:</b> ${Number(payment.amountUsd || payment.amount_usd || 0).toFixed(2)} USD</div>
-        <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || payment.crypto_code || "-")} (${escapeHtml(payment.networkCode || payment.network_code || "-")})</div>
+        <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || payment.crypto_code || '-')} (${escapeHtml(payment.networkCode || payment.network_code || '-')})</div>
         <div><b>Status:</b> ${getPaymentStatusBadge(payment)}</div>
-        <div><b>Requested From:</b> ${escapeHtml(payment.requestedFrom || payment.requested_from || "-")}</div>
+        <div><b>Requested From:</b> ${escapeHtml(payment.requestedFrom || payment.requested_from || '-')}</div>
         <div><b>Created:</b> ${fmtDate(payment.createdAt || payment.created_at)}</div>
         <div><b>Expires:</b> ${fmtDate(payment.expiresAt || payment.expires_at)}</div>
-        <div><b>Source:</b> ${escapeHtml(payment.source || "-")}</div>
-        ${payment.address ? `<div class="code-box">${escapeHtml(payment.address)}</div>` : ""}
-        ${(payment.qrImageUrl || payment.qrText || payment.address) ? `
-          <div class="payment-qr">
-            <img src="${escapeHtml(payment.qrImageUrl || ("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || "")))}" alt="Payment QR" />
-          </div>` : ""}
+        <div><b>Source:</b> ${escapeHtml(payment.source || '-')}</div>
+        ${payment.address ? `<div class="code-box">${escapeHtml(payment.address)}</div>` : ''}
+        ${(payment.qrImageUrl || payment.qrText || payment.address) ? `<div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || ('https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || '')))}" alt="Payment QR" /></div>` : ''}
         <div class="actions" style="margin-top:12px;">
-          <button class="${isAwaiting ? "btn-action" : "btn-green"}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')" ${disableVerify ? "disabled" : ""}>${isAwaiting ? "Verify This Payment" : "Verify Payment"}</button>
-          <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')" ${disableCancel ? "disabled" : ""}>Cancel Payment</button>
-          <button class="btn-red" onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || "primary")}')">Delete Payment</button>
-          <button onclick="copyText('${escapeHtml(payment.address || "")}')">Copy Address</button>
+          <button class="${isAwaiting ? 'btn-action' : 'btn-green'}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')" ${disableVerify ? 'disabled' : ''}>${isAwaiting ? 'Verify This Payment' : 'Verify Payment'}</button>
+          <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')" ${disableCancel ? 'disabled' : ''}>Cancel Payment</button>
+          <button class="btn-red" onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')">Delete Payment</button>
+          <button onclick="copyText('${escapeHtml(payment.address || '')}')">Copy Address</button>
         </div>
       `;
     }
@@ -1866,252 +1905,190 @@
     async function openDomain(domain) {
       const d = domainsData.find(x => x.domain === domain);
       if (!d) return;
-
       panel.style.display = "block";
       panelTitle.textContent = "Domain Details";
       panelContent.innerHTML = `
         <div><b>Domain:</b> ${escapeHtml(d.domain)}</div>
-        <div><b>User:</b> ${escapeHtml(d.username || "-")}</div>
+        <div><b>User:</b> ${escapeHtml(d.username || '-')}</div>
         <div><b>Status:</b> ${getDomainStatusBadge(d)}</div>
-        <div><b>Primary:</b> ${d.isPrimary ? "Yes" : "No"}</div>
+        <div><b>Primary:</b> ${d.isPrimary ? 'Yes' : 'No'}</div>
         <div><b>TXT Record:</b></div>
         <div class="code-box">${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</div>
         <div><b>Verify Token:</b></div>
-        <div class="code-box">${escapeHtml(d.verifyToken || "-")}</div>
+        <div class="code-box">${escapeHtml(d.verifyToken || '-')}</div>
         <div><b>Created:</b> ${fmtDate(d.createdAt)}</div>
         <div><b>Verified:</b> ${fmtDate(d.verifiedAt)}</div>
         <div class="actions" style="margin-top:12px;">
-          ${String(d.status).toLowerCase() !== "verified" ? `<button class="btn-green" onclick="verifyDomain('${escapeHtml(d.domain)}')">Verify Domain</button>` : ``}
-          ${!d.isPrimary && String(d.status).toLowerCase() === "verified" ? `<button class="btn-yellow" onclick="setPrimaryDomain('${escapeHtml(d.domain)}')">Set Primary</button>` : ``}
-          <button onclick="copyText('${escapeHtml(d.verifyToken || "")}')">Copy Token</button>
+          ${String(d.status).toLowerCase() !== 'verified' ? `<button class="btn-green" onclick="verifyDomain('${escapeHtml(d.domain)}')">Verify Domain</button>` : ''}
+          ${!d.isPrimary && String(d.status).toLowerCase() === 'verified' ? `<button class="btn-yellow" onclick="setPrimaryDomain('${escapeHtml(d.domain)}')">Set Primary</button>` : ''}
+          <button onclick="copyText('${escapeHtml(d.verifyToken || '')}')">Copy Token</button>
           <button class="btn-red" onclick="deleteDomain('${escapeHtml(d.domain)}')">Delete Domain</button>
         </div>
       `;
     }
 
     async function openLanding(slug, domain, source, previewOnly = false) {
-      const link = landingData.find(x => x.slug === slug && (x.domain || "") === (domain || "") && x.source === source);
+      const link = landingData.find(x => x.slug === slug && (x.domain || '') === (domain || '') && x.source === source);
       if (!link) return;
-
       const publicUrl = buildPublicLink(link);
-
       panel.style.display = "block";
-      panelTitle.textContent = previewOnly ? "Landing Preview" : "Landing Details";
+      panelTitle.textContent = previewOnly ? 'Landing Preview' : 'Landing Details';
       panelContent.innerHTML = `
         <div><b>Slug:</b> ${escapeHtml(link.slug)}</div>
         <div><b>Domain:</b> ${escapeHtml(link.domain || defaultHostBySource(link.source))}</div>
-        <div><b>User:</b> ${escapeHtml(link.user || "-")}</div>
-        <div><b>Title:</b> ${escapeHtml(link.landingTitle || "-")}</div>
-        <div><b>Description:</b> ${escapeHtml(link.landingDescription || "-")}</div>
-        <div><b>Theme:</b> ${escapeHtml(link.landingTheme || "-")}</div>
+        <div><b>User:</b> ${escapeHtml(link.user || '-')}</div>
+        <div><b>Title:</b> ${escapeHtml(link.landingTitle || '-')}</div>
+        <div><b>Description:</b> ${escapeHtml(link.landingDescription || '-')}</div>
+        <div><b>Theme:</b> ${escapeHtml(link.landingTheme || '-')}</div>
         <div><b>Clicks:</b> ${Number(link.clicks || 0)}</div>
         <div><b>Source:</b> ${escapeHtml(link.source)}</div>
         <div class="code-box">${escapeHtml(publicUrl)}</div>
         <div class="actions" style="margin:12px 0;">
           <button onclick="openLink('${escapeHtml(publicUrl)}')">Open Live</button>
           <button onclick="copyText('${escapeHtml(publicUrl)}')">Copy URL</button>
-          <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || "")}','${escapeHtml(link.source)}')">Delete Landing</button>
+          <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || '')}','${escapeHtml(link.source)}')">Delete Landing</button>
         </div>
         <iframe class="preview-frame" src="${escapeHtml(publicUrl)}"></iframe>
       `;
     }
 
     async function banUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/ban`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("BAN USER", username);
-        showToast("User banned");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Ban failed");
+      const res = await fetchBySource(source || 'primary', `/admin/ban`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('BAN USER', username); showToast('User banned'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Ban failed');
     }
 
     async function unbanUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/unban`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("UNBAN USER", username);
-        showToast("User enabled");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Enable failed");
+      const res = await fetchBySource(source || 'primary', `/admin/unban`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('UNBAN USER', username); showToast('User enabled'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Enable failed');
     }
 
     async function makeAdmin(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/make-admin`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("PROMOTE ADMIN", username);
-        showToast("User promoted");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Promote failed");
+      const res = await fetchBySource(source || 'primary', `/admin/make-admin`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('PROMOTE ADMIN', username); showToast('User promoted'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Promote failed');
     }
 
     async function removeAdmin(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/remove-admin`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("REMOVE ADMIN", username);
-        showToast("Role changed");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Role update failed");
+      const res = await fetchBySource(source || 'primary', `/admin/remove-admin`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('REMOVE ADMIN', username); showToast('Role changed'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Role update failed');
     }
 
     async function verifyUser(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/verify-user`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("VERIFY USER", username);
-        showToast("User verified");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Verify failed");
+      const res = await fetchBySource(source || 'primary', `/admin/verify-user`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('VERIFY USER', username); showToast('User verified'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Verify failed');
     }
 
     async function pauseSubscription(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/subscription-pause`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("PAUSE SUBSCRIPTION", username);
-        showToast("Subscription paused");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Pause subscription failed");
+      const res = await fetchBySource(source || 'primary', `/admin/subscription-pause`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('PAUSE SUBSCRIPTION', username); showToast('Subscription paused'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Pause subscription failed');
     }
 
     async function resumeSubscription(username, source) {
-      const res = await fetchBySource(source || "primary", `/admin/subscription-resume`, "POST", { username }, false);
-      if (res.ok) {
-        await logAudit("RESUME SUBSCRIPTION", username);
-        showToast("Subscription resumed");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Resume subscription failed");
+      const res = await fetchBySource(source || 'primary', `/admin/subscription-resume`, 'POST', { username }, false);
+      if (res.ok) { await logAudit('RESUME SUBSCRIPTION', username); showToast('Subscription resumed'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Resume subscription failed');
     }
 
     async function verifyPayment(paymentId, source) {
-      const res = await fetchBySource(source || "primary", `/admin/payment-verify`, "POST", { paymentId }, false);
-      if (res.ok) {
-        await logAudit("VERIFY PAYMENT", paymentId);
-        showToast("Payment verified");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Payment verify failed");
+      const res = await fetchBySource(source || 'primary', `/admin/payment-verify`, 'POST', { paymentId }, false);
+      if (res.ok) { await logAudit('VERIFY PAYMENT', paymentId); showToast('Payment verified'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Payment verify failed');
     }
 
     async function cancelPayment(paymentId, source) {
       if (!confirm(`Cancel payment ${paymentId}?`)) return;
-      const res = await fetchBySource(source || "primary", `/admin/payment-cancel`, "POST", { paymentId }, false);
-      if (res.ok) {
-        await logAudit("CANCEL PAYMENT", paymentId);
-        showToast("Payment cancelled");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Payment cancel failed");
+      const res = await fetchBySource(source || 'primary', `/admin/payment-cancel`, 'POST', { paymentId }, false);
+      if (res.ok) { await logAudit('CANCEL PAYMENT', paymentId); showToast('Payment cancelled'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Payment cancel failed');
     }
 
     async function deletePayment(paymentId, source) {
       if (!confirm(`Delete payment ${paymentId} permanently?`)) return;
-      const res = await fetchBySource(source || "primary", `/admin/payment-delete`, "POST", { paymentId }, false);
-      if (res.ok) {
-        await logAudit("DELETE PAYMENT", paymentId);
-        showToast("Payment deleted");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Payment delete failed");
+      const res = await fetchBySource(source || 'primary', `/admin/payment-delete`, 'POST', { paymentId }, false);
+      if (res.ok) { await logAudit('DELETE PAYMENT', paymentId); showToast('Payment deleted'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Payment delete failed');
     }
 
     async function verifyDomain(domain) {
-      const res = await fetchBySource("primary", `/domains/verify`, "POST", { domain }, false);
-      if (res.ok) {
-        await logAudit("VERIFY DOMAIN", domain);
-        showToast("Domain verified");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Domain verify failed");
+      const res = await fetchBySource('primary', `/domains/verify`, 'POST', { domain }, false);
+      if (res.ok) { await logAudit('VERIFY DOMAIN', domain); showToast('Domain verified'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Domain verify failed');
     }
 
     async function setPrimaryDomain(domain) {
-      const res = await fetchBySource("primary", `/domains/set-primary`, "POST", { domain }, false);
-      if (res.ok) {
-        await logAudit("SET PRIMARY DOMAIN", domain);
-        showToast("Primary domain updated");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Set primary failed");
+      const res = await fetchBySource('primary', `/domains/set-primary`, 'POST', { domain }, false);
+      if (res.ok) { await logAudit('SET PRIMARY DOMAIN', domain); showToast('Primary domain updated'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Set primary failed');
     }
 
     async function deleteDomain(domain) {
       if (!confirm(`Delete domain ${domain}?`)) return;
-      let res = await fetchBySource("primary", `/admin/domain-delete`, "POST", { domain }, false);
-      if (!res.ok) {
-        res = await fetchBySource("primary", `/domains/remove`, "POST", { domain }, false);
-      }
-      if (res.ok) {
-        await logAudit("DELETE DOMAIN", domain);
-        showToast("Domain deleted");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Domain delete failed");
+      let res = await fetchBySource('primary', `/admin/domain-delete`, 'POST', { domain }, false);
+      if (!res.ok) res = await fetchBySource('primary', `/domains/remove`, 'POST', { domain }, false);
+      if (res.ok) { await logAudit('DELETE DOMAIN', domain); showToast('Domain deleted'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Domain delete failed');
     }
 
     async function deleteLanding(slug, domain, source) {
       if (!confirm(`Delete landing page ${slug}?`)) return;
-
       let res;
-      if (source === "primary") {
-        res = await fetchBySource("primary", `/landing/delete`, "POST", { slug, domain }, false);
-      } else {
-        res = await fetchBySource(source || "legacy", `/delete`, "POST", { slug, domain }, false);
-      }
-
-      if (res.ok) {
-        await logAudit("DELETE LANDING", `${domain || defaultHostBySource(source)} / ${slug}`);
-        showToast("Landing page deleted");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Landing delete failed");
+      if (source === 'primary') res = await fetchBySource('primary', `/landing/delete`, 'POST', { slug, domain }, false);
+      else res = await fetchBySource(source || 'legacy', `/delete`, 'POST', { slug, domain }, false);
+      if (res.ok) { await logAudit('DELETE LANDING', `${domain || defaultHostBySource(source)} / ${slug}`); showToast('Landing page deleted'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Landing delete failed');
     }
 
     async function pauseLink(slug, source) {
-      const res = await fetchBySource(source || "primary", `/admin/pause`, "POST", { slug }, false);
-      if (res.ok) {
-        await logAudit("PAUSE LINK", slug);
-        showToast("Link paused");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Pause failed");
+      const res = await fetchBySource(source || 'primary', `/admin/pause`, 'POST', { slug }, false);
+      if (res.ok) { await logAudit('PAUSE LINK', slug); showToast('Link paused'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Pause failed');
     }
 
     async function resumeLink(slug, source) {
-      const res = await fetchBySource(source || "primary", `/admin/resume`, "POST", { slug }, false);
-      if (res.ok) {
-        await logAudit("RESUME LINK", slug);
-        showToast("Link resumed");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Resume failed");
+      const res = await fetchBySource(source || 'primary', `/admin/resume`, 'POST', { slug }, false);
+      if (res.ok) { await logAudit('RESUME LINK', slug); showToast('Link resumed'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Resume failed');
     }
 
-    async function deleteLink(slug, source, domain = "") {
+    async function deleteLink(slug, source, domain = '') {
       if (!confirm(`Delete ${slug}?`)) return;
-      const res = await fetchBySource(source || "primary", `/delete`, "POST", { slug, domain }, false);
-      if (res.ok) {
-        await logAudit("DELETE LINK", slug);
-        showToast("Link deleted");
-        await loadAdmin();
-      } else showToast(res.data?.message || "Delete failed");
+      const res = await fetchBySource(source || 'primary', `/delete`, 'POST', { slug, domain }, false);
+      if (res.ok) { await logAudit('DELETE LINK', slug); showToast('Link deleted'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Delete failed');
     }
 
     async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        const input = document.createElement("input");
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const input = document.createElement('input');
         input.value = text;
         document.body.appendChild(input);
         input.select();
-        document.execCommand("copy");
+        document.execCommand('copy');
         input.remove();
       }
-      showToast("Copied");
+      showToast('Copied');
     }
 
     function openLink(link) {
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = link;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       document.body.appendChild(a);
       a.click();
       a.remove();
     }
 
     function exportJson(filename, data) {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -2120,127 +2097,127 @@
       URL.revokeObjectURL(url);
     }
 
+    function exportVisibleLinks() {
+      exportJson('visible-links.json', getFilteredLinks());
+      showToast('Visible links exported');
+    }
+
     function openCreateUser() {
-      panel.style.display = "block";
-      panelTitle.textContent = "Create User";
+      panel.style.display = 'block';
+      panelTitle.textContent = 'Create User';
       panelContent.innerHTML = `
         <div class="mini-grid">
           <input id="newUser" placeholder="Email" />
           <input id="newPass" type="password" placeholder="Password" />
-          <select id="newRole">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-          <select id="newEmailVerified">
-            <option value="false">Email Not Verified</option>
-            <option value="true">Email Verified</option>
-          </select>
-          <select id="newCreateSource">
-            <option value="primary">Backend 2</option>
-            <option value="legacy">Legacy AWS</option>
-          </select>
+          <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
+          <select id="newEmailVerified"><option value="false">Email Not Verified</option><option value="true">Email Verified</option></select>
+          <select id="newCreateSource"><option value="primary">Backend 2</option><option value="legacy">Legacy AWS</option></select>
           <button id="submitCreateUserBtn" class="btn-primary">Create User</button>
         </div>
       `;
-      document.getElementById("submitCreateUserBtn").onclick = createUser;
+      $('submitCreateUserBtn').onclick = createUser;
     }
 
     function openPaymentSearch() {
-      panel.style.display = "block";
-      panelTitle.textContent = "Search Payment";
+      panel.style.display = 'block';
+      panelTitle.textContent = 'Search Payment';
       panelContent.innerHTML = `
         <div>
           <input id="panelPaymentSearchInput" placeholder="Enter payment id..." />
-          <div style="margin-top:10px;">
-            <button id="panelPaymentSearchBtn" class="btn-primary">Search</button>
-          </div>
+          <div style="margin-top:10px;"><button id="panelPaymentSearchBtn" class="btn-primary">Search</button></div>
           <div id="panelPaymentSearchResult" style="margin-top:12px;"></div>
         </div>
       `;
-
-      document.getElementById("panelPaymentSearchBtn").onclick = () => {
-        const id = document.getElementById("panelPaymentSearchInput").value.trim();
+      $('panelPaymentSearchBtn').onclick = () => {
+        const id = $('panelPaymentSearchInput').value.trim();
         const p = paymentsData.find(x => x.id === id);
-        const resultBox = document.getElementById("panelPaymentSearchResult");
-        if (!p) {
-          resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`;
-          return;
-        }
+        const resultBox = $('panelPaymentSearchResult');
+        if (!p) { resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`; return; }
         resultBox.innerHTML = `
-          <div><b>User:</b> ${escapeHtml(p.username || "-")}</div>
-          <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || "-")}</div>
+          <div><b>User:</b> ${escapeHtml(p.username || '-')}</div>
+          <div><b>Plan:</b> ${escapeHtml(p.billingCycle || p.billing_cycle || '-')}</div>
           <div><b>Status:</b> ${getPaymentStatusBadge(p)}</div>
-          <div><b>Source:</b> ${escapeHtml(p.source || "-")}</div>
+          <div><b>Source:</b> ${escapeHtml(p.source || '-')}</div>
           <div class="actions" style="margin-top:10px;">
-            <button onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Verify</button>
-            <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Cancel</button>
-            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || "primary")}')">Delete</button>
+            <button onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Verify</button>
+            <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Cancel</button>
+            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Delete</button>
           </div>
         `;
       };
     }
 
-    async function createUser() {
-      const username = document.getElementById("newUser").value.trim();
-      const password = document.getElementById("newPass").value;
-      const role = document.getElementById("newRole").value;
-      const emailVerified = document.getElementById("newEmailVerified").value === "true";
-      const source = document.getElementById("newCreateSource").value;
-
-      if (!username || !password) {
-        showToast("Missing fields");
-        return;
-      }
-
-      const res = await fetchBySource(source, `/admin/create-user`, "POST", {
-        username,
-        password,
-        role,
-        emailVerified
-      }, false);
-
-      if (res.ok) {
-        await logAudit("CREATE USER", username);
-        showToast("User created");
+    function openBroadcastPanel() {
+      panel.style.display = 'block';
+      panelTitle.textContent = 'Broadcast / Admin Note';
+      panelContent.innerHTML = `
+        <div class="section-note">This panel stores an audit-style admin note in the log feed.</div>
+        <textarea id="broadcastMessage" placeholder="Write an admin note or broadcast summary..."></textarea>
+        <div class="actions" style="margin-top:10px;">
+          <button class="btn-primary" id="saveBroadcastBtn">Save Note</button>
+        </div>
+      `;
+      $('saveBroadcastBtn').onclick = async () => {
+        const msg = $('broadcastMessage').value.trim();
+        if (!msg) return showToast('Enter a message');
+        await logAudit('ADMIN NOTE', msg);
+        showToast('Note saved');
         await loadAdmin();
-      } else {
-        showToast(res.data?.message || "Create failed");
-      }
+      };
+    }
+
+    function openSettingsPanel() {
+      panel.style.display = 'block';
+      panelTitle.textContent = 'Dashboard Settings';
+      panelContent.innerHTML = `
+        <div class="success-box"><b>Current State</b><br>Auto refresh: ${autoRefresh ? 'ON' : 'OFF'}<br>Compact mode: ${compactMode ? 'ON' : 'OFF'}</div>
+        <div class="actions">
+          <button id="toggleAutoRefreshPanelBtn">Toggle Auto Refresh</button>
+          <button id="toggleCompactPanelBtn">Toggle Compact</button>
+        </div>
+      `;
+      $('toggleAutoRefreshPanelBtn').onclick = () => { autoRefresh = !autoRefresh; $('autoRefreshBtn').textContent = `⏱️ Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`; showToast(`Auto Refresh ${autoRefresh ? 'ON' : 'OFF'}`); };
+      $('toggleCompactPanelBtn').onclick = () => { compactMode = !compactMode; document.body.classList.toggle('compact', compactMode); if (compactModeToggle) compactModeToggle.checked = compactMode; showToast(`Compact ${compactMode ? 'ON' : 'OFF'}`); };
+    }
+
+    async function createUser() {
+      const username = $('newUser').value.trim();
+      const password = $('newPass').value;
+      const role = $('newRole').value;
+      const emailVerified = $('newEmailVerified').value === 'true';
+      const source = $('newCreateSource').value;
+      if (!username || !password) { showToast('Missing fields'); return; }
+      const res = await fetchBySource(source, `/admin/create-user`, 'POST', { username, password, role, emailVerified }, false);
+      if (res.ok) { await logAudit('CREATE USER', username); showToast('User created'); await loadAdmin(); }
+      else showToast(res.data?.message || 'Create failed');
     }
 
     async function verifyAdminSession() {
       const [primary, legacy] = await Promise.all([
-        fetchBySource("primary", "/me", "GET", null, false),
-        fetchBySource("legacy", "/me", "GET", null, false)
+        fetchBySource('primary', '/me', 'GET', null, false),
+        fetchBySource('legacy', '/me', 'GET', null, false)
       ]);
-
-      const primaryOk = primary.ok && String(primary.data?.role || "").toLowerCase() === "admin";
-      const legacyOk = legacy.ok && String(legacy.data?.role || "").toLowerCase() === "admin";
-
-      if (!primaryOk && !legacyOk) {
-        logout();
-        return false;
-      }
-
+      const primaryOk = primary.ok && String(primary.data?.role || '').toLowerCase() === 'admin';
+      const legacyOk = legacy.ok && String(legacy.data?.role || '').toLowerCase() === 'admin';
+      if (!primaryOk && !legacyOk) { logout(); return false; }
       return true;
     }
 
     async function loadAdmin() {
       if (isLoading) return;
       isLoading = true;
-
+      if (refreshProgress) refreshProgress.style.width = '35%';
       try {
         const sessionOk = await verifyAdminSession();
         if (!sessionOk) return;
-
-        addTerminal("Starting merged refresh...");
+        addTerminal('Starting merged refresh...');
 
         const [usersPair, linksPair, auditPair, paymentsPair, domainsRes] = await Promise.all([
           fetchBoth(`/admin/users`),
           fetchBoth(`/admin/links`),
           fetchBoth(`/admin/audit`),
           fetchBoth(`/admin/payments`),
-          fetchBySource("primary", `/admin/domains`, "GET", null, false)
+          fetchBySource('primary', `/admin/domains`, 'GET', null, false)
         ]);
 
         const nextUsers = mergeUsers(
@@ -2263,11 +2240,8 @@
           Array.isArray(paymentsPair.legacy.data?.payments) ? paymentsPair.legacy.data.payments : []
         );
 
-        const nextDomains = mergeDomains(
-          Array.isArray(domainsRes.data?.domains) ? domainsRes.data.domains : []
-        );
-
-        const nextLanding = nextLinks.filter(l => String(l.linkType || "").toLowerCase() === "landing");
+        const nextDomains = mergeDomains(Array.isArray(domainsRes.data?.domains) ? domainsRes.data.domains : []);
+        const nextLanding = nextLinks.filter(l => String(l.linkType || '').toLowerCase() === 'landing');
 
         usersData = nextUsers.length ? nextUsers : lastGoodState.usersData;
         linksData = nextLinks.length ? nextLinks : lastGoodState.linksData;
@@ -2284,226 +2258,201 @@
         lastGoodState.landingData = landingData;
 
         const stateSummary = [
-          `Users P:${usersPair.primary.ok ? "OK" : usersPair.primary.status} L:${usersPair.legacy.ok ? "OK" : usersPair.legacy.status}`,
-          `Links P:${linksPair.primary.ok ? "OK" : linksPair.primary.status} L:${linksPair.legacy.ok ? "OK" : linksPair.legacy.status}`,
-          `Payments P:${paymentsPair.primary.ok ? "OK" : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? "OK" : paymentsPair.legacy.status}`,
-          `Domains P:${domainsRes.ok ? "OK" : domainsRes.status}`,
-          `Audit P:${auditPair.primary.ok ? "OK" : auditPair.primary.status} L:${auditPair.legacy.ok ? "OK" : auditPair.legacy.status}`
-        ].join(" • ");
+          `Users P:${usersPair.primary.ok ? 'OK' : usersPair.primary.status} L:${usersPair.legacy.ok ? 'OK' : usersPair.legacy.status}`,
+          `Links P:${linksPair.primary.ok ? 'OK' : linksPair.primary.status} L:${linksPair.legacy.ok ? 'OK' : linksPair.legacy.status}`,
+          `Payments P:${paymentsPair.primary.ok ? 'OK' : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? 'OK' : paymentsPair.legacy.status}`,
+          `Domains P:${domainsRes.ok ? 'OK' : domainsRes.status}`,
+          `Audit P:${auditPair.primary.ok ? 'OK' : auditPair.primary.status} L:${auditPair.legacy.ok ? 'OK' : auditPair.legacy.status}`
+        ].join(' • ');
 
         renderStats(stateSummary);
         renderPaymentStats();
+        renderRiskStats();
+        renderSubscriptionStats();
         renderSideLists();
+        renderActivityStream();
         renderUsers();
         renderPayments();
         renderLinks();
         renderDomains();
         renderLandingPages();
         renderAuditLogs();
+        renderSecuritySection();
         drawChart();
 
-        setBackendBadge("Merged View • Backend 2 + Legacy AWS");
-        addTerminal("Dashboard refreshed");
+        setBackendBadge('Merged View • Backend 2 + Legacy AWS');
+        addTerminal('Dashboard refreshed');
       } catch (error) {
         console.error(error);
-        addTerminal("Refresh failed. Keeping last good data.");
-        refreshStateText.textContent = "Refresh failed. Last good data preserved.";
-        showToast("Refresh failed - kept last data");
+        addTerminal('Refresh failed. Keeping last good data.');
+        refreshStateText.textContent = 'Refresh failed. Last good data preserved.';
+        showToast('Refresh failed - kept last data');
       } finally {
         isLoading = false;
+        if (refreshProgress) {
+          refreshProgress.style.width = '100%';
+          setTimeout(() => { if (refreshProgress) refreshProgress.style.width = '0%'; }, 1200);
+        }
       }
     }
 
     function setupFilters() {
-      userSearch.addEventListener("input", renderUsers);
-      userFilterRole.addEventListener("change", renderUsers);
-      userFilterStatus.addEventListener("change", renderUsers);
-
-      paymentSearch.addEventListener("input", renderPayments);
-      paymentStatusFilter.addEventListener("change", renderPayments);
-      paymentPlanFilter.addEventListener("change", renderPayments);
-
-      linkSearch.addEventListener("input", renderLinks);
-      linkFilterStatus.addEventListener("change", renderLinks);
-      linkSort.addEventListener("change", renderLinks);
-
-      domainSearch.addEventListener("input", renderDomains);
-      domainStatusFilter.addEventListener("change", renderDomains);
-
-      landingSearch.addEventListener("input", renderLandingPages);
-      landingSourceFilter.addEventListener("change", renderLandingPages);
+      [userSearch, userFilterRole, userFilterStatus].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderUsers));
+      [paymentSearch, paymentStatusFilter, paymentPlanFilter, onlyAwaitingToggle].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', renderPayments));
+      [linkSearch, linkFilterStatus, linkSort].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLinks));
+      [domainSearch, domainStatusFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderDomains));
+      [landingSearch, landingSourceFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLandingPages));
+      if (auditSearch) auditSearch.addEventListener('input', renderAuditLogs);
+      [globalSearch, sourceFilterGlobal].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+        renderUsers(); renderPayments(); renderLinks(); renderDomains(); renderLandingPages();
+      }));
+      if (chartModeSelect) chartModeSelect.addEventListener('change', drawChart);
     }
 
     function setupNavigation() {
-      document.getElementById("navOverview").onclick = () => showSection("overview");
-      document.getElementById("navUsers").onclick = () => showSection("users");
-      document.getElementById("navPayments").onclick = () => showSection("payments");
-      document.getElementById("navLinks").onclick = () => showSection("links");
-      document.getElementById("navDomains").onclick = () => showSection("domains");
-      document.getElementById("navLanding").onclick = () => showSection("landing");
-      document.getElementById("navAudit").onclick = () => showSection("audit");
+      $('navOverview').onclick = () => showSection('overview');
+      $('navUsers').onclick = () => showSection('users');
+      $('navPayments').onclick = () => showSection('payments');
+      $('navLinks').onclick = () => showSection('links');
+      $('navDomains').onclick = () => showSection('domains');
+      $('navLanding').onclick = () => showSection('landing');
+      $('navAudit').onclick = () => showSection('audit');
+      $('navSecurity').onclick = () => showSection('security');
+    }
+
+    async function bulkVerifyVisibleAwaiting() {
+      const awaiting = getFilteredPayments().filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation');
+      if (!awaiting.length) return showToast('No awaiting payments visible');
+      if (!confirm(`Verify ${awaiting.length} visible awaiting payment(s)?`)) return;
+      for (const p of awaiting) {
+        await verifyPayment(p.id, p.source);
+      }
+    }
+
+    async function bulkVerifyVisibleUsers() {
+      const users = getFilteredUsers().filter(u => !(u.emailVerified || u.email_verified));
+      if (!users.length) return showToast('No unverified visible users');
+      if (!confirm(`Verify ${users.length} visible user email(s)?`)) return;
+      for (const u of users) {
+        await verifyUser(u.username, u.source);
+      }
     }
 
     function setupTopButtons() {
-      document.getElementById("refreshBtn").onclick = async () => {
-        await loadAdmin();
-        showToast("Refreshed");
+      $('refreshBtn').onclick = async () => { await loadAdmin(); showToast('Refreshed'); };
+      $('refreshAllBtn').onclick = async () => { await loadAdmin(); showToast('Refreshed'); };
+      $('createUserBtn').onclick = openCreateUser;
+      $('openPaymentSearchBtn').onclick = openPaymentSearch;
+      $('openBroadcastBtn').onclick = openBroadcastPanel;
+      $('openSettingsBtn').onclick = openSettingsPanel;
+      $('bulkVerifyAwaitingBtn').onclick = bulkVerifyVisibleAwaiting;
+      $('bulkVerifyUsersBtn').onclick = bulkVerifyVisibleUsers;
+      $('exportVisibleLinksBtn').onclick = exportVisibleLinks;
+      $('refreshDomainsOnlyBtn').onclick = renderDomains;
+      $('refreshLandingOnlyBtn').onclick = renderLandingPages;
+      $('refreshAuditBtn').onclick = renderAuditLogs;
+      $('clearGlobalFiltersBtn').onclick = () => {
+        if (globalSearch) globalSearch.value = '';
+        if (sourceFilterGlobal) sourceFilterGlobal.value = '';
+        renderUsers(); renderPayments(); renderLinks(); renderDomains(); renderLandingPages();
       };
 
-      document.getElementById("refreshAllBtn").onclick = async () => {
-        await loadAdmin();
-        showToast("Refreshed");
-      };
+      $('showAwaitingBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'awaiting_confirmation'; renderPayments(); showToast('Showing awaiting confirmation payments'); };
+      $('showPendingBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'pending'; renderPayments(); showToast('Showing pending payments'); };
+      $('showVerifiedBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'verified'; renderPayments(); showToast('Showing verified payments'); };
+      $('showDomainsBtn').onclick = () => { showSection('domains'); showToast('Showing domains'); };
+      $('showLandingBtn').onclick = () => { showSection('landing'); showToast('Showing landing pages'); };
+      $('closePanelBtn').onclick = closePanel;
+      $('logoutBtn').onclick = logout;
 
-      document.getElementById("createUserBtn").onclick = openCreateUser;
-      document.getElementById("openPaymentSearchBtn").onclick = openPaymentSearch;
+      $('exportUsersBtn').onclick = () => { exportJson('users.json', usersData); showToast('Users exported'); };
+      $('exportLinksBtn').onclick = () => { exportJson('links.json', linksData); showToast('Links exported'); };
+      $('exportPaymentsBtn').onclick = () => { exportJson('payments.json', paymentsData); showToast('Payments exported'); };
+      $('exportDomainsBtn').onclick = () => { exportJson('domains.json', domainsData); showToast('Domains exported'); };
+      $('exportLandingBtn').onclick = () => { exportJson('landing-pages.json', landingData); showToast('Landing pages exported'); };
 
-      document.getElementById("showAwaitingBtn").onclick = () => {
-        showSection("payments");
-        paymentStatusFilter.value = "awaiting_confirmation";
-        renderPayments();
-        showToast("Showing awaiting confirmation payments");
-      };
-
-      document.getElementById("showPendingBtn").onclick = () => {
-        showSection("payments");
-        paymentStatusFilter.value = "pending";
-        renderPayments();
-        showToast("Showing pending payments");
-      };
-
-      document.getElementById("showVerifiedBtn").onclick = () => {
-        showSection("payments");
-        paymentStatusFilter.value = "verified";
-        renderPayments();
-        showToast("Showing verified payments");
-      };
-
-      document.getElementById("showDomainsBtn").onclick = () => {
-        showSection("domains");
-        showToast("Showing domains");
-      };
-
-      document.getElementById("showLandingBtn").onclick = () => {
-        showSection("landing");
-        showToast("Showing landing pages");
-      };
-
-      document.getElementById("closePanelBtn").onclick = closePanel;
-      document.getElementById("logoutBtn").onclick = logout;
-
-      document.getElementById("exportUsersBtn").onclick = () => {
-        exportJson("users.json", usersData);
-        showToast("Users exported");
-      };
-
-      document.getElementById("exportLinksBtn").onclick = () => {
-        exportJson("links.json", linksData);
-        showToast("Links exported");
-      };
-
-      document.getElementById("exportPaymentsBtn").onclick = () => {
-        exportJson("payments.json", paymentsData);
-        showToast("Payments exported");
-      };
-
-      document.getElementById("exportDomainsBtn").onclick = () => {
-        exportJson("domains.json", domainsData);
-        showToast("Domains exported");
-      };
-
-      document.getElementById("exportLandingBtn").onclick = () => {
-        exportJson("landing-pages.json", landingData);
-        showToast("Landing pages exported");
-      };
-
-      document.getElementById("autoRefreshBtn").onclick = () => {
+      $('autoRefreshBtn').onclick = () => {
         autoRefresh = !autoRefresh;
-        document.getElementById("autoRefreshBtn").textContent = `⏱️ Auto Refresh: ${autoRefresh ? "ON" : "OFF"}`;
-        showToast(`Auto Refresh ${autoRefresh ? "ON" : "OFF"}`);
+        $('autoRefreshBtn').textContent = `⏱️ Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`;
+        showToast(`Auto Refresh ${autoRefresh ? 'ON' : 'OFF'}`);
       };
+
+      if (compactModeToggle) compactModeToggle.addEventListener('change', () => {
+        compactMode = compactModeToggle.checked;
+        document.body.classList.toggle('compact', compactMode);
+      });
     }
 
     function setupEventDelegation() {
-      usersEl.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
+      usersEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-
         const action = btn.dataset.action;
         const username = btn.dataset.username;
         const source = btn.dataset.source;
-
-        if (action === "view-user") return openUser(username);
-        if (action === "ban-user") return banUser(username, source);
-        if (action === "unban-user") return unbanUser(username, source);
-        if (action === "make-admin") return makeAdmin(username, source);
-        if (action === "remove-admin") return removeAdmin(username, source);
-        if (action === "pause-subscription") return pauseSubscription(username, source);
-        if (action === "resume-subscription") return resumeSubscription(username, source);
-        if (action === "verify-user") return verifyUser(username, source);
+        if (action === 'view-user') return openUser(username);
+        if (action === 'ban-user') return banUser(username, source);
+        if (action === 'unban-user') return unbanUser(username, source);
+        if (action === 'make-admin') return makeAdmin(username, source);
+        if (action === 'remove-admin') return removeAdmin(username, source);
+        if (action === 'pause-subscription') return pauseSubscription(username, source);
+        if (action === 'resume-subscription') return resumeSubscription(username, source);
+        if (action === 'verify-user') return verifyUser(username, source);
       });
 
-      paymentsEl.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
+      paymentsEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-
         const action = btn.dataset.action;
         const paymentId = btn.dataset.paymentId;
         const address = btn.dataset.address;
         const source = btn.dataset.source;
-
-        if (action === "view-payment") return openPayment(paymentId);
-        if (action === "verify-payment") return verifyPayment(paymentId, source);
-        if (action === "cancel-payment") return cancelPayment(paymentId, source);
-        if (action === "delete-payment") return deletePayment(paymentId, source);
-        if (action === "copy-payment-address") return copyText(address);
+        if (action === 'view-payment') return openPayment(paymentId);
+        if (action === 'verify-payment') return verifyPayment(paymentId, source);
+        if (action === 'cancel-payment') return cancelPayment(paymentId, source);
+        if (action === 'delete-payment') return deletePayment(paymentId, source);
+        if (action === 'copy-payment-address') return copyText(address);
       });
 
-      linksEl.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
+      linksEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-
         const action = btn.dataset.action;
         const slug = btn.dataset.slug;
         const link = btn.dataset.link;
         const source = btn.dataset.source;
-        const domain = btn.dataset.domain || "";
-
-        if (action === "copy-link") return copyText(link);
-        if (action === "open-link") return openLink(link);
-        if (action === "pause-link") return pauseLink(slug, source);
-        if (action === "resume-link") return resumeLink(slug, source);
-        if (action === "delete-link") return deleteLink(slug, source, domain);
-        if (action === "preview-landing") return openLanding(slug, domain, source, true);
+        const domain = btn.dataset.domain || '';
+        if (action === 'copy-link') return copyText(link);
+        if (action === 'open-link') return openLink(link);
+        if (action === 'pause-link') return pauseLink(slug, source);
+        if (action === 'resume-link') return resumeLink(slug, source);
+        if (action === 'delete-link') return deleteLink(slug, source, domain);
+        if (action === 'preview-landing') return openLanding(slug, domain, source, true);
       });
 
-      domainsEl.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
+      domainsEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-
         const action = btn.dataset.action;
         const domain = btn.dataset.domain;
-        const token = btn.dataset.token || "";
-
-        if (action === "view-domain") return openDomain(domain);
-        if (action === "verify-domain") return verifyDomain(domain);
-        if (action === "set-primary-domain") return setPrimaryDomain(domain);
-        if (action === "delete-domain") return deleteDomain(domain);
-        if (action === "copy-domain-token") return copyText(token);
+        const token = btn.dataset.token || '';
+        if (action === 'view-domain') return openDomain(domain);
+        if (action === 'verify-domain') return verifyDomain(domain);
+        if (action === 'set-primary-domain') return setPrimaryDomain(domain);
+        if (action === 'delete-domain') return deleteDomain(domain);
+        if (action === 'copy-domain-token') return copyText(token);
       });
 
-      landingPagesEl.addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-action]");
+      landingPagesEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-
         const action = btn.dataset.action;
         const slug = btn.dataset.slug;
-        const domain = btn.dataset.domain || "";
+        const domain = btn.dataset.domain || '';
         const source = btn.dataset.source;
-
-        if (action === "preview-landing") return openLanding(slug, domain, source, true);
-        if (action === "view-landing") return openLanding(slug, domain, source, false);
-        if (action === "delete-landing") return deleteLanding(slug, domain, source);
+        if (action === 'preview-landing') return openLanding(slug, domain, source, true);
+        if (action === 'view-landing') return openLanding(slug, domain, source, false);
+        if (action === 'delete-landing') return deleteLanding(slug, domain, source);
       });
     }
 
@@ -2515,7 +2464,7 @@
       }, 10000);
     }
 
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener('visibilitychange', () => {
       if (!document.hidden) loadAdmin();
     });
 
@@ -2528,10 +2477,13 @@
     window.deleteDomain = deleteDomain;
     window.deleteLanding = deleteLanding;
     window.openLink = openLink;
+    window.pauseSubscription = pauseSubscription;
+    window.resumeSubscription = resumeSubscription;
+    window.verifyUser = verifyUser;
 
     (async function init() {
       setBackendBadge();
-      showSection("overview");
+      showSection('overview');
       setupNavigation();
       setupTopButtons();
       setupFilters();
