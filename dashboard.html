@@ -14,6 +14,7 @@
       --bg:#020617;
       --bg2:#000000;
       --card:rgba(2,6,23,0.84);
+      --card-2:rgba(15,23,42,0.62);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -22,11 +23,14 @@
       --red:#ef4444;
       --yellow:#f59e0b;
       --purple:#a855f7;
+      --pink:#ec4899;
       --border:rgba(0,255,255,0.18);
+      --shadow:0 0 10px rgba(0,255,255,0.10), inset 0 0 15px rgba(0,255,255,0.03);
+      --radius:16px;
     }
 
     *{ box-sizing:border-box; }
-
+    html{ scroll-behavior:smooth; }
     body{
       margin:0;
       font-family:Inter, Arial, sans-serif;
@@ -35,6 +39,10 @@
       min-height:100vh;
       position:relative;
     }
+
+    body.compact .card{ padding:12px; margin-bottom:14px; }
+    body.compact th, body.compact td{ padding:8px; }
+    body.compact .stat-card h3{ font-size:24px; }
 
     body::before{
       content:"";
@@ -51,7 +59,7 @@
     .container{
       position:relative;
       z-index:1;
-      max-width:1500px;
+      max-width:1560px;
       margin:0 auto;
       padding:20px;
     }
@@ -77,7 +85,9 @@
       line-height:1.6;
     }
 
-    .top-actions{
+    .top-actions,
+    .toolbar-actions,
+    .row-actions{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
@@ -88,16 +98,15 @@
       background:var(--card);
       border:1px solid var(--border);
       backdrop-filter:blur(12px);
-      border-radius:16px;
+      border-radius:var(--radius);
       padding:16px;
       margin-bottom:18px;
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.10),
-        inset 0 0 15px rgba(0,255,255,0.03);
+      box-shadow:var(--shadow);
     }
 
     .card h3,
-    .card h4{
+    .card h4,
+    .card h5{
       margin:0 0 12px;
       color:var(--cyan);
     }
@@ -108,46 +117,46 @@
       gap:14px;
     }
 
-    .stat-card{
-      text-align:center;
-    }
-
-    .stat-card h3{
-      margin:0 0 8px;
-      font-size:30px;
-      color:var(--cyan);
-    }
-
-    .stat-card p{
-      margin:0;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .two-col{
+    .grid-2{
       display:grid;
-      grid-template-columns:1.2fr .8fr;
-      gap:18px;
-    }
-
-    .three-col{
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
+      grid-template-columns:repeat(2,1fr);
       gap:14px;
     }
 
-    .four-col{
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+    }
+
+    .grid-4{
       display:grid;
       grid-template-columns:repeat(4,1fr);
       gap:14px;
     }
 
-    .form-row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
+    .grid-5{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
     }
+
+    .stat-card{ text-align:center; }
+    .stat-card h3{
+      margin:0 0 8px;
+      font-size:30px;
+      color:var(--cyan);
+    }
+    .stat-card p{ margin:0; color:var(--muted); font-size:13px; }
+
+    .two-col{ display:grid; grid-template-columns:1.25fr .75fr; gap:18px; }
+    .three-col{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .four-col{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+    .stack{ display:flex; flex-direction:column; gap:12px; }
+
+    .form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .form-row > *{ flex:1 1 180px; }
 
     input, select, textarea{
       width:100%;
@@ -159,18 +168,14 @@
       outline:none;
     }
 
-    textarea{
-      min-height:110px;
-      resize:vertical;
+    input[type="checkbox"]{
+      width:auto;
+      accent-color:var(--cyan);
     }
 
-    input::placeholder, textarea::placeholder{
-      color:var(--muted);
-    }
-
-    input:focus, select:focus, textarea:focus{
-      box-shadow:0 0 10px rgba(0,255,255,0.4);
-    }
+    textarea{ min-height:110px; resize:vertical; }
+    input::placeholder, textarea::placeholder{ color:var(--muted); }
+    input:focus, select:focus, textarea:focus{ box-shadow:0 0 10px rgba(0,255,255,0.4); }
 
     button, .btn{
       padding:11px 14px;
@@ -183,54 +188,27 @@
       border:1px solid rgba(0,255,255,0.28);
       transition:.2s ease;
       text-decoration:none;
-      display:inline-block;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
     }
 
     button:hover, .btn:hover{
       color:#fff;
       border-color:var(--cyan);
-      box-shadow:
-        0 0 10px rgba(0,255,255,0.4),
-        0 0 24px rgba(0,255,255,0.15);
+      box-shadow:0 0 10px rgba(0,255,255,0.4), 0 0 24px rgba(0,255,255,0.15);
       transform:translateY(-1px);
     }
 
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
+    button:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
 
-    .success-btn{
-      background:var(--green);
-      color:#000;
-      border-color:var(--green);
-    }
-
-    .danger-btn{
-      background:var(--red);
-      color:#fff;
-      border-color:var(--red);
-    }
-
-    .purple-btn{
-      background:var(--purple);
-      color:#fff;
-      border-color:var(--purple);
-    }
-
-    .legacy-btn{
-      background:#0f172a;
-      color:#facc15;
-      border-color:#facc15;
-    }
-
-    .backend2-btn{
-      background:#0f172a;
-      color:#22c55e;
-      border-color:#22c55e;
-    }
+    .success-btn{ background:var(--green); color:#000; border-color:var(--green); }
+    .danger-btn{ background:var(--red); color:#fff; border-color:var(--red); }
+    .purple-btn{ background:var(--purple); color:#fff; border-color:var(--purple); }
+    .legacy-btn{ background:#0f172a; color:#facc15; border-color:#facc15; }
+    .backend2-btn{ background:#0f172a; color:#22c55e; border-color:#22c55e; }
+    .pink-btn{ background:#111827; color:#f472b6; border-color:#f472b6; }
 
     .backend-active{
       box-shadow:0 0 0 2px currentColor inset, 0 0 16px rgba(255,255,255,0.08);
@@ -245,7 +223,7 @@
     .ghost-btn{ color:#cbd5e1; border-color:#475569; }
     .warn-btn{ color:#f59e0b; border-color:#f59e0b; }
 
-    .badge{
+    .badge, .pill, .chip{
       display:inline-block;
       padding:4px 8px;
       border-radius:999px;
@@ -260,29 +238,17 @@
     .pending{ color:var(--yellow); }
     .awaiting{ color:#60a5fa; }
 
-    .muted{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
+    .muted{ color:var(--muted); font-size:12px; line-height:1.6; }
+    .small{ font-size:12px; }
+    .tiny{ font-size:11px; }
 
-    .small{
-      font-size:12px;
-    }
-
-    .result{
-      margin-top:10px;
-      font-size:13px;
-      min-height:20px;
-      line-height:1.5;
-      white-space:pre-wrap;
-    }
-
+    .result{ margin-top:10px; font-size:13px; min-height:20px; line-height:1.5; white-space:pre-wrap; }
     .success{ color:var(--green); }
     .error{ color:var(--red); }
 
     .links-header,
-    .section-head{
+    .section-head,
+    .section-subhead{
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -291,60 +257,30 @@
       margin-bottom:10px;
     }
 
-    .table-wrap{
-      overflow:auto;
-      width:100%;
-    }
+    .table-wrap{ overflow:auto; width:100%; }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1180px;
-    }
+    table{ width:100%; border-collapse:collapse; min-width:1300px; }
+    th, td{ padding:10px; border-bottom:1px solid #334155; text-align:left; vertical-align:top; font-size:13px; }
+    th{ color:var(--cyan); font-weight:600; position:sticky; top:0; background:#020617; z-index:1; }
+    tr:hover{ background:#020617; }
 
-    th, td{
-      padding:10px;
-      border-bottom:1px solid #334155;
-      text-align:left;
-      vertical-align:top;
-      font-size:13px;
-    }
-
-    th{
-      color:var(--cyan);
-      font-weight:600;
-    }
-
-    tr:hover{
-      background:#020617;
-    }
-
-    .pill{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid currentColor;
-      margin-right:6px;
-      margin-bottom:4px;
-    }
-
-    .plan-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:12px;
-      margin-top:8px;
-    }
-
-    .plan-card{
+    .plan-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:8px; }
+    .plan-card,
+    .create-box,
+    .mini-stat,
+    .health-item,
+    .resource-card,
+    .insight-card,
+    .activity-item,
+    .domain-summary-card,
+    .landing-summary-card{
       border:1px solid rgba(0,255,255,0.16);
       border-radius:14px;
       padding:14px;
       background:rgba(15,23,42,0.45);
-      cursor:pointer;
-      transition:.2s ease;
     }
 
+    .plan-card{ cursor:pointer; transition:.2s ease; }
     .plan-card.active{
       border-color:var(--cyan);
       box-shadow:0 0 16px rgba(0,255,255,0.22);
@@ -359,7 +295,6 @@
       border-radius:12px;
       transition:.2s ease;
     }
-
     .drop-zone.dragover{
       background:#020617;
       border-color:var(--cyan);
@@ -370,7 +305,7 @@
       position:fixed;
       right:0;
       top:0;
-      width:430px;
+      width:460px;
       max-width:100%;
       height:100%;
       background:#000;
@@ -397,28 +332,12 @@
       max-width:80vw;
     }
 
-    .payment-box{
-      display:grid;
-      grid-template-columns:220px 1fr;
-      gap:16px;
-      align-items:start;
-    }
+    .payment-box{ display:grid; grid-template-columns:220px 1fr; gap:16px; align-items:start; }
+    .payment-qr{ background:#fff; border-radius:12px; padding:10px; width:100%; max-width:220px; }
+    .payment-qr img{ width:100%; display:block; border-radius:8px; }
 
-    .payment-qr{
-      background:#fff;
-      border-radius:12px;
-      padding:10px;
-      width:100%;
-      max-width:220px;
-    }
-
-    .payment-qr img{
-      width:100%;
-      display:block;
-      border-radius:8px;
-    }
-
-    .address-box{
+    .address-box,
+    .code-box{
       word-break:break-all;
       background:#000;
       border:1px solid rgba(0,255,255,0.2);
@@ -429,32 +348,10 @@
       font-size:13px;
     }
 
-    .ranking-item{
-      padding:10px;
-      border-radius:10px;
-      margin-bottom:10px;
-      background:rgba(15,23,42,0.65);
-      border:1px solid rgba(0,255,255,0.12);
-    }
-
-    .backend-badge{
-      display:inline-block;
-      padding:5px 10px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid rgba(0,255,255,0.25);
-      color:var(--cyan);
-    }
-
-    .backend-legacy{
-      color:#facc15;
-      border-color:#facc15;
-    }
-
-    .backend-primary{
-      color:#22c55e;
-      border-color:#22c55e;
-    }
+    .ranking-item{ padding:10px; border-radius:10px; margin-bottom:10px; background:rgba(15,23,42,0.65); border:1px solid rgba(0,255,255,0.12); }
+    .backend-badge{ display:inline-block; padding:5px 10px; border-radius:999px; font-size:11px; border:1px solid rgba(0,255,255,0.25); color:var(--cyan); }
+    .backend-legacy{ color:#facc15; border-color:#facc15; }
+    .backend-primary{ color:#22c55e; border-color:#22c55e; }
 
     .overlay{
       position:fixed;
@@ -464,11 +361,12 @@
       z-index:999;
     }
 
-    .upgrade-modal{
+    .upgrade-modal,
+    .modal{
       position:fixed;
       inset:50% auto auto 50%;
       transform:translate(-50%,-50%);
-      width:min(860px,94vw);
+      width:min(980px,94vw);
       max-height:88vh;
       overflow:auto;
       background:#000;
@@ -480,163 +378,37 @@
       box-shadow:0 0 40px rgba(0,255,255,0.18);
     }
 
-    .notice{
+    .notice,
+    .info-box,
+    .alert-box,
+    .waiting-box,
+    .confirm-box{
       padding:12px;
       border-radius:12px;
-      background:rgba(245,158,11,0.08);
-      border:1px solid rgba(245,158,11,0.25);
-      color:#fcd34d;
       font-size:13px;
       line-height:1.6;
       margin-bottom:12px;
     }
 
-    .split-create{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:10px;
-    }
+    .notice{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); color:#fcd34d; }
+    .info-box{ background:rgba(15,23,42,0.45); border:1px solid rgba(0,255,255,0.12); }
+    .alert-box{ background:rgba(236,72,153,.10); border:1px solid rgba(236,72,153,.30); color:#f9a8d4; }
+    .waiting-box{ background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.35); }
+    .confirm-box{ background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.35); }
 
-    .create-box{
-      border:1px solid rgba(0,255,255,0.16);
-      border-radius:14px;
-      padding:14px;
-      background:rgba(15,23,42,0.45);
-    }
+    .split-create{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:10px; }
+    .health-list{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .backend-switch{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .resource-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
 
-    .health-list{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:10px;
-    }
+    .faq-item{ border:1px solid rgba(0,255,255,0.12); border-radius:12px; margin-bottom:10px; overflow:hidden; background:rgba(15,23,42,0.45); }
+    .faq-q{ width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.05); padding:14px; color:var(--cyan); font-weight:600; }
+    .faq-a{ display:none; padding:14px; color:var(--muted); font-size:13px; line-height:1.7; }
+    .faq-item.open .faq-a{ display:block; }
 
-    .health-item{
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(0,255,255,0.14);
-      background:rgba(15,23,42,0.45);
-    }
-
-    .backend-switch{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .chip{
-      display:inline-block;
-      font-size:11px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid currentColor;
-    }
-
-    .mini-stat{
-      padding:10px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.45);
-      border:1px solid rgba(0,255,255,0.12);
-    }
-
-    .resource-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-      gap:14px;
-    }
-
-    .resource-card{
-      border:1px solid rgba(0,255,255,0.14);
-      border-radius:14px;
-      padding:14px;
-      background:rgba(15,23,42,0.45);
-    }
-
-    .resource-card h4{
-      margin:0 0 8px;
-    }
-
-    .resource-card p{
-      margin:0 0 10px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
-
-    .faq-item{
-      border:1px solid rgba(0,255,255,0.12);
-      border-radius:12px;
-      margin-bottom:10px;
-      overflow:hidden;
-      background:rgba(15,23,42,0.45);
-    }
-
-    .faq-q{
-      width:100%;
-      text-align:left;
-      background:transparent;
-      border:none;
-      border-bottom:1px solid rgba(255,255,255,0.05);
-      padding:14px;
-      color:var(--cyan);
-      font-weight:600;
-    }
-
-    .faq-a{
-      display:none;
-      padding:14px;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.7;
-    }
-
-    .faq-item.open .faq-a{
-      display:block;
-    }
-
-    .footer-links{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .info-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(15,23,42,0.45);
-      border:1px solid rgba(0,255,255,0.12);
-      margin-bottom:10px;
-    }
-
-    .support-list a{
-      display:block;
-      margin-bottom:8px;
-      color:var(--cyan);
-      text-decoration:none;
-      word-break:break-word;
-    }
-
-    .support-list a:hover{
-      text-decoration:underline;
-    }
-
-    .waiting-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(59,130,246,.12);
-      border:1px solid rgba(59,130,246,.35);
-    }
-
-    .confirm-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(34,197,94,.12);
-      border:1px solid rgba(34,197,94,.35);
-    }
+    .footer-links{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .support-list a{ display:block; margin-bottom:8px; color:var(--cyan); text-decoration:none; word-break:break-word; }
+    .support-list a:hover{ text-decoration:underline; }
 
     .spinner{
       width:18px;
@@ -650,19 +422,86 @@
       margin-right:8px;
     }
 
-    @keyframes spin{
-      to{ transform:rotate(360deg); }
+    .progress{
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      margin-top:8px;
+    }
+    .progress > span{
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--cyan),var(--green));
     }
 
-    @media (max-width: 980px){
-      .two-col,
-      .three-col,
-      .four-col,
-      .payment-box,
-      .split-create,
-      .health-list{
-        grid-template-columns:1fr;
-      }
+    .kanban{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .kanban-col{
+      background:rgba(15,23,42,.35);
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .kanban-card{
+      background:rgba(2,6,23,.8);
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:12px;
+      padding:10px;
+      margin-top:10px;
+    }
+
+    .quick-links{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
+
+    .toggle-wrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .timeline-item{
+      position:relative;
+      padding-left:18px;
+      margin-bottom:10px;
+    }
+    .timeline-item::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:6px;
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--cyan);
+      box-shadow:0 0 10px rgba(0,255,255,.5);
+    }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    @media (max-width: 1180px){
+      .grid-5, .four-col, .three-col, .kanban{ grid-template-columns:1fr 1fr; }
+      .two-col, .payment-box, .split-create, .health-list, .grid-3, .grid-4, .grid-2{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 720px){
+      .grid-5, .four-col, .three-col, .kanban{ grid-template-columns:1fr; }
+      .container{ padding:14px; }
+      .header{ align-items:stretch; }
+      .top-actions{ width:100%; }
+      table{ min-width:1100px; }
     }
   </style>
 </head>
@@ -672,22 +511,26 @@
       <div>
         <h2>📊 Rattle Link Dashboard</h2>
         <div class="sub">
-          Manage links • Track traffic • Use AWS and Backend2 together • Payment requests
+          Manage links • Track traffic • Payment requests • Landing pages • TXT-only custom domains behind Cloudflare proxy mode
         </div>
       </div>
 
       <div class="top-actions">
         <span id="backendBadgeTop" class="backend-badge">Backend</span>
+        <span id="liveSyncBadge" class="badge live">Auto Sync On</span>
         <button id="refreshBtn" type="button">Refresh</button>
+        <button id="exportCsvBtn" type="button">Export CSV</button>
+        <button id="exportJsonBtn" type="button">Export JSON</button>
         <button id="landingCenterBtn" class="backend2-btn" type="button">Landing Pages</button>
         <button id="domainCenterBtn" class="backend2-btn" type="button">Custom Domains</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
+        <button id="quickSettingsBtn" class="ghost-btn" type="button">Quick Settings</button>
         <button class="btn" type="button" onclick="openSupportPanel()">Support</button>
         <button class="danger-btn" type="button" onclick="logout()">Logout</button>
       </div>
     </div>
 
-    <div class="grid">
+    <div class="grid-5">
       <div class="card stat-card">
         <h3 id="totalLinks">0</h3>
         <p>Total Links</p>
@@ -703,6 +546,10 @@
       <div class="card stat-card">
         <h3 id="trialRemaining">0</h3>
         <p>Trial Links Remaining</p>
+      </div>
+      <div class="card stat-card">
+        <h3 id="liveThreatCount">0</h3>
+        <p>Risky IP Flags</p>
       </div>
     </div>
 
@@ -726,55 +573,110 @@
     </div>
 
     <div class="two-col">
-      <div class="card">
-        <div class="section-head">
-          <h3>👤 Account Access</h3>
-          <span id="subscriptionBadge" class="badge trial">Trial</span>
+      <div class="stack">
+        <div class="card">
+          <div class="section-head">
+            <h3>👤 Account Access</h3>
+            <span id="subscriptionBadge" class="badge trial">Trial</span>
+          </div>
+
+          <div class="three-col">
+            <div>
+              <div class="muted">Email</div>
+              <div id="meEmail">-</div>
+            </div>
+            <div>
+              <div class="muted">Plan</div>
+              <div id="mePlan">Free Trial</div>
+            </div>
+            <div>
+              <div class="muted">Expires</div>
+              <div id="meExpire">-</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <div class="muted">Access Summary</div>
+            <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
+            <div class="progress"><span id="trialProgressBar"></span></div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <div class="muted">Preferred backend</div>
+            <div class="backend-switch" style="margin-top:8px;">
+              <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
+              <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
+              <button type="button" id="verifySessionBtn" class="ghost-btn">Verify Session</button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;" class="row-actions">
+            <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
+            <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
+            <button class="pink-btn" type="button" id="openSecurityCenterBtn">Security Center</button>
+          </div>
         </div>
 
-        <div class="three-col">
-          <div>
-            <div class="muted">Email</div>
-            <div id="meEmail">-</div>
+        <div class="card">
+          <div class="section-head">
+            <h3>🛠 Dashboard Controls</h3>
+            <button id="clearFiltersBtn" class="ghost-btn" type="button">Reset Filters</button>
           </div>
-          <div>
-            <div class="muted">Plan</div>
-            <div id="mePlan">Free Trial</div>
-          </div>
-          <div>
-            <div class="muted">Expires</div>
-            <div id="meExpire">-</div>
-          </div>
-        </div>
 
-        <div style="margin-top:14px;">
-          <div class="muted">Access Summary</div>
-          <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
-        </div>
-
-        <div style="margin-top:14px;">
-          <div class="muted">Preferred backend</div>
-          <div class="backend-switch" style="margin-top:8px;">
-            <button type="button" id="preferPrimaryBtn" class="backend2-btn">Prefer Backend2</button>
-            <button type="button" id="preferLegacyBtn" class="legacy-btn">Prefer AWS</button>
-            <button type="button" id="verifySessionBtn" class="ghost-btn">Verify Session</button>
+          <div class="grid-3">
+            <div>
+              <div class="muted">Date Range</div>
+              <select id="dateRangeFilter">
+                <option value="all">All time</option>
+                <option value="24h">Last 24 hours</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+            <div>
+              <div class="muted">Status</div>
+              <select id="statusFilter">
+                <option value="all">All statuses</option>
+                <option value="live">Live</option>
+                <option value="paused">Paused</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+            <div>
+              <div class="muted">Sort</div>
+              <select id="sortFilter">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="clicks_desc">Clicks high to low</option>
+                <option value="clicks_asc">Clicks low to high</option>
+                <option value="slug_asc">Slug A-Z</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div style="margin-top:14px;">
-          <button class="purple-btn" type="button" onclick="openUpgradeModal()">Open Upgrade Center</button>
-          <button type="button" onclick="loadPayments(true)">Refresh Payments</button>
+          <div class="toggle-wrap" style="margin-top:14px;">
+            <label><input type="checkbox" id="autoRefreshToggle" checked /> Auto refresh</label>
+            <label><input type="checkbox" id="compactModeToggle" /> Compact mode</label>
+            <label><input type="checkbox" id="onlyHighRiskToggle" /> Only risky traffic</label>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-head">
-          <h3>💳 Latest Payment Request</h3>
-          <button type="button" onclick="loadPayments(true)">Reload</button>
+      <div class="stack">
+        <div class="card">
+          <div class="section-head">
+            <h3>💳 Latest Payment Request</h3>
+            <button type="button" onclick="loadPayments(true)">Reload</button>
+          </div>
+          <div id="latestPaymentBox" class="muted">No payment request yet.</div>
         </div>
 
-        <div id="latestPaymentBox" class="muted">
-          No payment request yet.
+        <div class="card">
+          <div class="section-head">
+            <h3>🔔 Notifications</h3>
+            <button id="clearNotificationsBtn" type="button" class="ghost-btn">Clear</button>
+          </div>
+          <div id="notificationsList" class="stack"></div>
         </div>
       </div>
     </div>
@@ -796,10 +698,23 @@
 
       <div class="card">
         <h3>🧠 Session Notes</h3>
-        <div class="muted">
-          Preferred backend is manual only. This page will not switch your preference automatically anymore.
-        </div>
+        <div class="muted">Preferred backend is manual only. Session checks stay isolated from your selected preference.</div>
         <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>⚡ Quick Actions</h3>
+        <span class="muted">One-click shortcuts for frequent tasks</span>
+      </div>
+      <div class="quick-links">
+        <button id="quickCreatePrimary" class="backend2-btn" type="button">Create on Backend2</button>
+        <button id="quickCreateLegacy" class="legacy-btn" type="button">Create on AWS</button>
+        <button id="quickPaymentBtn" class="purple-btn" type="button">New Payment Request</button>
+        <button id="quickLandingBtn" class="backend2-btn" type="button">Landing Builder</button>
+        <button id="quickDomainBtn" class="backend2-btn" type="button">Domain Manager</button>
+        <button id="quickSecurityBtn" class="pink-btn" type="button">Security Review</button>
       </div>
     </div>
 
@@ -809,10 +724,16 @@
       <div class="form-row">
         <input id="url" placeholder="Paste URL (https://...)" />
         <input id="customSlug" placeholder="Custom slug (optional)" />
+        <input id="expire" type="number" min="1" placeholder="Expire in hours" />
       </div>
 
       <div class="form-row">
-        <input id="expire" type="number" min="1" placeholder="Expire in hours" />
+        <input id="campaignInput" placeholder="Campaign tag (optional)" />
+        <input id="noteInput" placeholder="Internal note (optional)" />
+        <select id="riskModeSelect">
+          <option value="standard">Standard traffic mode</option>
+          <option value="strict">Strict monitoring mode</option>
+        </select>
       </div>
 
       <div class="split-create">
@@ -860,8 +781,7 @@
         <div class="split-create">
           <div class="create-box">
             <h4>Landing Pages</h4>
-            <div class="muted">Create and manage landing pages on Backend2 only.</div>
-
+            <div class="muted">Manage landing pages with optional custom HTML/CSS/JS.</div>
             <div class="form-row" style="margin-top:10px;">
               <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
               <button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button>
@@ -870,12 +790,22 @@
 
           <div class="create-box">
             <h4>Custom Domains</h4>
-            <div class="muted">Add and verify custom domains on Backend2 only.</div>
-
+            <div class="muted">TXT verification only. Optimized for Cloudflare proxy mode.</div>
             <div class="form-row" style="margin-top:10px;">
               <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
               <button id="refreshDomainsBtn" class="ghost-btn" type="button">Open domain-manager.html</button>
             </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:12px;">
+          <div class="landing-summary-card">
+            <div class="muted">Landing pages snapshot</div>
+            <div id="landingSummaryText" style="margin-top:8px;">No landing summary loaded yet.</div>
+          </div>
+          <div class="domain-summary-card">
+            <div class="muted">Domains snapshot</div>
+            <div id="domainSummaryText" style="margin-top:8px;">No domain summary loaded yet.</div>
           </div>
         </div>
 
@@ -888,23 +818,36 @@
     <div class="card">
       <div class="links-header">
         <h3>🔗 Your Links</h3>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="toolbar-actions">
           <select id="backendFilter" style="max-width:180px;">
             <option value="all">All backends</option>
             <option value="primary">Backend2 only</option>
             <option value="legacy">AWS only</option>
           </select>
-          <input id="search" placeholder="Search slug or URL..." />
+          <input id="search" placeholder="Search slug or URL..." style="max-width:280px;" />
         </div>
+      </div>
+
+      <div class="section-subhead">
+        <div class="toggle-wrap">
+          <label><input type="checkbox" id="selectAllLinks" /> Select visible</label>
+          <button id="bulkCopyBtn" class="copy" type="button">Copy Selected</button>
+          <button id="bulkDeleteBtn" class="delete" type="button">Delete Selected</button>
+          <button id="bulkRefreshStatsBtn" class="ghost-btn" type="button">Refresh Visible Stats</button>
+        </div>
+        <div class="muted" id="visibleStatsText">0 visible links</div>
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th>Select</th>
               <th>Backend</th>
               <th>Slug</th>
               <th>Clicks</th>
+              <th>Score</th>
+              <th>Fraud</th>
               <th>Link</th>
               <th>Status</th>
               <th>Expire</th>
@@ -918,14 +861,37 @@
     </div>
 
     <div class="two-col">
-      <div class="card">
-        <h3>📈 Performance Overview</h3>
-        <canvas id="chart"></canvas>
+      <div class="stack">
+        <div class="card">
+          <div class="section-head">
+            <h3>📈 Performance Overview</h3>
+            <select id="chartMetricSelect" style="max-width:220px;">
+              <option value="clicks">Clicks</option>
+              <option value="score">Performance Score</option>
+            </select>
+          </div>
+          <canvas id="chart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <h3>🕒 Activity Timeline</h3>
+            <button id="refreshActivityBtn" class="ghost-btn" type="button">Refresh</button>
+          </div>
+          <div id="activityTimeline"></div>
+        </div>
       </div>
 
-      <div class="card">
-        <h3>🏆 Top Performing Links</h3>
-        <div id="ranking"></div>
+      <div class="stack">
+        <div class="card">
+          <h3>🏆 Top Performing Links</h3>
+          <div id="ranking"></div>
+        </div>
+
+        <div class="card">
+          <h3>🛡 Security Insights</h3>
+          <div id="securityInsights" class="stack"></div>
+        </div>
       </div>
     </div>
 
@@ -958,6 +924,27 @@
     <div class="two-col">
       <div class="card">
         <div class="section-head">
+          <h3>📌 Operational Board</h3>
+          <button id="rebuildBoardBtn" type="button" class="ghost-btn">Rebuild</button>
+        </div>
+        <div class="kanban">
+          <div class="kanban-col">
+            <div class="muted">Needs Review</div>
+            <div id="boardReview"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="muted">Healthy</div>
+            <div id="boardHealthy"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="muted">Attention</div>
+            <div id="boardAttention"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
           <h3>❓ FAQ</h3>
           <button type="button" onclick="toggleAllFaq(true)">Open All</button>
         </div>
@@ -974,12 +961,12 @@
 
         <div class="faq-item">
           <button class="faq-q" type="button">How do payments get verified?</button>
-          <div class="faq-a">Payments are currently created from the dashboard and then manually verified by admin after checking the wallet/payment details.</div>
+          <div class="faq-a">Payments are created from the dashboard and then manually verified by admin after checking the transfer and wallet details.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">Why can a link show paused or expired?</button>
-          <div class="faq-a">Paused links were disabled manually. Expired links have passed the expiry time set when the link was created.</div>
+          <button class="faq-q" type="button">How do custom domains verify?</button>
+          <div class="faq-a">Backend2 custom domains should verify using a TXT record only. No A-record or direct VPS-IP check is required for the standard flow.</div>
         </div>
 
         <div class="faq-item">
@@ -987,7 +974,9 @@
           <div class="faq-a">Use the Verify Session button first. If your token expired or was cleared, log in again from the login page.</div>
         </div>
       </div>
+    </div>
 
+    <div class="two-col">
       <div class="card">
         <h3>📞 Support Center</h3>
         <div class="support-list">
@@ -997,12 +986,30 @@
           <a href="tel:+19547878220">Phone: +1 954 787 8220</a>
         </div>
 
-        <div class="muted" style="margin-top:10px;">
-          Replace the Telegram, Discord, and phone placeholders with your real contact details before production.
-        </div>
+        <div class="muted" style="margin-top:10px;">Replace the Telegram, Discord, and phone placeholders with your real contact details before production.</div>
 
         <div style="margin-top:14px;">
           <button type="button" onclick="openSupportPanel()">Open Help Panel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📜 Legal Summary</h3>
+        <div class="info-box">
+          <b>Acceptable Use:</b>
+          <div class="muted">Do not use Rattle Link for spam, phishing, malware, abuse, illegal content, or harmful redirection activity.</div>
+        </div>
+        <div class="info-box">
+          <b>Privacy:</b>
+          <div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div>
+        </div>
+        <div class="info-box">
+          <b>Billing:</b>
+          <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new link creation.</div>
+        </div>
+        <div class="info-box">
+          <b>Domains:</b>
+          <div class="muted">For Backend2 custom domains, TXT verification is expected to be used even when Cloudflare proxy mode is enabled.</div>
         </div>
       </div>
     </div>
@@ -1032,32 +1039,6 @@
         <button type="button" onclick="openUpgradeModal()">Open Billing</button>
       </div>
     </div>
-
-    <div class="card">
-      <h3>📝 Legal Summary</h3>
-      <div class="info-box">
-        <b>Acceptable Use:</b>
-        <div class="muted">Do not use Rattle Link for spam, phishing, malware, abuse, illegal content, or harmful redirection activity.</div>
-      </div>
-      <div class="info-box">
-        <b>Privacy:</b>
-        <div class="muted">The platform may store account, click, IP, and device/session data for analytics, fraud prevention, and service operation.</div>
-      </div>
-      <div class="info-box">
-        <b>Billing:</b>
-        <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new link creation.</div>
-      </div>
-      <div class="info-box">
-        <b>Support Response:</b>
-        <div class="muted">Support requests are handled through the listed support channels and may require account/payment details for faster help.</div>
-      </div>
-
-      <div class="footer-links">
-        <button type="button" onclick="openInfoPanel('about')">About</button>
-        <button type="button" onclick="openInfoPanel('legal')">Legal</button>
-        <button type="button" onclick="openSupportPanel()">Support</button>
-      </div>
-    </div>
   </div>
 
   <div class="panel" id="panel">
@@ -1065,7 +1046,7 @@
     <button type="button" onclick="closePanel()">Close</button>
   </div>
 
-  <div class="overlay" id="overlay" onclick="closeUpgradeModal()"></div>
+  <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
   <div class="upgrade-modal" id="upgradeModal">
     <div class="section-head">
@@ -1093,6 +1074,47 @@
     <div id="paymentRequestBox" style="margin-top:16px;"></div>
   </div>
 
+  <div class="modal" id="settingsModal">
+    <div class="section-head">
+      <h3>⚙️ Quick Settings</h3>
+      <button type="button" onclick="closeSettingsModal()">Close</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="info-box">
+        <b>Auto refresh</b>
+        <div class="toggle-wrap" style="margin-top:10px;">
+          <label><input type="checkbox" id="modalAutoRefreshToggle" checked /> Enabled</label>
+        </div>
+      </div>
+      <div class="info-box">
+        <b>Compact mode</b>
+        <div class="toggle-wrap" style="margin-top:10px;">
+          <label><input type="checkbox" id="modalCompactModeToggle" /> Enabled</label>
+        </div>
+      </div>
+      <div class="info-box">
+        <b>Chart metric</b>
+        <select id="modalChartMetricSelect" style="margin-top:10px;">
+          <option value="clicks">Clicks</option>
+          <option value="score">Score</option>
+        </select>
+      </div>
+      <div class="info-box">
+        <b>Search state</b>
+        <div class="muted" id="settingsSearchSummary" style="margin-top:10px;">No active search</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="securityModal">
+    <div class="section-head">
+      <h3>🛡 Security Center</h3>
+      <button type="button" onclick="closeSecurityModal()">Close</button>
+    </div>
+    <div id="securityModalContent"></div>
+  </div>
+
   <div class="toast" id="toast">Copied!</div>
 
   <script>
@@ -1108,6 +1130,8 @@
 
     let dataStore = [];
     let paymentsStore = [];
+    let notificationsStore = [];
+    let selectedLinks = new Set();
     let chart = null;
     let statsChartInstance = null;
     let refreshTimer = null;
@@ -1118,80 +1142,122 @@
     let selectedPlan = "monthly";
     let paymentPoller = null;
     let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
+    let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
+    let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
 
     let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
     let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
 
-    const totalLinks = document.getElementById("totalLinks");
-    const totalClicks = document.getElementById("totalClicks");
-    const avgClicks = document.getElementById("avgClicks");
-    const trialRemainingEl = document.getElementById("trialRemaining");
-    const table = document.getElementById("table");
-    const ranking = document.getElementById("ranking");
-    const panel = document.getElementById("panel");
-    const panelContent = document.getElementById("panelContent");
-    const toast = document.getElementById("toast");
-    const result = document.getElementById("result");
-    const paymentsTable = document.getElementById("paymentsTable");
+    const $ = id => document.getElementById(id);
 
-    const primaryLinksCount = document.getElementById("primaryLinksCount");
-    const legacyLinksCount = document.getElementById("legacyLinksCount");
-    const primaryClicksCount = document.getElementById("primaryClicksCount");
-    const legacyClicksCount = document.getElementById("legacyClicksCount");
-    const primaryHealth = document.getElementById("primaryHealth");
-    const legacyHealth = document.getElementById("legacyHealth");
-    const sessionNote = document.getElementById("sessionNote");
+    const totalLinks = $("totalLinks");
+    const totalClicks = $("totalClicks");
+    const avgClicks = $("avgClicks");
+    const trialRemainingEl = $("trialRemaining");
+    const liveThreatCount = $("liveThreatCount");
+    const table = $("table");
+    const ranking = $("ranking");
+    const panel = $("panel");
+    const panelContent = $("panelContent");
+    const toast = $("toast");
+    const result = $("result");
+    const paymentsTable = $("paymentsTable");
+    const notificationsList = $("notificationsList");
+    const visibleStatsText = $("visibleStatsText");
+    const securityInsights = $("securityInsights");
+    const activityTimeline = $("activityTimeline");
+    const liveSyncBadge = $("liveSyncBadge");
+    const trialProgressBar = $("trialProgressBar");
 
-    const backendBadgeTop = document.getElementById("backendBadgeTop");
-    const meEmail = document.getElementById("meEmail");
-    const mePlan = document.getElementById("mePlan");
-    const meExpire = document.getElementById("meExpire");
-    const accessSummary = document.getElementById("accessSummary");
-    const subscriptionBadge = document.getElementById("subscriptionBadge");
-    const latestPaymentBox = document.getElementById("latestPaymentBox");
+    const primaryLinksCount = $("primaryLinksCount");
+    const legacyLinksCount = $("legacyLinksCount");
+    const primaryClicksCount = $("primaryClicksCount");
+    const legacyClicksCount = $("legacyClicksCount");
+    const primaryHealth = $("primaryHealth");
+    const legacyHealth = $("legacyHealth");
+    const sessionNote = $("sessionNote");
 
-    const urlInput = document.getElementById("url");
-    const slugInput = document.getElementById("customSlug");
-    const expireInput = document.getElementById("expire");
+    const backendBadgeTop = $("backendBadgeTop");
+    const meEmail = $("meEmail");
+    const mePlan = $("mePlan");
+    const meExpire = $("meExpire");
+    const accessSummary = $("accessSummary");
+    const subscriptionBadge = $("subscriptionBadge");
+    const latestPaymentBox = $("latestPaymentBox");
 
-    const bulkCountLegacy = document.getElementById("bulkCountLegacy");
-    const bulkCountPrimary = document.getElementById("bulkCountPrimary");
-    const searchInput = document.getElementById("search");
-    const backendFilter = document.getElementById("backendFilter");
+    const urlInput = $("url");
+    const slugInput = $("customSlug");
+    const expireInput = $("expire");
+    const campaignInput = $("campaignInput");
+    const noteInput = $("noteInput");
+    const riskModeSelect = $("riskModeSelect");
 
-    const csvFileLegacy = document.getElementById("csvFileLegacy");
-    const csvFilePrimary = document.getElementById("csvFilePrimary");
+    const bulkCountLegacy = $("bulkCountLegacy");
+    const bulkCountPrimary = $("bulkCountPrimary");
+    const searchInput = $("search");
+    const backendFilter = $("backendFilter");
+    const statusFilter = $("statusFilter");
+    const dateRangeFilter = $("dateRangeFilter");
+    const sortFilter = $("sortFilter");
+    const chartMetricSelect = $("chartMetricSelect");
+    const onlyHighRiskToggle = $("onlyHighRiskToggle");
+    const compactModeToggle = $("compactModeToggle");
+    const autoRefreshToggle = $("autoRefreshToggle");
 
-    const dropZoneLegacy = document.getElementById("dropZoneLegacy");
-    const dropZonePrimary = document.getElementById("dropZonePrimary");
+    const csvFileLegacy = $("csvFileLegacy");
+    const csvFilePrimary = $("csvFilePrimary");
+    const dropZoneLegacy = $("dropZoneLegacy");
+    const dropZonePrimary = $("dropZonePrimary");
 
-    const refreshBtn = document.getElementById("refreshBtn");
-    const upgradeBtn = document.getElementById("upgradeBtn");
-    const createLegacyBtn = document.getElementById("createLegacyBtn");
-    const createPrimaryBtn = document.getElementById("createPrimaryBtn");
-    const bulkLegacyBtn = document.getElementById("bulkLegacyBtn");
-    const bulkPrimaryBtn = document.getElementById("bulkPrimaryBtn");
-    const uploadLegacyBtn = document.getElementById("uploadLegacyBtn");
-    const uploadPrimaryBtn = document.getElementById("uploadPrimaryBtn");
-    const preferPrimaryBtn = document.getElementById("preferPrimaryBtn");
-    const preferLegacyBtn = document.getElementById("preferLegacyBtn");
-    const verifySessionBtn = document.getElementById("verifySessionBtn");
+    const refreshBtn = $("refreshBtn");
+    const upgradeBtn = $("upgradeBtn");
+    const exportCsvBtn = $("exportCsvBtn");
+    const exportJsonBtn = $("exportJsonBtn");
+    const quickSettingsBtn = $("quickSettingsBtn");
+    const createLegacyBtn = $("createLegacyBtn");
+    const createPrimaryBtn = $("createPrimaryBtn");
+    const bulkLegacyBtn = $("bulkLegacyBtn");
+    const bulkPrimaryBtn = $("bulkPrimaryBtn");
+    const uploadLegacyBtn = $("uploadLegacyBtn");
+    const uploadPrimaryBtn = $("uploadPrimaryBtn");
+    const preferPrimaryBtn = $("preferPrimaryBtn");
+    const preferLegacyBtn = $("preferLegacyBtn");
+    const verifySessionBtn = $("verifySessionBtn");
+    const clearFiltersBtn = $("clearFiltersBtn");
+    const bulkCopyBtn = $("bulkCopyBtn");
+    const bulkDeleteBtn = $("bulkDeleteBtn");
+    const bulkRefreshStatsBtn = $("bulkRefreshStatsBtn");
+    const selectAllLinks = $("selectAllLinks");
+    const clearNotificationsBtn = $("clearNotificationsBtn");
+    const refreshActivityBtn = $("refreshActivityBtn");
+    const rebuildBoardBtn = $("rebuildBoardBtn");
+    const openSecurityCenterBtn = $("openSecurityCenterBtn");
 
-    const overlay = document.getElementById("overlay");
-    const upgradeModal = document.getElementById("upgradeModal");
-    const planGrid = document.getElementById("planGrid");
-    const cryptoSelect = document.getElementById("cryptoSelect");
-    const requestPaymentBtn = document.getElementById("requestPaymentBtn");
-    const upgradeResult = document.getElementById("upgradeResult");
-    const paymentRequestBox = document.getElementById("paymentRequestBox");
+    const overlay = $("overlay");
+    const upgradeModal = $("upgradeModal");
+    const settingsModal = $("settingsModal");
+    const securityModal = $("securityModal");
+    const securityModalContent = $("securityModalContent");
+    const modalAutoRefreshToggle = $("modalAutoRefreshToggle");
+    const modalCompactModeToggle = $("modalCompactModeToggle");
+    const modalChartMetricSelect = $("modalChartMetricSelect");
+    const settingsSearchSummary = $("settingsSearchSummary");
 
-    const landingCenterBtn = document.getElementById("landingCenterBtn");
-    const domainCenterBtn = document.getElementById("domainCenterBtn");
-    const openLandingPanelBtn = document.getElementById("openLandingPanelBtn");
-    const viewLandingLinksBtn = document.getElementById("viewLandingLinksBtn");
-    const openDomainPanelBtn = document.getElementById("openDomainPanelBtn");
-    const refreshDomainsBtn = document.getElementById("refreshDomainsBtn");
-    const backend2ExtraResult = document.getElementById("backend2ExtraResult");
+    const planGrid = $("planGrid");
+    const cryptoSelect = $("cryptoSelect");
+    const requestPaymentBtn = $("requestPaymentBtn");
+    const upgradeResult = $("upgradeResult");
+    const paymentRequestBox = $("paymentRequestBox");
+
+    const landingCenterBtn = $("landingCenterBtn");
+    const domainCenterBtn = $("domainCenterBtn");
+    const openLandingPanelBtn = $("openLandingPanelBtn");
+    const viewLandingLinksBtn = $("viewLandingLinksBtn");
+    const openDomainPanelBtn = $("openDomainPanelBtn");
+    const refreshDomainsBtn = $("refreshDomainsBtn");
+    const backend2ExtraResult = $("backend2ExtraResult");
+    const landingSummaryText = $("landingSummaryText");
+    const domainSummaryText = $("domainSummaryText");
 
     function authHeaders() {
       const token = localStorage.getItem("token") || "";
@@ -1211,7 +1277,7 @@
     }
 
     function buildPublicLink(slug, backend) {
-      return `${apiBaseForBackend(backend)}/${slug}`;
+      return `${apiBaseForBackend(backend).replace(/\/+$/,'')}/${slug}`;
     }
 
     function updatePreferredButtons() {
@@ -1246,10 +1312,32 @@
       }, 1800);
     }
 
+    function pushNotification(message, type = "info") {
+      const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+      notificationsStore.unshift({ id, message, type, time: Date.now() });
+      notificationsStore = notificationsStore.slice(0, 8);
+      renderNotifications();
+    }
+
+    function renderNotifications() {
+      if (!notificationsList) return;
+      if (!notificationsStore.length) {
+        notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
+        return;
+      }
+      notificationsList.innerHTML = notificationsStore.map(n => `
+        <div class="info-box" style="margin:0;">
+          <div><b>${escapeHtml(n.message)}</b></div>
+          <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
+        </div>
+      `).join("");
+    }
+
     function setResult(message, isError = false, target = result) {
       if (!target) return;
       target.textContent = message;
       target.className = "result " + (isError ? "error" : "success");
+      pushNotification(message, isError ? "error" : "success");
     }
 
     function setExtraResult(message, isError = false) {
@@ -1289,11 +1377,9 @@
       const n = Number(ts || 0);
       if (!n) return '<span class="muted">No expiry</span>';
       if (n <= Date.now()) return `<span class="expired">Expired</span>`;
-
       const diff = n - Date.now();
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
       return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
     }
 
@@ -1306,9 +1392,16 @@
       return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
     }
 
+    function getStatusKey(link) {
+      if (link.paused) return "paused";
+      if (link.expire && Number(link.expire) <= Date.now()) return "expired";
+      return "live";
+    }
+
     function getStatus(link) {
-      if (link.paused) return '<span class="pill paused">Paused</span>';
-      if (link.expire && Number(link.expire) <= Date.now()) return '<span class="pill expired">Expired</span>';
+      const key = getStatusKey(link);
+      if (key === "paused") return '<span class="pill paused">Paused</span>';
+      if (key === "expired") return '<span class="pill expired">Expired</span>';
       return '<span class="pill live">Live</span>';
     }
 
@@ -1320,13 +1413,15 @@
       if (clicks > 100) score += 30;
       if (!link.paused) score += 10;
       if (!link.expire || Number(link.expire) > Date.now()) score += 10;
+      if (link.backend === "primary") score += 5;
       return Math.min(score, 100);
     }
 
     function detectFraud(link) {
       const clicks = Number(link.clicks || 0);
-      if (clicks > 200) return "🔥 Bot Attack";
-      if (clicks > 100) return "⚠️ Suspicious";
+      const risk = Number(link.maxRisk || 0);
+      if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
+      if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
       return "✅ Normal";
     }
 
@@ -1344,70 +1439,32 @@
         const res = await fetch(base.replace(/\/+$/, "") + path, options);
         const raw = await res.text();
         let data = {};
-        try {
-          data = raw ? JSON.parse(raw) : {};
-        } catch {
-          data = { message: raw };
-        }
-
-        return {
-          ok: res.ok,
-          status: res.status,
-          data,
-          raw
-        };
+        try { data = raw ? JSON.parse(raw) : {}; }
+        catch { data = { message: raw }; }
+        return { ok: res.ok, status: res.status, data, raw };
       } catch (e) {
-        return {
-          ok: false,
-          status: 0,
-          data: { message: e?.message || "Failed to fetch" },
-          raw: ""
-        };
+        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
       }
     }
 
     async function callBackend(backend, path, options = {}) {
-      const headers = {
-        ...(options.headers || {})
-      };
-
-      if (backend === "legacy") {
-        headers["x-rattle-fallback"] = "legacy";
-      }
-
-      return safeFetchRaw(apiBaseForBackend(backend), path, {
-        ...options,
-        headers
-      });
+      const headers = { ...(options.headers || {}) };
+      if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
+      return safeFetchRaw(apiBaseForBackend(backend), path, { ...options, headers });
     }
 
     async function authorizedFetch(path, options = {}, backend, autoLogout = false) {
       const targetBackend = backend || sessionBackend;
       const method = String(options.method || "GET").toUpperCase();
-      const headers = {
-        ...authHeaders(),
-        ...(options.headers || {})
-      };
-
-      if (method !== "GET" && !headers["Content-Type"]) {
-        headers["Content-Type"] = "application/json";
-      }
-
-      const res = await callBackend(targetBackend, path, {
-        ...options,
-        headers
-      });
-
-      if (autoLogout && res.status === 401) {
-        logout();
-      }
-
+      const headers = { ...authHeaders(), ...(options.headers || {}) };
+      if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      const res = await callBackend(targetBackend, path, { ...options, headers });
+      if (autoLogout && res.status === 401) logout();
       return { ...res, backend: targetBackend };
     }
 
     async function verifyMainSession(showToastMessage = false) {
       const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
-
       if (preferredRes.ok) {
         sessionBackend = preferredBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
@@ -1417,22 +1474,17 @@
         if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
         return true;
       }
-
       const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
       const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
-
       if (fallbackRes.ok) {
         sessionBackend = otherBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
         meState = fallbackRes.data || null;
         renderMe();
         setTopBackendBadge();
-        if (showToastMessage) {
-          showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
-        }
+        if (showToastMessage) showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
         return true;
       }
-
       logout();
       return false;
     }
@@ -1445,7 +1497,10 @@
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
         expire: item.expire ? Number(item.expire) : null,
-        createdAt: Number(item.createdAt || item.created_at || 0)
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        maxRisk: Number(item.maxRisk || item.max_risk || 0),
+        note: item.note || "",
+        campaign: item.campaign || ""
       };
     }
 
@@ -1469,7 +1524,7 @@
 
     function sortPayments(payments = []) {
       return [...payments].sort((a, b) => {
-        const rank = (s) => {
+        const rank = s => {
           s = String(s || "").toLowerCase();
           if (s === "awaiting_confirmation") return 0;
           if (s === "pending") return 1;
@@ -1485,15 +1540,12 @@
 
     function renderMe() {
       if (!meState) return;
-
       if (meEmail) meEmail.textContent = meState.username || "-";
       if (mePlan) {
-        mePlan.textContent =
-          meState.subscriptionPlan
-            ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
-            : "Free Trial";
+        mePlan.textContent = meState.subscriptionPlan
+          ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
+          : "Free Trial";
       }
-
       if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
       if (trialRemainingEl) trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
 
@@ -1510,11 +1562,11 @@
       } else if (paused) {
         badgeClass = "paused";
         badgeText = "Paused";
-        summary = `Your subscription is paused.`;
+        summary = "Your subscription is paused.";
       } else if (status === "expired") {
         badgeClass = "expired";
         badgeText = "Expired";
-        summary = `Your subscription is expired.`;
+        summary = "Your subscription is expired.";
       } else {
         badgeClass = "trial";
         badgeText = "Trial";
@@ -1526,6 +1578,11 @@
         subscriptionBadge.textContent = badgeText;
       }
       if (accessSummary) accessSummary.textContent = summary;
+
+      const limit = Math.max(1, Number(meState.trialLinksLimit || 0));
+      const remain = Math.max(0, Number(meState.trialLinksRemaining || 0));
+      const usedPercent = Math.max(0, Math.min(100, ((limit - remain) / limit) * 100));
+      if (trialProgressBar) trialProgressBar.style.width = `${usedPercent}%`;
     }
 
     async function loadMe(showLoading = false) {
@@ -1538,18 +1595,13 @@
       const primary = await callBackend("primary", "/plans", { method: "GET" });
       const legacy = await callBackend("legacy", "/plans", { method: "GET" });
       const res = primary.ok ? primary : legacy;
-
       if (!res.ok) {
         if (showMessage) setResult("Failed to load plans", true, upgradeResult);
         return;
       }
-
       plansState = res.data || {};
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-      if (plans.length && !plans.some(p => p.code === selectedPlan)) {
-        selectedPlan = plans[0].code;
-      }
-
+      if (plans.length && !plans.some(p => p.code === selectedPlan)) selectedPlan = plans[0].code;
       renderPlans();
       renderCryptoOptions();
       if (showMessage) setResult("Plans loaded", false, upgradeResult);
@@ -1565,7 +1617,6 @@
           <div class="muted">${escapeHtml(plan.code)} billing</div>
         </div>
       `).join("");
-
       document.querySelectorAll(".plan-card").forEach(card => {
         card.onclick = () => {
           selectedPlan = card.dataset.plan;
@@ -1625,26 +1676,13 @@
             <div class="address-box">${escapeHtml(payment.address)}</div>
             <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
             <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
-
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
               <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
               <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
               <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
             </div>
-
-            ${waiting ? `
-              <div class="waiting-box">
-                <div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div>
-                <div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div>
-              </div>
-            ` : ""}
-
-            ${verified ? `
-              <div class="confirm-box">
-                <div><b>✅ Payment confirmed</b></div>
-                <div class="muted" style="margin-top:8px;">Your plan should already be active.</div>
-              </div>
-            ` : ""}
+            ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div><div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div></div>` : ""}
+            ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed</b></div><div class="muted" style="margin-top:8px;">Your plan should already be active.</div></div>` : ""}
           </div>
         </div>
       `;
@@ -1688,7 +1726,6 @@
       const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments)
         ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
         : [];
-
       const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments)
         ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
         : [];
@@ -1733,29 +1770,14 @@
               <div class="address-box">${escapeHtml(payment.address)}</div>
               <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
               <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-
               <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
                 <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
                 <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
               </div>
-
               ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
-
-              ${waiting ? `
-                <div class="waiting-box">
-                  <div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div>
-                  <div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div>
-                  <div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div>
-                </div>
-              ` : ""}
-
-              ${verified ? `
-                <div class="confirm-box">
-                  <div><b>✅ Payment confirmed and successful</b></div>
-                  <div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div>
-                </div>
-              ` : ""}
+              ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div><div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div><div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div></div>` : ""}
+              ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed and successful</b></div><div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div></div>` : ""}
             </div>
           </div>
         </div>
@@ -1768,7 +1790,6 @@
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
-
       let res = await authorizedFetch("/payment-request", {
         method: "POST",
         body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
@@ -1783,7 +1804,6 @@
       }
 
       setBusy(requestPaymentBtn, false);
-
       if (!res.ok) {
         setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
         return;
@@ -1798,24 +1818,19 @@
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
-
       setResult("Payment request generated.", false, upgradeResult);
       renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
-
       await loadPayments(false);
     }
 
     async function markPaymentSent(paymentId, backend) {
       const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
       if (!payment) return;
-
       const status = String(payment.status || "").toLowerCase();
-
       if (status === "verified") {
         showToast("This payment is already verified");
         return;
       }
-
       if (status === "awaiting_confirmation") {
         waitingPaymentId = payment.id;
         localStorage.setItem("waitingPaymentId", payment.id);
@@ -1847,7 +1862,6 @@
 
     function handleWaitingPaymentState(payment) {
       const status = String(payment.status || "").toLowerCase();
-
       if (status === "verified") {
         waitingPaymentId = "";
         localStorage.removeItem("waitingPaymentId");
@@ -1856,13 +1870,11 @@
         loadMe(false);
         return;
       }
-
       if (status === "awaiting_confirmation" || status === "pending") {
         renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
         startPaymentPolling(payment.id, payment.backend);
         return;
       }
-
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
@@ -1870,30 +1882,23 @@
 
     function startPaymentPolling(paymentId, backend) {
       stopPaymentPolling();
-
       const run = async () => {
         const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
         if (!res.ok) return;
-
         const incoming = Array.isArray(res.data?.payments)
           ? res.data.payments.map(p => normalizePaymentItem(p, backend))
           : [];
-
         const current = incoming.find(p => p.id === paymentId);
         if (!current) return;
-
         const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
         paymentsStore = sortPayments([...incoming, ...otherPayments]);
         renderPaymentsTable();
 
         const status = String(current.status || "").toLowerCase();
-        const pollText = document.getElementById("paymentPollText");
+        const pollText = $("paymentPollText");
         if (pollText) {
-          if (status === "awaiting_confirmation") {
-            pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-          } else if (status === "pending") {
-            pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
-          }
+          if (status === "awaiting_confirmation") pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+          else if (status === "pending") pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
         }
 
         if (status === "verified") {
@@ -1905,7 +1910,6 @@
           showToast("Payment confirmed");
         }
       };
-
       run();
       paymentPoller = setInterval(run, 5000);
     }
@@ -1913,17 +1917,49 @@
     function openUpgradeModal() {
       if (overlay) overlay.style.display = "block";
       if (upgradeModal) upgradeModal.style.display = "block";
-
-      const p = waitingPaymentId
-        ? paymentsStore.find(x => x.id === waitingPaymentId)
-        : getLatestInterestingPayment();
-
+      const p = waitingPaymentId ? paymentsStore.find(x => x.id === waitingPaymentId) : getLatestInterestingPayment();
       if (p) renderPaymentRequestBox(p);
     }
 
     function closeUpgradeModal() {
-      if (overlay) overlay.style.display = "none";
       if (upgradeModal) upgradeModal.style.display = "none";
+      syncOverlay();
+    }
+
+    function openSettingsModal() {
+      if (overlay) overlay.style.display = "block";
+      if (settingsModal) settingsModal.style.display = "block";
+      if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
+      if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
+      if (modalChartMetricSelect) modalChartMetricSelect.value = chartMetricSelect?.value || "clicks";
+      if (settingsSearchSummary) settingsSearchSummary.textContent = searchInput?.value?.trim() ? `Searching for: ${searchInput.value.trim()}` : "No active search";
+    }
+
+    function closeSettingsModal() {
+      if (settingsModal) settingsModal.style.display = "none";
+      syncOverlay();
+    }
+
+    function openSecurityModal() {
+      if (overlay) overlay.style.display = "block";
+      if (securityModal) securityModal.style.display = "block";
+      renderSecurityModal();
+    }
+
+    function closeSecurityModal() {
+      if (securityModal) securityModal.style.display = "none";
+      syncOverlay();
+    }
+
+    function closeAllModals() {
+      closeUpgradeModal();
+      closeSettingsModal();
+      closeSecurityModal();
+    }
+
+    function syncOverlay() {
+      const anyOpen = [upgradeModal, settingsModal, securityModal].some(m => m && m.style.display === "block");
+      if (overlay) overlay.style.display = anyOpen ? "block" : "none";
     }
 
     function showPaymentDetails(paymentId, backend = "") {
@@ -1936,11 +1972,11 @@
     function updateMiniStats() {
       const primaryLinks = dataStore.filter(x => x.backend === "primary");
       const legacyLinks = dataStore.filter(x => x.backend === "legacy");
-
       if (primaryLinksCount) primaryLinksCount.textContent = primaryLinks.length;
       if (legacyLinksCount) legacyLinksCount.textContent = legacyLinks.length;
       if (primaryClicksCount) primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
       if (legacyClicksCount) legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      if (liveThreatCount) liveThreatCount.textContent = dataStore.filter(x => Number(x.maxRisk || 0) > 60).length;
     }
 
     async function checkOneBackendHealth(backend) {
@@ -1950,17 +1986,12 @@
     }
 
     async function checkBackendHealth() {
-      const [p, l] = await Promise.all([
-        checkOneBackendHealth("primary"),
-        checkOneBackendHealth("legacy")
-      ]);
-
+      const [p, l] = await Promise.all([checkOneBackendHealth("primary"), checkOneBackendHealth("legacy")]);
       if (primaryHealth) {
         primaryHealth.innerHTML = p.ok
           ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
           : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
       }
-
       if (legacyHealth) {
         legacyHealth.innerHTML = l.ok
           ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
@@ -1968,10 +1999,46 @@
       }
     }
 
+    function getFilteredData() {
+      const q = (searchInput?.value || "").trim().toLowerCase();
+      const backendOnly = backendFilter?.value || "all";
+      const statusOnly = statusFilter?.value || "all";
+      const dateRange = dateRangeFilter?.value || "all";
+      const onlyHighRisk = !!onlyHighRiskToggle?.checked;
+      const now = Date.now();
+
+      let filtered = dataStore.filter(item => {
+        const slug = String(item.slug || "").toLowerCase();
+        const url = String(item.url || "").toLowerCase();
+        const backend = String(item.backend || "").toLowerCase();
+        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q) || String(item.note || "").toLowerCase().includes(q) || String(item.campaign || "").toLowerCase().includes(q);
+        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+        const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
+        const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
+
+        let dateMatch = true;
+        if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
+        if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
+        if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
+
+        return queryMatch && backendMatch && statusMatch && dateMatch && riskMatch;
+      });
+
+      const sortKey = sortFilter?.value || "newest";
+      filtered.sort((a, b) => {
+        if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+        if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
+        if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
+        if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+      });
+
+      return filtered;
+    }
+
     async function loadLinks(showLoading = false) {
       if (loadingLinks) return;
       loadingLinks = true;
-
       if (showLoading) {
         setBusy(refreshBtn, true, "Loading...");
         setResult("Loading links...", false);
@@ -1989,7 +2056,6 @@
       const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
       dataStore = mergeLinks(primaryItems, legacyItems);
-
       const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
       if (totalLinks) totalLinks.textContent = dataStore.length;
       if (totalClicks) totalClicks.textContent = total;
@@ -1999,6 +2065,10 @@
       renderTable();
       drawChart();
       renderRanking();
+      renderSecurityInsights();
+      renderActivityTimeline();
+      renderOperationalBoard();
+      renderBackend2Summary();
 
       if (showLoading) {
         const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
@@ -2009,36 +2079,31 @@
 
     function renderTable() {
       if (!table) return;
-      const q = (searchInput?.value || "").trim().toLowerCase();
-      const backendOnly = backendFilter?.value || "all";
-
-      const filtered = dataStore.filter(item => {
-        const slug = String(item.slug || "").toLowerCase();
-        const url = String(item.url || "").toLowerCase();
-        const backend = String(item.backend || "").toLowerCase();
-
-        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-        const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q);
-
-        return backendMatch && queryMatch;
-      });
-
+      const filtered = getFilteredData();
+      if (visibleStatsText) visibleStatsText.textContent = `${filtered.length} visible links`;
       if (!filtered.length) {
-        table.innerHTML = `<tr><td colspan="8" class="muted">No links found</td></tr>`;
+        table.innerHTML = `<tr><td colspan="11" class="muted">No links found</td></tr>`;
         return;
       }
 
       table.innerHTML = filtered.map(item => {
         const publicLink = buildPublicLink(item.slug, item.backend);
-
+        const checked = selectedLinks.has(`${item.backend}:${item.slug}`) ? "checked" : "";
         return `
           <tr>
+            <td><input class="row-select" type="checkbox" data-key="${escapeHtml(item.backend)}:${escapeHtml(item.slug)}" ${checked} /></td>
             <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
-            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td>
+              <b>${escapeHtml(item.slug)}</b>
+              ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
+            </td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+            <td>${scoreLink(item)}/100</td>
+            <td>${detectFraud(item)}</td>
             <td>
               <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
               <div class="muted">${escapeHtml(item.url || "")}</div>
+              ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
             </td>
             <td>${getStatus(item)}</td>
             <td>${fmtExpire(item.expire)}</td>
@@ -2061,22 +2126,45 @@
       document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
       document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
       document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".row-select").forEach(box => {
+        box.addEventListener("change", () => {
+          const key = box.dataset.key;
+          if (box.checked) selectedLinks.add(key);
+          else selectedLinks.delete(key);
+          syncSelectAllState();
+        });
+      });
+      syncSelectAllState();
+    }
+
+    function syncSelectAllState() {
+      if (!selectAllLinks) return;
+      const visible = [...document.querySelectorAll(".row-select")];
+      if (!visible.length) {
+        selectAllLinks.checked = false;
+        selectAllLinks.indeterminate = false;
+        return;
+      }
+      const checked = visible.filter(i => i.checked).length;
+      selectAllLinks.checked = checked === visible.length;
+      selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
     }
 
     function drawChart() {
-      const canvas = document.getElementById("chart");
+      const canvas = $("chart");
       if (!canvas) return;
       if (chart) chart.destroy();
-
-      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      const filtered = getFilteredData();
+      const metric = chartMetricSelect?.value || "clicks";
+      const sorted = [...filtered].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 12);
 
       chart = new Chart(canvas, {
         type: "line",
         data: {
           labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
           datasets: [{
-            label: "Clicks",
-            data: sorted.map(i => Number(i.clicks || 0)),
+            label: metric === "score" ? "Performance Score" : "Clicks",
+            data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
             tension: 0.35
           }]
         },
@@ -2098,7 +2186,6 @@
         ranking.innerHTML = `<div class="muted">No links yet</div>`;
         return;
       }
-
       ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
         <div class="ranking-item">
           <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
@@ -2110,18 +2197,94 @@
       `).join("");
     }
 
+    function renderSecurityInsights() {
+      if (!securityInsights) return;
+      const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
+      const paused = dataStore.filter(x => x.paused).length;
+      const expired = dataStore.filter(x => getStatusKey(x) === "expired").length;
+      const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+
+      securityInsights.innerHTML = `
+        <div class="insight-card"><b>Risky links</b><div class="muted">${risky.length} links have elevated risk markers.</div></div>
+        <div class="insight-card"><b>Paused links</b><div class="muted">${paused} links are manually paused.</div></div>
+        <div class="insight-card"><b>Expired links</b><div class="muted">${expired} links are already expired.</div></div>
+        <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map(x => `${x.slug} (${x.maxRisk || 0})`).join(', ') : 'No risk data yet.'}</div></div>
+      `;
+    }
+
+    function renderSecurityModal() {
+      if (!securityModalContent) return;
+      const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60).sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+      securityModalContent.innerHTML = `
+        <div class="alert-box"><b>Security overview</b><br>${risky.length} links currently show elevated risk markers.</div>
+        ${risky.length ? risky.map(item => `
+          <div class="info-box">
+            <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+            <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>
+              <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Delete</button>
+            </div>
+          </div>
+        `).join("") : `<div class="muted">No elevated risk links found.</div>`}
+      `;
+    }
+
+    function renderActivityTimeline() {
+      if (!activityTimeline) return;
+      const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
+      activityTimeline.innerHTML = recent.length ? recent.map(item => `
+        <div class="timeline-item">
+          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+          <div class="muted">Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
+        </div>
+      `).join("") : `<div class="muted">No activity yet.</div>`;
+    }
+
+    function renderOperationalBoard() {
+      const review = $("boardReview");
+      const healthy = $("boardHealthy");
+      const attention = $("boardAttention");
+      if (!review || !healthy || !attention) return;
+
+      const needsReview = dataStore.filter(x => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
+      const healthyItems = dataStore.filter(x => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
+      const attentionItems = dataStore.filter(x => x.paused || getStatusKey(x) === "expired").slice(0, 4);
+
+      const makeCards = arr => arr.length ? arr.map(item => `
+        <div class="kanban-card">
+          <div><b>${escapeHtml(item.slug)}</b></div>
+          <div class="muted">${backendLabel(item.backend)} • ${Number(item.clicks || 0)} clicks</div>
+        </div>
+      `).join("") : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
+
+      review.innerHTML = makeCards(needsReview);
+      healthy.innerHTML = makeCards(healthyItems);
+      attention.innerHTML = makeCards(attentionItems);
+    }
+
+    function renderBackend2Summary() {
+      if (landingSummaryText) landingSummaryText.textContent = "Landing pages available through Backend2 builder with optional custom HTML, CSS, and JS.";
+      if (domainSummaryText) domainSummaryText.textContent = "Custom domains should verify through TXT records only, with Cloudflare proxy mode supported in your standard flow.";
+    }
+
     function getCreatePayload() {
       const url = urlInput?.value.trim();
       const slug = slugInput?.value.trim();
       const expireHours = expireInput?.value.trim();
+      const campaign = campaignInput?.value.trim();
+      const note = noteInput?.value.trim();
+      const riskMode = riskModeSelect?.value || "standard";
 
       if (!url) {
         setResult("Enter URL", true);
         return null;
       }
 
-      const body = { url };
+      const body = { url, riskMode };
       if (slug) body.slug = slug;
+      if (campaign) body.campaign = campaign;
+      if (note) body.note = note;
 
       if (expireHours) {
         const hours = Number(expireHours);
@@ -2157,7 +2320,6 @@
       }
 
       setBusy(button, false);
-
       if (!res.ok) {
         if (res.status === 402) {
           await loadMe(false);
@@ -2174,6 +2336,8 @@
       if (urlInput) urlInput.value = "";
       if (slugInput) slugInput.value = "";
       if (expireInput) expireInput.value = "";
+      if (campaignInput) campaignInput.value = "";
+      if (noteInput) noteInput.value = "";
 
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
@@ -2222,7 +2386,6 @@
 
     async function deleteLink(slug, backend) {
       if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
-
       let res = await authorizedFetch("/delete", {
         method: "POST",
         body: JSON.stringify({ slug })
@@ -2241,8 +2404,30 @@
         return;
       }
 
+      selectedLinks.delete(`${backend}:${slug}`);
       showToast(`Deleted from ${backendLabel(backend)}`);
       await loadLinks(false);
+    }
+
+    async function bulkDeleteSelected() {
+      const items = [...selectedLinks];
+      if (!items.length) return showToast("No selected links");
+      if (!confirm(`Delete ${items.length} selected links?`)) return;
+      for (const key of items) {
+        const [backend, slug] = key.split(":");
+        await deleteLink(slug, backend);
+      }
+      selectedLinks.clear();
+      renderTable();
+    }
+
+    async function bulkCopySelected() {
+      const items = [...selectedLinks].map(key => {
+        const [backend, slug] = key.split(":");
+        return buildPublicLink(slug, backend);
+      });
+      if (!items.length) return showToast("No selected links");
+      await copyLink(items.join("\n"));
     }
 
     async function copyLink(text) {
@@ -2266,11 +2451,42 @@
       );
     }
 
-    async function getGeo(ip) {
-      if (!ip || ip === "unknown") {
-        return { country_name: "Unknown", latitude: 20, longitude: 0 };
-      }
+    function downloadTextFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
 
+    function exportVisibleAsCsv() {
+      const rows = getFilteredData();
+      const header = ["backend","slug","url","clicks","score","fraud","status","expire","createdAt"];
+      const lines = [header.join(",")].concat(rows.map(item => {
+        const values = [
+          backendLabel(item.backend),
+          item.slug || "",
+          item.url || "",
+          Number(item.clicks || 0),
+          scoreLink(item),
+          detectFraud(item),
+          getStatusKey(item),
+          item.expire || "",
+          item.createdAt || ""
+        ];
+        return values.map(v => `"${String(v).replaceAll('"','""')}"`).join(",");
+      }));
+      downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
+    }
+
+    function exportVisibleAsJson() {
+      downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
+    }
+
+    async function getGeo(ip) {
+      if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
       try {
         const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
         const data = await res.json();
@@ -2304,47 +2520,23 @@
     function openInfoPanel(type) {
       if (!panel || !panelContent) return;
       panel.style.display = "block";
-
       if (type === "about") {
         panelContent.innerHTML = `
           <h3>ℹ️ About Rattle Link</h3>
-          <div class="muted">
-            Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.
-          </div>
-          <div class="info-box" style="margin-top:12px;">
-            <b>What it does</b>
-            <div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div>
-          </div>
-          <div class="info-box">
-            <b>Why two backends</b>
-            <div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div>
-          </div>
-          <div class="info-box">
-            <b>Main purpose</b>
-            <div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div>
-          </div>
+          <div class="muted">Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.</div>
+          <div class="info-box" style="margin-top:12px;"><b>What it does</b><div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div></div>
+          <div class="info-box"><b>Why two backends</b><div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div></div>
+          <div class="info-box"><b>Main purpose</b><div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div></div>
         `;
       }
-
       if (type === "legal") {
         panelContent.innerHTML = `
           <h3>📜 Legal</h3>
-          <div class="info-box">
-            <b>Acceptable Use</b>
-            <div class="muted">Do not use Rattle Link for spam, phishing, malware, scams, harmful redirects, or illegal content.</div>
-          </div>
-          <div class="info-box">
-            <b>Privacy</b>
-            <div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div>
-          </div>
-          <div class="info-box">
-            <b>Billing</b>
-            <div class="muted">Paid access activates after payment verification. Subscription status may change when expired, paused, or manually updated by admin.</div>
-          </div>
-          <div class="info-box">
-            <b>User Responsibility</b>
-            <div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div>
-          </div>
+          <div class="info-box"><b>Acceptable Use</b><div class="muted">Do not use Rattle Link for spam, phishing, malware, scams, harmful redirects, or illegal content.</div></div>
+          <div class="info-box"><b>Privacy</b><div class="muted">Account details, payment references, click records, device info, and IP-related data may be processed for service operation, analytics, and anti-abuse protection.</div></div>
+          <div class="info-box"><b>Billing</b><div class="muted">Paid access activates after payment verification. Subscription status may change when expired, paused, or manually updated by admin.</div></div>
+          <div class="info-box"><b>User Responsibility</b><div class="muted">You are responsible for the content behind your links and for protecting your login credentials.</div></div>
+          <div class="info-box"><b>Domains</b><div class="muted">Backend2 custom domain verification is expected to rely on TXT records rather than direct A-record or VPS-IP checks in the standard setup.</div></div>
         `;
       }
     }
@@ -2354,7 +2546,6 @@
       panel.style.display = "block";
       panelContent.innerHTML = `
         <h3>🆘 Support Center</h3>
-
         <div class="info-box">
           <b>Contact Support</b>
           <div class="support-list" style="margin-top:8px;">
@@ -2364,40 +2555,14 @@
             <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g,''))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
           </div>
         </div>
-
-        <div class="info-box">
-          <b>Common Help Topics</b>
-          <div class="muted" style="margin-top:8px;">
-            • login/session problems<br>
-            • payment verification delay<br>
-            • link paused or expired<br>
-            • link analytics questions<br>
-            • account verification help
-          </div>
-        </div>
-
-        <div class="info-box">
-          <b>Before contacting support</b>
-          <div class="muted" style="margin-top:8px;">
-            Include your email, payment ID if relevant, backend used, and a short explanation of the problem.
-          </div>
-        </div>
-
-        <div class="info-box">
-          <b>Quick Buttons</b>
-          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-            <a class="btn" href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email Support</a>
-            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
-            <a class="btn" href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord</a>
-          </div>
-        </div>
+        <div class="info-box"><b>Common Help Topics</b><div class="muted" style="margin-top:8px;">• login/session problems<br>• payment verification delay<br>• link paused or expired<br>• link analytics questions<br>• account verification help<br>• domain TXT verification</div></div>
+        <div class="info-box"><b>Before contacting support</b><div class="muted" style="margin-top:8px;">Include your email, payment ID if relevant, backend used, and a short explanation of the problem.</div></div>
+        <div class="info-box"><b>Quick Buttons</b><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><a class="btn" href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email Support</a><a class="btn" href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a><a class="btn" href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord</a></div></div>
       `;
     }
 
     function toggleAllFaq(open) {
-      document.querySelectorAll(".faq-item").forEach(item => {
-        item.classList.toggle("open", !!open);
-      });
+      document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
     }
 
     async function showGeo(slug, backend) {
@@ -2412,18 +2577,13 @@
 
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
-
-      const mapEl = document.getElementById("map");
+      const mapEl = $("map");
       if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
 
       const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
-
       if (!history.length) {
         L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
         return;
@@ -2437,15 +2597,9 @@
         lat += offset * 0.25;
         lng += offset * 0.25;
         offset++;
-
-        L.circle([lat, lng], {
-          radius: 45000,
-          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(map).bindPopup(`
-          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
-          ${escapeHtml(h.ip || "unknown")}<br>
-          Risk: ${Number(h.risk || 0)}
-        `);
+        L.circle([lat, lng], { radius: 45000, color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff" })
+          .addTo(map)
+          .bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
       }
     }
 
@@ -2472,13 +2626,13 @@
         history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
           ip: "unknown",
           time: Date.now() - (i * 30000),
-          risk: 0,
+          risk: Number(link.maxRisk || 0),
           vpn: false,
           bot: false
         }));
       }
 
-      const statsBody = document.getElementById("statsBody");
+      const statsBody = $("statsBody");
       if (!history.length) {
         if (statsBody) statsBody.innerHTML = "<p class='muted'>No clicks recorded</p>";
         return;
@@ -2496,18 +2650,13 @@
       const dataPoints = history.map((_, i) => i + 1);
 
       if (statsChartInstance) statsChartInstance.destroy();
-
-      const statsCanvas = document.getElementById("statsChart");
+      const statsCanvas = $("statsChart");
       if (statsCanvas) {
         statsChartInstance = new Chart(statsCanvas, {
           type: "line",
           data: {
             labels,
-            datasets: [{
-              label: "Clicks Timeline",
-              data: dataPoints,
-              tension: 0.4
-            }]
+            datasets: [{ label: "Clicks Timeline", data: dataPoints, tension: 0.4 }]
           },
           options: {
             responsive: true,
@@ -2522,31 +2671,18 @@
 
       const stats = {};
       for (const h of history) {
-        if (!stats[h.ip]) {
-          stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
-        }
+        if (!stats[h.ip]) stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
         stats[h.ip].count++;
         stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
         stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
       }
 
       const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
-
-      let html = `
-        <div><b>Total Clicks:</b> ${history.length}</div>
-        <div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>
-      `;
-
+      let html = `<div><b>Total Clicks:</b> ${history.length}</div><div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>`;
       sorted.slice(0, 10).forEach(([ip, data]) => {
         const danger = data.risk > 70;
         html += `
-          <div style="
-            margin-bottom:10px;
-            padding:10px;
-            border-radius:10px;
-            background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};
-            border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};
-          ">
+          <div style="margin-bottom:10px;padding:10px;border-radius:10px;background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};">
             <b>${escapeHtml(ip)}</b>
             ${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}
             ${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}
@@ -2556,41 +2692,29 @@
           </div>
         `;
       });
-
       if (statsBody) statsBody.innerHTML = html;
 
-      const mapEl = document.getElementById("map");
+      const mapEl = $("map");
       if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
 
       let offset = 0;
       for (const h of history) {
         const geo = await getGeo(h.ip);
         let lat = Number(geo.latitude || (Math.random() * 140 - 70));
         let lng = Number(geo.longitude || (Math.random() * 360 - 180));
-
         lat += offset * 0.22;
         lng += offset * 0.22;
         offset++;
-
-        L.circle([lat, lng], {
-          radius: 40000,
-          color: h.risk > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(map).bindPopup(`
-          <b>${escapeHtml(geo.country_name || "Unknown")}</b><br>
-          ${escapeHtml(h.ip || "unknown")}<br>
-          Risk: ${Number(h.risk || 0)}
-        `);
+        L.circle([lat, lng], { radius: 40000, color: h.risk > 70 ? "#ef4444" : "#00ffff" })
+          .addTo(map)
+          .bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
       }
     }
 
     async function processFile(file, backend) {
       if (!file) return setResult("Choose a CSV file first", true);
-
       const text = await file.text();
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (!lines.length) return setResult("CSV is empty", true);
@@ -2635,7 +2759,6 @@
           setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
           break;
         }
-
         okCount++;
         setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
       }
@@ -2655,6 +2778,23 @@
       Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
     }
 
+    function applyAutoRefreshState() {
+      localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
+      if (autoRefreshToggle) autoRefreshToggle.checked = autoRefreshEnabled;
+      if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
+      if (liveSyncBadge) {
+        liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
+        liveSyncBadge.className = `badge ${autoRefreshEnabled ? 'live' : 'paused'}`;
+      }
+    }
+
+    function applyCompactModeState() {
+      localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
+      document.body.classList.toggle("compact", compactModeEnabled);
+      if (compactModeToggle) compactModeToggle.checked = compactModeEnabled;
+      if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
+    }
+
     function logout() {
       stopPaymentPolling();
       localStorage.removeItem("token");
@@ -2666,20 +2806,22 @@
     }
 
     function setupKeyboardShortcuts() {
-      [urlInput, slugInput, expireInput].forEach(el => {
+      [urlInput, slugInput, expireInput, campaignInput, noteInput].forEach(el => {
         if (!el) return;
         el.addEventListener("keydown", e => {
           if (e.key === "Enter") createLinkForBackend(preferredBackend);
         });
       });
 
-      if (searchInput) searchInput.addEventListener("input", renderTable);
-      if (backendFilter) backendFilter.addEventListener("change", renderTable);
+      [searchInput, backendFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
+        if (!el) return;
+        el.addEventListener("input", () => { renderTable(); drawChart(); });
+        el.addEventListener("change", () => { renderTable(); drawChart(); });
+      });
     }
 
     function wireDropZone(zone, backend) {
       if (!zone) return;
-
       ["dragenter", "dragover"].forEach(eventName => {
         zone.addEventListener(eventName, e => {
           e.preventDefault();
@@ -2687,7 +2829,6 @@
           zone.classList.add("dragover");
         });
       });
-
       ["dragleave", "dragend", "drop"].forEach(eventName => {
         zone.addEventListener(eventName, e => {
           e.preventDefault();
@@ -2695,7 +2836,6 @@
           zone.classList.remove("dragover");
         });
       });
-
       zone.addEventListener("drop", async e => {
         const file = e.dataTransfer?.files?.[0];
         if (!file) return;
@@ -2712,9 +2852,7 @@
 
     function setupFaq() {
       document.querySelectorAll(".faq-q").forEach(btn => {
-        btn.addEventListener("click", () => {
-          btn.parentElement.classList.toggle("open");
-        });
+        btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
       });
     }
 
@@ -2726,8 +2864,22 @@
       window.location.href = "domain-manager.html";
     }
 
+    function clearFilters() {
+      if (searchInput) searchInput.value = "";
+      if (backendFilter) backendFilter.value = "all";
+      if (statusFilter) statusFilter.value = "all";
+      if (dateRangeFilter) dateRangeFilter.value = "all";
+      if (sortFilter) sortFilter.value = "newest";
+      if (onlyHighRiskToggle) onlyHighRiskToggle.checked = false;
+      renderTable();
+      drawChart();
+    }
+
     if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
     if (upgradeBtn) upgradeBtn.addEventListener("click", openUpgradeModal);
+    if (quickSettingsBtn) quickSettingsBtn.addEventListener("click", openSettingsModal);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportVisibleAsCsv);
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportVisibleAsJson);
     if (createLegacyBtn) createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
     if (createPrimaryBtn) createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
     if (bulkLegacyBtn) bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
@@ -2737,6 +2889,51 @@
     if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
     if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
     if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+    if (clearFiltersBtn) clearFiltersBtn.addEventListener("click", clearFilters);
+    if (bulkCopyBtn) bulkCopyBtn.addEventListener("click", bulkCopySelected);
+    if (bulkDeleteBtn) bulkDeleteBtn.addEventListener("click", bulkDeleteSelected);
+    if (bulkRefreshStatsBtn) bulkRefreshStatsBtn.addEventListener("click", () => { renderTable(); drawChart(); renderSecurityInsights(); });
+    if (clearNotificationsBtn) clearNotificationsBtn.addEventListener("click", () => { notificationsStore = []; renderNotifications(); });
+    if (refreshActivityBtn) refreshActivityBtn.addEventListener("click", renderActivityTimeline);
+    if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperationalBoard);
+    if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
+
+    if (selectAllLinks) {
+      selectAllLinks.addEventListener("change", () => {
+        document.querySelectorAll(".row-select").forEach(box => {
+          box.checked = selectAllLinks.checked;
+          const key = box.dataset.key;
+          if (box.checked) selectedLinks.add(key);
+          else selectedLinks.delete(key);
+        });
+        syncSelectAllState();
+      });
+    }
+
+    if (compactModeToggle) compactModeToggle.addEventListener("change", () => {
+      compactModeEnabled = compactModeToggle.checked;
+      applyCompactModeState();
+    });
+
+    if (autoRefreshToggle) autoRefreshToggle.addEventListener("change", () => {
+      autoRefreshEnabled = autoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    if (modalCompactModeToggle) modalCompactModeToggle.addEventListener("change", () => {
+      compactModeEnabled = modalCompactModeToggle.checked;
+      applyCompactModeState();
+    });
+
+    if (modalAutoRefreshToggle) modalAutoRefreshToggle.addEventListener("change", () => {
+      autoRefreshEnabled = modalAutoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    if (modalChartMetricSelect) modalChartMetricSelect.addEventListener("change", () => {
+      if (chartMetricSelect) chartMetricSelect.value = modalChartMetricSelect.value;
+      drawChart();
+    });
 
     if (verifySessionBtn) {
       verifySessionBtn.addEventListener("click", async () => {
@@ -2749,26 +2946,25 @@
     if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
     if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
     if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", goToLandingPage);
-    if (viewLandingLinksBtn) {
-      viewLandingLinksBtn.addEventListener("click", () => {
-        setExtraResult("Opening landing.html ...");
-        goToLandingPage();
-      });
-    }
+    if (viewLandingLinksBtn) viewLandingLinksBtn.addEventListener("click", () => { setExtraResult("Opening landing.html ..."); goToLandingPage(); });
     if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
-    if (refreshDomainsBtn) {
-      refreshDomainsBtn.addEventListener("click", () => {
-        setExtraResult("Opening domain-manager.html ...");
-        goToDomainManager();
-      });
-    }
+    if (refreshDomainsBtn) refreshDomainsBtn.addEventListener("click", () => { setExtraResult("Opening domain-manager.html ..."); goToDomainManager(); });
+
+    if ($("quickCreatePrimary")) $("quickCreatePrimary").addEventListener("click", () => createLinkForBackend("primary"));
+    if ($("quickCreateLegacy")) $("quickCreateLegacy").addEventListener("click", () => createLinkForBackend("legacy"));
+    if ($("quickPaymentBtn")) $("quickPaymentBtn").addEventListener("click", openUpgradeModal);
+    if ($("quickLandingBtn")) $("quickLandingBtn").addEventListener("click", goToLandingPage);
+    if ($("quickDomainBtn")) $("quickDomainBtn").addEventListener("click", goToDomainManager);
+    if ($("quickSecurityBtn")) $("quickSecurityBtn").addEventListener("click", openSecurityModal);
 
     (async function init() {
       if (!ensureAuth()) return;
-
       setTopBackendBadge();
+      applyAutoRefreshState();
+      applyCompactModeState();
       setupKeyboardShortcuts();
       setupFaq();
+      renderNotifications();
       wireDropZone(dropZoneLegacy, "legacy");
       wireDropZone(dropZonePrimary, "primary");
 
@@ -2787,7 +2983,7 @@
 
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
-        if (document.hidden) return;
+        if (document.hidden || !autoRefreshEnabled) return;
         loadMe(false);
         loadLinks(false);
         loadPayments(false);
@@ -2803,6 +2999,9 @@
     window.closePanel = closePanel;
     window.openUpgradeModal = openUpgradeModal;
     window.closeUpgradeModal = closeUpgradeModal;
+    window.closeSettingsModal = closeSettingsModal;
+    window.closeSecurityModal = closeSecurityModal;
+    window.closeAllModals = closeAllModals;
     window.loadPayments = loadPayments;
     window.loadPlans = loadPlans;
     window.logout = logout;
@@ -2810,6 +3009,9 @@
     window.showToast = showToast;
     window.goToLandingPage = goToLandingPage;
     window.goToDomainManager = goToDomainManager;
+    window.showHistory = showHistory;
+    window.showGeo = showGeo;
+    window.deleteLink = deleteLink;
   </script>
 </body>
 </html>
