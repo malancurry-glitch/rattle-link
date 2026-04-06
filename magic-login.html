@@ -4,218 +4,219 @@
   <meta charset="UTF-8" />
   <title>Magic Login - Rattle Link</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    * { box-sizing: border-box; }
+    *{box-sizing:border-box;}
 
-    body {
-      margin: 0;
-      font-family: Inter, Arial, sans-serif;
-      background: radial-gradient(circle at top, #020617, #000);
-      color: #e2e8f0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:radial-gradient(circle at top,#020617,#000);
+      color:#e2e8f0;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
     }
 
-    .card {
-      width: 100%;
-      max-width: 470px;
-      background: #020617;
-      padding: 28px;
-      border-radius: 16px;
-      border: 1px solid rgba(0, 255, 255, 0.18);
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+    .card{
+      width:100%;
+      max-width:470px;
+      background:#020617;
+      padding:28px;
+      border-radius:16px;
+      border:1px solid rgba(0,255,255,0.18);
+      text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
     }
 
-    h2 {
-      color: #00ffff;
-      margin: 0 0 10px;
+    h2{
+      color:#00ffff;
+      margin:0 0 10px;
     }
 
-    .sub {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 18px;
-      line-height: 1.5;
+    .sub{
+      font-size:13px;
+      color:#94a3b8;
+      margin-bottom:18px;
+      line-height:1.5;
     }
 
-    input {
-      width: 100%;
-      padding: 13px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      background: #000;
-      color: #0ff;
-      margin-bottom: 12px;
-      outline: none;
+    input{
+      width:100%;
+      padding:13px 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,255,255,0.2);
+      background:#000;
+      color:#0ff;
+      margin-bottom:12px;
+      outline:none;
     }
 
-    input:focus {
-      box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.12);
+    input:focus{
+      box-shadow:0 0 0 2px rgba(0,255,255,0.12);
     }
 
-    button, a.btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: #0ff;
-      color: #000;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: 0.2s ease;
-      text-decoration: none;
-      display: block;
+    button, a.btn{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#0ff;
+      color:#000;
+      font-weight:700;
+      cursor:pointer;
+      margin-top:8px;
+      transition:.2s ease;
+      text-decoration:none;
+      display:block;
     }
 
-    button:hover, a.btn:hover {
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
-      transform: translateY(-1px);
+    button:hover, a.btn:hover{
+      box-shadow:0 0 20px rgba(0,255,255,.35);
+      transform:translateY(-1px);
     }
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
     }
 
-    .secondary {
-      background: #020617;
-      color: #0ff;
-      border: 1px solid #0ff;
+    .secondary{
+      background:#020617;
+      color:#0ff;
+      border:1px solid #0ff;
     }
 
-    .muted {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 14px;
-      line-height: 1.5;
+    .muted{
+      font-size:12px;
+      color:#94a3b8;
+      margin-top:14px;
+      line-height:1.5;
     }
 
-    .error {
-      color: #ef4444;
-      font-size: 13px;
-      margin-top: 14px;
-      line-height: 1.5;
+    .error{
+      color:#ef4444;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
     }
 
-    .success {
-      color: #22c55e;
-      font-size: 13px;
-      margin-top: 14px;
-      line-height: 1.5;
+    .success{
+      color:#22c55e;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
     }
 
-    .warn {
-      color: #f59e0b;
-      font-size: 13px;
-      margin-top: 14px;
-      line-height: 1.5;
+    .warn{
+      color:#f59e0b;
+      font-size:13px;
+      margin-top:14px;
+      line-height:1.5;
     }
 
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid #000;
-      border-top: 2px solid transparent;
-      border-radius: 50%;
-      display: inline-block;
-      animation: spin 1s linear infinite;
-      margin-left: 6px;
-      vertical-align: middle;
+    .spinner{
+      width:14px;
+      height:14px;
+      border:2px solid #000;
+      border-top:2px solid transparent;
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      margin-left:6px;
+      vertical-align:middle;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
     }
 
-    .timer {
-      margin-top: 12px;
-      font-size: 12px;
-      color: #f59e0b;
-      min-height: 16px;
+    .timer{
+      margin-top:12px;
+      font-size:12px;
+      color:#f59e0b;
+      min-height:16px;
     }
 
-    .qr {
-      margin-top: 14px;
+    .qr{
+      margin-top:14px;
     }
 
-    .hidden {
-      display: none !important;
+    .hidden{
+      display:none !important;
     }
 
-    .divider {
-      height: 1px;
-      background: rgba(148, 163, 184, 0.15);
-      margin: 18px 0;
+    .divider{
+      height:1px;
+      background:rgba(148,163,184,.15);
+      margin:18px 0;
     }
 
-    .small-btn {
-      padding: 10px 12px;
-      font-size: 13px;
+    .small-btn{
+      padding:10px 12px;
+      font-size:13px;
     }
 
-    .status-card {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(0, 255, 255, 0.15);
-      background: rgba(0, 255, 255, 0.04);
-      text-align: left;
+    .status-card{
+      margin-top:14px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,0.15);
+      background:rgba(0,255,255,0.04);
+      text-align:left;
     }
 
-    .status-card h3 {
-      margin: 0 0 8px;
-      color: #00ffff;
-      font-size: 14px;
+    .status-card h3{
+      margin:0 0 8px;
+      color:#00ffff;
+      font-size:14px;
     }
 
-    .status-card p {
-      margin: 0 0 8px;
-      font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.6;
+    .status-card p{
+      margin:0 0 8px;
+      font-size:12px;
+      color:#94a3b8;
+      line-height:1.6;
     }
 
-    .backend-badge {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      color: #00ffff;
-      margin-top: 4px;
+    .backend-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(0,255,255,0.2);
+      color:#00ffff;
+      margin-top:4px;
     }
 
-    .back-link {
-      display: block;
-      margin-top: 14px;
-      color: #60a5fa;
-      font-size: 12px;
-      text-decoration: none;
-      cursor: pointer;
+    .back-link{
+      display:block;
+      margin-top:14px;
+      color:#60a5fa;
+      font-size:12px;
+      text-decoration:none;
+      cursor:pointer;
     }
 
-    .back-link:hover {
-      text-decoration: underline;
+    .back-link:hover{
+      text-decoration:underline;
     }
 
-    .inline-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
+    .inline-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
     }
 
-    .inline-actions button {
-      flex: 1;
-      min-width: 120px;
-      margin-top: 0;
+    .inline-actions button{
+      flex:1;
+      min-width:120px;
+      margin-top:0;
     }
   </style>
 </head>
@@ -234,6 +235,11 @@
 
       <div id="qr" class="qr"></div>
       <div class="timer" id="timer"></div>
+    </div>
+
+    <!-- This section displays the magic token always -->
+    <div id="tokenSection">
+      <p><strong>Magic Token:</strong> <span id="magicTokenDisplay">None</span></p>
     </div>
 
     <div id="statusSection" class="hidden">
@@ -288,6 +294,7 @@
     const timerEl = document.getElementById("timer");
     const qrBox = document.getElementById("qr");
     const backToIndex = document.getElementById("backToIndex");
+    const magicTokenDisplay = document.getElementById("magicTokenDisplay");
 
     const requestSection = document.getElementById("requestSection");
     const statusSection = document.getElementById("statusSection");
@@ -303,178 +310,230 @@
     let currentBackend = null;
     let lastEmailUsed = null;
 
-    function normalizeApiUrl(url){
-      return String(url || "").replace(/\/+$/, "");
+    // Always display the token on the page
+    function displayToken(token) {
+      magicTokenDisplay.textContent = token || "None";
     }
 
-    function isUsableApiUrl(url){
-      const clean = normalizeApiUrl(url);
-      return !!clean && /^https?:\/\//i.test(clean);
-    }
-
-    function getParams(){
-      return new URLSearchParams(window.location.search);
-    }
-
-    function safeText(value){
+    function safeText(value) {
       return String(value || "").trim();
     }
 
-    function isEmail(value){
+    function isEmail(value) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
     }
 
-    function getDeviceInfo(){
-      return {
-        ua: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screen: `${screen.width}x${screen.height}`,
-        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
-      };
-    }
-
-    function backendLabel(name){
-      return name === "primary" ? "Backend 2" : "Legacy AWS";
-    }
-
-    function showBackendBadge(target, backend){
-      if (!backend) {
-        target.classList.add("hidden");
-        target.textContent = "";
-        return;
-      }
-      target.classList.remove("hidden");
-      target.textContent = `Using ${backendLabel(backend)}`;
-    }
-
-    function showMessage(text, type = "error"){
+    function showMessage(text, type = "error") {
       msg.textContent = text;
       msg.className = type;
     }
 
-    function setLoading(button, loadingText){
+    function setLoading(button, loadingText) {
       button.disabled = true;
       button.innerHTML = `${loadingText} <span class="spinner"></span>`;
     }
 
-    function resetButton(button, text){
+    function resetButton(button, text) {
       button.disabled = false;
       button.textContent = text;
     }
 
-    function buildIndexHref(email = "", backend = ""){
-      const query = [];
-      if (email) query.push(`email=${encodeURIComponent(email)}`);
-      if (backend) query.push(`backend=${encodeURIComponent(backend)}`);
-      return `index.html${query.length ? `?${query.join("&")}` : ""}`;
-    }
+    function savePendingState() {
+      if (currentRequestId) {
+        localStorage.setItem("magicRequestId", currentRequestId);
+      } else {
+        localStorage.removeItem("magicRequestId");
+      }
 
-    function updateBackLink(){
-      const email = safeText(emailInput.value).toLowerCase();
-      backToIndex.href = buildIndexHref(email, currentBackend || "");
-    }
+      if (currentBackend) {
+        localStorage.setItem("magicBackend", currentBackend);
+      } else {
+        localStorage.removeItem("magicBackend");
+      }
 
-    async function safeBody(res){
-      const text = await res.text();
-      if (!text) return {};
-      try {
-        return JSON.parse(text);
-      } catch {
-        return { message: text };
+      if (expiryTime) {
+        localStorage.setItem("magicExpiresAt", String(expiryTime));
+      } else {
+        localStorage.removeItem("magicExpiresAt");
+      }
+
+      if (lastEmailUsed) {
+        localStorage.setItem("magicEmail", lastEmailUsed);
+      } else {
+        localStorage.removeItem("magicEmail");
       }
     }
 
-    async function callApi(baseUrl, path, options = {}){
-      const url = normalizeApiUrl(baseUrl);
+    function clearStoredPending() {
+      localStorage.removeItem("magicRequestId");
+      localStorage.removeItem("magicBackend");
+      localStorage.removeItem("magicExpiresAt");
+      localStorage.removeItem("magicEmail");
+    }
 
-      if (!isUsableApiUrl(url)) {
-        return {
-          ok: false,
-          status: 0,
-          data: { message: "Backend URL not configured" },
-          networkError: true
-        };
-      }
+    async function callApi(baseUrl, path, options = {}) {
+      const url = baseUrl.replace(/\/+$/, "");
+      if (!url) return { ok: false, status: 0, data: { message: "Backend URL not configured" }, networkError: true };
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
       try {
-        const res = await fetch(url + path, {
-          ...options,
-          signal: controller.signal
-        });
+        const res = await fetch(url + path, { ...options, signal: controller.signal });
         clearTimeout(timeout);
-
-        const data = await safeBody(res);
-        return {
-          ok: res.ok,
-          status: res.status,
-          data,
-          networkError: false
-        };
+        const data = await res.json();
+        return { ok: res.ok, status: res.status, data, networkError: false };
       } catch (error) {
         clearTimeout(timeout);
-        return {
-          ok: false,
-          status: 0,
-          data: { message: error?.message || "Network request failed" },
-          networkError: true
-        };
+        return { ok: false, status: 0, data: { message: error?.message || "Network request failed" }, networkError: true };
       }
     }
 
     async function sendMagic() {
       const email = safeText(emailInput.value).toLowerCase();
-      if (!email) return showMessage("Enter email ❌", "error");
-      if (!isEmail(email)) return showMessage("Enter a valid email ❌", "error");
+
+      if (!email || !isEmail(email)) {
+        return showMessage("Enter a valid email ❌", "error");
+      }
 
       setLoading(sendBtn, "Sending");
 
       try {
-        const result = await callApi(
-          PRIMARY_API,
-          "/magic-request",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: email, device: getDeviceInfo() })
-          }
-        );
-
-        const data = result.data || {};
+        const result = await callApi(PRIMARY_API, "/magic-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: email })
+        });
 
         if (!result.ok) {
-          showMessage(friendlyError(result) + " ❌", "error");
-          resetButton(sendBtn, "Send Magic Login");
-          return;
+          return showMessage(`Error: ${result.data.message}`, "error");
         }
 
         lastEmailUsed = email;
-        currentRequestId = safeText(data.requestId) || null;
+        currentRequestId = result.data.requestId;
         currentBackend = result.backend || "primary";
-
-        showBackendBadge(backendBadge, currentBackend);
-        updateBackLink();
-
-        // Save request state to local storage
-        localStorage.setItem("magicRequestId", currentRequestId);
-
-        showMessage("Approval email sent ✅ Check your inbox.", "success");
+        savePendingState();
         statusSection.classList.remove("hidden");
+        showMessage("Check your email for approval link", "success");
+        displayToken(result.data.token);
 
       } catch (error) {
         console.error(error);
-        showMessage("Server error ❌", "error");
+        showMessage("Error sending magic link ❌", "error");
       }
 
       resetButton(sendBtn, "Send Magic Login");
     }
 
-    function friendlyError(result) {
-      return result?.data?.message || "Request failed";
+    async function resendMagic() {
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed;
+
+      if (!email) {
+        return showMessage("Enter email first ❌", "error");
+      }
+
+      setLoading(resendBtn, "Resending");
+
+      try {
+        const result = await callApi(PRIMARY_API, "/magic-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: email })
+        });
+
+        if (!result.ok) {
+          return showMessage(`Error: ${result.data.message}`, "error");
+        }
+
+        lastEmailUsed = email;
+        currentRequestId = result.data.requestId;
+        currentBackend = result.backend || "primary";
+        savePendingState();
+        statusSection.classList.remove("hidden");
+        showMessage("New approval email sent ✅", "success");
+        displayToken(result.data.token);
+
+      } catch (error) {
+        console.error(error);
+        showMessage("Error resending magic link ❌", "error");
+      }
+
+      resetButton(resendBtn, "Resend Email");
     }
+
+    async function checkStatus(showFeedback = false) {
+      const requestId = currentRequestId || localStorage.getItem("magicRequestId");
+
+      if (!requestId) {
+        return showMessage("No pending login request found ❌", "error");
+      }
+
+      const result = await callApi(PRIMARY_API, "/magic-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId })
+      });
+
+      if (result.ok) {
+        const data = result.data;
+        if (data.status === "approved") {
+          showMessage("Login approved ✅", "success");
+        } else {
+          showMessage("Approval pending ⏳", "warn");
+        }
+      } else {
+        showMessage(`Error: ${result.data.message}`, "error");
+      }
+    }
+
+    async function approveLogin() {
+      const token = currentApproveToken;
+
+      if (!token) {
+        return showMessage("Missing approval token ❌", "error");
+      }
+
+      setLoading(approveBtn, "Approving");
+
+      try {
+        const result = await callApi(PRIMARY_API, "/magic-approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+
+        if (result.ok) {
+          currentRequestId = result.data.requestId;
+          savePendingState();
+          showMessage("Login approved ✅", "success");
+        } else {
+          showMessage(`Error: ${result.data.message}`, "error");
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage("Error approving login ❌", "error");
+      }
+
+      resetButton(approveBtn, "Approve Login");
+    }
+
+    // QR code generation
+    function generateQR() {
+      const email = safeText(emailInput.value).toLowerCase();
+      if (!email) {
+        return showMessage("Enter email first ❌", "error");
+      }
+
+      const qrUrl = `${window.location.origin}/magic-login.html?email=${encodeURIComponent(email)}`;
+      qrBox.innerHTML = `
+        <img alt="QR Code" style="border-radius:12px;border:1px solid rgba(0,255,255,.18);" 
+        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" />
+      `;
+
+      showMessage("QR generated ✅", "success");
+    }
+
+    handleAutoActions();
   </script>
 </body>
 </html>
