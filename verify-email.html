@@ -205,7 +205,6 @@
       outline: none;
       padding: 15px 14px;
       font-size: 15px;
-      transition: .18s ease;
     }
 
     .input:focus {
@@ -540,10 +539,37 @@
       }
     }
 
-    function shouldFallback(status, networkError) {
-      if (networkError) return true;
-      if (status === 404) return true;
-      if (status >= 500) return true;
+    function shouldFallback(path, result) {
+      if (result.networkError) return true;
+      if (result.status === 404 || result.status >= 500) return true;
+
+      const message = String(result?.data?.message || "").toLowerCase();
+
+      if (path === "/verify-email") {
+        if (
+          message.includes("account not found in backend2") ||
+          message.includes("invalid verification token") ||
+          message.includes("verification token expired")
+        ) {
+          return true;
+        }
+      }
+
+      if (path === "/verify-email/exchange") {
+        if (
+          message.includes("invalid or expired exchange code") ||
+          message.includes("account not found in backend2")
+        ) {
+          return true;
+        }
+      }
+
+      if (path === "/resend-verify") {
+        if (message.includes("account not found in backend2")) {
+          return true;
+        }
+      }
+
       return false;
     }
 
@@ -563,7 +589,7 @@
 
       const first = await callApi(primary, path, options);
       if (first.ok) return { ...first, backend: "primary" };
-      if (!shouldFallback(first.status, first.networkError)) return { ...first, backend: "primary" };
+      if (!shouldFallback(path, first)) return { ...first, backend: "primary" };
       const second = await callApi(legacy, path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
@@ -599,25 +625,54 @@
       magicLink.classList.remove("hidden");
     }
 
-    function syncUrl(email = "", backend = "", token = "") {
+    function syncUrl(email = "", backend = "", token = "", exchange = "") {
       const q = [];
       if (token) q.push(`token=${encodeURIComponent(token)}`);
+      if (exchange) q.push(`exchange=${encodeURIComponent(exchange)}`);
       if (email) q.push(`email=${encodeURIComponent(email)}`);
       if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
       const newUrl = `verify-email.html${q.length ? `?${q.join("&")}` : ""}`;
       window.history.replaceState({}, "", newUrl);
     }
 
-    function redirectToDashboard(token, role) {
-      if (!token) return false;
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role || "user");
+    async function exchangeVerifyCode(exchange, email = "", backend = "") {
+      const result = await apiHybrid(
+        "/verify-email/exchange",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exchange })
+        },
+        backend === "legacy" ? "legacyOnly" : backend === "primary" ? "primaryOnly" : "primaryThenLegacy"
+      );
 
-      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
-      if (email) localStorage.setItem("lastUser", email);
+      if (!result.ok) {
+        showMessage(friendlyError(result), "error");
+        return false;
+      }
 
-      const target = role === "admin" ? "admin.html" : "dashboard.html";
-      window.location.href = target;
+      const data = result.data || {};
+      const usedBackend = result.backend || backend || forcedBackend || "primary";
+      forcedBackend = usedBackend;
+      showBackendBadge(usedBackend);
+      showPostVerifyActions(email, usedBackend);
+      syncUrl(email, usedBackend, "", exchange);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role || "user");
+        localStorage.setItem("authBackend", usedBackend);
+        if (data.username || email) localStorage.setItem("lastUser", data.username || email);
+
+        const target = data.role === "admin" ? "admin.html" : "dashboard.html";
+        showBanner("Email already verified. Redirecting to your account.");
+        showMessage(`Email verified successfully on ${backendLabel(usedBackend)}. Redirecting...`, "success");
+        setTimeout(() => { window.location.href = target; }, 600);
+        return true;
+      }
+
+      showBanner("Verification completed. Continue to login.");
+      showMessage(`Email verified successfully on ${backendLabel(usedBackend)}.`, "success");
       return true;
     }
 
@@ -655,7 +710,12 @@
           resetButton(verifyBtn, "Verify Email");
 
           if (data.token) {
-            setTimeout(() => redirectToDashboard(data.token, data.role || "user"), 800);
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("role", data.role || "user");
+            localStorage.setItem("authBackend", forcedBackend);
+            if (data.username || email) localStorage.setItem("lastUser", data.username || email);
+            const target = data.role === "admin" ? "admin.html" : "dashboard.html";
+            setTimeout(() => { window.location.href = target; }, 800);
             return;
           }
           return;
@@ -711,10 +771,9 @@
 
     async function autoVerify() {
       const token = String(params().get("token") || "").trim();
+      const exchange = String(params().get("exchange") || "").trim();
       const email = String(params().get("email") || "").trim().toLowerCase();
       const backend = String(params().get("backend") || "").trim().toLowerCase();
-      const urlToken = String(params().get("token") || "").trim();
-      const urlRole = String(params().get("role") || "").trim();
       const verified = String(params().get("verified") || "").trim();
 
       if (email) emailInput.value = email;
@@ -728,10 +787,17 @@
 
       updateNavigation(email, forcedBackend || "");
 
-      if (urlToken && verified === "1") {
-        showBanner("Email already verified. Redirecting to dashboard.");
-        showMessage("Email already verified. Redirecting...", "success");
-        setTimeout(() => redirectToDashboard(urlToken, urlRole || "user"), 500);
+      if (exchange && verified === "1") {
+        showBanner("Email was verified from your email link. Finishing secure login exchange now.");
+        showMessage("Completing verification sign-in...", "warn");
+        await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
+        return;
+      }
+
+      if (exchange) {
+        showBanner("Verification exchange found. Completing verification now.");
+        showMessage("Completing verification...", "warn");
+        await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
         return;
       }
 
