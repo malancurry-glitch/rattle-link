@@ -255,15 +255,13 @@
     </div>
 
     <div id="approveSection" class="hidden">
-      <div class="status-card">
-        <h3>Approve login</h3>
-        <p>
-          This page opened from your email approval link. Tap below to approve this login request.
-        </p>
-        <div id="approveBackendBadge" class="backend-badge hidden"></div>
-      </div>
-      <button id="approveBtn" type="button" onclick="approveLogin()">Approve Login</button>
-    </div>
+  <div class="status-card">
+    <h3>Approve login</h3>
+    <p>This page opened from your email approval link. Tap below to approve this login request.</p>
+    <div id="approveBackendBadge" class="backend-badge hidden"></div>
+  </div>
+  <button id="approveBtn" type="button" onclick="approveLogin()">Approve Login</button>
+</div>
 
     <div class="divider"></div>
 
@@ -878,51 +876,51 @@
     }
 
     async function approveLogin(){
-      if(!currentApproveToken){
-        return showMessage("Missing approval token ❌", "error");
-      }
+  if(!currentApproveToken){
+    return showMessage("Missing approval token ❌", "error");
+  }
 
-      setLoading(approveBtn, "Approving");
+  setLoading(approveBtn, "Approving");
 
-      try{
-        const result = await apiHybrid(
-          "/magic-approve",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: currentApproveToken })
-          },
-          chooseBehaviorForCurrentBackend()
-        );
+  try{
+    const result = await apiHybrid(
+      "/magic-approve",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: currentApproveToken }) // Ensure token is passed here
+      },
+      chooseBehaviorForCurrentBackend()
+    );
 
-        const data = result.data || {};
-        currentBackend = result.backend || currentBackend || "primary";
-        showBackendBadge(approveBackendBadge, currentBackend);
-        updateBackLink();
+    const data = result.data || {};
+    currentBackend = result.backend || currentBackend || "primary";
+    showBackendBadge(approveBackendBadge, currentBackend);
+    updateBackLink();
 
-        if(!result.ok){
-          showMessage(friendlyError(result) + " ❌", "error");
-          resetButton(approveBtn, "Approve Login");
-          return;
-        }
-
-        if(data.requestId){
-          currentRequestId = safeText(data.requestId);
-          savePendingState();
-        }
-
-        showMessage(`Login approved on ${backendLabel(currentBackend)} ✅ You can close this page or wait to continue.`, "success");
-        statusSection.classList.remove("hidden");
-        showBackendBadge(backendBadge, currentBackend);
-        stopPolling();
-        startPolling();
-      }catch(e){
-        console.error(e);
-        showMessage("Approval failed ❌", "error");
-      }
-
+    if(!result.ok){
+      showMessage(friendlyError(result) + " ❌", "error");
       resetButton(approveBtn, "Approve Login");
+      return;
     }
+
+    if(data.requestId){
+      currentRequestId = safeText(data.requestId);
+      savePendingState();
+    }
+
+    showMessage(`Login approved on ${backendLabel(currentBackend)} ✅ You can close this page or wait to continue.`, "success");
+    statusSection.classList.remove("hidden");
+    showBackendBadge(backendBadge, currentBackend);
+    stopPolling();
+    startPolling();
+  }catch(e){
+    console.error(e);
+    showMessage("Approval failed ❌", "error");
+  }
+
+  resetButton(approveBtn, "Approve Login");
+}
 
     function generateQR(){
       const email = safeText(emailInput.value).toLowerCase();
