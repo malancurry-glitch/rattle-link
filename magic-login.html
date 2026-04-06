@@ -277,9 +277,6 @@
   </div>
 
   <script>
-    // IMPORTANT:
-    // If this page is on Vercel, DO NOT keep PRIMARY_API as localhost.
-    // Replace it with your real deployed Backend 2 URL.
     const PRIMARY_API = "https://rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
@@ -858,7 +855,7 @@
           }
 
           if(data.status === "pending"){
-            showMessage("Approval still pending ⏳", "warn");
+            showMessage("This login is waiting for approval ⏳", "warn");
             return;
           }
 
