@@ -259,7 +259,7 @@
 
     .table-wrap{ overflow:auto; width:100%; }
 
-    table{ width:100%; border-collapse:collapse; min-width:1300px; }
+    table{ width:100%; border-collapse:collapse; min-width:1400px; }
     th, td{ padding:10px; border-bottom:1px solid #334155; text-align:left; vertical-align:top; font-size:13px; }
     th{ color:var(--cyan); font-weight:600; position:sticky; top:0; background:#020617; z-index:1; }
     tr:hover{ background:#020617; }
@@ -501,7 +501,7 @@
       .container{ padding:14px; }
       .header{ align-items:stretch; }
       .top-actions{ width:100%; }
-      table{ min-width:1100px; }
+      table{ min-width:1200px; }
     }
   </style>
 </head>
@@ -533,7 +533,7 @@
     <div class="grid-5">
       <div class="card stat-card">
         <h3 id="totalLinks">0</h3>
-        <p>Total Links</p>
+        <p>Total Items</p>
       </div>
       <div class="card stat-card">
         <h3 id="totalClicks">0</h3>
@@ -544,8 +544,8 @@
         <p>Avg Clicks</p>
       </div>
       <div class="card stat-card">
-        <h3 id="trialRemaining">0</h3>
-        <p>Trial Links Remaining</p>
+        <h3 id="activeShortLinksRemaining">0</h3>
+        <p>Short Link Slots Left</p>
       </div>
       <div class="card stat-card">
         <h3 id="liveThreatCount">0</h3>
@@ -595,10 +595,22 @@
             </div>
           </div>
 
+          <div style="margin-top:14px;" class="grid-2">
+            <div>
+              <div class="muted">Active short links</div>
+              <div id="activeShortLinksText" style="margin-top:6px;">0 / 0</div>
+              <div class="progress"><span id="shortLinksProgressBar"></span></div>
+            </div>
+            <div>
+              <div class="muted">Active landing pages</div>
+              <div id="activeLandingPagesText" style="margin-top:6px;">0 / 0</div>
+              <div class="progress"><span id="landingPagesProgressBar"></span></div>
+            </div>
+          </div>
+
           <div style="margin-top:14px;">
             <div class="muted">Access Summary</div>
             <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
-            <div class="progress"><span id="trialProgressBar"></span></div>
           </div>
 
           <div style="margin-top:14px;">
@@ -756,7 +768,7 @@
 
         <div class="create-box">
           <h4>🟢 Create Backend2 Link</h4>
-          <div class="muted">Creates short links on the Backend2 server.</div>
+          <div class="muted">Creates short links on the Backend2 server with active-slot limits.</div>
           <div class="form-row" style="margin-top:10px;">
             <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
           </div>
@@ -781,7 +793,7 @@
         <div class="split-create">
           <div class="create-box">
             <h4>Landing Pages</h4>
-            <div class="muted">Manage landing pages with optional custom HTML/CSS/JS.</div>
+            <div class="muted">Manage landing pages with optional custom HTML/CSS/JS and plan-based active slots.</div>
             <div class="form-row" style="margin-top:10px;">
               <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
               <button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button>
@@ -824,6 +836,11 @@
             <option value="primary">Backend2 only</option>
             <option value="legacy">AWS only</option>
           </select>
+          <select id="itemTypeFilter" style="max-width:180px;">
+            <option value="all">All item types</option>
+            <option value="redirect">Short links</option>
+            <option value="landing">Landing pages</option>
+          </select>
           <input id="search" placeholder="Search slug or URL..." style="max-width:280px;" />
         </div>
       </div>
@@ -844,6 +861,7 @@
             <tr>
               <th>Select</th>
               <th>Backend</th>
+              <th>Type</th>
               <th>Slug</th>
               <th>Clicks</th>
               <th>Score</th>
@@ -908,6 +926,7 @@
               <th>Backend</th>
               <th>ID</th>
               <th>Plan</th>
+              <th>Quantity</th>
               <th>Amount</th>
               <th>Crypto</th>
               <th>Status</th>
@@ -950,13 +969,13 @@
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How many links can I create on free trial?</button>
-          <div class="faq-a">Your free trial limit is controlled by your account settings in the backend. The dashboard shows how many trial links remain in your account access section.</div>
+          <button class="faq-q" type="button">How many short links can I create on free trial?</button>
+          <div class="faq-a">Free trial now allows 3 active short links on Backend2. When you delete one short link, that slot becomes available again.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">Why do I see Backend2 and AWS together?</button>
-          <div class="faq-a">Your account can work across both systems. This dashboard merges both sources so you can manage links, payments, and activity from one place.</div>
+          <button class="faq-q" type="button">How do landing page limits work?</button>
+          <div class="faq-a">Landing pages use separate active-slot limits on Backend2 paid plans. Deleting a landing page frees that landing page slot.</div>
         </div>
 
         <div class="faq-item">
@@ -965,13 +984,13 @@
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How do custom domains verify?</button>
-          <div class="faq-a">Backend2 custom domains should verify using a TXT record only. No A-record or direct VPS-IP check is required for the standard flow.</div>
+          <button class="faq-q" type="button">Can I buy multiple weeks or months?</button>
+          <div class="faq-a">Yes. Backend2 supports quantity-based payment requests like 2 weeks, 3 months, or 6 months.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">What if my session stops working?</button>
-          <div class="faq-a">Use the Verify Session button first. If your token expired or was cleared, log in again from the login page.</div>
+          <button class="faq-q" type="button">How do custom domains verify?</button>
+          <div class="faq-a">Backend2 custom domains should verify using a TXT record only. No A-record or direct VPS-IP check is required for the standard flow.</div>
         </div>
       </div>
     </div>
@@ -1005,38 +1024,12 @@
         </div>
         <div class="info-box">
           <b>Billing:</b>
-          <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new link creation.</div>
+          <div class="muted">Paid access begins after admin payment verification. Expired or paused subscriptions may limit new item creation.</div>
         </div>
         <div class="info-box">
           <b>Domains:</b>
           <div class="muted">For Backend2 custom domains, TXT verification is expected to be used even when Cloudflare proxy mode is enabled.</div>
         </div>
-      </div>
-    </div>
-
-    <div class="resource-grid">
-      <div class="card resource-card">
-        <h4>ℹ️ About Rattle Link</h4>
-        <p>Rattle Link helps you create and manage short links, track traffic, and run your link operations from one dashboard across your active backend setup.</p>
-        <button type="button" onclick="openInfoPanel('about')">Read About</button>
-      </div>
-
-      <div class="card resource-card">
-        <h4>📜 Legal</h4>
-        <p>Read policy notes for acceptable use, privacy basics, billing expectations, and account responsibilities.</p>
-        <button type="button" onclick="openInfoPanel('legal')">Read Legal</button>
-      </div>
-
-      <div class="card resource-card">
-        <h4>🆘 Need Help?</h4>
-        <p>Open the support panel for FAQs, contact options, quick guidance, and user help resources.</p>
-        <button type="button" onclick="openSupportPanel()">Open Support</button>
-      </div>
-
-      <div class="card resource-card">
-        <h4>💼 Billing Help</h4>
-        <p>Use the Upgrade Center to generate payment requests, review pending payments, and see your billing status.</p>
-        <button type="button" onclick="openUpgradeModal()">Open Billing</button>
       </div>
     </div>
   </div>
@@ -1055,14 +1048,30 @@
     </div>
 
     <div class="notice">
-      Free accounts can create only a limited number of links. Choose a plan, select your crypto network, generate a payment request, then click <b>I Made a Transfer</b> after paying. The system will wait for admin verification.
+      Backend2 active-slot plans:<br>
+      • Free trial: 3 active short links<br>
+      • Weekly: 120 active short links + 5 active landing pages<br>
+      • Monthly: 650 active short links + 15 active landing pages<br>
+      • Premium Monthly: 3000 active short links + 35 active landing pages<br><br>
+      You can also buy multiple periods like 2 weeks, 3 months, or 6 months.
     </div>
 
     <div class="plan-grid" id="planGrid"></div>
 
-    <div style="margin-top:14px;">
-      <div class="muted">Crypto Option</div>
-      <select id="cryptoSelect"></select>
+    <div class="grid-2" style="margin-top:14px;">
+      <div>
+        <div class="muted">Quantity</div>
+        <input id="planQuantity" type="number" min="1" max="24" value="1" placeholder="Quantity" />
+      </div>
+      <div>
+        <div class="muted">Crypto Option</div>
+        <select id="cryptoSelect"></select>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:12px;">
+      <b>Billing preview</b>
+      <div id="billingPreview" class="muted" style="margin-top:8px;">Choose a plan and quantity.</div>
     </div>
 
     <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
@@ -1140,6 +1149,7 @@
     let meState = null;
     let plansState = null;
     let selectedPlan = "monthly";
+    let selectedPlanQuantity = 1;
     let paymentPoller = null;
     let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
     let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
@@ -1153,7 +1163,7 @@
     const totalLinks = $("totalLinks");
     const totalClicks = $("totalClicks");
     const avgClicks = $("avgClicks");
-    const trialRemainingEl = $("trialRemaining");
+    const activeShortLinksRemainingEl = $("activeShortLinksRemaining");
     const liveThreatCount = $("liveThreatCount");
     const table = $("table");
     const ranking = $("ranking");
@@ -1167,7 +1177,8 @@
     const securityInsights = $("securityInsights");
     const activityTimeline = $("activityTimeline");
     const liveSyncBadge = $("liveSyncBadge");
-    const trialProgressBar = $("trialProgressBar");
+    const shortLinksProgressBar = $("shortLinksProgressBar");
+    const landingPagesProgressBar = $("landingPagesProgressBar");
 
     const primaryLinksCount = $("primaryLinksCount");
     const legacyLinksCount = $("legacyLinksCount");
@@ -1184,6 +1195,8 @@
     const accessSummary = $("accessSummary");
     const subscriptionBadge = $("subscriptionBadge");
     const latestPaymentBox = $("latestPaymentBox");
+    const activeShortLinksText = $("activeShortLinksText");
+    const activeLandingPagesText = $("activeLandingPagesText");
 
     const urlInput = $("url");
     const slugInput = $("customSlug");
@@ -1196,6 +1209,7 @@
     const bulkCountPrimary = $("bulkCountPrimary");
     const searchInput = $("search");
     const backendFilter = $("backendFilter");
+    const itemTypeFilter = $("itemTypeFilter");
     const statusFilter = $("statusFilter");
     const dateRangeFilter = $("dateRangeFilter");
     const sortFilter = $("sortFilter");
@@ -1245,6 +1259,8 @@
 
     const planGrid = $("planGrid");
     const cryptoSelect = $("cryptoSelect");
+    const planQuantityInput = $("planQuantity");
+    const billingPreview = $("billingPreview");
     const requestPaymentBtn = $("requestPaymentBtn");
     const upgradeResult = $("upgradeResult");
     const paymentRequestBox = $("paymentRequestBox");
@@ -1276,7 +1292,8 @@
       return backend === "legacy" ? "backend-legacy" : "backend-primary";
     }
 
-    function buildPublicLink(slug, backend) {
+    function buildPublicLink(itemOrSlug, backend) {
+      const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
       return `${apiBaseForBackend(backend).replace(/\/+$/,'')}/${slug}`;
     }
 
@@ -1392,6 +1409,25 @@
       return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
     }
 
+    function normalizePlanLabel(planCode) {
+      const code = String(planCode || "").toLowerCase();
+      if (code === "premium_monthly") return "Premium Monthly";
+      if (code === "monthly") return "Monthly";
+      if (code === "weekly") return "Weekly";
+      if (code === "free_trial") return "Free Trial";
+      return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
+    }
+
+    function parseBillingCycleQuantity(value) {
+      const raw = String(value || "");
+      const parts = raw.split(":");
+      return parts.length === 2 ? Math.max(1, Number(parts[1] || 1)) : 1;
+    }
+
+    function getItemType(item) {
+      return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect";
+    }
+
     function getStatusKey(link) {
       if (link.paused) return "paused";
       if (link.expire && Number(link.expire) <= Date.now()) return "expired";
@@ -1500,7 +1536,9 @@
         createdAt: Number(item.createdAt || item.created_at || 0),
         maxRisk: Number(item.maxRisk || item.max_risk || 0),
         note: item.note || "",
-        campaign: item.campaign || ""
+        campaign: item.campaign || "",
+        linkType: getItemType(item),
+        publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
       };
     }
 
@@ -1511,7 +1549,10 @@
         amountUsd: Number(item.amountUsd || item.amount_usd || 0),
         createdAt: Number(item.createdAt || item.created_at || 0),
         expiresAt: Number(item.expiresAt || item.expires_at || 0),
-        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null
+        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
+        quantity: Number(item.quantity || parseBillingCycleQuantity(item.billingCycle || item.billing_cycle || 1) || 1),
+        planCode: item.planCode || item.plan_code || null,
+        billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-"
       };
     }
 
@@ -1538,19 +1579,54 @@
       });
     }
 
+    function getPlanInfoByCode(code) {
+      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+      return plans.find(p => String(p.code) === String(code)) || null;
+    }
+
+    function updateBillingPreview() {
+      if (!billingPreview) return;
+      const plan = getPlanInfoByCode(selectedPlan);
+      const qty = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
+      selectedPlanQuantity = qty;
+      if (!plan) {
+        billingPreview.textContent = "Choose a plan and quantity.";
+        return;
+      }
+      const total = Number(plan.amountUsd || 0) * qty;
+      const cycleLabel = plan.code === "weekly" ? `${qty} week${qty === 1 ? "" : "s"}` : `${qty} month${qty === 1 ? "" : "s"}`;
+      const limits = plan.limits || {};
+      billingPreview.innerHTML = `
+        ${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>
+        Total: <b>${fmtMoney(total)}</b><br>
+        Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages
+      `;
+    }
+
     function renderMe() {
       if (!meState) return;
       if (meEmail) meEmail.textContent = meState.username || "-";
-      if (mePlan) {
-        mePlan.textContent = meState.subscriptionPlan
-          ? `${String(meState.subscriptionPlan).charAt(0).toUpperCase()}${String(meState.subscriptionPlan).slice(1)}`
-          : "Free Trial";
-      }
+      if (mePlan) mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
       if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-      if (trialRemainingEl) trialRemainingEl.textContent = Number(meState.trialLinksRemaining || 0);
 
       const status = String(meState.subscriptionStatus || "trial").toLowerCase();
       const paused = !!meState.subscriptionPaused;
+      const planLimits = meState.planLimits || {};
+      const usage = meState.usage || {};
+      const remaining = meState.remaining || {};
+
+      const shortUsed = Number(usage.activeShortLinks || 0);
+      const shortLimit = Math.max(0, Number(planLimits.activeShortLinks || 0));
+      const landingUsed = Number(usage.activeLandingPages || 0);
+      const landingLimit = Math.max(0, Number(planLimits.activeLandingPages || 0));
+      const shortRemaining = Math.max(0, Number(remaining.activeShortLinks || 0));
+
+      if (activeShortLinksRemainingEl) activeShortLinksRemainingEl.textContent = shortRemaining;
+      if (activeShortLinksText) activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
+      if (activeLandingPagesText) activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
+      if (shortLinksProgressBar) shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
+      if (landingPagesProgressBar) landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
+
       let summary = "";
       let badgeClass = "trial";
       let badgeText = "Trial";
@@ -1558,19 +1634,19 @@
       if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
         badgeClass = "live";
         badgeText = "Active";
-        summary = `Your subscription is active until ${fmtDate(meState.subscriptionExpiresAt)}.`;
+        summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short link slots left and ${Math.max(0, Number(remaining.activeLandingPages || 0))} landing slots left.`;
       } else if (paused) {
         badgeClass = "paused";
         badgeText = "Paused";
-        summary = "Your subscription is paused.";
+        summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
       } else if (status === "expired") {
         badgeClass = "expired";
         badgeText = "Expired";
-        summary = "Your subscription is expired.";
+        summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
       } else {
         badgeClass = "trial";
         badgeText = "Trial";
-        summary = `Free trial: ${Number(meState.trialLinksRemaining || 0)} of ${Number(meState.trialLinksLimit || 0)} links remaining.`;
+        summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
       }
 
       if (subscriptionBadge) {
@@ -1578,11 +1654,6 @@
         subscriptionBadge.textContent = badgeText;
       }
       if (accessSummary) accessSummary.textContent = summary;
-
-      const limit = Math.max(1, Number(meState.trialLinksLimit || 0));
-      const remain = Math.max(0, Number(meState.trialLinksRemaining || 0));
-      const usedPercent = Math.max(0, Math.min(100, ((limit - remain) / limit) * 100));
-      if (trialProgressBar) trialProgressBar.style.width = `${usedPercent}%`;
     }
 
     async function loadMe(showLoading = false) {
@@ -1604,6 +1675,7 @@
       if (plans.length && !plans.some(p => p.code === selectedPlan)) selectedPlan = plans[0].code;
       renderPlans();
       renderCryptoOptions();
+      updateBillingPreview();
       if (showMessage) setResult("Plans loaded", false, upgradeResult);
     }
 
@@ -1612,15 +1684,16 @@
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
       planGrid.innerHTML = plans.map(plan => `
         <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
-          <h4>${escapeHtml(plan.label)}</h4>
+          <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
           <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
-          <div class="muted">${escapeHtml(plan.code)} billing</div>
+          <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
         </div>
       `).join("");
       document.querySelectorAll(".plan-card").forEach(card => {
         card.onclick = () => {
           selectedPlan = card.dataset.plan;
           renderPlans();
+          updateBillingPreview();
         };
       });
     }
@@ -1667,7 +1740,8 @@
           <div>
             <div>
               <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-              <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+              <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
+              <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
               ${formatPaymentStatus(payment.status)}
             </div>
             <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
@@ -1691,7 +1765,7 @@
     function renderPaymentsTable() {
       if (!paymentsTable) return;
       if (!paymentsStore.length) {
-        paymentsTable.innerHTML = `<tr><td colspan="9" class="muted">No payments yet</td></tr>`;
+        paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
         renderLatestPayment(null);
         return;
       }
@@ -1700,7 +1774,8 @@
         <tr>
           <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
           <td><code>${escapeHtml(p.id)}</code></td>
-          <td>${escapeHtml(p.billingCycle)}</td>
+          <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
+          <td>${Number(p.quantity || 1)}</td>
           <td>${fmtMoney(p.amountUsd)}</td>
           <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
           <td>${formatPaymentStatus(p.status)}</td>
@@ -1762,7 +1837,8 @@
               <div>
                 <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
                 ${formatPaymentStatus(payment.status)}
-                <span class="badge pending">${escapeHtml(payment.billingCycle)}</span>
+                <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
+                <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
               </div>
               <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
               <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
@@ -1786,20 +1862,22 @@
 
     async function createPaymentRequest() {
       const cryptoCode = cryptoSelect?.value;
+      const quantity = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
+      selectedPlanQuantity = quantity;
       if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
       let res = await authorizedFetch("/payment-request", {
         method: "POST",
-        body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+        body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
       }, preferredBackend, false);
 
       if (res.status === 401) {
         await verifyMainSession(false);
         res = await authorizedFetch("/payment-request", {
           method: "POST",
-          body: JSON.stringify({ billingCycle: selectedPlan, cryptoCode })
+          body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
         }, preferredBackend, false);
       }
 
@@ -1917,6 +1995,7 @@
     function openUpgradeModal() {
       if (overlay) overlay.style.display = "block";
       if (upgradeModal) upgradeModal.style.display = "block";
+      updateBillingPreview();
       const p = waitingPaymentId ? paymentsStore.find(x => x.id === waitingPaymentId) : getLatestInterestingPayment();
       if (p) renderPaymentRequestBox(p);
     }
@@ -1970,12 +2049,12 @@
     }
 
     function updateMiniStats() {
-      const primaryLinks = dataStore.filter(x => x.backend === "primary");
-      const legacyLinks = dataStore.filter(x => x.backend === "legacy");
-      if (primaryLinksCount) primaryLinksCount.textContent = primaryLinks.length;
-      if (legacyLinksCount) legacyLinksCount.textContent = legacyLinks.length;
-      if (primaryClicksCount) primaryClicksCount.textContent = primaryLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
-      if (legacyClicksCount) legacyClicksCount.textContent = legacyLinks.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      const primaryItems = dataStore.filter(x => x.backend === "primary");
+      const legacyItems = dataStore.filter(x => x.backend === "legacy");
+      if (primaryLinksCount) primaryLinksCount.textContent = primaryItems.length;
+      if (legacyLinksCount) legacyLinksCount.textContent = legacyItems.length;
+      if (primaryClicksCount) primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
+      if (legacyClicksCount) legacyClicksCount.textContent = legacyItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
       if (liveThreatCount) liveThreatCount.textContent = dataStore.filter(x => Number(x.maxRisk || 0) > 60).length;
     }
 
@@ -2002,6 +2081,7 @@
     function getFilteredData() {
       const q = (searchInput?.value || "").trim().toLowerCase();
       const backendOnly = backendFilter?.value || "all";
+      const itemTypeOnly = itemTypeFilter?.value || "all";
       const statusOnly = statusFilter?.value || "all";
       const dateRange = dateRangeFilter?.value || "all";
       const onlyHighRisk = !!onlyHighRiskToggle?.checked;
@@ -2011,8 +2091,10 @@
         const slug = String(item.slug || "").toLowerCase();
         const url = String(item.url || "").toLowerCase();
         const backend = String(item.backend || "").toLowerCase();
+        const itemType = getItemType(item);
         const queryMatch = !q || slug.includes(q) || url.includes(q) || backend.includes(q) || String(item.note || "").toLowerCase().includes(q) || String(item.campaign || "").toLowerCase().includes(q);
         const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+        const typeMatch = itemTypeOnly === "all" ? true : itemType === itemTypeOnly;
         const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
         const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
 
@@ -2021,7 +2103,7 @@
         if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
         if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
 
-        return queryMatch && backendMatch && statusMatch && dateMatch && riskMatch;
+        return queryMatch && backendMatch && typeMatch && statusMatch && dateMatch && riskMatch;
       });
 
       const sortKey = sortFilter?.value || "newest";
@@ -2080,19 +2162,21 @@
     function renderTable() {
       if (!table) return;
       const filtered = getFilteredData();
-      if (visibleStatsText) visibleStatsText.textContent = `${filtered.length} visible links`;
+      if (visibleStatsText) visibleStatsText.textContent = `${filtered.length} visible items`;
       if (!filtered.length) {
-        table.innerHTML = `<tr><td colspan="11" class="muted">No links found</td></tr>`;
+        table.innerHTML = `<tr><td colspan="12" class="muted">No items found</td></tr>`;
         return;
       }
 
       table.innerHTML = filtered.map(item => {
-        const publicLink = buildPublicLink(item.slug, item.backend);
+        const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
         const checked = selectedLinks.has(`${item.backend}:${item.slug}`) ? "checked" : "";
+        const itemType = getItemType(item);
         return `
           <tr>
             <td><input class="row-select" type="checkbox" data-key="${escapeHtml(item.backend)}:${escapeHtml(item.slug)}" ${checked} /></td>
             <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+            <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
             <td>
               <b>${escapeHtml(item.slug)}</b>
               ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
@@ -2112,9 +2196,9 @@
               <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
               <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
               <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
-              <button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>
-              <button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>
-              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Delete</button>
+              ${itemType === "redirect" ? `<button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Edit</button>`}
+              ${itemType === "redirect" ? `<button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Builder</button>`}
+              <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-type="${escapeHtml(itemType)}">Delete</button>
             </td>
           </tr>
         `;
@@ -2125,7 +2209,7 @@
       document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
       document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
       document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
-      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend));
+      document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend, btn.dataset.type));
       document.querySelectorAll(".row-select").forEach(box => {
         box.addEventListener("change", () => {
           const key = box.dataset.key;
@@ -2183,13 +2267,13 @@
       if (!ranking) return;
       const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
       if (!sorted.length) {
-        ranking.innerHTML = `<div class="muted">No links yet</div>`;
+        ranking.innerHTML = `<div class="muted">No items yet</div>`;
         return;
       }
       ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
         <div class="ranking-item">
           <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+          <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span> <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span></div>
           <div>Clicks: ${Number(item.clicks || 0)}</div>
           <div>Score: ${scoreLink(item)}/100</div>
           <div>${detectFraud(item)}</div>
@@ -2205,9 +2289,9 @@
       const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
 
       securityInsights.innerHTML = `
-        <div class="insight-card"><b>Risky links</b><div class="muted">${risky.length} links have elevated risk markers.</div></div>
-        <div class="insight-card"><b>Paused links</b><div class="muted">${paused} links are manually paused.</div></div>
-        <div class="insight-card"><b>Expired links</b><div class="muted">${expired} links are already expired.</div></div>
+        <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
+        <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
+        <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
         <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map(x => `${x.slug} (${x.maxRisk || 0})`).join(', ') : 'No risk data yet.'}</div></div>
       `;
     }
@@ -2216,17 +2300,17 @@
       if (!securityModalContent) return;
       const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60).sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
       securityModalContent.innerHTML = `
-        <div class="alert-box"><b>Security overview</b><br>${risky.length} links currently show elevated risk markers.</div>
+        <div class="alert-box"><b>Security overview</b><br>${risky.length} items currently show elevated risk markers.</div>
         ${risky.length ? risky.map(item => `
           <div class="info-box">
             <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-            <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+            <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
             <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>
-              <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Delete</button>
+              ${getItemType(item) === "redirect" ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>` : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
+              <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
             </div>
           </div>
-        `).join("") : `<div class="muted">No elevated risk links found.</div>`}
+        `).join("") : `<div class="muted">No elevated risk items found.</div>`}
       `;
     }
 
@@ -2236,7 +2320,7 @@
       activityTimeline.innerHTML = recent.length ? recent.map(item => `
         <div class="timeline-item">
           <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div class="muted">Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
+          <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
         </div>
       `).join("") : `<div class="muted">No activity yet.</div>`;
     }
@@ -2254,7 +2338,7 @@
       const makeCards = arr => arr.length ? arr.map(item => `
         <div class="kanban-card">
           <div><b>${escapeHtml(item.slug)}</b></div>
-          <div class="muted">${backendLabel(item.backend)} • ${Number(item.clicks || 0)} clicks</div>
+          <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
         </div>
       `).join("") : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
 
@@ -2264,8 +2348,11 @@
     }
 
     function renderBackend2Summary() {
-      if (landingSummaryText) landingSummaryText.textContent = "Landing pages available through Backend2 builder with optional custom HTML, CSS, and JS.";
-      if (domainSummaryText) domainSummaryText.textContent = "Custom domains should verify through TXT records only, with Cloudflare proxy mode supported in your standard flow.";
+      const primaryItems = dataStore.filter(x => x.backend === "primary");
+      const landings = primaryItems.filter(x => getItemType(x) === "landing").length;
+      const redirects = primaryItems.filter(x => getItemType(x) === "redirect").length;
+      if (landingSummaryText) landingSummaryText.textContent = `${landings} Backend2 landing pages currently loaded in this dashboard snapshot.`;
+      if (domainSummaryText) domainSummaryText.textContent = `Backend2 custom domains continue using TXT verification only. Short links loaded on Backend2: ${redirects}.`;
     }
 
     function getCreatePayload() {
@@ -2330,8 +2417,13 @@
       }
 
       const link = res.data?.link || "Success";
-      const trialAfter = res.data?.trialRemainingAfter;
-      setResult(`${backendLabel(backend)} created: ${link}${trialAfter !== undefined ? ` • Trial left: ${trialAfter}` : ""}`, false);
+      const usage = res.data?.usage || null;
+      const limits = res.data?.limits || null;
+      let summary = `${backendLabel(backend)} created: ${link}`;
+      if (backend === "primary" && usage && limits) {
+        summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
+      }
+      setResult(summary, false);
 
       if (urlInput) urlInput.value = "";
       if (slugInput) slugInput.value = "";
@@ -2384,16 +2476,21 @@
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    async function deleteLink(slug, backend) {
-      if (!confirm(`Delete ${slug} from ${backendLabel(backend)}?`)) return;
-      let res = await authorizedFetch("/delete", {
+    function getDeletePath(itemType) {
+      return itemType === "landing" ? "/landing/delete" : "/delete";
+    }
+
+    async function deleteLink(slug, backend, itemType = "redirect") {
+      const label = itemType === "landing" ? "landing page" : "short link";
+      if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
+      let res = await authorizedFetch(getDeletePath(itemType), {
         method: "POST",
         body: JSON.stringify({ slug })
       }, backend, false);
 
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/delete", {
+        res = await authorizedFetch(getDeletePath(itemType), {
           method: "POST",
           body: JSON.stringify({ slug })
         }, backend, false);
@@ -2406,16 +2503,17 @@
 
       selectedLinks.delete(`${backend}:${slug}`);
       showToast(`Deleted from ${backendLabel(backend)}`);
-      await loadLinks(false);
+      await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
     async function bulkDeleteSelected() {
       const items = [...selectedLinks];
-      if (!items.length) return showToast("No selected links");
-      if (!confirm(`Delete ${items.length} selected links?`)) return;
+      if (!items.length) return showToast("No selected items");
+      if (!confirm(`Delete ${items.length} selected items?`)) return;
       for (const key of items) {
         const [backend, slug] = key.split(":");
-        await deleteLink(slug, backend);
+        const item = dataStore.find(x => x.backend === backend && x.slug === slug);
+        await deleteLink(slug, backend, item ? getItemType(item) : "redirect");
       }
       selectedLinks.clear();
       renderTable();
@@ -2424,9 +2522,10 @@
     async function bulkCopySelected() {
       const items = [...selectedLinks].map(key => {
         const [backend, slug] = key.split(":");
-        return buildPublicLink(slug, backend);
+        const item = dataStore.find(x => x.backend === backend && x.slug === slug);
+        return item?.publicLink || buildPublicLink(slug, backend);
       });
-      if (!items.length) return showToast("No selected links");
+      if (!items.length) return showToast("No selected items");
       await copyLink(items.join("\n"));
     }
 
@@ -2463,10 +2562,11 @@
 
     function exportVisibleAsCsv() {
       const rows = getFilteredData();
-      const header = ["backend","slug","url","clicks","score","fraud","status","expire","createdAt"];
+      const header = ["backend","type","slug","url","clicks","score","fraud","status","expire","createdAt"];
       const lines = [header.join(",")].concat(rows.map(item => {
         const values = [
           backendLabel(item.backend),
+          getItemType(item),
           item.slug || "",
           item.url || "",
           Number(item.clicks || 0),
@@ -2524,9 +2624,9 @@
         panelContent.innerHTML = `
           <h3>ℹ️ About Rattle Link</h3>
           <div class="muted">Rattle Link is a smart short-link platform that lets users create, manage, and monitor short URLs across connected backend systems.</div>
-          <div class="info-box" style="margin-top:12px;"><b>What it does</b><div class="muted">Shorten links, manage expiry, review analytics, track clicks, and control payments/subscriptions through one dashboard.</div></div>
+          <div class="info-box" style="margin-top:12px;"><b>What it does</b><div class="muted">Shorten links, manage expiry, review analytics, track clicks, run landing pages, and control payments/subscriptions through one dashboard.</div></div>
           <div class="info-box"><b>Why two backends</b><div class="muted">Your account can work with both Backend2 and AWS Legacy, and this dashboard merges them for easier management.</div></div>
-          <div class="info-box"><b>Main purpose</b><div class="muted">Fast link creation, clean analytics, billing control, and better operational visibility for users and admins.</div></div>
+          <div class="info-box"><b>Main purpose</b><div class="muted">Fast link creation, clean analytics, billing control, landing page management, and better operational visibility for users and admins.</div></div>
         `;
       }
       if (type === "legal") {
@@ -2557,7 +2657,6 @@
         </div>
         <div class="info-box"><b>Common Help Topics</b><div class="muted" style="margin-top:8px;">• login/session problems<br>• payment verification delay<br>• link paused or expired<br>• link analytics questions<br>• account verification help<br>• domain TXT verification</div></div>
         <div class="info-box"><b>Before contacting support</b><div class="muted" style="margin-top:8px;">Include your email, payment ID if relevant, backend used, and a short explanation of the problem.</div></div>
-        <div class="info-box"><b>Quick Buttons</b><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><a class="btn" href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email Support</a><a class="btn" href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a><a class="btn" href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord</a></div></div>
       `;
     }
 
@@ -2813,7 +2912,7 @@
         });
       });
 
-      [searchInput, backendFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
+      [searchInput, backendFilter, itemTypeFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
         if (!el) return;
         el.addEventListener("input", () => { renderTable(); drawChart(); });
         el.addEventListener("change", () => { renderTable(); drawChart(); });
@@ -2867,6 +2966,7 @@
     function clearFilters() {
       if (searchInput) searchInput.value = "";
       if (backendFilter) backendFilter.value = "all";
+      if (itemTypeFilter) itemTypeFilter.value = "all";
       if (statusFilter) statusFilter.value = "all";
       if (dateRangeFilter) dateRangeFilter.value = "all";
       if (sortFilter) sortFilter.value = "newest";
@@ -2897,6 +2997,9 @@
     if (refreshActivityBtn) refreshActivityBtn.addEventListener("click", renderActivityTimeline);
     if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperationalBoard);
     if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
+
+    if (planQuantityInput) planQuantityInput.addEventListener("input", updateBillingPreview);
+    if (planQuantityInput) planQuantityInput.addEventListener("change", updateBillingPreview);
 
     if (selectAllLinks) {
       selectAllLinks.addEventListener("change", () => {
