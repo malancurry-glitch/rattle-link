@@ -4,13 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upgrade - Rattle Link</title>
-
   <style>
     :root{
       --bg:#020617;
       --bg2:#000;
       --card:rgba(2,6,23,.86);
-      --card-soft:rgba(15,23,42,.55);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -22,7 +20,7 @@
       --border:rgba(0,255,255,.18);
     }
 
-    *{ box-sizing:border-box; }
+    *{box-sizing:border-box}
 
     body{
       margin:0;
@@ -44,46 +42,12 @@
       background-size:40px 40px;
     }
 
-    .wrap{
-      position:relative;
-      z-index:1;
-      max-width:1280px;
-      margin:0 auto;
-    }
-
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
-    }
-
-    .topbar h1{
-      margin:0;
-      color:var(--cyan);
-      text-shadow:0 0 10px rgba(0,255,255,.35);
-    }
-
-    .sub{
-      color:var(--muted);
-      font-size:12px;
-      margin-top:6px;
-      line-height:1.6;
-    }
-
-    .actions{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-
-    .grid-2{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:16px;
-    }
+    .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .topbar h1{margin:0;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,.35)}
+    .sub{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.6}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
 
     .card{
       background:var(--card);
@@ -95,16 +59,11 @@
       margin-bottom:16px;
     }
 
-    .card h2,.card h3{
-      margin-top:0;
-      color:var(--cyan);
-    }
-
-    .muted{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
+    .card h2,.card h3{margin-top:0;color:var(--cyan)}
+    .muted{color:var(--muted);font-size:12px;line-height:1.6}
+    .success{color:var(--green)}
+    .error{color:var(--red)}
+    .warn{color:var(--yellow)}
 
     .badge{
       display:inline-block;
@@ -116,20 +75,16 @@
       margin-bottom:6px;
     }
 
-    .success{ color:var(--green); }
-    .error{ color:var(--red); }
-    .warn{ color:var(--yellow); }
+    .status-trial{color:var(--yellow);background:#2b1a00}
+    .status-active{color:var(--green);background:#052e16}
+    .status-paused{color:var(--yellow);background:#2b1a00}
+    .status-expired{color:var(--red);background:#2b0000}
+    .status-pending{color:var(--yellow);background:#2b1a00}
+    .status-awaiting{color:#60a5fa;background:#172554}
+    .status-verified{color:var(--green);background:#052e16}
+    .status-cancelled{color:var(--red);background:#2b0000}
 
-    .status-trial{ color:var(--yellow); background:#2b1a00; }
-    .status-active{ color:var(--green); background:#052e16; }
-    .status-paused{ color:var(--yellow); background:#2b1a00; }
-    .status-expired{ color:var(--red); background:#2b0000; }
-    .status-pending{ color:var(--yellow); background:#2b1a00; }
-    .status-awaiting{ color:#60a5fa; background:#172554; }
-    .status-verified{ color:var(--green); background:#052e16; }
-    .status-cancelled{ color:var(--red); background:#2b0000; }
-
-    button, a.btn{
+    button,a.btn{
       background:#020617;
       color:var(--cyan);
       border:1px solid var(--border);
@@ -142,78 +97,20 @@
       font-size:13px;
     }
 
-    button:hover, a.btn:hover{
-      box-shadow:0 0 14px rgba(0,255,255,.18);
-      transform:translateY(-1px);
-    }
+    button:hover,a.btn:hover{box-shadow:0 0 14px rgba(0,255,255,.18);transform:translateY(-1px)}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+    .btn-green{color:var(--green);border-color:var(--green)}
+    .btn-red{color:var(--red);border-color:var(--red)}
+    .btn-purple{color:var(--purple);border-color:var(--purple)}
+    .btn-yellow{color:var(--yellow);border-color:var(--yellow)}
 
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .field{margin-bottom:12px}
+    label{display:block;margin-bottom:6px;font-size:12px;color:var(--muted)}
 
-    .btn-primary{
-      background:var(--blue);
-      border-color:var(--blue);
-      color:#fff;
-    }
-
-    .btn-green{
-      color:var(--green);
-      border-color:var(--green);
-    }
-
-    .btn-red{
-      color:var(--red);
-      border-color:var(--red);
-    }
-
-    .btn-purple{
-      color:var(--purple);
-      border-color:var(--purple);
-    }
-
-    .btn-yellow{
-      color:var(--yellow);
-      border-color:var(--yellow);
-    }
-
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .field{
-      margin-bottom:12px;
-    }
-
-    label{
-      display:block;
-      margin-bottom:6px;
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    input, select{
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      border:1px solid var(--border);
-      background:#000;
-      color:var(--text);
-      outline:none;
-    }
-
-    .plans{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:14px;
-    }
-
-    .plan{
+    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .plan,.crypto{
       border:1px solid var(--border);
       border-radius:14px;
       padding:14px;
@@ -222,81 +119,25 @@
       transition:.2s ease;
     }
 
-    .plan:hover{
-      transform:translateY(-2px);
-      box-shadow:0 0 16px rgba(0,255,255,.14);
-    }
+    .plan:hover,.crypto:hover{transform:translateY(-2px);box-shadow:0 0 16px rgba(0,255,255,.14)}
+    .plan.active,.crypto.active{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,255,255,.18)}
+    .plan .price{font-size:28px;color:var(--cyan);font-weight:700;margin:8px 0}
+    .plan ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
+    .crypto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
 
-    .plan.active{
-      border-color:var(--cyan);
-      box-shadow:0 0 18px rgba(0,255,255,.18);
-    }
-
-    .plan .price{
-      font-size:28px;
-      color:var(--cyan);
-      font-weight:700;
-      margin:8px 0;
-    }
-
-    .plan ul{
-      margin:10px 0 0;
-      padding-left:18px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
-
-    .crypto-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-    }
-
-    .crypto{
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:12px;
-      cursor:pointer;
-      background:#010816;
-      transition:.2s ease;
-    }
-
-    .crypto.active{
-      border-color:var(--cyan);
-      box-shadow:0 0 14px rgba(0,255,255,.16);
-    }
-
-    .summary{
+    .summary,.mini{
       background:#010816;
       border:1px solid var(--border);
       border-radius:14px;
       padding:14px;
-      margin-top:12px;
     }
 
-    .payment-box{
-      display:grid;
-      grid-template-columns:240px 1fr;
-      gap:16px;
-      align-items:start;
-    }
+    .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .mini .v{font-size:24px;font-weight:700;color:var(--cyan)}
 
-    .qr-box{
-      text-align:center;
-      background:#fff;
-      border-radius:14px;
-      padding:12px;
-      min-height:264px;
-    }
-
-    .qr-box img{
-      width:100%;
-      max-width:220px;
-      display:block;
-      margin:0 auto;
-      border-radius:10px;
-    }
+    .payment-box{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
+    .qr-box{text-align:center;background:#fff;border-radius:14px;padding:12px;min-height:264px}
+    .qr-box img{width:100%;max-width:220px;display:block;margin:0 auto;border-radius:10px}
 
     .address-box{
       background:#000;
@@ -308,130 +149,34 @@
       font-size:13px;
     }
 
-    .kpi{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:12px;
-    }
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top;font-size:13px}
+    tbody tr[data-id]{cursor:pointer}
+    tbody tr[data-id]:hover{background:rgba(15,23,42,.55)}
+    .table-wrap{overflow:auto;width:100%}
 
-    .mini{
-      padding:12px;
-      border-radius:14px;
-      background:#010816;
-      border:1px solid var(--border);
-    }
+    .message{min-height:22px;margin-top:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
+    .hidden{display:none !important}
+    .copy-row{display:flex;gap:8px;align-items:stretch;margin-top:10px}
+    .copy-row .address-box{flex:1;margin:0}
+    .timer{font-size:13px;margin-top:10px;color:var(--yellow);font-weight:600}
 
-    .mini .v{
-      font-size:24px;
-      font-weight:700;
-      color:var(--cyan);
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:760px;
-    }
-
-    th, td{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      text-align:left;
-      vertical-align:top;
-      font-size:13px;
-    }
-
-    tbody tr[data-id]{
-      cursor:pointer;
-    }
-
-    tbody tr[data-id]:hover{
-      background:rgba(15,23,42,.55);
-    }
-
-    .table-wrap{
-      overflow:auto;
-      width:100%;
-    }
-
-    .message{
-      min-height:22px;
-      margin-top:12px;
-      font-size:13px;
-      line-height:1.5;
-      white-space:pre-wrap;
-    }
-
-    .hidden{
-      display:none !important;
-    }
-
-    .copy-row{
-      display:flex;
-      gap:8px;
-      align-items:stretch;
-      margin-top:10px;
-    }
-
-    .copy-row .address-box{
-      flex:1;
-      margin:0;
-    }
-
-    .timer{
-      font-size:13px;
-      margin-top:10px;
-      color:var(--yellow);
-      font-weight:600;
-    }
-
-    .waiting-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(59,130,246,.12);
-      border:1px solid rgba(59,130,246,.35);
-    }
-
-    .confirm-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(34,197,94,.12);
-      border:1px solid rgba(34,197,94,.35);
-    }
-
-    .expired-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-      background:rgba(239,68,68,.12);
-      border:1px solid rgba(239,68,68,.35);
-    }
+    .waiting-box,.confirm-box,.expired-box{margin-top:14px;padding:14px;border-radius:14px}
+    .waiting-box{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35)}
+    .confirm-box{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
+    .expired-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
 
     .spinner{
-      width:18px;
-      height:18px;
-      border:2px solid rgba(255,255,255,.2);
-      border-top:2px solid var(--cyan);
-      border-radius:50%;
-      display:inline-block;
-      animation:spin 1s linear infinite;
-      vertical-align:middle;
-      margin-right:8px;
+      width:18px;height:18px;border:2px solid rgba(255,255,255,.2);
+      border-top:2px solid var(--cyan);border-radius:50%;display:inline-block;
+      animation:spin 1s linear infinite;vertical-align:middle;margin-right:8px;
     }
 
-    @keyframes spin{
-      to{ transform:rotate(360deg); }
-    }
+    @keyframes spin{to{transform:rotate(360deg)}}
 
     @media (max-width: 980px){
-      .grid-2{
-        grid-template-columns:1fr;
-      }
-      .payment-box{
-        grid-template-columns:1fr;
-      }
+      .grid-2{grid-template-columns:1fr}
+      .payment-box{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -440,9 +185,8 @@
     <div class="topbar">
       <div>
         <h1>💎 Upgrade & Payments</h1>
-        <div class="sub">Start with 3 free trial links, then upgrade with crypto for more access and higher limits.</div>
+        <div class="sub">Create crypto payment requests, monitor confirmation, and activate your production subscription flow.</div>
       </div>
-
       <div class="actions">
         <a class="btn" href="dashboard.html">← Back to Dashboard</a>
         <a class="btn btn-purple" href="billing.html">Billing Center</a>
@@ -456,27 +200,16 @@
         <div class="card">
           <h2>👤 Subscription Status</h2>
           <div class="kpi">
-            <div class="mini">
-              <div class="muted">Account</div>
-              <div class="v" id="meUser" style="font-size:18px;">-</div>
-            </div>
-            <div class="mini">
-              <div class="muted">Status</div>
-              <div id="meStatusWrap"></div>
-            </div>
-            <div class="mini">
-              <div class="muted">Trial Remaining</div>
-              <div class="v" id="meTrialRemaining">0</div>
-            </div>
-            <div class="mini">
-              <div class="muted">Plan</div>
-              <div class="v" id="mePlan" style="font-size:18px;">-</div>
-            </div>
+            <div class="mini"><div class="muted">Account</div><div class="v" id="meUser" style="font-size:18px;">-</div></div>
+            <div class="mini"><div class="muted">Status</div><div id="meStatusWrap"></div></div>
+            <div class="mini"><div class="muted">Short Links Remaining</div><div class="v" id="meLinksRemaining">0</div></div>
+            <div class="mini"><div class="muted">Plan</div><div class="v" id="mePlan" style="font-size:18px;">-</div></div>
           </div>
 
           <div class="summary" style="margin-top:14px;">
             <div><b>Subscription Expires:</b> <span id="meExpires">-</span></div>
             <div style="margin-top:8px;"><b>Can Generate Links:</b> <span id="meCanGenerate">-</span></div>
+            <div style="margin-top:8px;"><b>Can Generate Landing Pages:</b> <span id="meCanLandings">-</span></div>
             <div style="margin-top:8px;"><b>Email Verified:</b> <span id="meEmailVerified">-</span></div>
             <div style="margin-top:8px;"><b>Usage:</b> <span id="meUsage">-</span></div>
             <div style="margin-top:8px;"><b>Primary Domain:</b> <span id="mePrimaryDomain">-</span></div>
@@ -512,8 +245,7 @@
           <h2>🪙 Payment Request</h2>
 
           <div id="emptyPaymentState" class="muted">
-            Choose a plan and crypto option, then create a payment request.
-            After you pay, click <b>I Made a Transfer</b> and this page will wait for admin confirmation.
+            Choose a paid plan and crypto option, then create a payment request. After you transfer funds, click <b>I Made a Transfer</b> to switch the request into confirmation tracking mode.
           </div>
 
           <div id="paymentState" class="hidden">
@@ -554,24 +286,18 @@
 
                 <div id="waitingBox" class="waiting-box hidden">
                   <div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div>
-                  <div class="muted" style="margin-top:8px;">
-                    We are checking your payment status. Once admin verifies it, this page will confirm automatically and return you to the dashboard.
-                  </div>
+                  <div class="muted" style="margin-top:8px;">This page will keep polling your account payment list until the request becomes verified, expires, or is cancelled.</div>
                   <div id="pollStatusText" class="muted" style="margin-top:8px;">Checking...</div>
                 </div>
 
                 <div id="confirmedBox" class="confirm-box hidden">
-                  <div><b>✅ Payment confirmed and successful</b></div>
-                  <div class="muted" style="margin-top:8px;">
-                    Your subscription is active. Redirecting back to dashboard...
-                  </div>
+                  <div><b>✅ Payment confirmed and subscription activated</b></div>
+                  <div class="muted" style="margin-top:8px;">Redirecting back to dashboard...</div>
                 </div>
 
                 <div id="expiredBox" class="expired-box hidden">
                   <div><b>⛔ Payment request expired or cancelled</b></div>
-                  <div class="muted" style="margin-top:8px;">
-                    Create a new payment request to continue.
-                  </div>
+                  <div class="muted" style="margin-top:8px;">Create a fresh payment request to continue.</div>
                 </div>
               </div>
             </div>
@@ -601,14 +327,15 @@
   </div>
 
   <script>
-    const API = "https://api.rattleshortapi.it.com";
+    const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
     const meUser = document.getElementById("meUser");
     const meStatusWrap = document.getElementById("meStatusWrap");
-    const meTrialRemaining = document.getElementById("meTrialRemaining");
+    const meLinksRemaining = document.getElementById("meLinksRemaining");
     const mePlan = document.getElementById("mePlan");
     const meExpires = document.getElementById("meExpires");
     const meCanGenerate = document.getElementById("meCanGenerate");
+    const meCanLandings = document.getElementById("meCanLandings");
     const meEmailVerified = document.getElementById("meEmailVerified");
     const meUsage = document.getElementById("meUsage");
     const mePrimaryDomain = document.getElementById("mePrimaryDomain");
@@ -692,17 +419,13 @@
 
         return { ok:res.ok, status:res.status, data };
       }catch(error){
-        return {
-          ok:false,
-          status:0,
-          data:{ message:error?.message || "Network error" }
-        };
+        return { ok:false, status:0, data:{ message:error?.message || "Network error" } };
       }
     }
 
     function showMsg(text, type = "warn"){
       upgradeMsg.textContent = text;
-      upgradeMsg.className = "message " + type;
+      upgradeMsg.className = `message ${type}`;
     }
 
     function logout(){
@@ -721,11 +444,11 @@
     }
 
     function statusBadge(status){
-      const s = String(status || "").toLowerCase();
+      const s = String(status || "trial").toLowerCase();
       if(s === "active") return `<span class="badge status-active">ACTIVE</span>`;
       if(s === "paused") return `<span class="badge status-paused">PAUSED</span>`;
       if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
-      return `<span class="badge status-trial">${(s || "trial").toUpperCase()}</span>`;
+      return `<span class="badge status-trial">${s.toUpperCase()}</span>`;
     }
 
     function paymentStatusBadge(status){
@@ -737,56 +460,45 @@
       return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
     }
 
+    function boolLabel(value){
+      return value ? `<span class="success">Yes ✅</span>` : `<span class="error">No ❌</span>`;
+    }
+
     function renderMe(){
       if(!meData) return;
 
+      const limits = meData.planLimits || { activeShortLinks: 0, activeLandingPages: 0 };
+      const usage = meData.usage || { activeShortLinks: 0, activeLandingPages: 0 };
+      const remaining = meData.remaining || {
+        activeShortLinks: Math.max(0, Number(limits.activeShortLinks || 0) - Number(usage.activeShortLinks || 0)),
+        activeLandingPages: Math.max(0, Number(limits.activeLandingPages || 0) - Number(usage.activeLandingPages || 0))
+      };
+
       meUser.textContent = meData.username || "-";
       meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || "trial");
-      meTrialRemaining.textContent = Number(meData.trialLinksRemaining || 0);
-      mePlan.textContent = meData.subscriptionPlan || "Trial";
+      meLinksRemaining.textContent = Number(remaining.activeShortLinks || 0);
+      mePlan.textContent = meData.subscriptionPlan || (meData.accessSource === "trial" ? "free_trial" : "-");
       meExpires.textContent = meData.subscriptionExpiresAt ? formatDate(meData.subscriptionExpiresAt) : "No active paid plan";
-      meCanGenerate.innerHTML = meData.canGenerateLinks
-        ? `<span class="success">Yes ✅</span>`
-        : `<span class="error">No ❌</span>`;
-      meEmailVerified.innerHTML = meData.emailVerified
-        ? `<span class="success">Verified ✅</span>`
-        : `<span class="warn">Not verified</span>`;
+      meCanGenerate.innerHTML = boolLabel(!!meData.canGenerateLinks);
+      meCanLandings.innerHTML = boolLabel(!!meData.canGenerateLandingPages);
+      meEmailVerified.innerHTML = meData.emailVerified ? `<span class="success">Verified ✅</span>` : `<span class="warn">Not verified</span>`;
       mePrimaryDomain.textContent = meData.primaryDomain || "-";
-
-      const usage = meData.planUsage;
-      if (usage) {
-        meUsage.textContent =
-          `${Number(usage.linksUsed || 0)}/${Number(usage.linksLimit || 0)} links • ` +
-          `${Number(usage.landingUsed || 0)}/${Number(usage.landingLimit || 0)} landings`;
-      } else {
-        meUsage.textContent = `${Number(meData.trialLinksUsed || 0)}/${Number(meData.trialLinksLimit || 0)} trial links used`;
-      }
+      meUsage.textContent = `${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links • ${Number(usage.activeLandingPages || 0)}/${Number(limits.activeLandingPages || 0)} landing pages`;
     }
 
     function renderPlans(){
-      plansBox.innerHTML = plansData.map(plan => {
-        const limits = plan.features || {};
-        const linksText =
-          limits.linksPerWeek ? `${limits.linksPerWeek} links / week` :
-          limits.linksPerMonth ? `${limits.linksPerMonth} links / month` :
-          "Links included";
-        const landingsText =
-          limits.customLandingPagesPerWeek ? `${limits.customLandingPagesPerWeek} landing pages / week` :
-          limits.customLandingPagesPerMonth ? `${limits.customLandingPagesPerMonth} landing pages / month` :
-          "Landing pages included";
-
-        return `
-          <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
-            <div class="muted">${plan.label}</div>
-            <div class="price">$${plan.amountUsd}</div>
-            <div class="muted">Billing cycle: ${plan.code}</div>
-            <ul>
-              <li>${linksText}</li>
-              <li>${landingsText}</li>
-            </ul>
-          </div>
-        `;
-      }).join("");
+      plansBox.innerHTML = plansData.map(plan => `
+        <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
+          <div class="muted">${plan.label}</div>
+          <div class="price">$${Number(plan.amountUsd || 0)}</div>
+          <div class="muted">${plan.unit ? `Every ${plan.unit}` : plan.code}</div>
+          <ul>
+            <li>${Number(plan.limits?.activeShortLinks || 0)} active short links</li>
+            <li>${Number(plan.limits?.activeLandingPages || 0)} active landing pages</li>
+            <li>${Number(plan.durationDaysPerUnit || 0)} day access window per payment unit</li>
+          </ul>
+        </div>
+      `).join("");
 
       plansBox.querySelectorAll(".plan").forEach(el => {
         el.onclick = () => {
@@ -818,28 +530,18 @@
     function updateSelection(){
       const plan = plansData.find(x => x.code === selectedPlan);
       const crypto = cryptoData.find(x => x.code === selectedCrypto);
-
       selectedPlanText.textContent = plan ? `${plan.label} (${plan.code})` : "None";
-      selectedCryptoText.textContent = crypto ? `${crypto.label}` : "None";
-      selectedAmountText.textContent = plan ? `$${plan.amountUsd}` : "$0";
+      selectedCryptoText.textContent = crypto ? crypto.label : "None";
+      selectedAmountText.textContent = plan ? `$${Number(plan.amountUsd || 0)}` : "$0";
     }
 
     function stopPaymentCountdown(){
-      if(paymentCountdown){
-        clearInterval(paymentCountdown);
-        paymentCountdown = null;
-      }
+      if(paymentCountdown){ clearInterval(paymentCountdown); paymentCountdown = null; }
     }
 
     function stopPaymentPolling(){
-      if(paymentPoller){
-        clearInterval(paymentPoller);
-        paymentPoller = null;
-      }
-      if(redirectTimer){
-        clearTimeout(redirectTimer);
-        redirectTimer = null;
-      }
+      if(paymentPoller){ clearInterval(paymentPoller); paymentPoller = null; }
+      if(redirectTimer){ clearTimeout(redirectTimer); redirectTimer = null; }
     }
 
     function resetWaitingState(){
@@ -852,7 +554,6 @@
 
     function startPaymentCountdown(expiresAt){
       stopPaymentCountdown();
-
       const tick = () => {
         const left = Number(expiresAt || 0) - Date.now();
         if(left <= 0){
@@ -867,7 +568,6 @@
         const s = Math.floor((left % 60000) / 1000);
         paymentTimer.textContent = `⏱ Payment request expires in ${h}h ${m}m ${s}s`;
       };
-
       tick();
       paymentCountdown = setInterval(tick, 1000);
     }
@@ -905,14 +605,15 @@
         networkCode: payment.networkCode || payment.network_code || "-",
         createdAt: Number(payment.createdAt || payment.created_at || 0),
         expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
-        verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null
+        verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
+        qrImageUrl: payment.qrImageUrl || payment.qr_image_url || "",
+        qrText: payment.qrText || payment.qr_text || ""
       };
     }
 
     function openPayment(rawPayment){
       const payment = normalizePayment(rawPayment);
       latestPayment = payment;
-
       emptyPaymentState.classList.add("hidden");
       paymentState.classList.remove("hidden");
 
@@ -924,51 +625,34 @@
       paymentNetwork.textContent = payment.networkCode || "-";
       paymentStatus.innerHTML = paymentStatusBadge(payment.status);
       paymentAddress.textContent = payment.address || "-";
-      paymentQrText.textContent = payment.qrText || payment.qr_text || "-";
+      paymentQrText.textContent = payment.qrText || "-";
       paymentCreated.textContent = formatDate(payment.createdAt);
       paymentExpires.textContent = formatDate(payment.expiresAt);
 
-      if(payment.expiresAt){
-        startPaymentCountdown(payment.expiresAt);
-      } else {
-        paymentTimer.textContent = "";
-      }
+      if(payment.expiresAt) startPaymentCountdown(payment.expiresAt);
+      else paymentTimer.textContent = "";
 
       const waitingPaymentId = localStorage.getItem("waitingPaymentId");
       const paymentStatusValue = String(payment.status || "").toLowerCase();
 
-      if(paymentStatusValue === "verified"){
-        setConfirmedMode();
-        return;
-      }
-
-      if(paymentStatusValue === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())){
-        setExpiredMode();
-        return;
-      }
-
-      if(waitingPaymentId && waitingPaymentId === payment.id){
+      if(paymentStatusValue === "verified") return setConfirmedMode();
+      if(paymentStatusValue === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())) return setExpiredMode();
+      if(waitingPaymentId && waitingPaymentId === payment.id) {
         setWaitingMode(true);
         pollStatusText.textContent = `Checking payment ${payment.id}...`;
         return;
       }
-
-      if(paymentStatusValue === "awaiting_confirmation"){
+      if(paymentStatusValue === "awaiting_confirmation") {
         setWaitingMode(true);
         pollStatusText.textContent = "Waiting for admin confirmation...";
         return;
       }
-
       resetWaitingState();
     }
 
     function renderPaymentsTable(list){
       if(!list.length){
-        paymentsTable.innerHTML = `
-          <tr>
-            <td colspan="6" class="muted">No payments yet</td>
-          </tr>
-        `;
+        paymentsTable.innerHTML = `<tr><td colspan="6" class="muted">No payments yet</td></tr>`;
         return;
       }
 
@@ -993,17 +677,11 @@
 
     async function loadPlans(){
       const res = await safeFetch(`${API}/plans`);
-      if(!res.ok){
-        showMsg(res.data?.message || "Failed to load plans", "error");
-        return;
-      }
-
+      if(!res.ok){ showMsg(res.data?.message || "Failed to load plans", "error"); return; }
       plansData = Array.isArray(res.data?.plans) ? res.data.plans : [];
       cryptoData = Array.isArray(res.data?.cryptoOptions) ? res.data.cryptoOptions : [];
-
       if(!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
       if(!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
-
       renderPlans();
       renderCrypto();
       updateSelection();
@@ -1011,40 +689,30 @@
 
     async function loadMe(){
       const res = await safeFetch(`${API}/me`);
-      if(!res.ok){
-        showMsg(res.data?.message || "Failed to load account", "error");
-        return;
-      }
+      if(!res.ok){ showMsg(res.data?.message || "Failed to load account", "error"); return; }
       meData = res.data || {};
       renderMe();
     }
 
     function prioritizePayments(payments){
       return [...payments].map(normalizePayment).sort((a, b) => {
-        const sa = String(a.status || "").toLowerCase();
-        const sb = String(b.status || "").toLowerCase();
-
         const rank = (s) => {
+          s = String(s || "").toLowerCase();
           if (s === "awaiting_confirmation") return 0;
           if (s === "pending") return 1;
           if (s === "verified") return 2;
           if (s === "cancelled") return 3;
           return 4;
         };
-
-        const diff = rank(sa) - rank(sb);
+        const diff = rank(a.status) - rank(b.status);
         if(diff !== 0) return diff;
-
         return Number(b.createdAt || 0) - Number(a.createdAt || 0);
       });
     }
 
     async function loadPayments(openLatestPending = false){
       const res = await safeFetch(`${API}/payments/me`);
-      if(!res.ok){
-        showMsg(res.data?.message || "Failed to load payments", "error");
-        return null;
-      }
+      if(!res.ok){ showMsg(res.data?.message || "Failed to load payments", "error"); return null; }
 
       const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : [];
       const payments = prioritizePayments(rawPayments);
@@ -1052,30 +720,20 @@
       renderPaymentsTable(payments);
 
       const waitingPaymentId = localStorage.getItem("waitingPaymentId");
-
       if(waitingPaymentId){
         const waitingPayment = payments.find(x => x.id === waitingPaymentId);
-        if(waitingPayment){
-          openPayment(waitingPayment);
-          return waitingPayment;
-        }
+        if(waitingPayment){ openPayment(waitingPayment); return waitingPayment; }
       }
 
       if(openLatestPending){
         const pending = payments.find(x => {
-          const s = String(x.status).toLowerCase();
+          const s = String(x.status || "").toLowerCase();
           return s === "awaiting_confirmation" || s === "pending";
         });
-        if(pending){
-          openPayment(pending);
-          return pending;
-        }
+        if(pending){ openPayment(pending); return pending; }
       }
 
-      if(payments[0]){
-        openPayment(payments[0]);
-        return payments[0];
-      }
+      if(payments[0]){ openPayment(payments[0]); return payments[0]; }
 
       latestPayment = null;
       emptyPaymentState.classList.remove("hidden");
@@ -1085,22 +743,17 @@
     }
 
     async function createPaymentRequest(){
-      if(!selectedPlan){
-        showMsg("Choose a plan first", "warn");
-        return;
-      }
-      if(!selectedCrypto){
-        showMsg("Choose a crypto option first", "warn");
-        return;
-      }
+      if(!selectedPlan) return showMsg("Choose a plan first", "warn");
+      if(!selectedCrypto) return showMsg("Choose a crypto option first", "warn");
 
       const btn = document.getElementById("createPaymentBtn");
       btn.disabled = true;
       btn.textContent = "Creating...";
 
       const res = await safeFetch(`${API}/payment-request`, "POST", {
-        billingCycle: selectedPlan,
-        cryptoCode: selectedCrypto
+        planCode: selectedPlan,
+        cryptoCode: selectedCrypto,
+        quantity: 1
       });
 
       btn.disabled = false;
@@ -1144,7 +797,6 @@
 
     async function pollPaymentUntilVerified(paymentIdValue){
       stopPaymentPolling();
-
       setWaitingMode(true);
       pollStatusText.textContent = `Checking payment ${paymentIdValue}...`;
 
@@ -1173,8 +825,7 @@
           stopPaymentPolling();
           setConfirmedMode();
           await loadMe();
-          showMsg("Payment confirmed and successful ✅ Redirecting to dashboard...", "success");
-
+          showMsg("Payment confirmed and successful. Redirecting to dashboard...", "success");
           redirectTimer = setTimeout(() => {
             window.location.href = "dashboard.html?payment=success";
           }, 2500);
@@ -1202,37 +853,29 @@
     }
 
     async function userMadeTransfer(){
-      if(!latestPayment || !latestPayment.id){
-        showMsg("Create or open a payment request first", "warn");
-        return;
-      }
+      if(!latestPayment || !latestPayment.id) return showMsg("Create or open a payment request first", "warn");
 
       const currentStatus = String(latestPayment.status || "").toLowerCase();
       if(currentStatus === "verified"){
         showMsg("This payment is already verified", "success");
-        setConfirmedMode();
-        return;
+        return setConfirmedMode();
       }
 
       if(currentStatus === "cancelled" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())){
         showMsg("This payment is expired or cancelled. Create a new one.", "error");
-        setExpiredMode();
-        return;
+        return setExpiredMode();
       }
 
       if(currentStatus === "awaiting_confirmation"){
         localStorage.setItem("waitingPaymentId", latestPayment.id);
         showMsg("This payment is already waiting for admin confirmation", "success");
-        pollPaymentUntilVerified(latestPayment.id);
-        return;
+        return pollPaymentUntilVerified(latestPayment.id);
       }
 
       iTransferredBtn.disabled = true;
       iTransferredBtn.textContent = "Saving...";
 
-      const res = await safeFetch(`${API}/payment-i-made`, "POST", {
-        paymentId: latestPayment.id
-      });
+      const res = await safeFetch(`${API}/payment-i-made`, "POST", { paymentId: latestPayment.id });
 
       if(!res.ok){
         iTransferredBtn.disabled = false;
@@ -1243,7 +886,6 @@
 
       localStorage.setItem("waitingPaymentId", latestPayment.id);
       showMsg("Transfer marked. Waiting for admin confirmation...", "success");
-
       await loadPayments(false);
       pollPaymentUntilVerified(latestPayment.id);
     }
@@ -1259,9 +901,7 @@
     document.getElementById("logoutBtn").onclick = logout;
     document.getElementById("copyAddressBtn").onclick = () => copyText(paymentAddress.textContent, "Address copied");
     document.getElementById("copyQrTextBtn").onclick = () => copyText(paymentQrText.textContent, "QR text copied");
-    document.getElementById("openBillingBtn").onclick = () => {
-      window.location.href = "billing.html";
-    };
+    document.getElementById("openBillingBtn").onclick = () => { window.location.href = "billing.html"; };
     document.getElementById("checkMeBtn").onclick = async () => {
       await loadMe();
       await loadPayments(false);
@@ -1274,7 +914,6 @@
       await loadPlans();
       await loadMe();
       const payment = await loadPayments(true);
-
       const waitingPaymentId = localStorage.getItem("waitingPaymentId");
       if(waitingPaymentId){
         if(payment && payment.id === waitingPaymentId){
