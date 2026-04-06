@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rattle Link - Login, Signup, Magic Access</title>
-  <meta name="description" content="Secure login, signup, magic approval, pricing, and branded link platform access for Rattle Link." />
+  <meta name="description" content="Secure login, signup, email verification, 2FA, magic approval, pricing, and branded link platform access for Rattle Link." />
   <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
   <style>
     :root{
@@ -146,18 +146,18 @@
     }
 
     .nav-links,
-    .topbar-actions,
     .hero-buttons,
-    .proof-row,
     .footer-links,
     .pricing-actions,
-    .faq-actions,
-    .approval-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .approval-actions,
+    .method-actions,
+    .inline-links{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
     .nav-links a,
     .ghost-link,
     .theme-toggle,
-    .pill-btn{
+    .pill-btn,
+    .link-card{
       appearance:none;
       border:1px solid var(--line);
       background:rgba(255,255,255,.74);
@@ -173,12 +173,14 @@
     body.dark .nav-links a,
     body.dark .ghost-link,
     body.dark .theme-toggle,
-    body.dark .pill-btn{ background:rgba(255,255,255,.03); }
+    body.dark .pill-btn,
+    body.dark .link-card{ background:rgba(255,255,255,.03); }
 
     .nav-links a:hover,
     .ghost-link:hover,
     .theme-toggle:hover,
-    .pill-btn:hover{
+    .pill-btn:hover,
+    .link-card:hover{
       transform:translateY(-1px);
       border-color:var(--primary);
       color:var(--primary);
@@ -197,7 +199,7 @@
     .shell{
       display:grid;
       grid-template-columns:1.08fr .92fr;
-      min-height:820px;
+      min-height:840px;
       border-radius:var(--radius-2xl);
       overflow:hidden;
       border:1px solid var(--line);
@@ -291,14 +293,15 @@
 
     .visual-card,
     .promo-panel,
-    .section-card,
     .price-card,
     .feature-card,
     .testimonial-card,
     .faq-item,
     .metric-card,
     .industry-card,
-    .support-card{
+    .support-card,
+    .option-box,
+    .auth-method-box{
       border-radius:24px;
       border:1px solid var(--line);
       background:var(--surface);
@@ -514,7 +517,8 @@
       transition:.18s ease;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.24);
     }
-    .input-group input::placeholder{ color:transparent; }
+    .input-group input::placeholder,
+    .input-group select::placeholder{ color:transparent; }
     .input-group input:hover,
     .input-group select:hover{ border-color:var(--line-strong); }
     .input-group input:focus,
@@ -533,7 +537,9 @@
       transition:.16s ease;
     }
     .input-group input:focus + label,
-    .input-group input:not(:placeholder-shown) + label{ top:-8px; font-size:11px; font-weight:800; color:var(--primary); }
+    .input-group input:not(:placeholder-shown) + label,
+    .input-group select:focus + label,
+    .input-group select.has-value + label{ top:-8px; font-size:11px; font-weight:800; color:var(--primary); }
     .input-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; pointer-events:none; }
     .password-box{ position:relative; }
     .toggle{
@@ -580,7 +586,8 @@
     .testimonial-grid,
     .support-grid,
     .footer-grid,
-    .promo-grid{
+    .promo-grid,
+    .auth-method-grid{
       display:grid;
       gap:16px;
     }
@@ -588,6 +595,41 @@
     .helper-box{ border-radius:14px; border:1px solid var(--line); background:var(--surface-2); padding:12px; }
     .helper-box b{ display:block; font-size:12px; margin-bottom:5px; color:var(--text); }
     .helper-box span{ display:block; font-size:11px; line-height:1.6; color:var(--text-soft); }
+
+    .auth-method-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    .auth-method-box{
+      padding:14px;
+      border-radius:18px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      cursor:pointer;
+      transition:.18s ease;
+      user-select:none;
+      box-shadow:none;
+    }
+    .auth-method-box:hover{ border-color:var(--primary); transform:translateY(-1px); }
+    .auth-method-box.active{
+      border-color:var(--primary);
+      background:rgba(37,99,235,.06);
+      box-shadow:0 0 0 4px rgba(37,99,235,.08);
+    }
+    body.dark .auth-method-box.active{
+      background:rgba(0,213,255,.06);
+      box-shadow:0 0 0 4px rgba(0,213,255,.08);
+    }
+    .auth-method-box b{ display:block; margin-bottom:6px; font-size:13px; }
+    .auth-method-box span{ display:block; font-size:11px; line-height:1.6; color:var(--text-soft); }
+
+    .option-box{
+      display:none;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+    }
+    .option-box.show{ display:block; }
+    .option-box b{ display:block; margin-bottom:6px; font-size:13px; color:var(--text); }
+    .option-box span{ display:block; font-size:12px; line-height:1.7; color:var(--text-soft); }
 
     .captcha-panel{ margin-top:2px; border-radius:18px; border:1px dashed var(--line-strong); background:var(--surface-2); padding:14px; }
     .captcha-title{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 10px; font-size:12px; font-weight:800; color:var(--text-soft); text-transform:uppercase; letter-spacing:.08em; }
@@ -660,7 +702,6 @@
     body.dark .section.alt{ background:rgba(255,255,255,.02); border-color:rgba(148,163,184,.06); }
 
     .section-head{ max-width:820px; margin:0 auto 32px; text-align:center; }
-    .section-head.left{ max-width:none; margin:0 0 26px; text-align:left; }
     .section-kicker{ display:inline-flex; padding:8px 12px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); color:var(--primary); font-size:12px; font-weight:800; margin-bottom:14px; }
     .section-head h2{ margin:0 0 12px; font-size:46px; line-height:1.04; letter-spacing:-1.4px; color:var(--text); }
     .section-head p{ margin:0; color:var(--text-soft); font-size:16px; line-height:1.8; }
@@ -755,7 +796,8 @@
       .industry-grid,
       .testimonial-grid,
       .support-grid,
-      .footer-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .footer-grid,
+      .auth-method-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
       .auth{ padding:24px 20px 22px; }
       .auth-shell{ max-width:100%; }
     }
@@ -780,7 +822,8 @@
       .industry-grid,
       .testimonial-grid,
       .support-grid,
-      .footer-grid{ grid-template-columns:1fr; }
+      .footer-grid,
+      .auth-method-grid{ grid-template-columns:1fr; }
       .auth-head h3{ font-size:28px; }
       .tab{ min-width:100%; }
       .form-card,
@@ -824,7 +867,7 @@
           <div class="eyebrow">⚡ Built for branded link operations</div>
           <h2>Shorten links, launch landing pages, and sign in securely from one pro platform.</h2>
           <p class="lead">
-            Rattle Link gives you branded short links, QR-ready campaigns, TXT-only custom domain verification behind Cloudflare proxy mode, cleaner analytics, and a secure login flow with magic approval and fallback-aware authentication.
+            Rattle Link gives you branded short links, QR-ready campaigns, TXT-only custom domain verification behind Cloudflare proxy mode, cleaner analytics, and a secure login flow with password, email approval, email verification, and direct 2FA code support.
           </p>
 
           <div class="hero-buttons">
@@ -844,7 +887,7 @@
               <div class="hero-point-icon">🛡️</div>
               <div>
                 <strong>Security-first access</strong>
-                <span>Password login, email verification, magic approval, captcha protection, and a production-ready auth flow.</span>
+                <span>Password login, email verification, magic approval, direct 2FA code entry, and captcha protection in one flow.</span>
               </div>
             </div>
             <div class="hero-point">
@@ -877,7 +920,7 @@
               <div class="kpi-stack">
                 <div class="kpi">
                   <b>99.9%</b>
-                  <small>Login flow uptime target with secure approval checks</small>
+                  <small>Login flow uptime target with secure approval and 2FA options</small>
                 </div>
                 <div class="kpi">
                   <b>2-layer</b>
@@ -955,6 +998,28 @@
             </div>
 
             <div class="field-grid">
+              <div id="loginMethodArea">
+                <div class="auth-method-grid">
+                  <div class="auth-method-box active" id="methodPasswordBox" onclick="setLoginMethod('password')">
+                    <b>Password login</b>
+                    <span>Use email and password, then continue normally.</span>
+                  </div>
+                  <div class="auth-method-box" id="methodVerifyBox" onclick="setLoginMethod('verify_email')">
+                    <b>Verify email</b>
+                    <span>Resend your verification email and continue from there.</span>
+                  </div>
+                  <div class="auth-method-box" id="method2faBox" onclick="setLoginMethod('two_factor')">
+                    <b>Use 2FA code</b>
+                    <span>Enter your authenticator or email OTP code directly.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="loginMethodInfo" class="option-box show">
+                <b id="loginMethodInfoTitle">Password login selected</b>
+                <span id="loginMethodInfoText">Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.</span>
+              </div>
+
               <div class="input-group">
                 <input id="username" placeholder="Email" autocomplete="username email" />
                 <label>Email address</label>
@@ -964,7 +1029,7 @@
               <div id="passwordArea">
                 <div class="input-group password-box">
                   <input id="password" type="password" placeholder="Password" autocomplete="current-password" oninput="checkStrength()" />
-                  <label>Password</label>
+                  <label id="passwordLabel">Password</label>
                   <span class="toggle" onclick="togglePass('password')">👁</span>
                 </div>
 
@@ -1033,7 +1098,7 @@
             <div class="social-proof">
               <div>
                 <strong>Built for modern branded link operations</strong>
-                <span>Cleaner workflows for login, signup, approval, verification, and account recovery.</span>
+                <span>Cleaner workflows for login, signup, email verification, 2FA, approval, and account recovery.</span>
               </div>
               <div class="avatars">
                 <div class="avatar">RL</div>
@@ -1072,6 +1137,7 @@
               <a href="verify-email.html">Verify Email</a>
               <a href="dashboard.html">Dashboard</a>
               <a href="security-2fa.html">2FA Settings</a>
+              <a href="2fa-login.html">2FA Login Page</a>
             </div>
           </div>
         </div>
@@ -1166,12 +1232,12 @@
         <div class="feature-card">
           <div class="feature-icon">🛡️</div>
           <h3>Secure Auth</h3>
-          <p>Use password login, email verification, magic approval, captcha checks, and production-friendly fallback routing across supported backends.</p>
+          <p>Use password login, email verification, direct 2FA code entry, magic approval, captcha checks, and production-friendly fallback routing across supported backends.</p>
           <ul>
             <li>Password login</li>
             <li>Email verification redirect flow</li>
+            <li>Direct 2FA code support</li>
             <li>Magic request and approval polling</li>
-            <li>Future-ready 2FA support</li>
           </ul>
         </div>
         <div class="feature-card">
@@ -1341,7 +1407,7 @@
         </div>
         <div class="faq-item">
           <button class="faq-q" type="button">What login methods are available?<span>+</span></button>
-          <div class="faq-a">Users can sign in with email and password, complete email verification, and use a magic approval flow. This page is also structured to support future 2FA expansion.</div>
+          <div class="faq-a">Users can sign in with email and password, resend verification emails, use direct 2FA code entry, complete email verification, and use a magic approval flow.</div>
         </div>
       </div>
     </div>
@@ -1428,6 +1494,7 @@
     const CAPTCHA_ENABLED = true;
 
     let mode = "login";
+    let loginMethod = "password";
     let captchaWidgetId = null;
     let captchaReady = false;
     let pendingMagicRequestId = null;
@@ -1464,6 +1531,7 @@
     const switchBtn = document.getElementById("switchBtn");
     const secondaryBtn = document.getElementById("secondaryBtn");
     const passwordArea = document.getElementById("passwordArea");
+    const passwordLabel = document.getElementById("passwordLabel");
     const captchaState = document.getElementById("captchaState");
     const approvalBox = document.getElementById("approvalBox");
     const approvalText = document.getElementById("approvalText");
@@ -1477,6 +1545,13 @@
     const checkUpper = document.getElementById("checkUpper");
     const checkNum = document.getElementById("checkNum");
     const checkSpecial = document.getElementById("checkSpecial");
+    const loginMethodArea = document.getElementById("loginMethodArea");
+    const loginMethodInfo = document.getElementById("loginMethodInfo");
+    const loginMethodInfoTitle = document.getElementById("loginMethodInfoTitle");
+    const loginMethodInfoText = document.getElementById("loginMethodInfoText");
+    const methodPasswordBox = document.getElementById("methodPasswordBox");
+    const methodVerifyBox = document.getElementById("methodVerifyBox");
+    const method2faBox = document.getElementById("method2faBox");
 
     function qs() { return new URLSearchParams(window.location.search); }
 
@@ -1541,7 +1616,11 @@
       return null;
     }
 
-    function shouldUseCaptcha() { return CAPTCHA_ENABLED && (mode === "login" || mode === "signup"); }
+    function shouldUseCaptcha() {
+      if (mode !== "login" && mode !== "signup") return false;
+      if (mode === "login" && loginMethod !== "password") return false;
+      return CAPTCHA_ENABLED;
+    }
 
     function updateModeProgress() {
       stepDot1.classList.remove("active");
@@ -1589,14 +1668,60 @@
       }, 200);
     }
 
+    function setLoginMethod(method) {
+      loginMethod = method;
+      localStorage.setItem("preferredLoginMethod", method);
+
+      methodPasswordBox.classList.toggle("active", method === "password");
+      methodVerifyBox.classList.toggle("active", method === "verify_email");
+      method2faBox.classList.toggle("active", method === "two_factor");
+
+      if (method === "password") {
+        passwordArea.style.display = "block";
+        optionsRow.style.display = "flex";
+        passwordLabel.textContent = mode === "signup" ? "Password" : "Password";
+        password.placeholder = mode === "signup" ? "Password" : "Password";
+        loginMethodInfoTitle.textContent = "Password login selected";
+        loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
+        btnText.textContent = mode === "signup" ? "Create account" : "Login";
+        secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+      } else if (method === "verify_email") {
+        passwordArea.style.display = "none";
+        optionsRow.style.display = "none";
+        loginMethodInfoTitle.textContent = "Email verification selected";
+        loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
+        btnText.textContent = "Send verification email";
+        secondaryBtn.style.display = "block";
+        secondaryBtn.textContent = "Open verify page";
+      } else {
+        passwordArea.style.display = "block";
+        optionsRow.style.display = "none";
+        confirmWrap.classList.add("hidden");
+        strengthWrap.classList.add("hidden");
+        passwordLabel.textContent = "2FA code";
+        password.placeholder = "2FA code";
+        loginMethodInfoTitle.textContent = "Direct 2FA code selected";
+        loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly. This is useful when you already know your account has 2FA enabled.";
+        btnText.textContent = "Verify 2FA code";
+        secondaryBtn.style.display = "block";
+        secondaryBtn.textContent = "Open 2FA page";
+      }
+
+      captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+      if (captchaState) captchaState.textContent = shouldUseCaptcha() ? "Captcha required" : "Captcha not needed";
+      if (shouldUseCaptcha()) waitForCaptchaAndMount();
+      else resetCaptcha();
+    }
+
     function setMode(nextMode) {
       mode = nextMode;
       loginTab.classList.toggle("active", mode === "login");
       signupTab.classList.toggle("active", mode === "signup");
       magicTab.classList.toggle("active", mode === "magic");
+      loginMethodArea.style.display = mode === "login" ? "block" : "none";
+      loginMethodInfo.classList.toggle("show", mode === "login");
       confirmWrap.classList.toggle("hidden", mode !== "signup");
       strengthWrap.classList.toggle("hidden", mode !== "signup");
-      optionsRow.style.display = mode === "login" ? "flex" : "none";
       switchBox.style.display = mode === "magic" ? "none" : "block";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
       passwordArea.style.display = mode === "magic" ? "none" : "block";
@@ -1607,13 +1732,14 @@
         title.textContent = "Welcome back";
         subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
         formTitle.textContent = "Account access";
-        formSub.textContent = "Use your email and credentials to continue into your workspace.";
+        formSub.textContent = "Choose how you want to continue into your workspace.";
         modeLabel.textContent = "Login";
-        btnText.textContent = "Login";
         switchText.textContent = "Don’t have an account?";
         switchBtn.textContent = "Create one";
-        helperText.textContent = "Login checks Backend 2 first, then falls back to legacy AWS only when needed.";
+        helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
         secondaryBtn.textContent = "Reset password";
+        const savedMethod = localStorage.getItem("preferredLoginMethod") || "password";
+        setLoginMethod(savedMethod === "verify_email" || savedMethod === "two_factor" ? savedMethod : "password");
       } else if (mode === "signup") {
         title.textContent = "Create your account";
         subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
@@ -1625,6 +1751,9 @@
         switchBtn.textContent = "Login";
         helperText.textContent = "New signups go to Backend 2 only.";
         secondaryBtn.textContent = "Resend verification";
+        optionsRow.style.display = "none";
+        passwordArea.style.display = "block";
+        passwordLabel.textContent = "Password";
       } else {
         title.textContent = "Passwordless magic login";
         subText.textContent = "Request a login approval email and finish signing in without entering your password.";
@@ -1650,11 +1779,10 @@
     }
 
     function resetCaptcha() {
-      if (!shouldUseCaptcha()) return;
       if (!window.grecaptcha || captchaWidgetId === null) return;
       try {
         window.grecaptcha.reset(captchaWidgetId);
-        if (captchaState) captchaState.textContent = "Captcha required";
+        if (captchaState) captchaState.textContent = shouldUseCaptcha() ? "Captcha required" : "Captcha not needed";
       } catch (e) {
         console.error("reCAPTCHA reset error:", e);
       }
@@ -1746,7 +1874,7 @@
       if (result.networkError) return true;
       if (result.status === 404) return true;
       if (result.status >= 500) return true;
-      if (path === "/login" || path === "/magic-request" || path === "/magic-login" || path === "/magic-status" || path === "/resend-verify") {
+      if (path === "/login" || path === "/magic-request" || path === "/magic-login" || path === "/magic-status" || path === "/resend-verify" || path === "/login/2fa/verify") {
         const msg = String(result?.data?.message || "").toLowerCase();
         if (msg.includes("account not found in backend2") || msg.includes("magic request not found") || msg.includes("invalid magic request")) return true;
       }
@@ -1896,6 +2024,7 @@
           localStorage.setItem("lastUser", data.username || email);
           if (remember.checked && email) localStorage.setItem("rememberUser", email);
           clearPendingMagic();
+          localStorage.removeItem("pending2faMethod");
           showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
           setTimeout(() => { window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html"; }, 500);
           return;
@@ -1988,6 +2117,20 @@
           return;
         }
 
+        if (data.requiresTwoFactor) {
+          const method = data.method || "";
+          localStorage.setItem("pending2faMethod", method);
+          setChosenBackend(result.backend || "primary");
+          showError(`Two-factor required. Redirecting to ${method === 'email_otp' ? 'email OTP' : '2FA'} verification.`, "warn");
+          const next = new URLSearchParams({ email: user, backend: result.backend || "primary", method });
+          setTimeout(() => {
+            window.location.href = "2fa-login.html?" + next.toString();
+          }, 900);
+          resetCaptcha();
+          setLoading(false);
+          return;
+        }
+
         if (data.requiresApproval && data.requestId) {
           savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
           showError(`Approval email sent from ${backendLabel(result.backend)}.`, "warn");
@@ -2009,6 +2152,7 @@
         localStorage.setItem("lastUser", user);
         if (remember.checked) localStorage.setItem("rememberUser", user);
         else localStorage.removeItem("rememberUser");
+        localStorage.removeItem("pending2faMethod");
         showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
         setTimeout(() => { window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html"; }, 500);
       } catch (e) {
@@ -2017,6 +2161,57 @@
       }
 
       resetCaptcha();
+      setLoading(false);
+    }
+
+    async function directTwoFactorLogin() {
+      showError("");
+      setLoading(true);
+      const user = username.value.trim().toLowerCase();
+      const enteredCode = password.value.trim();
+      if (!user) { showError("Enter email."); setLoading(false); return; }
+      if (!enteredCode) { showError("Enter your 2FA code."); setLoading(false); return; }
+
+      try {
+        const verifyResult = await apiHybrid(
+          "/login/2fa/verify",
+          { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user, code: enteredCode }) },
+          "primaryThenLegacy"
+        );
+        const verifyData = verifyResult.data || {};
+        if (!verifyResult.ok || !verifyData.exchange) {
+          showError(verifyData.message || "Two-factor verification failed.");
+          setLoading(false);
+          return;
+        }
+
+        const backend = verifyResult.backend || "primary";
+        setChosenBackend(backend);
+        const behavior = backend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+        const loginResult = await apiHybrid(
+          "/magic-login",
+          { method: "POST", headers: buildHeaders(), body: JSON.stringify({ exchange: verifyData.exchange }) },
+          behavior
+        );
+        const loginData = loginResult.data || {};
+        if (!loginResult.ok || !loginData.token) {
+          showError(loginData.message || "2FA code verified, but final login failed.");
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem("token", loginData.token);
+        localStorage.setItem("role", loginData.role || "user");
+        localStorage.setItem("lastUser", loginData.username || user);
+        if (remember.checked) localStorage.setItem("rememberUser", user);
+        localStorage.removeItem("pending2faMethod");
+        showError(`2FA verified via ${backendLabel(loginResult.backend || backend)}.`, "success");
+        setTimeout(() => { window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html"; }, 700);
+      } catch (e) {
+        console.error("DIRECT 2FA ERROR:", e);
+        showError("Could not verify 2FA code.");
+      }
+
       setLoading(false);
     }
 
@@ -2098,6 +2293,10 @@
         if (!result.ok) { showError(data.message || "Could not resend verification."); return; }
         if (result.backend) setChosenBackend(result.backend);
         showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)}.`, "success");
+        setTimeout(() => {
+          const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+          window.location.href = "verify-email.html?" + next.toString();
+        }, 1000);
       } catch (e) {
         console.error("RESEND VERIFY ERROR:", e);
         showError("Could not resend verification.");
@@ -2106,12 +2305,40 @@
 
     async function handleMainAction() {
       if (mainBtn.disabled) return;
-      if (mode === "login") await login();
+      if (mode === "login") {
+        if (loginMethod === "verify_email") await resendVerify();
+        else if (loginMethod === "two_factor") await directTwoFactorLogin();
+        else await login();
+      }
       else if (mode === "signup") await signup();
       else await magicRequest();
     }
 
-    function secondaryAction() { if (mode === "signup") { resendVerify(); return; } goForgot(); }
+    function secondaryAction() {
+      if (mode === "signup") { resendVerify(); return; }
+      if (mode === "login" && loginMethod === "verify_email") {
+        const user = username.value.trim().toLowerCase();
+        const params = new URLSearchParams();
+        if (user) params.set("email", user);
+        const backend = getForcedBackendFromState();
+        if (backend) params.set("backend", backend);
+        window.location.href = "verify-email.html" + (params.toString() ? `?${params.toString()}` : "");
+        return;
+      }
+      if (mode === "login" && loginMethod === "two_factor") {
+        const user = username.value.trim().toLowerCase();
+        const params = new URLSearchParams();
+        if (user) params.set("email", user);
+        const backend = getForcedBackendFromState();
+        if (backend) params.set("backend", backend);
+        const m = localStorage.getItem("pending2faMethod");
+        if (m) params.set("method", m);
+        window.location.href = "2fa-login.html" + (params.toString() ? `?${params.toString()}` : "");
+        return;
+      }
+      goForgot();
+    }
+
     function goForgot() { window.location.href = "forgot.html"; }
 
     function loadRememberedUser() {
@@ -2128,11 +2355,13 @@
       const backend = String(qs().get("backend") || "").trim().toLowerCase();
       const exchange = String(qs().get("exchange") || "").trim();
       const approved = String(qs().get("approved") || "").trim();
+      const method = String(qs().get("method") || "").trim().toLowerCase();
       if (backend === "primary" || backend === "legacy") {
         preferredBackend = backend;
         localStorage.setItem("authBackend", backend);
       }
       if (email) username.value = email;
+      if (method === "totp" || method === "email_otp") localStorage.setItem("pending2faMethod", method);
       if (requestId) {
         savePendingMagic(requestId, Number(localStorage.getItem("magicExpiresAt") || 0) || null, backend || localStorage.getItem("magicBackend") || "primary", email || localStorage.getItem("magicEmail") || "");
         showError("Resuming pending login approval.", "warn");
