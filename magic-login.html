@@ -384,8 +384,8 @@
     }
 
     function updateBackLink(){
-      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || "";
-      backToIndex.href = buildIndexHref(email, currentBackend || "");
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
+      backToIndex.href = buildIndexHref(email, currentBackend || localStorage.getItem("magicBackend") || "");
     }
 
     async function safeBody(res){
@@ -463,7 +463,7 @@
         }
       }
 
-      if(path === "/magic-status" || path === "/magic-login" || path === "/magic-approve"){
+      if(path.includes("/magic-status") || path === "/magic-login" || path === "/magic-approve"){
         if(
           msgText.includes("magic request not found") ||
           msgText.includes("invalid magic request") ||
@@ -480,9 +480,14 @@
       const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
       const path = buildPath(rawPath, backend);
       const finalOptions = { ...options };
+
       if(backend === "legacy"){
-        finalOptions.headers = { ...(options.headers || {}), "x-rattle-fallback": "legacy" };
+        finalOptions.headers = {
+          ...(options.headers || {}),
+          "x-rattle-fallback": "legacy"
+        };
       }
+
       return callApi(baseUrl, path, finalOptions);
     }
 
@@ -545,6 +550,7 @@
       currentExchange = null;
       expiryTime = null;
       lastEmailUsed = null;
+
       clearStoredPending();
       statusSection.classList.add("hidden");
       timerEl.textContent = "";
@@ -609,12 +615,22 @@
     }
 
     function saveAuth(data, backend){
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role || "user");
+      const token = data?.token || "";
+      const role = data?.role || "user";
+      const user = data?.username || lastEmailUsed || localStorage.getItem("magicEmail") || "";
+
+      if(!token) return;
+
+      localStorage.setItem("rattle_token", token);
+      localStorage.setItem("rattle_role", role);
+      localStorage.setItem("rattle_user", user);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("lastUser", user);
+
       localStorage.setItem("authBackend", backend || "primary");
-      if(data.username || lastEmailUsed){
-        localStorage.setItem("lastUser", data.username || lastEmailUsed);
-      }
+      localStorage.setItem("sessionBackend", backend || "primary");
     }
 
     function redirectByRole(role){
@@ -754,18 +770,35 @@
       if(showFeedback) setLoading(checkBtn, "Checking");
 
       try{
+        const method = currentBackend === "legacy" ? "POST" : "GET";
+        const path = method === "GET"
+          ? `/magic-status?requestId=${encodeURIComponent(requestId)}`
+          : "/magic-status";
+
+        const requestOptions = method === "GET"
+          ? {
+              method: "GET",
+              headers: { "Content-Type": "application/json" }
+            }
+          : {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ requestId })
+            };
+
         const result = await apiHybrid(
-          "/magic-status",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestId })
-          },
+          path,
+          requestOptions,
           chooseBehaviorForCurrentBackend()
         );
 
         const data = result.data || {};
         currentBackend = result.backend || currentBackend || "primary";
+
+        localStorage.setItem("magicBackend", currentBackend);
+        localStorage.setItem("authBackend", currentBackend);
+        localStorage.setItem("sessionBackend", currentBackend);
+
         savePendingState();
         showBackendBadge(backendBadge, currentBackend);
         updateBackLink();
@@ -779,7 +812,15 @@
 
         if(data.status === "approved"){
           stopPolling();
-          showMessage(`Login approved on ${backendLabel(currentBackend)} ✅ Check your email link to complete sign in.`, "success");
+
+          if(data.exchange){
+            currentExchange = safeText(data.exchange);
+            showMessage(`Login approved on ${backendLabel(currentBackend)} ✅ Finishing sign in...`, "success");
+            await finishMagicLogin();
+            return;
+          }
+
+          showMessage(`Login approved on ${backendLabel(currentBackend)} ✅ Open the email continuation link to finish sign in.`, "success");
           return;
         }
 
@@ -804,6 +845,7 @@
     async function finishMagicLogin(){
       const exchange = currentExchange || safeText(getParams().get("exchange"));
       const token = safeText(getParams().get("token"));
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
 
       if(!exchange && !token){
         showMessage("Missing secure login token ❌", "error");
@@ -826,6 +868,28 @@
         );
 
         const data = result.data || {};
+        const resolvedBackend = result.backend || currentBackend || "primary";
+
+        currentBackend = resolvedBackend;
+        localStorage.setItem("authBackend", resolvedBackend);
+        localStorage.setItem("sessionBackend", resolvedBackend);
+
+        if(data.requiresTwoFactor){
+          const method = safeText(data.method) || localStorage.getItem("pending2faMethod") || "";
+          localStorage.setItem("pending2faMethod", method);
+
+          showMessage(`2FA required on ${backendLabel(resolvedBackend)}. Redirecting... ⏳`, "warn");
+
+          const next = new URLSearchParams();
+          if(email) next.set("email", email);
+          next.set("backend", resolvedBackend);
+          if(method) next.set("method", method);
+
+          setTimeout(() => {
+            window.location.href = "2fa-login.html?" + next.toString();
+          }, 700);
+          return;
+        }
 
         if(!result.ok || !data.token){
           if(data.requiresEmailVerification){
@@ -843,8 +907,10 @@
         }
 
         clearStoredPending();
-        saveAuth(data, result.backend || currentBackend);
-        showMessage(`Login successful via ${backendLabel(result.backend || currentBackend)} ✅`, "success");
+        localStorage.removeItem("pending2faMethod");
+        saveAuth(data, resolvedBackend);
+
+        showMessage(`Login successful via ${backendLabel(resolvedBackend)} ✅`, "success");
         window.history.replaceState({}, "", "/magic-login.html");
         redirectByRole(data.role);
       }catch(e){
@@ -871,6 +937,10 @@
 
         const data = result.data || {};
         currentBackend = result.backend || currentBackend || "primary";
+
+        localStorage.setItem("authBackend", currentBackend);
+        localStorage.setItem("sessionBackend", currentBackend);
+
         showBackendBadge(approveBackendBadge, currentBackend);
         updateBackLink();
 
