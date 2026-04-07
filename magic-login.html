@@ -669,6 +669,61 @@
       return "primaryThenLegacy";
     }
 
+    function isTwoFactorSetupRequired(data){
+      return !!(
+        data?.requiresTwoFactorSetup ||
+        data?.requires2FASetup ||
+        data?.twoFactorSetupRequired ||
+        data?.requiresTwoFactorEnrollment ||
+        data?.requires2FAEnrollment ||
+        data?.incompleteTwoFactorSetup ||
+        data?.twoFactorIncomplete ||
+        data?.twoFactorNotConfigured ||
+        data?.requiresAuthenticatorSetup ||
+        data?.mustCompleteTwoFactorSetup
+      );
+    }
+
+    function buildTwoFactorSetupUrl(options = {}){
+      const params = new URLSearchParams();
+
+      if(options.email) params.set("email", options.email);
+      if(options.backend) params.set("backend", options.backend);
+      if(options.exchange) params.set("exchange", options.exchange);
+      if(options.token) params.set("token", options.token);
+      if(options.method) params.set("method", options.method);
+      params.set("mode", "setup");
+      params.set("source", "magic-login");
+      params.set("incomplete", "1");
+
+      return `2fa-login.html?${params.toString()}`;
+    }
+
+    function redirectToTwoFactorSetup(data = {}, resolvedBackend = "primary"){
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
+      const method = safeText(data?.method || data?.twoFactorMethod || data?.preferredMethod || "");
+      const exchange = safeText(data?.exchange || currentExchange || "");
+      const token = safeText(data?.token || getParams().get("token") || "");
+
+      if(email) localStorage.setItem("magicEmail", email);
+      if(method) localStorage.setItem("pending2faMethod", method);
+      localStorage.setItem("pending2faSetup", "1");
+
+      showMessage(`2FA setup must be completed on ${backendLabel(resolvedBackend)}. Redirecting... ⏳`, "warn");
+
+      const url = buildTwoFactorSetupUrl({
+        email,
+        backend: resolvedBackend,
+        exchange,
+        token,
+        method
+      });
+
+      setTimeout(() => {
+        window.location.href = url;
+      }, 700);
+    }
+
     async function sendMagic(){
       const email = safeText(emailInput.value).toLowerCase();
 
@@ -891,8 +946,13 @@
 
         rememberBackend(resolvedBackend);
 
+        if(isTwoFactorSetupRequired(data)){
+          redirectToTwoFactorSetup(data, resolvedBackend);
+          return;
+        }
+
         if(data.requiresTwoFactor){
-          const method = safeText(data.method) || localStorage.getItem("pending2faMethod") || "";
+          const method = safeText(data.method || data.twoFactorMethod) || localStorage.getItem("pending2faMethod") || "";
           localStorage.setItem("pending2faMethod", method);
 
           showMessage(`2FA required on ${backendLabel(resolvedBackend)}. Redirecting... ⏳`, "warn");
@@ -901,6 +961,8 @@
           if(email) next.set("email", email);
           next.set("backend", resolvedBackend);
           if(method) next.set("method", method);
+          if(exchange) next.set("exchange", exchange);
+          next.set("source", "magic-login");
 
           setTimeout(() => {
             window.location.href = "2fa-login.html?" + next.toString();
@@ -919,12 +981,18 @@
             return;
           }
 
+          if(isTwoFactorSetupRequired(data)){
+            redirectToTwoFactorSetup(data, resolvedBackend);
+            return;
+          }
+
           showMessage(friendlyError(result) + " ❌", "error");
           return;
         }
 
         clearStoredPending();
         localStorage.removeItem("pending2faMethod");
+        localStorage.removeItem("pending2faSetup");
         saveAuth(data, resolvedBackend);
 
         showMessage(`Login successful via ${backendLabel(resolvedBackend)} ✅`, "success");
