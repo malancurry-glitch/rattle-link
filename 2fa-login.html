@@ -619,16 +619,22 @@
       const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
       const localBackend = String(localStorage.getItem("authBackend") || "").trim().toLowerCase();
       const magicBackend = String(localStorage.getItem("magicBackend") || "").trim().toLowerCase();
+      const sessionBackend = String(localStorage.getItem("sessionBackend") || "").trim().toLowerCase();
 
       if (preferredBackend === "primary" || preferredBackend === "legacy") return preferredBackend;
       if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
       if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
+      if (sessionBackend === "primary" || sessionBackend === "legacy") return sessionBackend;
       if (localBackend === "primary" || localBackend === "legacy") return localBackend;
       return "primary";
     }
 
     async function safeJson(res) {
-      try { return await res.json(); } catch { return {}; }
+      try {
+        return await res.json();
+      } catch {
+        return {};
+      }
     }
 
     async function callApi(baseUrl, path, options = {}) {
@@ -654,47 +660,77 @@
       }
     }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-      const primary = normalizeApiUrl(PRIMARY_API);
-      const legacy = normalizeApiUrl(LEGACY_API);
+    function shouldFallbackToLegacy(path, result) {
+      if (path === "/login/2fa/verify") return false;
+      if (result.networkError) return true;
+      if (result.status === 404) return true;
+      if (result.status >= 500) return true;
 
+      const msg = String(result?.data?.message || "").toLowerCase();
+      if (
+        msg.includes("backend url not configured") ||
+        msg.includes("failed to fetch") ||
+        msg.includes("network request failed")
+      ) return true;
+
+      return false;
+    }
+
+    async function callBackend(backend, rawPath, options = {}) {
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const finalPath = buildAuthPath(backend, rawPath);
+      const finalOptions = { ...options };
+
+      if (backend === "legacy") {
+        finalOptions.headers = buildHeaders({
+          ...(options.headers || {}),
+          "x-rattle-fallback": "legacy"
+        });
+      }
+
+      return callApi(baseUrl, finalPath, finalOptions);
+    }
+
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
       if (behavior === "primaryOnly") {
-        const result = await callApi(primary, buildAuthPath("primary", path), options);
+        const result = await callBackend("primary", path, options);
         return { ...result, backend: "primary" };
       }
 
       if (behavior === "legacyOnly") {
-        const legacyOptions = {
-          ...options,
-          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
-        };
-        const result = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
       const forced = getForcedBackend();
+
       if (forced === "legacy") {
-        const legacyOptions = {
-          ...options,
-          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
-        };
-        const result = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
-      const primaryResult = await callApi(primary, buildAuthPath("primary", path), options);
+      const primaryResult = await callBackend("primary", path, options);
       if (primaryResult.ok) return { ...primaryResult, backend: "primary" };
 
-      if (primaryResult.networkError || primaryResult.status === 404 || primaryResult.status >= 500) {
-        const legacyOptions = {
-          ...options,
-          headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
-        };
-        const legacyResult = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
+      if (shouldFallbackToLegacy(path, primaryResult)) {
+        const legacyResult = await callBackend("legacy", path, options);
         return { ...legacyResult, backend: "legacy", firstAttempt: primaryResult };
       }
 
       return { ...primaryResult, backend: "primary" };
+    }
+
+    function saveSession(token, role = "user", user = "", backend = "primary") {
+      localStorage.setItem("rattle_token", token);
+      localStorage.setItem("rattle_role", role);
+      localStorage.setItem("rattle_user", user);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("lastUser", user);
+
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
     }
 
     function updateBackendUi(backend) {
@@ -735,6 +771,7 @@
       if (backendFromQuery === "primary" || backendFromQuery === "legacy") {
         preferredBackend = backendFromQuery;
         localStorage.setItem("authBackend", backendFromQuery);
+        localStorage.setItem("sessionBackend", backendFromQuery);
       }
 
       username.value = emailFromQuery || pendingEmail || lastUser || "";
@@ -763,6 +800,8 @@
       }
 
       try {
+        const verifyBehavior = getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly";
+
         const verifyResult = await apiHybrid(
           "/login/2fa/verify",
           {
@@ -770,21 +809,29 @@
             headers: buildHeaders(),
             body: JSON.stringify({ username: user, code: enteredCode })
           },
-          "primaryThenLegacy"
+          verifyBehavior
         );
 
         const verifyData = verifyResult.data || {};
+
         if (!verifyResult.ok || !verifyData.exchange) {
-          showError(verifyData.message || "Two-factor verification failed.");
+          showError(
+            verifyData.message ||
+            verifyData.error ||
+            verifyData.detail ||
+            "Two-factor verification failed."
+          );
           setLoading(false);
           return;
         }
 
-        preferredBackend = verifyResult.backend || "primary";
+        preferredBackend = verifyResult.backend || getForcedBackend() || "primary";
         localStorage.setItem("authBackend", preferredBackend);
+        localStorage.setItem("sessionBackend", preferredBackend);
         updateBackendUi(preferredBackend);
 
-        const loginBehavior = preferredBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+        const loginBehavior = preferredBackend === "legacy" ? "legacyOnly" : "primaryOnly";
+
         const loginResult = await apiHybrid(
           "/magic-login",
           {
@@ -796,18 +843,37 @@
         );
 
         const loginData = loginResult.data || {};
-        if (!loginResult.ok || !loginData.token) {
-          showError(loginData.message || "Code verified, but final login failed.");
+
+        if (loginData.requiresTwoFactor) {
+          showError("This login still requires another 2FA step.", "warn");
           setLoading(false);
           return;
         }
 
-        localStorage.setItem("token", loginData.token);
-        localStorage.setItem("role", loginData.role || "user");
-        localStorage.setItem("lastUser", loginData.username || user);
-        localStorage.removeItem("pending2faMethod");
+        if (!loginResult.ok || !loginData.token) {
+          showError(
+            loginData.message ||
+            loginData.error ||
+            loginData.detail ||
+            "Code verified, but final login failed."
+          );
+          setLoading(false);
+          return;
+        }
 
-        showError(`2FA verified via ${backendLabel(loginResult.backend)}. Redirecting...`, "success");
+        saveSession(
+          loginData.token,
+          loginData.role || "user",
+          loginData.username || user,
+          loginResult.backend || preferredBackend
+        );
+
+        localStorage.removeItem("pending2faMethod");
+        localStorage.removeItem("magicRequestId");
+        localStorage.removeItem("magicExpiresAt");
+        localStorage.removeItem("magicBackend");
+
+        showError(`2FA verified via ${backendLabel(loginResult.backend || preferredBackend)}. Redirecting...`, "success");
 
         setTimeout(() => {
           window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
@@ -824,14 +890,17 @@
       const params = new URLSearchParams();
       const email = username.value.trim().toLowerCase();
       const backend = getForcedBackend();
+      const method = detectedMethod || localStorage.getItem("pending2faMethod") || "";
 
       if (email) params.set("email", email);
       if (backend) params.set("backend", backend);
+      if (method) params.set("method", method);
 
       window.location.href = "index.html" + (params.toString() ? `?${params.toString()}` : "");
     }
 
     username.addEventListener("input", updateEmailUi);
+
     username.addEventListener("keydown", (e) => {
       if (e.key === "Enter") verifyTwoFactor();
     });
