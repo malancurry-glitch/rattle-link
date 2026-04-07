@@ -381,1156 +381,1176 @@
   </footer>
 
   <script>
-    const PRIMARY_API = "https://api.rattleshortapi.it.com";
-    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
-    const CAPTCHA_ENABLED = true;
-    const PRIMARY_AUTH_BASE = "/auth";
-    const LEGACY_AUTH_BASE = "";
+  const PRIMARY_API = "https://api.rattleshortapi.it.com";
+  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
+  const CAPTCHA_ENABLED = true;
+  const PRIMARY_AUTH_BASE = "/auth";
+  const LEGACY_AUTH_BASE = "";
 
-    let mode = "login";
-    let loginMethod = "password";
-    let captchaWidgetId = null;
-    let recaptchaLoaded = false;
-    let recaptchaWaitTimer = null;
-    let pendingMagicRequestId = null;
-    let pendingMagicExpiresAt = null;
-    let pendingMagicBackend = null;
-    let preferredBackend = null;
-    let pollInterval = null;
-    let timerInterval = null;
+  const AUTH_STORAGE_KEY = "rattle_token";
+  const ROLE_STORAGE_KEY = "rattle_role";
+  const USER_STORAGE_KEY = "rattle_user";
 
-    const el = (id) => document.getElementById(id);
+  let mode = "login";
+  let loginMethod = "password";
+  let captchaWidgetId = null;
+  let recaptchaLoaded = false;
+  let recaptchaWaitTimer = null;
+  let pendingMagicRequestId = null;
+  let pendingMagicExpiresAt = null;
+  let pendingMagicBackend = null;
+  let preferredBackend = null;
+  let pollInterval = null;
+  let timerInterval = null;
 
-    const card = el("card");
-    const errorBox = el("error");
-    const mainBtn = el("mainBtn");
-    const btnText = el("btnText");
-    const spinner = el("spinner");
-    const username = el("username");
-    const password = el("password");
-    const confirmInput = el("confirm");
-    const remember = el("remember");
-    const title = el("title");
-    const subText = el("subText");
-    const helperText = el("helperText");
-    const formTitle = el("formTitle");
-    const formSub = el("formSub");
-    const modeLabel = el("modeLabel");
-    const loginTab = el("loginTab");
-    const signupTab = el("signupTab");
-    const magicTab = el("magicTab");
-    const confirmWrap = el("confirmWrap");
-    const strengthWrap = el("strengthWrap");
-    const captchaWrap = el("captchaWrap");
-    const optionsRow = el("optionsRow");
-    const switchBox = el("switchBox");
-    const switchText = el("switchText");
-    const switchBtn = el("switchBtn");
-    const secondaryBtn = el("secondaryBtn");
-    const passwordArea = el("passwordArea");
-    const passwordLabel = el("passwordLabel");
-    const captchaState = el("captchaState");
-    const approvalBox = el("approvalBox");
-    const approvalText = el("approvalText");
-    const statusTimer = el("statusTimer");
-    const checkStatusBtn = el("checkStatusBtn");
-    const backendUsedNote = el("backendUsedNote");
-    const stepDot1 = el("stepDot1");
-    const stepDot2 = el("stepDot2");
-    const stepDot3 = el("stepDot3");
-    const checkLen = el("checkLen");
-    const checkUpper = el("checkUpper");
-    const checkNum = el("checkNum");
-    const checkSpecial = el("checkSpecial");
-    const loginMethodArea = el("loginMethodArea");
-    const loginMethodInfo = el("loginMethodInfo");
-    const loginMethodInfoTitle = el("loginMethodInfoTitle");
-    const loginMethodInfoText = el("loginMethodInfoText");
-    const methodPasswordBox = el("methodPasswordBox");
-    const methodVerifyBox = el("methodVerifyBox");
-    const method2faBox = el("method2faBox");
+  const el = (id) => document.getElementById(id);
 
-    function qs() {
-      return new URLSearchParams(window.location.search);
+  const card = el("card");
+  const errorBox = el("error");
+  const mainBtn = el("mainBtn");
+  const btnText = el("btnText");
+  const spinner = el("spinner");
+  const username = el("username");
+  const password = el("password");
+  const confirmInput = el("confirm");
+  const remember = el("remember");
+  const title = el("title");
+  const subText = el("subText");
+  const helperText = el("helperText");
+  const formTitle = el("formTitle");
+  const formSub = el("formSub");
+  const modeLabel = el("modeLabel");
+  const loginTab = el("loginTab");
+  const signupTab = el("signupTab");
+  const magicTab = el("magicTab");
+  const confirmWrap = el("confirmWrap");
+  const strengthWrap = el("strengthWrap");
+  const captchaWrap = el("captchaWrap");
+  const optionsRow = el("optionsRow");
+  const switchBox = el("switchBox");
+  const switchText = el("switchText");
+  const switchBtn = el("switchBtn");
+  const secondaryBtn = el("secondaryBtn");
+  const passwordArea = el("passwordArea");
+  const passwordLabel = el("passwordLabel");
+  const captchaState = el("captchaState");
+  const approvalBox = el("approvalBox");
+  const approvalText = el("approvalText");
+  const statusTimer = el("statusTimer");
+  const checkStatusBtn = el("checkStatusBtn");
+  const backendUsedNote = el("backendUsedNote");
+  const stepDot1 = el("stepDot1");
+  const stepDot2 = el("stepDot2");
+  const stepDot3 = el("stepDot3");
+  const checkLen = el("checkLen");
+  const checkUpper = el("checkUpper");
+  const checkNum = el("checkNum");
+  const checkSpecial = el("checkSpecial");
+  const loginMethodArea = el("loginMethodArea");
+  const loginMethodInfo = el("loginMethodInfo");
+  const loginMethodInfoTitle = el("loginMethodInfoTitle");
+  const loginMethodInfoText = el("loginMethodInfoText");
+  const methodPasswordBox = el("methodPasswordBox");
+  const methodVerifyBox = el("methodVerifyBox");
+  const method2faBox = el("method2faBox");
+
+  function qs() {
+    return new URLSearchParams(window.location.search);
+  }
+
+  function normalizeApiUrl(url) {
+    return String(url || "").replace(/\/+$/, "");
+  }
+
+  function authPrefix(backend) {
+    return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+  }
+
+  function buildPath(rawPath, backend) {
+    const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
+    return `${authPrefix(backend)}${clean}`;
+  }
+
+  function backendLabel(name) {
+    return name === "primary" ? "Backend 2" : "Legacy AWS";
+  }
+
+  function showError(msg = "", type = "error") {
+    errorBox.textContent = msg;
+    errorBox.className = "error";
+    if (type === "success") errorBox.classList.add("success-text");
+    else if (type === "warn") errorBox.classList.add("warn-text");
+
+    if (msg && type === "error") {
+      card.classList.remove("shake");
+      void card.offsetWidth;
+      card.classList.add("shake");
+    }
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    if (shouldUseCaptcha()) remountCaptcha();
+  }
+
+  function loadTheme() {
+    const theme = localStorage.getItem("theme");
+    if (theme === "light") document.body.classList.remove("dark");
+    else document.body.classList.add("dark");
+  }
+
+  function setLoading(state) {
+    mainBtn.disabled = state;
+    card.classList.toggle("loading", state);
+    btnText.style.display = state ? "none" : "inline";
+    spinner.style.display = state ? "inline-block" : "none";
+  }
+
+  function setMiniLoading(button, loading) {
+    if (!button) return;
+    if (loading) {
+      button.dataset.originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Checking...";
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.originalText || "Check status";
+    }
+  }
+
+  function togglePass(id) {
+    const input = el(id);
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+  }
+
+  function getForcedBackendFromState() {
+    const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
+    const localBackend = String(localStorage.getItem("authBackend") || "").trim().toLowerCase();
+    const magicBackend = String(localStorage.getItem("magicBackend") || "").trim().toLowerCase();
+
+    if (preferredBackend === "primary" || preferredBackend === "legacy") return preferredBackend;
+    if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
+    if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
+    if (localBackend === "primary" || localBackend === "legacy") return localBackend;
+    return null;
+  }
+
+  function shouldUseCaptcha() {
+    if (!CAPTCHA_ENABLED) return false;
+    if (mode === "signup") return true;
+    if (mode === "login" && loginMethod === "password") return true;
+    return false;
+  }
+
+  function updateModeProgress() {
+    stepDot1.classList.remove("active");
+    stepDot2.classList.remove("active");
+    stepDot3.classList.remove("active");
+
+    if (mode === "login") {
+      stepDot1.classList.add("active");
+    } else if (mode === "signup") {
+      stepDot1.classList.add("active");
+      stepDot2.classList.add("active");
+    } else {
+      stepDot1.classList.add("active");
+      stepDot2.classList.add("active");
+      stepDot3.classList.add("active");
+    }
+  }
+
+  function setPasswordCheck(node, ok) {
+    if (!node) return;
+    node.classList.toggle("ok", !!ok);
+    const icon = node.querySelector("i");
+    if (icon) icon.textContent = ok ? "✓" : "•";
+  }
+
+  function setCaptchaState(text) {
+    if (captchaState) captchaState.textContent = text;
+  }
+
+  function destroyCaptcha() {
+    const box = el("recaptchaBox");
+    if (box) box.innerHTML = "";
+    captchaWidgetId = null;
+  }
+
+  function mountCaptcha() {
+    if (!shouldUseCaptcha()) {
+      destroyCaptcha();
+      setCaptchaState("Captcha not needed");
+      return;
     }
 
-    function normalizeApiUrl(url) {
-      return String(url || "").replace(/\/+$/, "");
+    if (!recaptchaLoaded || !window.grecaptcha || typeof window.grecaptcha.render !== "function") {
+      setCaptchaState("Loading captcha...");
+      return;
     }
 
-    function authPrefix(backend) {
-      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    if (captchaWidgetId !== null) return;
+
+    const box = el("recaptchaBox");
+    if (!box) return;
+    box.innerHTML = "";
+
+    try {
+      captchaWidgetId = window.grecaptcha.render("recaptchaBox", {
+        sitekey: RECAPTCHA_SITE_KEY,
+        theme: document.body.classList.contains("dark") ? "dark" : "light",
+        callback: function () {
+          setCaptchaState("Captcha completed");
+        },
+        "expired-callback": function () {
+          setCaptchaState("Captcha expired");
+        },
+        "error-callback": function () {
+          setCaptchaState("Captcha error");
+        }
+      });
+      setCaptchaState("Captcha required");
+    } catch (error) {
+      console.error("reCAPTCHA render error:", error);
+      setCaptchaState("Captcha failed to load");
     }
+  }
 
-    function buildPath(rawPath, backend) {
-      const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
-      return `${authPrefix(backend)}${clean}`;
+  function remountCaptcha() {
+    destroyCaptcha();
+    mountCaptcha();
+  }
+
+  function waitForCaptchaAndMount() {
+    clearInterval(recaptchaWaitTimer);
+    if (!shouldUseCaptcha()) {
+      destroyCaptcha();
+      return;
     }
-
-    function backendLabel(name) {
-      return name === "primary" ? "Backend 2" : "Legacy AWS";
-    }
-
-    function showError(msg = "", type = "error") {
-      errorBox.textContent = msg;
-      errorBox.className = "error";
-      if (type === "success") errorBox.classList.add("success-text");
-      else if (type === "warn") errorBox.classList.add("warn-text");
-
-      if (msg && type === "error") {
-        card.classList.remove("shake");
-        void card.offsetWidth;
-        card.classList.add("shake");
+    let tries = 0;
+    recaptchaWaitTimer = setInterval(() => {
+      tries += 1;
+      if (window.grecaptcha && typeof window.grecaptcha.render === "function") {
+        recaptchaLoaded = true;
+        clearInterval(recaptchaWaitTimer);
+        mountCaptcha();
       }
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-      if (shouldUseCaptcha()) remountCaptcha();
-    }
-
-    function loadTheme() {
-      const theme = localStorage.getItem("theme");
-      if (theme === "light") document.body.classList.remove("dark");
-      else document.body.classList.add("dark");
-    }
-
-    function setLoading(state) {
-      mainBtn.disabled = state;
-      card.classList.toggle("loading", state);
-      btnText.style.display = state ? "none" : "inline";
-      spinner.style.display = state ? "inline-block" : "none";
-    }
-
-    function setMiniLoading(button, loading) {
-      if (!button) return;
-      if (loading) {
-        button.dataset.originalText = button.textContent;
-        button.disabled = true;
-        button.textContent = "Checking...";
-      } else {
-        button.disabled = false;
-        button.textContent = button.dataset.originalText || "Check status";
-      }
-    }
-
-    function togglePass(id) {
-      const input = el(id);
-      if (!input) return;
-      input.type = input.type === "password" ? "text" : "password";
-    }
-
-    function getForcedBackendFromState() {
-      const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
-      const localBackend = String(localStorage.getItem("authBackend") || "").trim().toLowerCase();
-      const magicBackend = String(localStorage.getItem("magicBackend") || "").trim().toLowerCase();
-
-      if (preferredBackend === "primary" || preferredBackend === "legacy") return preferredBackend;
-      if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
-      if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
-      if (localBackend === "primary" || localBackend === "legacy") return localBackend;
-      return null;
-    }
-
-    function shouldUseCaptcha() {
-      if (!CAPTCHA_ENABLED) return false;
-      if (mode === "signup") return true;
-      if (mode === "login" && loginMethod === "password") return true;
-      return false;
-    }
-
-    function updateModeProgress() {
-      stepDot1.classList.remove("active");
-      stepDot2.classList.remove("active");
-      stepDot3.classList.remove("active");
-
-      if (mode === "login") {
-        stepDot1.classList.add("active");
-      } else if (mode === "signup") {
-        stepDot1.classList.add("active");
-        stepDot2.classList.add("active");
-      } else {
-        stepDot1.classList.add("active");
-        stepDot2.classList.add("active");
-        stepDot3.classList.add("active");
-      }
-    }
-
-    function setPasswordCheck(node, ok) {
-      if (!node) return;
-      node.classList.toggle("ok", !!ok);
-      const icon = node.querySelector("i");
-      if (icon) icon.textContent = ok ? "✓" : "•";
-    }
-
-    function setCaptchaState(text) {
-      if (captchaState) captchaState.textContent = text;
-    }
-
-    function destroyCaptcha() {
-      const box = el("recaptchaBox");
-      if (box) box.innerHTML = "";
-      captchaWidgetId = null;
-    }
-
-    function mountCaptcha() {
-      if (!shouldUseCaptcha()) {
-        destroyCaptcha();
-        setCaptchaState("Captcha not needed");
-        return;
-      }
-
-      if (!recaptchaLoaded || !window.grecaptcha || typeof window.grecaptcha.render !== "function") {
-        setCaptchaState("Loading captcha...");
-        return;
-      }
-
-      if (captchaWidgetId !== null) return;
-
-      const box = el("recaptchaBox");
-      if (!box) return;
-      box.innerHTML = "";
-
-      try {
-        captchaWidgetId = window.grecaptcha.render("recaptchaBox", {
-          sitekey: RECAPTCHA_SITE_KEY,
-          theme: document.body.classList.contains("dark") ? "dark" : "light",
-          callback: function () {
-            setCaptchaState("Captcha completed");
-          },
-          "expired-callback": function () {
-            setCaptchaState("Captcha expired");
-          },
-          "error-callback": function () {
-            setCaptchaState("Captcha error");
-          }
-        });
-        setCaptchaState("Captcha required");
-      } catch (error) {
-        console.error("reCAPTCHA render error:", error);
+      if (tries > 100) {
+        clearInterval(recaptchaWaitTimer);
         setCaptchaState("Captcha failed to load");
       }
+    }, 200);
+  }
+
+  window.onRecaptchaLoaded = function () {
+    recaptchaLoaded = true;
+    mountCaptcha();
+  };
+
+  function getCaptchaToken() {
+    if (!shouldUseCaptcha()) return null;
+    if (!window.grecaptcha || captchaWidgetId === null) return "";
+    try {
+      return window.grecaptcha.getResponse(captchaWidgetId) || "";
+    } catch {
+      return "";
     }
+  }
 
-    function remountCaptcha() {
-      destroyCaptcha();
-      mountCaptcha();
+  function resetCaptcha() {
+    if (!shouldUseCaptcha()) return;
+    if (!window.grecaptcha || captchaWidgetId === null) return;
+    try {
+      window.grecaptcha.reset(captchaWidgetId);
+      setCaptchaState("Captcha required");
+    } catch (error) {
+      console.error("reCAPTCHA reset error:", error);
     }
+  }
 
-    function waitForCaptchaAndMount() {
-      clearInterval(recaptchaWaitTimer);
-      if (!shouldUseCaptcha()) {
-        destroyCaptcha();
-        return;
-      }
-      let tries = 0;
-      recaptchaWaitTimer = setInterval(() => {
-        tries += 1;
-        if (window.grecaptcha && typeof window.grecaptcha.render === "function") {
-          recaptchaLoaded = true;
-          clearInterval(recaptchaWaitTimer);
-          mountCaptcha();
-        }
-        if (tries > 100) {
-          clearInterval(recaptchaWaitTimer);
-          setCaptchaState("Captcha failed to load");
-        }
-      }, 200);
-    }
+  function saveSession(token, role = "user", user = "") {
+    if (!token) return;
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
+    localStorage.setItem(ROLE_STORAGE_KEY, role || "user");
+    localStorage.setItem(USER_STORAGE_KEY, user || "");
 
-    window.onRecaptchaLoaded = function () {
-      recaptchaLoaded = true;
-      mountCaptcha();
-    };
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role || "user");
+    localStorage.setItem("lastUser", user || "");
+  }
 
-    function getCaptchaToken() {
-      if (!shouldUseCaptcha()) return null;
-      if (!window.grecaptcha || captchaWidgetId === null) return "";
-      try {
-        return window.grecaptcha.getResponse(captchaWidgetId) || "";
-      } catch {
-        return "";
-      }
-    }
+  function clearSessionStorage() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("lastUser");
+  }
 
-    function resetCaptcha() {
-      if (!shouldUseCaptcha()) return;
-      if (!window.grecaptcha || captchaWidgetId === null) return;
-      try {
-        window.grecaptcha.reset(captchaWidgetId);
-        setCaptchaState("Captcha required");
-      } catch (error) {
-        console.error("reCAPTCHA reset error:", error);
-      }
-    }
+  function setLoginMethod(method) {
+    loginMethod = method;
+    localStorage.setItem("preferredLoginMethod", method);
 
-    function setLoginMethod(method) {
-      loginMethod = method;
-      localStorage.setItem("preferredLoginMethod", method);
+    methodPasswordBox.classList.toggle("active", method === "password");
+    methodVerifyBox.classList.toggle("active", method === "verify_email");
+    method2faBox.classList.toggle("active", method === "two_factor");
 
-      methodPasswordBox.classList.toggle("active", method === "password");
-      methodVerifyBox.classList.toggle("active", method === "verify_email");
-      method2faBox.classList.toggle("active", method === "two_factor");
-
-      if (method === "password") {
-        passwordArea.style.display = "block";
-        optionsRow.style.display = "flex";
-        passwordLabel.textContent = "Password";
-        password.placeholder = "Password";
-        password.type = "password";
-        loginMethodInfoTitle.textContent = "Password login selected";
-        loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
-        btnText.textContent = mode === "signup" ? "Create account" : "Login";
-        secondaryBtn.style.display = mode === "magic" ? "none" : "block";
-        secondaryBtn.textContent = mode === "signup" ? "Resend verification" : "Reset password";
-      } else if (method === "verify_email") {
-        passwordArea.style.display = "none";
-        optionsRow.style.display = "none";
-        loginMethodInfoTitle.textContent = "Email verification selected";
-        loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
-        btnText.textContent = "Send verification email";
-        secondaryBtn.style.display = "block";
-        secondaryBtn.textContent = "Open verify page";
-      } else {
-        passwordArea.style.display = "block";
-        optionsRow.style.display = "none";
-        confirmWrap.classList.add("hidden");
-        strengthWrap.classList.add("hidden");
-        passwordLabel.textContent = "2FA code";
-        password.placeholder = "2FA code";
-        password.type = "text";
-        loginMethodInfoTitle.textContent = "Direct 2FA code selected";
-        loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly.";
-        btnText.textContent = "Verify 2FA code";
-        secondaryBtn.style.display = "block";
-        secondaryBtn.textContent = "Open 2FA page";
-      }
-
-      captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
-      if (shouldUseCaptcha()) waitForCaptchaAndMount();
-      else destroyCaptcha();
-    }
-
-    function setMode(nextMode) {
-      mode = nextMode;
-      loginTab.classList.toggle("active", mode === "login");
-      signupTab.classList.toggle("active", mode === "signup");
-      magicTab.classList.toggle("active", mode === "magic");
-      loginMethodArea.style.display = mode === "login" ? "block" : "none";
-      loginMethodInfo.classList.toggle("show", mode === "login");
-      confirmWrap.classList.toggle("hidden", mode !== "signup");
-      strengthWrap.classList.toggle("hidden", mode !== "signup");
-      switchBox.style.display = mode === "magic" ? "none" : "block";
+    if (method === "password") {
+      passwordArea.style.display = "block";
+      optionsRow.style.display = "flex";
+      passwordLabel.textContent = "Password";
+      password.placeholder = "Password";
+      password.type = "password";
+      loginMethodInfoTitle.textContent = "Password login selected";
+      loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
+      btnText.textContent = mode === "signup" ? "Create account" : "Login";
       secondaryBtn.style.display = mode === "magic" ? "none" : "block";
-      passwordArea.style.display = mode === "magic" ? "none" : "block";
-      captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
-
-      if (mode === "login") {
-        title.textContent = "Welcome back";
-        subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
-        formTitle.textContent = "Account access";
-        formSub.textContent = "Choose how you want to continue into your workspace.";
-        modeLabel.textContent = "Login";
-        switchText.textContent = "Don’t have an account?";
-        switchBtn.textContent = "Create one";
-        helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
-        secondaryBtn.textContent = "Reset password";
-        const savedMethod = localStorage.getItem("preferredLoginMethod") || "password";
-        setLoginMethod(savedMethod === "verify_email" || savedMethod === "two_factor" ? savedMethod : "password");
-      } else if (mode === "signup") {
-        title.textContent = "Create your account";
-        subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
-        formTitle.textContent = "New account setup";
-        formSub.textContent = "Create a secure account with a stronger password and email verification.";
-        modeLabel.textContent = "Signup";
-        btnText.textContent = "Create account";
-        switchText.textContent = "Already have an account?";
-        switchBtn.textContent = "Login";
-        helperText.textContent = "New signups go to Backend 2 only.";
-        secondaryBtn.textContent = "Resend verification";
-        optionsRow.style.display = "none";
-        passwordArea.style.display = "block";
-        passwordLabel.textContent = "Password";
-        password.placeholder = "Password";
-        password.type = "password";
-      } else {
-        title.textContent = "Passwordless magic login";
-        subText.textContent = "Request a login approval email and finish signing in without entering your password.";
-        formTitle.textContent = "Magic approval flow";
-        formSub.textContent = "Start an email approval request and complete sign-in after verification.";
-        modeLabel.textContent = "Magic login";
-        btnText.textContent = "Send magic login";
-        helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
-      }
-
-      updateModeProgress();
-      if (shouldUseCaptcha()) waitForCaptchaAndMount();
-      else destroyCaptcha();
-      showError("");
-      checkStrength();
+      secondaryBtn.textContent = mode === "signup" ? "Resend verification" : "Reset password";
+    } else if (method === "verify_email") {
+      passwordArea.style.display = "none";
+      optionsRow.style.display = "none";
+      loginMethodInfoTitle.textContent = "Email verification selected";
+      loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
+      btnText.textContent = "Send verification email";
+      secondaryBtn.style.display = "block";
+      secondaryBtn.textContent = "Open verify page";
+    } else {
+      passwordArea.style.display = "block";
+      optionsRow.style.display = "none";
+      confirmWrap.classList.add("hidden");
+      strengthWrap.classList.add("hidden");
+      passwordLabel.textContent = "2FA code";
+      password.placeholder = "2FA code";
+      password.type = "text";
+      loginMethodInfoTitle.textContent = "Direct 2FA code selected";
+      loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly.";
+      btnText.textContent = "Verify 2FA code";
+      secondaryBtn.style.display = "block";
+      secondaryBtn.textContent = "Open 2FA page";
     }
 
-    function toggleLoginSignup() {
-      setMode(mode === "login" ? "signup" : "login");
+    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+    if (shouldUseCaptcha()) waitForCaptchaAndMount();
+    else destroyCaptcha();
+  }
+
+  function setMode(nextMode) {
+    mode = nextMode;
+    loginTab.classList.toggle("active", mode === "login");
+    signupTab.classList.toggle("active", mode === "signup");
+    magicTab.classList.toggle("active", mode === "magic");
+    loginMethodArea.style.display = mode === "login" ? "block" : "none";
+    loginMethodInfo.classList.toggle("show", mode === "login");
+    confirmWrap.classList.toggle("hidden", mode !== "signup");
+    strengthWrap.classList.toggle("hidden", mode !== "signup");
+    switchBox.style.display = mode === "magic" ? "none" : "block";
+    secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+    passwordArea.style.display = mode === "magic" ? "none" : "block";
+    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+
+    if (mode === "login") {
+      title.textContent = "Welcome back";
+      subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
+      formTitle.textContent = "Account access";
+      formSub.textContent = "Choose how you want to continue into your workspace.";
+      modeLabel.textContent = "Login";
+      switchText.textContent = "Don’t have an account?";
+      switchBtn.textContent = "Create one";
+      helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
+      secondaryBtn.textContent = "Reset password";
+      const savedMethod = localStorage.getItem("preferredLoginMethod") || "password";
+      setLoginMethod(savedMethod === "verify_email" || savedMethod === "two_factor" ? savedMethod : "password");
+    } else if (mode === "signup") {
+      title.textContent = "Create your account";
+      subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
+      formTitle.textContent = "New account setup";
+      formSub.textContent = "Create a secure account with a stronger password and email verification.";
+      modeLabel.textContent = "Signup";
+      btnText.textContent = "Create account";
+      switchText.textContent = "Already have an account?";
+      switchBtn.textContent = "Login";
+      helperText.textContent = "New signups go to Backend 2 only.";
+      secondaryBtn.textContent = "Resend verification";
+      optionsRow.style.display = "none";
+      passwordArea.style.display = "block";
+      passwordLabel.textContent = "Password";
+      password.placeholder = "Password";
+      password.type = "password";
+    } else {
+      title.textContent = "Passwordless magic login";
+      subText.textContent = "Request a login approval email and finish signing in without entering your password.";
+      formTitle.textContent = "Magic approval flow";
+      formSub.textContent = "Start an email approval request and complete sign-in after verification.";
+      modeLabel.textContent = "Magic login";
+      btnText.textContent = "Send magic login";
+      helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
     }
 
-    function checkStrength() {
-      const fill = el("strengthFill");
-      const text = el("strength");
-      if (mode !== "signup") {
-        fill.style.width = "0%";
-        fill.className = "";
-        text.textContent = "";
-        setPasswordCheck(checkLen, false);
-        setPasswordCheck(checkUpper, false);
-        setPasswordCheck(checkNum, false);
-        setPasswordCheck(checkSpecial, false);
-        return;
-      }
+    updateModeProgress();
+    if (shouldUseCaptcha()) waitForCaptchaAndMount();
+    else destroyCaptcha();
+    showError("");
+    checkStrength();
+  }
 
-      const value = password.value || "";
-      let score = 0;
-      const okLen = value.length >= 8;
-      const okUpper = /[A-Z]/.test(value);
-      const okNum = /[0-9]/.test(value);
-      const okSpecial = /[^A-Za-z0-9]/.test(value);
+  function toggleLoginSignup() {
+    setMode(mode === "login" ? "signup" : "login");
+  }
 
-      setPasswordCheck(checkLen, okLen);
-      setPasswordCheck(checkUpper, okUpper);
-      setPasswordCheck(checkNum, okNum);
-      setPasswordCheck(checkSpecial, okSpecial);
-
-      if (value.length >= 6) score += 1;
-      if (value.length >= 8) score += 1;
-      if (okUpper) score += 1;
-      if (okNum) score += 1;
-      if (okSpecial) score += 1;
-
-      if (!value) {
-        fill.style.width = "0%";
-        fill.className = "";
-        text.textContent = "";
-        return;
-      }
-
-      if (score <= 2) {
-        fill.style.width = "33%";
-        fill.className = "weak";
-        text.textContent = "Weak password";
-      } else if (score <= 4) {
-        fill.style.width = "66%";
-        fill.className = "medium";
-        text.textContent = "Medium password";
-      } else {
-        fill.style.width = "100%";
-        fill.className = "strong";
-        text.textContent = "Strong password";
-      }
+  function checkStrength() {
+    const fill = el("strengthFill");
+    const text = el("strength");
+    if (mode !== "signup") {
+      fill.style.width = "0%";
+      fill.className = "";
+      text.textContent = "";
+      setPasswordCheck(checkLen, false);
+      setPasswordCheck(checkUpper, false);
+      setPasswordCheck(checkNum, false);
+      setPasswordCheck(checkSpecial, false);
+      return;
     }
 
-    async function safeJson(res) {
-      try { return await res.json(); } catch { return {}; }
+    const value = password.value || "";
+    let score = 0;
+    const okLen = value.length >= 8;
+    const okUpper = /[A-Z]/.test(value);
+    const okNum = /[0-9]/.test(value);
+    const okSpecial = /[^A-Za-z0-9]/.test(value);
+
+    setPasswordCheck(checkLen, okLen);
+    setPasswordCheck(checkUpper, okUpper);
+    setPasswordCheck(checkNum, okNum);
+    setPasswordCheck(checkSpecial, okSpecial);
+
+    if (value.length >= 6) score += 1;
+    if (value.length >= 8) score += 1;
+    if (okUpper) score += 1;
+    if (okNum) score += 1;
+    if (okSpecial) score += 1;
+
+    if (!value) {
+      fill.style.width = "0%";
+      fill.className = "";
+      text.textContent = "";
+      return;
     }
 
-    function getDeviceInfo() {
-      return {
-        ua: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screen: `${screen.width}x${screen.height}`,
-        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
-      };
+    if (score <= 2) {
+      fill.style.width = "33%";
+      fill.className = "weak";
+      text.textContent = "Weak password";
+    } else if (score <= 4) {
+      fill.style.width = "66%";
+      fill.className = "medium";
+      text.textContent = "Medium password";
+    } else {
+      fill.style.width = "100%";
+      fill.className = "strong";
+      text.textContent = "Strong password";
+    }
+  }
+
+  async function safeJson(res) {
+    try { return await res.json(); } catch { return {}; }
+  }
+
+  function getDeviceInfo() {
+    return {
+      ua: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      screen: `${screen.width}x${screen.height}`,
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
+    };
+  }
+
+  async function callApi(baseUrl, path, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(normalizeApiUrl(baseUrl) + path, {
+        method: options.method || "GET",
+        headers: options.headers || {},
+        body: options.body,
+        mode: "cors",
+        credentials: "omit",
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      const data = await safeJson(res);
+      return { ok: res.ok, status: res.status, data, networkError: false };
+    } catch (error) {
+      clearTimeout(timer);
+      return { ok: false, status: 0, data: { message: error?.message || "Network request failed" }, networkError: true };
+    }
+  }
+
+  function buildHeaders(extra = {}) {
+    return { "Content-Type": "application/json", ...extra };
+  }
+
+  function shouldFallbackToLegacy(path, result) {
+    if (path === "/signup") return false;
+    if (path === "/login/2fa/verify") return false;
+    if (result.networkError) return true;
+    if (result.status === 404) return true;
+    if (result.status >= 500) return true;
+    const msg = String(result?.data?.message || "").toLowerCase();
+    if (["/login", "/magic-request", "/magic-login", "/magic-status", "/resend-verify"].includes(path)) {
+      if (msg.includes("account not found in backend2") || msg.includes("magic request not found") || msg.includes("invalid magic request")) return true;
+    }
+    return false;
+  }
+
+  async function callBackend(backend, rawPath, options = {}) {
+    const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    const path = buildPath(rawPath, backend);
+    const finalOptions = { ...options };
+    if (backend === "legacy") {
+      finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
+    }
+    return callApi(baseUrl, path, finalOptions);
+  }
+
+  async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
+    if (behavior === "primaryOnly") {
+      const result = await callBackend("primary", path, options);
+      return { ...result, backend: "primary" };
+    }
+    if (behavior === "legacyOnly") {
+      const result = await callBackend("legacy", path, options);
+      return { ...result, backend: "legacy" };
     }
 
-    async function callApi(baseUrl, path, options = {}) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
-      try {
-        const res = await fetch(normalizeApiUrl(baseUrl) + path, {
-          method: options.method || "GET",
-          headers: options.headers || {},
-          body: options.body,
-          mode: "cors",
-          credentials: "omit",
-          signal: controller.signal
-        });
-        clearTimeout(timer);
-        const data = await safeJson(res);
-        return { ok: res.ok, status: res.status, data, networkError: false };
-      } catch (error) {
-        clearTimeout(timer);
-        return { ok: false, status: 0, data: { message: error?.message || "Network request failed" }, networkError: true };
-      }
+    const forced = getForcedBackendFromState();
+    if (forced === "primary") {
+      const result = await callBackend("primary", path, options);
+      return { ...result, backend: "primary" };
+    }
+    if (forced === "legacy") {
+      const result = await callBackend("legacy", path, options);
+      return { ...result, backend: "legacy" };
     }
 
-    function buildHeaders(extra = {}) {
-      return { "Content-Type": "application/json", ...extra };
+    const first = await callBackend("primary", path, options);
+    if (first.ok) return { ...first, backend: "primary" };
+    if (!shouldFallbackToLegacy(path, first)) return { ...first, backend: "primary" };
+    const second = await callBackend("legacy", path, options);
+    return { ...second, backend: "legacy", firstAttempt: first };
+  }
+
+  async function resendVerifyHybrid(user) {
+    const forced = getForcedBackendFromState();
+    const options = { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user }) };
+    if (forced === "primary") return apiHybrid("/resend-verify", options, "primaryOnly");
+    if (forced === "legacy") return apiHybrid("/resend-verify", options, "legacyOnly");
+    return apiHybrid("/resend-verify", options, "primaryThenLegacy");
+  }
+
+  function buildAuthPayload(user, pass, captchaToken) {
+    const payload = { username: user, password: pass, device: getDeviceInfo() };
+    if (shouldUseCaptcha()) payload.captcha = captchaToken;
+    return payload;
+  }
+
+  function setChosenBackend(backend) {
+    if (backend === "primary" || backend === "legacy") {
+      preferredBackend = backend;
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
     }
+  }
 
-    function shouldFallbackToLegacy(path, result) {
-      if (path === "/signup") return false;
-      if (path === "/login/2fa/verify") return false;
-      if (result.networkError) return true;
-      if (result.status === 404) return true;
-      if (result.status >= 500) return true;
-      const msg = String(result?.data?.message || "").toLowerCase();
-      if (["/login","/magic-request","/magic-login","/magic-status","/resend-verify"].includes(path)) {
-        if (msg.includes("account not found in backend2") || msg.includes("magic request not found") || msg.includes("invalid magic request")) return true;
-      }
-      return false;
-    }
+  function savePendingMagic(requestId, expiresAt, backend, email = "") {
+    pendingMagicRequestId = requestId || null;
+    pendingMagicExpiresAt = expiresAt || null;
+    pendingMagicBackend = backend || null;
+    if (backend) setChosenBackend(backend);
+    if (requestId) localStorage.setItem("magicRequestId", requestId);
+    if (expiresAt) localStorage.setItem("magicExpiresAt", String(expiresAt));
+    if (backend) localStorage.setItem("magicBackend", backend);
+    if (email) localStorage.setItem("magicEmail", email);
+    approvalBox.style.display = "block";
+    backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
+    approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
+    startMagicTimer(expiresAt);
+    startMagicPolling();
+  }
 
-    async function callBackend(backend, rawPath, options = {}) {
-      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
-      const path = buildPath(rawPath, backend);
-      const finalOptions = { ...options };
-      if (backend === "legacy") {
-        finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
-      }
-      return callApi(baseUrl, path, finalOptions);
-    }
+  function clearPendingMagic() {
+    pendingMagicRequestId = null;
+    pendingMagicExpiresAt = null;
+    pendingMagicBackend = null;
+    localStorage.removeItem("magicRequestId");
+    localStorage.removeItem("magicExpiresAt");
+    localStorage.removeItem("magicBackend");
+    localStorage.removeItem("magicEmail");
+    approvalBox.style.display = "none";
+    backendUsedNote.textContent = "";
+    statusTimer.textContent = "";
+    stopMagicPolling();
+    stopMagicTimer();
+    showError("Pending login cleared.", "warn");
+  }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-      if (behavior === "primaryOnly") {
-        const result = await callBackend("primary", path, options);
-        return { ...result, backend: "primary" };
-      }
-      if (behavior === "legacyOnly") {
-        const result = await callBackend("legacy", path, options);
-        return { ...result, backend: "legacy" };
-      }
-
-      const forced = getForcedBackendFromState();
-      if (forced === "primary") {
-        const result = await callBackend("primary", path, options);
-        return { ...result, backend: "primary" };
-      }
-      if (forced === "legacy") {
-        const result = await callBackend("legacy", path, options);
-        return { ...result, backend: "legacy" };
-      }
-
-      const first = await callBackend("primary", path, options);
-      if (first.ok) return { ...first, backend: "primary" };
-      if (!shouldFallbackToLegacy(path, first)) return { ...first, backend: "primary" };
-      const second = await callBackend("legacy", path, options);
-      return { ...second, backend: "legacy", firstAttempt: first };
-    }
-
-    async function resendVerifyHybrid(user) {
-      const forced = getForcedBackendFromState();
-      const options = { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user }) };
-      if (forced === "primary") return apiHybrid("/resend-verify", options, "primaryOnly");
-      if (forced === "legacy") return apiHybrid("/resend-verify", options, "legacyOnly");
-      return apiHybrid("/resend-verify", options, "primaryThenLegacy");
-    }
-
-    function buildAuthPayload(user, pass, captchaToken) {
-      const payload = { username: user, password: pass, device: getDeviceInfo() };
-      if (shouldUseCaptcha()) payload.captcha = captchaToken;
-      return payload;
-    }
-
-    function setChosenBackend(backend) {
-      if (backend === "primary" || backend === "legacy") {
-        preferredBackend = backend;
-        localStorage.setItem("authBackend", backend);
-      }
-    }
-
-    function savePendingMagic(requestId, expiresAt, backend, email = "") {
-      pendingMagicRequestId = requestId || null;
+  function restorePendingMagic() {
+    const requestId = localStorage.getItem("magicRequestId");
+    const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
+    const backend = localStorage.getItem("magicBackend");
+    const savedEmail = localStorage.getItem("magicEmail") || "";
+    if (savedEmail && !username.value.trim()) username.value = savedEmail;
+    if (requestId) {
+      pendingMagicRequestId = requestId;
       pendingMagicExpiresAt = expiresAt || null;
       pendingMagicBackend = backend || null;
-      if (backend) setChosenBackend(backend);
-      if (requestId) localStorage.setItem("magicRequestId", requestId);
-      if (expiresAt) localStorage.setItem("magicExpiresAt", String(expiresAt));
-      if (backend) localStorage.setItem("magicBackend", backend);
-      if (email) localStorage.setItem("magicEmail", email);
       approvalBox.style.display = "block";
       backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
-      approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
-      startMagicTimer(expiresAt);
+      startMagicTimer(expiresAt || null);
       startMagicPolling();
     }
+  }
 
-    function clearPendingMagic() {
-      pendingMagicRequestId = null;
-      pendingMagicExpiresAt = null;
-      pendingMagicBackend = null;
-      localStorage.removeItem("magicRequestId");
-      localStorage.removeItem("magicExpiresAt");
-      localStorage.removeItem("magicBackend");
-      localStorage.removeItem("magicEmail");
-      approvalBox.style.display = "none";
-      backendUsedNote.textContent = "";
+  function stopMagicPolling() {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  }
+
+  function startMagicPolling() {
+    stopMagicPolling();
+    if (!pendingMagicRequestId) return;
+    pollInterval = setInterval(() => checkMagicStatus(false), 3000);
+  }
+
+  function stopMagicTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function startMagicTimer(expiresAt) {
+    stopMagicTimer();
+    if (!expiresAt) {
       statusTimer.textContent = "";
-      stopMagicPolling();
-      stopMagicTimer();
-      showError("Pending login cleared.", "warn");
+      return;
     }
-
-    function restorePendingMagic() {
-      const requestId = localStorage.getItem("magicRequestId");
-      const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
-      const backend = localStorage.getItem("magicBackend");
-      const savedEmail = localStorage.getItem("magicEmail") || "";
-      if (savedEmail && !username.value.trim()) username.value = savedEmail;
-      if (requestId) {
-        pendingMagicRequestId = requestId;
-        pendingMagicExpiresAt = expiresAt || null;
-        pendingMagicBackend = backend || null;
-        approvalBox.style.display = "block";
-        backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
-        startMagicTimer(expiresAt || null);
-        startMagicPolling();
-      }
-    }
-
-    function stopMagicPolling() {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-    }
-
-    function startMagicPolling() {
-      stopMagicPolling();
-      if (!pendingMagicRequestId) return;
-      pollInterval = setInterval(() => checkMagicStatus(false), 3000);
-    }
-
-    function stopMagicTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-    }
-
-    function startMagicTimer(expiresAt) {
-      stopMagicTimer();
-      if (!expiresAt) {
-        statusTimer.textContent = "";
+    pendingMagicExpiresAt = Number(expiresAt);
+    const tick = () => {
+      const left = pendingMagicExpiresAt - Date.now();
+      if (left <= 0) {
+        statusTimer.textContent = "Approval request expired";
+        stopMagicTimer();
+        stopMagicPolling();
         return;
       }
-      pendingMagicExpiresAt = Number(expiresAt);
-      const tick = () => {
-        const left = pendingMagicExpiresAt - Date.now();
-        if (left <= 0) {
-          statusTimer.textContent = "Approval request expired";
-          stopMagicTimer();
-          stopMagicPolling();
-          return;
-        }
-        const m = Math.floor(left / 60000);
-        const s = Math.floor((left % 60000) / 1000);
-        statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
-      };
-      tick();
-      timerInterval = setInterval(tick, 1000);
-    }
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
+    };
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
 
-    async function finishMagicLogin() {
-      const exchange = String(qs().get("exchange") || "").trim();
-      const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
-      const email = username.value.trim().toLowerCase() || localStorage.getItem("magicEmail") || "";
+  async function finishMagicLogin() {
+    const exchange = String(qs().get("exchange") || "").trim();
+    const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
+    const email = username.value.trim().toLowerCase() || localStorage.getItem("magicEmail") || "";
 
-      if (exchange) {
-        try {
-          const behavior = backend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-          const result = await apiHybrid("/magic-login", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ exchange }) }, behavior);
-          const data = result.data || {};
-
-          if (data.requiresTwoFactor) {
-            localStorage.setItem("pending2faMethod", data.method || "");
-            const next = new URLSearchParams({ email, backend: result.backend || backend, method: data.method || "" });
-            window.location.href = "2fa-login.html?" + next.toString();
-            return;
-          }
-
-          if (!result.ok || !data.token) {
-            showError(data.message || "Could not complete login.");
-            return;
-          }
-
-          setChosenBackend(result.backend || "primary");
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("role", data.role || "user");
-          localStorage.setItem("lastUser", data.username || email);
-          if (remember.checked && email) localStorage.setItem("rememberUser", email);
-          clearPendingMagic();
-          localStorage.removeItem("pending2faMethod");
-          showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
-          setTimeout(() => { window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html"; }, 500);
-          return;
-        } catch (error) {
-          console.error("MAGIC FINISH ERROR:", error);
-          showError("Could not complete login.");
-          return;
-        }
-      }
-
-      showError("Approval confirmed. Open the email link to finish login.", "success");
-      const params = new URLSearchParams();
-      if (pendingMagicRequestId) params.set("requestId", pendingMagicRequestId);
-      if (backend) params.set("backend", backend);
-      if (email) params.set("email", email);
-      params.set("approved", "1");
-      setTimeout(() => { window.location.href = "magic-login.html?" + params.toString(); }, 900);
-    }
-
-    async function checkMagicStatus(showFeedback = true) {
-      const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
-      if (!requestId) {
-        if (showFeedback) showError("No pending approval request found.");
-        return;
-      }
-
-      pendingMagicRequestId = requestId;
-      if (showFeedback) setMiniLoading(checkStatusBtn, true);
-
+    if (exchange) {
       try {
-        const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-        const method = pendingMagicBackend === "legacy" ? "POST" : "GET";
-        const payloadPath = method === "GET" ? `/magic-status?requestId=${encodeURIComponent(requestId)}` : "/magic-status";
-        const requestOptions = method === "GET"
-          ? { method, headers: buildHeaders() }
-          : { method, headers: buildHeaders(), body: JSON.stringify({ requestId }) };
-
-        const result = await apiHybrid(payloadPath, requestOptions, behavior);
+        const behavior = backend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+        const result = await apiHybrid("/magic-login", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ exchange }) }, behavior);
         const data = result.data || {};
-        pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
-        setChosenBackend(pendingMagicBackend);
-        localStorage.setItem("magicBackend", pendingMagicBackend);
-        backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
-
-        if (!result.ok) {
-          if (showFeedback) showError(data.message || "Could not check status.");
-          return;
-        }
-
-        if (data.expiresAt) {
-          localStorage.setItem("magicExpiresAt", String(data.expiresAt));
-          startMagicTimer(data.expiresAt);
-        }
-
-        if (data.status === "approved") {
-          approvalText.textContent = "Login approved. Redirecting to the magic login page.";
-          showError(`Login approved on ${backendLabel(pendingMagicBackend)}.`, "success");
-          stopMagicPolling();
-          await finishMagicLogin();
-          return;
-        }
-
-        if (data.status === "expired") {
-          showError("Approval request expired. Start again.", "warn");
-          clearPendingMagic();
-          return;
-        }
-
-        if (showFeedback) showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)}.`, "warn");
-      } catch (error) {
-        console.error("STATUS ERROR:", error);
-        if (showFeedback) showError("Status check failed.");
-      } finally {
-        if (showFeedback) setMiniLoading(checkStatusBtn, false);
-      }
-    }
-
-    function openMagicPage() {
-      const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
-      const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
-      const email = username.value.trim().toLowerCase();
-      const params = new URLSearchParams();
-      if (requestId) params.set("requestId", requestId);
-      if (backend) params.set("backend", backend);
-      if (email) params.set("email", email);
-      window.location.href = "magic-login.html?" + params.toString();
-    }
-
-    async function login() {
-      showError("");
-      setLoading(true);
-      const user = username.value.trim().toLowerCase();
-      const pass = password.value;
-      const captchaToken = getCaptchaToken();
-
-      if (!user) {
-        showError("Enter email.");
-        setLoading(false);
-        return;
-      }
-      if (!pass) {
-        showError("Enter password.");
-        setLoading(false);
-        return;
-      }
-      if (shouldUseCaptcha() && !captchaToken) {
-        showError("Complete CAPTCHA.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const result = await apiHybrid("/login", { method: "POST", headers: buildHeaders(), body: JSON.stringify(buildAuthPayload(user, pass, captchaToken)) }, "primaryThenLegacy");
-        const data = result.data || {};
-
-        if (!result.ok) {
-          if (data.requiresEmailVerification) {
-            setChosenBackend(result.backend || "primary");
-            showError("Check your email and verify your account first.", "warn");
-            setTimeout(() => {
-              const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
-              window.location.href = "verify-email.html?" + next.toString();
-            }, 1200);
-          } else {
-            showError(data.message || "Invalid login.");
-          }
-          resetCaptcha();
-          setLoading(false);
-          return;
-        }
 
         if (data.requiresTwoFactor) {
-          const method = data.method || "";
-          localStorage.setItem("pending2faMethod", method);
-          setChosenBackend(result.backend || "primary");
-          showError(`Two-factor required. Redirecting to ${method === "email_otp" ? "email OTP" : "2FA"} verification.`, "warn");
-          const next = new URLSearchParams({ email: user, backend: result.backend || "primary", method });
-          setTimeout(() => { window.location.href = "2fa-login.html?" + next.toString(); }, 900);
-          resetCaptcha();
-          setLoading(false);
+          localStorage.setItem("pending2faMethod", data.method || "");
+          const next = new URLSearchParams({ email, backend: result.backend || backend, method: data.method || "" });
+          window.location.href = "2fa-login.html?" + next.toString();
           return;
         }
 
-        if (data.requiresApproval && data.requestId) {
-          savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
-          showError(`Approval email sent from ${backendLabel(result.backend)}.`, "warn");
-          resetCaptcha();
-          setLoading(false);
-          return;
-        }
-
-        if (!data.token) {
-          showError(data.message || "Login failed.");
-          resetCaptcha();
-          setLoading(false);
+        if (!result.ok || !data.token) {
+          showError(data.message || "Could not complete login.");
           return;
         }
 
         setChosenBackend(result.backend || "primary");
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role || "user");
-        localStorage.setItem("lastUser", user);
-        if (remember.checked) localStorage.setItem("rememberUser", user);
-        else localStorage.removeItem("rememberUser");
+        saveSession(data.token, data.role || "user", data.username || email);
+        if (remember.checked && email) localStorage.setItem("rememberUser", email);
+        clearPendingMagic();
         localStorage.removeItem("pending2faMethod");
         showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
         setTimeout(() => { window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html"; }, 500);
+        return;
       } catch (error) {
-        console.error("LOGIN ERROR:", error);
-        showError("Server error.");
+        console.error("MAGIC FINISH ERROR:", error);
+        showError("Could not complete login.");
+        return;
+      }
+    }
+
+    showError("Approval confirmed. Open the email link to finish login.", "success");
+    const params = new URLSearchParams();
+    if (pendingMagicRequestId) params.set("requestId", pendingMagicRequestId);
+    if (backend) params.set("backend", backend);
+    if (email) params.set("email", email);
+    params.set("approved", "1");
+    setTimeout(() => { window.location.href = "magic-login.html?" + params.toString(); }, 900);
+  }
+
+  async function checkMagicStatus(showFeedback = true) {
+    const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+    if (!requestId) {
+      if (showFeedback) showError("No pending approval request found.");
+      return;
+    }
+
+    pendingMagicRequestId = requestId;
+    if (showFeedback) setMiniLoading(checkStatusBtn, true);
+
+    try {
+      const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+      const method = pendingMagicBackend === "legacy" ? "POST" : "GET";
+      const payloadPath = method === "GET" ? `/magic-status?requestId=${encodeURIComponent(requestId)}` : "/magic-status";
+      const requestOptions = method === "GET"
+        ? { method, headers: buildHeaders() }
+        : { method, headers: buildHeaders(), body: JSON.stringify({ requestId }) };
+
+      const result = await apiHybrid(payloadPath, requestOptions, behavior);
+      const data = result.data || {};
+      pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
+      setChosenBackend(pendingMagicBackend);
+      localStorage.setItem("magicBackend", pendingMagicBackend);
+      backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
+
+      if (!result.ok) {
+        if (showFeedback) showError(data.message || "Could not check status.");
+        return;
       }
 
-      resetCaptcha();
+      if (data.expiresAt) {
+        localStorage.setItem("magicExpiresAt", String(data.expiresAt));
+        startMagicTimer(data.expiresAt);
+      }
+
+      if (data.status === "approved") {
+        approvalText.textContent = "Login approved. Redirecting to the magic login page.";
+        showError(`Login approved on ${backendLabel(pendingMagicBackend)}.`, "success");
+        stopMagicPolling();
+        await finishMagicLogin();
+        return;
+      }
+
+      if (data.status === "expired") {
+        showError("Approval request expired. Start again.", "warn");
+        clearPendingMagic();
+        return;
+      }
+
+      if (showFeedback) showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)}.`, "warn");
+    } catch (error) {
+      console.error("STATUS ERROR:", error);
+      if (showFeedback) showError("Status check failed.");
+    } finally {
+      if (showFeedback) setMiniLoading(checkStatusBtn, false);
+    }
+  }
+
+  function openMagicPage() {
+    const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+    const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
+    const email = username.value.trim().toLowerCase();
+    const params = new URLSearchParams();
+    if (requestId) params.set("requestId", requestId);
+    if (backend) params.set("backend", backend);
+    if (email) params.set("email", email);
+    window.location.href = "magic-login.html?" + params.toString();
+  }
+
+  async function login() {
+    showError("");
+    setLoading(true);
+    const user = username.value.trim().toLowerCase();
+    const pass = password.value;
+    const captchaToken = getCaptchaToken();
+
+    if (!user) {
+      showError("Enter email.");
       setLoading(false);
+      return;
     }
-
-    async function directTwoFactorLogin() {
-      showError("");
-      setLoading(true);
-      const user = username.value.trim().toLowerCase();
-      const enteredCode = password.value.trim();
-      if (!user) {
-        showError("Enter email.");
-        setLoading(false);
-        return;
-      }
-      if (!enteredCode) {
-        showError("Enter your 2FA code.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const forced = getForcedBackendFromState();
-        const verifyBehavior = forced === "legacy" ? "legacyOnly" : "primaryOnly";
-        const verifyResult = await apiHybrid("/login/2fa/verify", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user, code: enteredCode }) }, verifyBehavior);
-        const verifyData = verifyResult.data || {};
-
-        if (!verifyResult.ok || !verifyData.exchange) {
-          showError(verifyData.message || verifyData.error || verifyData.detail || "Two-factor verification failed.");
-          setLoading(false);
-          return;
-        }
-
-        const backend = verifyResult.backend || "primary";
-        setChosenBackend(backend);
-        const loginResult = await apiHybrid("/magic-login", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ exchange: verifyData.exchange }) }, backend === "legacy" ? "legacyOnly" : "primaryOnly");
-        const loginData = loginResult.data || {};
-
-        if (!loginResult.ok || !loginData.token) {
-          showError(loginData.message || loginData.error || loginData.detail || "2FA code verified, but final login failed.");
-          setLoading(false);
-          return;
-        }
-
-        localStorage.setItem("token", loginData.token);
-        localStorage.setItem("role", loginData.role || "user");
-        localStorage.setItem("lastUser", loginData.username || user);
-        if (remember.checked) localStorage.setItem("rememberUser", user);
-        localStorage.removeItem("pending2faMethod");
-        showError(`2FA verified via ${backendLabel(loginResult.backend || backend)}.`, "success");
-        setTimeout(() => { window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html"; }, 700);
-      } catch (error) {
-        console.error("DIRECT 2FA ERROR:", error);
-        showError("Could not verify 2FA code.");
-      }
+    if (!pass) {
+      showError("Enter password.");
       setLoading(false);
+      return;
     }
-
-    async function signup() {
-      showError("");
-      setLoading(true);
-      const user = username.value.trim().toLowerCase();
-      const pass = password.value;
-      const confirm = confirmInput.value;
-      const captchaToken = getCaptchaToken();
-
-      if (!user) {
-        showError("Enter email.");
-        setLoading(false);
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
-        showError("Enter a valid email.");
-        setLoading(false);
-        return;
-      }
-      if (pass.length < 8) {
-        showError("Password must be at least 8 characters.");
-        setLoading(false);
-        return;
-      }
-      if (pass !== confirm) {
-        showError("Passwords do not match.");
-        setLoading(false);
-        return;
-      }
-      if (shouldUseCaptcha() && !captchaToken) {
-        showError("Complete CAPTCHA.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const payload = { username: user, password: pass };
-        if (shouldUseCaptcha()) payload.captcha = captchaToken;
-        const result = await apiHybrid("/signup", { method: "POST", headers: buildHeaders(), body: JSON.stringify(payload) }, "primaryOnly");
-        const data = result.data || {};
-
-        if (!result.ok) {
-          showError(data.message || "Signup failed.");
-          resetCaptcha();
-          setLoading(false);
-          return;
-        }
-
-        setChosenBackend("primary");
-        showError(data.message || "Account created. Verify your email before first login.", "success");
-        password.value = "";
-        confirmInput.value = "";
-        checkStrength();
-        setTimeout(() => {
-          const next = new URLSearchParams({ email: user, backend: "primary" });
-          window.location.href = "verify-email.html?" + next.toString();
-        }, 1200);
-      } catch (error) {
-        console.error("SIGNUP ERROR:", error);
-        showError("Signup failed.");
-      }
-      resetCaptcha();
+    if (shouldUseCaptcha() && !captchaToken) {
+      showError("Complete CAPTCHA.");
       setLoading(false);
+      return;
     }
 
-    async function magicRequest() {
-      showError("");
-      setLoading(true);
-      const user = username.value.trim().toLowerCase();
-      if (!user) {
-        showError("Enter email.");
+    try {
+      const result = await apiHybrid("/login", { method: "POST", headers: buildHeaders(), body: JSON.stringify(buildAuthPayload(user, pass, captchaToken)) }, "primaryThenLegacy");
+      const data = result.data || {};
+
+      if (!result.ok) {
+        if (data.requiresEmailVerification) {
+          setChosenBackend(result.backend || "primary");
+          showError("Check your email and verify your account first.", "warn");
+          setTimeout(() => {
+            const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+            window.location.href = "verify-email.html?" + next.toString();
+          }, 1200);
+        } else {
+          showError(data.message || "Invalid login.");
+        }
+        resetCaptcha();
         setLoading(false);
         return;
       }
 
-      try {
-        const result = await apiHybrid("/magic-request", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user, device: getDeviceInfo() }) }, "primaryThenLegacy");
-        const data = result.data || {};
-
-        if (!result.ok) {
-          if (data.requiresEmailVerification) {
-            setChosenBackend(result.backend || "primary");
-            showError("Verify your email first before magic login.", "warn");
-            setTimeout(() => {
-              const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
-              window.location.href = "verify-email.html?" + next.toString();
-            }, 1200);
-          } else {
-            showError(data.message || "Failed to send magic login.");
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (data.requestId) savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
-        showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)}.`, "success");
-      } catch (error) {
-        console.error("MAGIC LINK ERROR:", error);
-        showError("Failed to send magic login.");
+      if (data.requiresTwoFactor) {
+        const method = data.method || "";
+        localStorage.setItem("pending2faMethod", method);
+        setChosenBackend(result.backend || "primary");
+        showError(`Two-factor required. Redirecting to ${method === "email_otp" ? "email OTP" : "2FA"} verification.`, "warn");
+        const next = new URLSearchParams({ email: user, backend: result.backend || "primary", method });
+        setTimeout(() => { window.location.href = "2fa-login.html?" + next.toString(); }, 900);
+        resetCaptcha();
+        setLoading(false);
+        return;
       }
+
+      if (data.requiresApproval && data.requestId) {
+        savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
+        showError(`Approval email sent from ${backendLabel(result.backend)}.`, "warn");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      if (!data.token) {
+        showError(data.message || "Login failed.");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      setChosenBackend(result.backend || "primary");
+      saveSession(data.token, data.role || "user", user);
+      if (remember.checked) localStorage.setItem("rememberUser", user);
+      else localStorage.removeItem("rememberUser");
+      localStorage.removeItem("pending2faMethod");
+      showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
+      setTimeout(() => { window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html"; }, 500);
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+      showError("Server error.");
+    }
+
+    resetCaptcha();
+    setLoading(false);
+  }
+
+  async function directTwoFactorLogin() {
+    showError("");
+    setLoading(true);
+    const user = username.value.trim().toLowerCase();
+    const enteredCode = password.value.trim();
+    if (!user) {
+      showError("Enter email.");
       setLoading(false);
+      return;
+    }
+    if (!enteredCode) {
+      showError("Enter your 2FA code.");
+      setLoading(false);
+      return;
     }
 
-    async function resendVerify() {
+    try {
+      const forced = getForcedBackendFromState();
+      const verifyBehavior = forced === "legacy" ? "legacyOnly" : "primaryOnly";
+      const verifyResult = await apiHybrid("/login/2fa/verify", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user, code: enteredCode }) }, verifyBehavior);
+      const verifyData = verifyResult.data || {};
+
+      if (!verifyResult.ok || !verifyData.exchange) {
+        showError(verifyData.message || verifyData.error || verifyData.detail || "Two-factor verification failed.");
+        setLoading(false);
+        return;
+      }
+
+      const backend = verifyResult.backend || "primary";
+      setChosenBackend(backend);
+      const loginResult = await apiHybrid("/magic-login", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ exchange: verifyData.exchange }) }, backend === "legacy" ? "legacyOnly" : "primaryOnly");
+      const loginData = loginResult.data || {};
+
+      if (!loginResult.ok || !loginData.token) {
+        showError(loginData.message || loginData.error || loginData.detail || "2FA code verified, but final login failed.");
+        setLoading(false);
+        return;
+      }
+
+      saveSession(loginData.token, loginData.role || "user", loginData.username || user);
+      if (remember.checked) localStorage.setItem("rememberUser", user);
+      localStorage.removeItem("pending2faMethod");
+      showError(`2FA verified via ${backendLabel(loginResult.backend || backend)}.`, "success");
+      setTimeout(() => { window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html"; }, 700);
+    } catch (error) {
+      console.error("DIRECT 2FA ERROR:", error);
+      showError("Could not verify 2FA code.");
+    }
+    setLoading(false);
+  }
+
+  async function signup() {
+    showError("");
+    setLoading(true);
+    const user = username.value.trim().toLowerCase();
+    const pass = password.value;
+    const confirm = confirmInput.value;
+    const captchaToken = getCaptchaToken();
+
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+      showError("Enter a valid email.");
+      setLoading(false);
+      return;
+    }
+    if (pass.length < 8) {
+      showError("Password must be at least 8 characters.");
+      setLoading(false);
+      return;
+    }
+    if (pass !== confirm) {
+      showError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+    if (shouldUseCaptcha() && !captchaToken) {
+      showError("Complete CAPTCHA.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const payload = { username: user, password: pass };
+      if (shouldUseCaptcha()) payload.captcha = captchaToken;
+      const result = await apiHybrid("/signup", { method: "POST", headers: buildHeaders(), body: JSON.stringify(payload) }, "primaryOnly");
+      const data = result.data || {};
+
+      if (!result.ok) {
+        showError(data.message || "Signup failed.");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      setChosenBackend("primary");
+      showError(data.message || "Account created. Verify your email before first login.", "success");
+      password.value = "";
+      confirmInput.value = "";
+      checkStrength();
+      setTimeout(() => {
+        const next = new URLSearchParams({ email: user, backend: "primary" });
+        window.location.href = "verify-email.html?" + next.toString();
+      }, 1200);
+    } catch (error) {
+      console.error("SIGNUP ERROR:", error);
+      showError("Signup failed.");
+    }
+    resetCaptcha();
+    setLoading(false);
+  }
+
+  async function magicRequest() {
+    showError("");
+    setLoading(true);
+    const user = username.value.trim().toLowerCase();
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await apiHybrid("/magic-request", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ username: user, device: getDeviceInfo() }) }, "primaryThenLegacy");
+      const data = result.data || {};
+
+      if (!result.ok) {
+        if (data.requiresEmailVerification) {
+          setChosenBackend(result.backend || "primary");
+          showError("Verify your email first before magic login.", "warn");
+          setTimeout(() => {
+            const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+            window.location.href = "verify-email.html?" + next.toString();
+          }, 1200);
+        } else {
+          showError(data.message || "Failed to send magic login.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (data.requestId) savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
+      showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)}.`, "success");
+    } catch (error) {
+      console.error("MAGIC LINK ERROR:", error);
+      showError("Failed to send magic login.");
+    }
+    setLoading(false);
+  }
+
+  async function resendVerify() {
+    const user = username.value.trim().toLowerCase();
+    if (!user) {
+      showError("Enter your email first.");
+      return;
+    }
+    showError("Sending verification email...", "warn");
+    try {
+      const result = await resendVerifyHybrid(user);
+      const data = result.data || {};
+      if (!result.ok) {
+        showError(data.message || "Could not resend verification.");
+        return;
+      }
+      if (result.backend) setChosenBackend(result.backend);
+      showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)}.`, "success");
+      setTimeout(() => {
+        const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+        window.location.href = "verify-email.html?" + next.toString();
+      }, 1000);
+    } catch (error) {
+      console.error("RESEND VERIFY ERROR:", error);
+      showError("Could not resend verification.");
+    }
+  }
+
+  async function handleMainAction() {
+    if (mainBtn.disabled) return;
+    if (mode === "login") {
+      if (loginMethod === "verify_email") await resendVerify();
+      else if (loginMethod === "two_factor") await directTwoFactorLogin();
+      else await login();
+    } else if (mode === "signup") {
+      await signup();
+    } else {
+      await magicRequest();
+    }
+  }
+
+  function secondaryAction() {
+    if (mode === "signup") {
+      resendVerify();
+      return;
+    }
+    if (mode === "login" && loginMethod === "verify_email") {
       const user = username.value.trim().toLowerCase();
-      if (!user) {
-        showError("Enter your email first.");
-        return;
-      }
-      showError("Sending verification email...", "warn");
-      try {
-        const result = await resendVerifyHybrid(user);
-        const data = result.data || {};
-        if (!result.ok) {
-          showError(data.message || "Could not resend verification.");
-          return;
-        }
-        if (result.backend) setChosenBackend(result.backend);
-        showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)}.`, "success");
-        setTimeout(() => {
-          const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
-          window.location.href = "verify-email.html?" + next.toString();
-        }, 1000);
-      } catch (error) {
-        console.error("RESEND VERIFY ERROR:", error);
-        showError("Could not resend verification.");
-      }
+      const params = new URLSearchParams();
+      if (user) params.set("email", user);
+      const backend = getForcedBackendFromState();
+      if (backend) params.set("backend", backend);
+      window.location.href = "verify-email.html" + (params.toString() ? `?${params.toString()}` : "");
+      return;
+    }
+    if (mode === "login" && loginMethod === "two_factor") {
+      const user = username.value.trim().toLowerCase();
+      const params = new URLSearchParams();
+      if (user) params.set("email", user);
+      const backend = getForcedBackendFromState();
+      if (backend) params.set("backend", backend);
+      const m = localStorage.getItem("pending2faMethod");
+      if (m) params.set("method", m);
+      window.location.href = "2fa-login.html" + (params.toString() ? `?${params.toString()}` : "");
+      return;
+    }
+    goForgot();
+  }
+
+  function goForgot() {
+    window.location.href = "forgot.html";
+  }
+
+  function loadRememberedUser() {
+    const saved = localStorage.getItem("rememberUser");
+    if (saved) {
+      username.value = saved;
+      remember.checked = true;
+    }
+  }
+
+  function maybeRestoreFromParams() {
+    const email = String(qs().get("email") || "").trim().toLowerCase();
+    const requestId = String(qs().get("requestId") || "").trim();
+    const backend = String(qs().get("backend") || "").trim().toLowerCase();
+    const exchange = String(qs().get("exchange") || "").trim();
+    const approved = String(qs().get("approved") || "").trim();
+    const method = String(qs().get("method") || "").trim().toLowerCase();
+
+    if (backend === "primary" || backend === "legacy") {
+      preferredBackend = backend;
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
+    }
+    if (email) username.value = email;
+    if (method === "totp" || method === "email_otp") localStorage.setItem("pending2faMethod", method);
+
+    if (requestId) {
+      savePendingMagic(requestId, Number(localStorage.getItem("magicExpiresAt") || 0) || null, backend || localStorage.getItem("magicBackend") || "primary", email || localStorage.getItem("magicEmail") || "");
+      showError("Resuming pending login approval.", "warn");
     }
 
-    async function handleMainAction() {
-      if (mainBtn.disabled) return;
-      if (mode === "login") {
-        if (loginMethod === "verify_email") await resendVerify();
-        else if (loginMethod === "two_factor") await directTwoFactorLogin();
-        else await login();
-      } else if (mode === "signup") {
-        await signup();
-      } else {
-        await magicRequest();
+    if (exchange) {
+      pendingMagicBackend = backend || localStorage.getItem("magicBackend") || "primary";
+      if (pendingMagicBackend) setChosenBackend(pendingMagicBackend);
+      if (email) localStorage.setItem("magicEmail", email);
+      if (approved === "1") {
+        approvalBox.style.display = "block";
+        approvalText.textContent = "Approval confirmed. Completing login...";
       }
+      setTimeout(() => finishMagicLogin(), 50);
     }
+  }
 
-    function secondaryAction() {
-      if (mode === "signup") {
-        resendVerify();
-        return;
-      }
-      if (mode === "login" && loginMethod === "verify_email") {
-        const user = username.value.trim().toLowerCase();
-        const params = new URLSearchParams();
-        if (user) params.set("email", user);
-        const backend = getForcedBackendFromState();
-        if (backend) params.set("backend", backend);
-        window.location.href = "verify-email.html" + (params.toString() ? `?${params.toString()}` : "");
-        return;
-      }
-      if (mode === "login" && loginMethod === "two_factor") {
-        const user = username.value.trim().toLowerCase();
-        const params = new URLSearchParams();
-        if (user) params.set("email", user);
-        const backend = getForcedBackendFromState();
-        if (backend) params.set("backend", backend);
-        const m = localStorage.getItem("pending2faMethod");
-        if (m) params.set("method", m);
-        window.location.href = "2fa-login.html" + (params.toString() ? `?${params.toString()}` : "");
-        return;
-      }
-      goForgot();
-    }
-
-    function goForgot() {
-      window.location.href = "forgot.html";
-    }
-
-    function loadRememberedUser() {
-      const saved = localStorage.getItem("rememberUser");
-      if (saved) {
-        username.value = saved;
-        remember.checked = true;
-      }
-    }
-
-    function maybeRestoreFromParams() {
-      const email = String(qs().get("email") || "").trim().toLowerCase();
-      const requestId = String(qs().get("requestId") || "").trim();
-      const backend = String(qs().get("backend") || "").trim().toLowerCase();
-      const exchange = String(qs().get("exchange") || "").trim();
-      const approved = String(qs().get("approved") || "").trim();
-      const method = String(qs().get("method") || "").trim().toLowerCase();
-
-      if (backend === "primary" || backend === "legacy") {
-        preferredBackend = backend;
-        localStorage.setItem("authBackend", backend);
-      }
-      if (email) username.value = email;
-      if (method === "totp" || method === "email_otp") localStorage.setItem("pending2faMethod", method);
-
-      if (requestId) {
-        savePendingMagic(requestId, Number(localStorage.getItem("magicExpiresAt") || 0) || null, backend || localStorage.getItem("magicBackend") || "primary", email || localStorage.getItem("magicEmail") || "");
-        showError("Resuming pending login approval.", "warn");
-      }
-
-      if (exchange) {
-        pendingMagicBackend = backend || localStorage.getItem("magicBackend") || "primary";
-        if (pendingMagicBackend) setChosenBackend(pendingMagicBackend);
-        if (email) localStorage.setItem("magicEmail", email);
-        if (approved === "1") {
-          approvalBox.style.display = "block";
-          approvalText.textContent = "Approval confirmed. Completing login...";
-        }
-        setTimeout(() => finishMagicLogin(), 50);
-      }
-    }
-
-    document.querySelectorAll(".faq-q").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const item = btn.parentElement;
-        const open = item.classList.contains("open");
-        document.querySelectorAll(".faq-item").forEach((x) => {
-          x.classList.remove("open");
-          const mark = x.querySelector(".faq-q span");
-          if (mark) mark.textContent = "+";
-        });
-        if (!open) {
-          item.classList.add("open");
-          const mark = item.querySelector(".faq-q span");
-          if (mark) mark.textContent = "−";
-        }
+  document.querySelectorAll(".faq-q").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const item = btn.parentElement;
+      const open = item.classList.contains("open");
+      document.querySelectorAll(".faq-item").forEach((x) => {
+        x.classList.remove("open");
+        const mark = x.querySelector(".faq-q span");
+        if (mark) mark.textContent = "+";
       });
+      if (!open) {
+        item.classList.add("open");
+        const mark = item.querySelector(".faq-q span");
+        if (mark) mark.textContent = "−";
+      }
     });
+  });
 
-    username.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
-    password.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
-    confirmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  username.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  password.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  confirmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
 
-    loadTheme();
-    loadRememberedUser();
-    maybeRestoreFromParams();
-    setMode("login");
-    restorePendingMagic();
-    waitForCaptchaAndMount();
-  </script>
+  loadTheme();
+  loadRememberedUser();
+  maybeRestoreFromParams();
+  setMode("login");
+  restorePendingMagic();
+  waitForCaptchaAndMount();
+</script>
 </body>
 </html>
