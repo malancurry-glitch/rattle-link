@@ -700,1307 +700,2016 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-  const PRIMARY_API = "https://api.rattleshortapi.it.com";
-  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+const PRIMARY_API = "https://api.rattleshortapi.it.com";
+const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-  const AUTH_STORAGE_KEY = "rattle_token";
-  const ROLE_STORAGE_KEY = "rattle_role";
-  const USER_STORAGE_KEY = "rattle_user";
+const AUTH_STORAGE_KEY = "rattle_token";
+const ROLE_STORAGE_KEY = "rattle_role";
+const USER_STORAGE_KEY = "rattle_user";
 
-  const SUPPORT_CONFIG = {
-    telegram: "https://t.me/Rtslik",
-    discord: "https://discord.gg/xwGvhtjb",
-    email: "support@rattleshort.online",
-    phone: "+1 954 787 8220"
+const SUPPORT_CONFIG = {
+  telegram: "https://t.me/Rtslik",
+  discord: "https://discord.gg/xwGvhtjb",
+  email: "support@rattleshort.online",
+  phone: "+1 954 787 8220"
+};
+
+const ROUTE_CACHE = {
+  primary: {},
+  legacy: {}
+};
+
+let dataStore = [];
+let paymentsStore = [];
+let notificationsStore = [];
+let selectedLinks = new Set();
+let chart = null;
+let statsChartInstance = null;
+let refreshTimer = null;
+let map = null;
+let loadingLinks = false;
+let meState = null;
+let plansState = null;
+let selectedPlan = "monthly";
+let selectedPlanQuantity = 1;
+let paymentPoller = null;
+let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
+let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
+let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
+let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
+
+const $ = id => document.getElementById(id);
+
+const totalLinks = $("totalLinks");
+const totalClicks = $("totalClicks");
+const avgClicks = $("avgClicks");
+const activeShortLinksRemainingEl = $("activeShortLinksRemaining");
+const liveThreatCount = $("liveThreatCount");
+const table = $("table");
+const ranking = $("ranking");
+const panel = $("panel");
+const panelContent = $("panelContent");
+const toast = $("toast");
+const result = $("result");
+const paymentsTable = $("paymentsTable");
+const notificationsList = $("notificationsList");
+const visibleStatsText = $("visibleStatsText");
+const securityInsights = $("securityInsights");
+const activityTimeline = $("activityTimeline");
+const liveSyncBadge = $("liveSyncBadge");
+const shortLinksProgressBar = $("shortLinksProgressBar");
+const landingPagesProgressBar = $("landingPagesProgressBar");
+
+const primaryLinksCount = $("primaryLinksCount");
+const legacyLinksCount = $("legacyLinksCount");
+const primaryClicksCount = $("primaryClicksCount");
+const legacyClicksCount = $("legacyClicksCount");
+const primaryHealth = $("primaryHealth");
+const legacyHealth = $("legacyHealth");
+const sessionNote = $("sessionNote");
+
+const backendBadgeTop = $("backendBadgeTop");
+const meEmail = $("meEmail");
+const mePlan = $("mePlan");
+const meExpire = $("meExpire");
+const meRole = $("meRole");
+const meEmailVerified = $("meEmailVerified");
+const mePrimaryDomain = $("mePrimaryDomain");
+const meTwoFactor = $("meTwoFactor");
+const meTwoFactorMethod = $("meTwoFactorMethod");
+const accessSummary = $("accessSummary");
+const subscriptionBadge = $("subscriptionBadge");
+const latestPaymentBox = $("latestPaymentBox");
+const activeShortLinksText = $("activeShortLinksText");
+const activeLandingPagesText = $("activeLandingPagesText");
+
+const urlInput = $("url");
+const slugInput = $("customSlug");
+const expireInput = $("expire");
+const campaignInput = $("campaignInput");
+const noteInput = $("noteInput");
+const riskModeSelect = $("riskModeSelect");
+
+const bulkCountLegacy = $("bulkCountLegacy");
+const bulkCountPrimary = $("bulkCountPrimary");
+const searchInput = $("search");
+const backendFilter = $("backendFilter");
+const itemTypeFilter = $("itemTypeFilter");
+const statusFilter = $("statusFilter");
+const dateRangeFilter = $("dateRangeFilter");
+const sortFilter = $("sortFilter");
+const chartMetricSelect = $("chartMetricSelect");
+const onlyHighRiskToggle = $("onlyHighRiskToggle");
+const compactModeToggle = $("compactModeToggle");
+const autoRefreshToggle = $("autoRefreshToggle");
+
+const csvFileLegacy = $("csvFileLegacy");
+const csvFilePrimary = $("csvFilePrimary");
+const dropZoneLegacy = $("dropZoneLegacy");
+const dropZonePrimary = $("dropZonePrimary");
+
+const refreshBtn = $("refreshBtn");
+const upgradeBtn = $("upgradeBtn");
+const exportCsvBtn = $("exportCsvBtn");
+const exportJsonBtn = $("exportJsonBtn");
+const quickSettingsBtn = $("quickSettingsBtn");
+const createLegacyBtn = $("createLegacyBtn");
+const createPrimaryBtn = $("createPrimaryBtn");
+const bulkLegacyBtn = $("bulkLegacyBtn");
+const bulkPrimaryBtn = $("bulkPrimaryBtn");
+const uploadLegacyBtn = $("uploadLegacyBtn");
+const uploadPrimaryBtn = $("uploadPrimaryBtn");
+const preferPrimaryBtn = $("preferPrimaryBtn");
+const preferLegacyBtn = $("preferLegacyBtn");
+const verifySessionBtn = $("verifySessionBtn");
+const clearFiltersBtn = $("clearFiltersBtn");
+const bulkCopyBtn = $("bulkCopyBtn");
+const bulkDeleteBtn = $("bulkDeleteBtn");
+const bulkRefreshStatsBtn = $("bulkRefreshStatsBtn");
+const selectAllLinks = $("selectAllLinks");
+const clearNotificationsBtn = $("clearNotificationsBtn");
+const refreshActivityBtn = $("refreshActivityBtn");
+const rebuildBoardBtn = $("rebuildBoardBtn");
+const openSecurityCenterBtn = $("openSecurityCenterBtn");
+
+const overlay = $("overlay");
+const upgradeModal = $("upgradeModal");
+const settingsModal = $("settingsModal");
+const securityModal = $("securityModal");
+const securityModalContent = $("securityModalContent");
+const modalAutoRefreshToggle = $("modalAutoRefreshToggle");
+const modalCompactModeToggle = $("modalCompactModeToggle");
+const modalChartMetricSelect = $("modalChartMetricSelect");
+const settingsSearchSummary = $("settingsSearchSummary");
+
+const planGrid = $("planGrid");
+const cryptoSelect = $("cryptoSelect");
+const planQuantityInput = $("planQuantity");
+const billingPreview = $("billingPreview");
+const requestPaymentBtn = $("requestPaymentBtn");
+const upgradeResult = $("upgradeResult");
+const paymentRequestBox = $("paymentRequestBox");
+
+const landingCenterBtn = $("landingCenterBtn");
+const domainCenterBtn = $("domainCenterBtn");
+const openLandingPanelBtn = $("openLandingPanelBtn");
+const viewLandingLinksBtn = $("viewLandingLinksBtn");
+const openDomainPanelBtn = $("openDomainPanelBtn");
+const refreshDomainsBtn = $("refreshDomainsBtn");
+const backend2ExtraResult = $("backend2ExtraResult");
+const landingSummaryText = $("landingSummaryText");
+const domainSummaryText = $("domainSummaryText");
+
+function normalizeApiUrl(url) {
+  return String(url || "").replace(/\/+$/, "");
+}
+
+function getToken() {
+  return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
+}
+
+function getRole() {
+  return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || "";
+}
+
+function getUsername() {
+  return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
+}
+
+function setSession(token, role = "", username = "") {
+  if (token) {
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
+    localStorage.setItem("token", token);
+  }
+  if (role) {
+    localStorage.setItem(ROLE_STORAGE_KEY, role);
+    localStorage.setItem("role", role);
+  }
+  if (username) {
+    localStorage.setItem(USER_STORAGE_KEY, username);
+    localStorage.setItem("lastUser", username);
+  }
+}
+
+function clearSession() {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(ROLE_STORAGE_KEY);
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("lastUser");
+  localStorage.removeItem("preferredBackend");
+  localStorage.removeItem("sessionBackend");
+  localStorage.removeItem("waitingPaymentId");
+}
+
+function authHeaders() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function apiBaseForBackend(backend) {
+  return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+}
+
+function backendLabel(backend) {
+  return backend === "legacy" ? "AWS" : "Backend2";
+}
+
+function backendClass(backend) {
+  return backend === "legacy" ? "backend-legacy" : "backend-primary";
+}
+
+function buildPublicLink(itemOrSlug, backend) {
+  const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+  return `${normalizeApiUrl(apiBaseForBackend(backend))}/${slug}`;
+}
+
+function updatePreferredButtons() {
+  if (preferPrimaryBtn) preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
+  if (preferLegacyBtn) preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
+}
+
+function setTopBackendBadge() {
+  if (!backendBadgeTop) return;
+  backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
+  backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+  if (sessionNote) {
+    sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+  }
+  updatePreferredButtons();
+}
+
+function setBusy(button, busy, text = "") {
+  if (!button) return;
+  if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+  button.disabled = !!busy;
+  button.textContent = busy ? text : button.dataset.originalText;
+}
+
+function showToast(message = "Copied!") {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.style.display = "block";
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
+    toast.style.display = "none";
+  }, 1800);
+}
+
+function pushNotification(message, type = "info") {
+  const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  notificationsStore.unshift({ id, message, type, time: Date.now() });
+  notificationsStore = notificationsStore.slice(0, 8);
+  renderNotifications();
+}
+
+function renderNotifications() {
+  if (!notificationsList) return;
+  if (!notificationsStore.length) {
+    notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
+    return;
+  }
+  notificationsList.innerHTML = notificationsStore.map(n => `
+    <div class="info-box" style="margin:0;">
+      <div><b>${escapeHtml(n.message)}</b></div>
+      <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
+    </div>
+  `).join("");
+}
+
+function setResult(message, isError = false, target = result) {
+  if (!target) return;
+  target.textContent = message;
+  target.className = "result " + (isError ? "error" : "success");
+  pushNotification(message, isError ? "error" : "success");
+}
+
+function setExtraResult(message, isError = false) {
+  if (!backend2ExtraResult) return;
+  backend2ExtraResult.textContent = message;
+  backend2ExtraResult.className = "result " + (isError ? "error" : "success");
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeForJs(str) {
+  return String(str ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "");
+}
+
+function fmtDate(ts) {
+  const n = Number(ts || 0);
+  if (!n) return "-";
+  return new Date(n).toLocaleString();
+}
+
+function fmtMoney(v) {
+  return `$${Number(v || 0).toFixed(2)}`;
+}
+
+function fmtExpire(ts) {
+  const n = Number(ts || 0);
+  if (!n) return '<span class="muted">No expiry</span>';
+  if (n <= Date.now()) return `<span class="expired">Expired</span>`;
+  const diff = n - Date.now();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
+}
+
+function formatPaymentStatus(status) {
+  const s = String(status || "").toLowerCase();
+  if (s === "verified") return `<span class="badge live">Verified</span>`;
+  if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
+  if (s === "pending") return `<span class="badge pending">Pending</span>`;
+  if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
+  return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
+}
+
+function normalizePlanLabel(planCode) {
+  const code = String(planCode || "").toLowerCase();
+  if (code === "premium_monthly") return "Premium Monthly";
+  if (code === "monthly") return "Monthly";
+  if (code === "weekly") return "Weekly";
+  if (code === "free_trial") return "Free Trial";
+  return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
+}
+
+function parseBillingCycleQuantity(value) {
+  const raw = String(value || "");
+  const parts = raw.split(":");
+  return parts.length === 2 ? Math.max(1, Number(parts[1] || 1)) : 1;
+}
+
+function getItemType(item) {
+  return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect";
+}
+
+function getStatusKey(link) {
+  if (link.paused) return "paused";
+  if (link.expire && Number(link.expire) <= Date.now()) return "expired";
+  return "live";
+}
+
+function getStatus(link) {
+  const key = getStatusKey(link);
+  if (key === "paused") return '<span class="pill paused">Paused</span>';
+  if (key === "expired") return '<span class="pill expired">Expired</span>';
+  return '<span class="pill live">Live</span>';
+}
+
+function scoreLink(link) {
+  let score = 0;
+  const clicks = Number(link.clicks || 0);
+  if (clicks > 20) score += 20;
+  if (clicks > 50) score += 30;
+  if (clicks > 100) score += 30;
+  if (!link.paused) score += 10;
+  if (!link.expire || Number(link.expire) > Date.now()) score += 10;
+  if (link.backend === "primary") score += 5;
+  return Math.min(score, 100);
+}
+
+function detectFraud(link) {
+  const clicks = Number(link.clicks || 0);
+  const risk = Number(link.maxRisk || 0);
+  if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
+  if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
+  return "✅ Normal";
+}
+
+function ensureAuth() {
+  const token = getToken();
+  if (!token) {
+    window.location.href = "index.html";
+    return false;
+  }
+  return true;
+}
+
+function safeParseJson(raw) {
+  try {
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return { message: raw };
+  }
+}
+
+function isRouteNotFoundResponse(status, data) {
+  const msg = String(data?.message || data?.error || data?.detail || "").toLowerCase();
+  return (
+    status === 404 ||
+    msg.includes("route not found") ||
+    msg.includes("cannot get") ||
+    msg.includes("not found")
+  );
+}
+
+function buildRouteCandidates(path) {
+  const clean = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+  const map = {
+    "/me": ["/auth/me", "/me", "/profile", "/auth/profile", "/app/me"],
+    "/list": ["/list", "/app/list", "/auth/list", "/links", "/auth/links", "/app/links"],
+    "/create": ["/create", "/app/create", "/auth/create", "/links/create", "/auth/links/create"],
+    "/delete": ["/delete", "/app/delete", "/auth/delete", "/links/delete", "/auth/links/delete"],
+    "/landing/delete": ["/landing/delete", "/app/landing/delete", "/auth/landing/delete", "/landing-page/delete"],
+    "/history": ["/history", "/app/history", "/auth/history", "/links/history", "/auth/links/history"],
+    "/plans": ["/plans", "/app/plans", "/auth/plans", "/billing/plans", "/subscription/plans"],
+    "/payment-request": ["/payment-request", "/app/payment-request", "/auth/payment-request", "/payments/request", "/billing/payment-request"],
+    "/payment-i-made": ["/payment-i-made", "/app/payment-i-made", "/auth/payment-i-made", "/payments/i-made", "/billing/payment-i-made"],
+    "/payments/me": ["/payments/me", "/auth/payments/me", "/app/payments/me", "/payment-history", "/auth/payment-history"],
+    "/health": ["/health", "/app/health", "/auth/health"],
+    "/auth/security/2fa/setup": ["/auth/security/2fa/setup", "/security/2fa/setup", "/auth/2fa/setup", "/2fa/setup"],
+    "/auth/security/2fa/enable": ["/auth/security/2fa/enable", "/security/2fa/enable", "/auth/2fa/enable", "/2fa/enable"],
+    "/auth/security/2fa/disable": ["/auth/security/2fa/disable", "/security/2fa/disable", "/auth/2fa/disable", "/2fa/disable"]
   };
 
-  let dataStore = [];
-  let paymentsStore = [];
-  let notificationsStore = [];
-  let selectedLinks = new Set();
-  let chart = null;
-  let statsChartInstance = null;
-  let refreshTimer = null;
-  let map = null;
-  let loadingLinks = false;
-  let meState = null;
-  let plansState = null;
-  let selectedPlan = "monthly";
-  let selectedPlanQuantity = 1;
-  let paymentPoller = null;
-  let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
-  let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
-  let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
-  let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
-  let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
+  if (map[clean]) return map[clean];
 
-  const $ = id => document.getElementById(id);
+  const withoutAuth = clean.replace(/^\/auth/, "");
+  const withoutApp = clean.replace(/^\/app/, "");
 
-  const totalLinks = $("totalLinks");
-  const totalClicks = $("totalClicks");
-  const avgClicks = $("avgClicks");
-  const activeShortLinksRemainingEl = $("activeShortLinksRemaining");
-  const liveThreatCount = $("liveThreatCount");
-  const table = $("table");
-  const ranking = $("ranking");
-  const panel = $("panel");
-  const panelContent = $("panelContent");
-  const toast = $("toast");
-  const result = $("result");
-  const paymentsTable = $("paymentsTable");
-  const notificationsList = $("notificationsList");
-  const visibleStatsText = $("visibleStatsText");
-  const securityInsights = $("securityInsights");
-  const activityTimeline = $("activityTimeline");
-  const liveSyncBadge = $("liveSyncBadge");
-  const shortLinksProgressBar = $("shortLinksProgressBar");
-  const landingPagesProgressBar = $("landingPagesProgressBar");
+  return [...new Set([
+    clean,
+    `/auth${clean}`,
+    `/app${clean}`,
+    withoutAuth,
+    withoutApp
+  ])];
+}
 
-  const primaryLinksCount = $("primaryLinksCount");
-  const legacyLinksCount = $("legacyLinksCount");
-  const primaryClicksCount = $("primaryClicksCount");
-  const legacyClicksCount = $("legacyClicksCount");
-  const primaryHealth = $("primaryHealth");
-  const legacyHealth = $("legacyHealth");
-  const sessionNote = $("sessionNote");
-
-  const backendBadgeTop = $("backendBadgeTop");
-  const meEmail = $("meEmail");
-  const mePlan = $("mePlan");
-  const meExpire = $("meExpire");
-  const meRole = $("meRole");
-  const meEmailVerified = $("meEmailVerified");
-  const mePrimaryDomain = $("mePrimaryDomain");
-  const meTwoFactor = $("meTwoFactor");
-  const meTwoFactorMethod = $("meTwoFactorMethod");
-  const accessSummary = $("accessSummary");
-  const subscriptionBadge = $("subscriptionBadge");
-  const latestPaymentBox = $("latestPaymentBox");
-  const activeShortLinksText = $("activeShortLinksText");
-  const activeLandingPagesText = $("activeLandingPagesText");
-
-  const urlInput = $("url");
-  const slugInput = $("customSlug");
-  const expireInput = $("expire");
-  const campaignInput = $("campaignInput");
-  const noteInput = $("noteInput");
-  const riskModeSelect = $("riskModeSelect");
-
-  const bulkCountLegacy = $("bulkCountLegacy");
-  const bulkCountPrimary = $("bulkCountPrimary");
-  const searchInput = $("search");
-  const backendFilter = $("backendFilter");
-  const itemTypeFilter = $("itemTypeFilter");
-  const statusFilter = $("statusFilter");
-  const dateRangeFilter = $("dateRangeFilter");
-  const sortFilter = $("sortFilter");
-  const chartMetricSelect = $("chartMetricSelect");
-  const onlyHighRiskToggle = $("onlyHighRiskToggle");
-  const compactModeToggle = $("compactModeToggle");
-  const autoRefreshToggle = $("autoRefreshToggle");
-
-  const csvFileLegacy = $("csvFileLegacy");
-  const csvFilePrimary = $("csvFilePrimary");
-  const dropZoneLegacy = $("dropZoneLegacy");
-  const dropZonePrimary = $("dropZonePrimary");
-
-  const refreshBtn = $("refreshBtn");
-  const upgradeBtn = $("upgradeBtn");
-  const exportCsvBtn = $("exportCsvBtn");
-  const exportJsonBtn = $("exportJsonBtn");
-  const quickSettingsBtn = $("quickSettingsBtn");
-  const createLegacyBtn = $("createLegacyBtn");
-  const createPrimaryBtn = $("createPrimaryBtn");
-  const bulkLegacyBtn = $("bulkLegacyBtn");
-  const bulkPrimaryBtn = $("bulkPrimaryBtn");
-  const uploadLegacyBtn = $("uploadLegacyBtn");
-  const uploadPrimaryBtn = $("uploadPrimaryBtn");
-  const preferPrimaryBtn = $("preferPrimaryBtn");
-  const preferLegacyBtn = $("preferLegacyBtn");
-  const verifySessionBtn = $("verifySessionBtn");
-  const clearFiltersBtn = $("clearFiltersBtn");
-  const bulkCopyBtn = $("bulkCopyBtn");
-  const bulkDeleteBtn = $("bulkDeleteBtn");
-  const bulkRefreshStatsBtn = $("bulkRefreshStatsBtn");
-  const selectAllLinks = $("selectAllLinks");
-  const clearNotificationsBtn = $("clearNotificationsBtn");
-  const refreshActivityBtn = $("refreshActivityBtn");
-  const rebuildBoardBtn = $("rebuildBoardBtn");
-  const openSecurityCenterBtn = $("openSecurityCenterBtn");
-
-  const overlay = $("overlay");
-  const upgradeModal = $("upgradeModal");
-  const settingsModal = $("settingsModal");
-  const securityModal = $("securityModal");
-  const securityModalContent = $("securityModalContent");
-  const modalAutoRefreshToggle = $("modalAutoRefreshToggle");
-  const modalCompactModeToggle = $("modalCompactModeToggle");
-  const modalChartMetricSelect = $("modalChartMetricSelect");
-  const settingsSearchSummary = $("settingsSearchSummary");
-
-  const planGrid = $("planGrid");
-  const cryptoSelect = $("cryptoSelect");
-  const planQuantityInput = $("planQuantity");
-  const billingPreview = $("billingPreview");
-  const requestPaymentBtn = $("requestPaymentBtn");
-  const upgradeResult = $("upgradeResult");
-  const paymentRequestBox = $("paymentRequestBox");
-
-  const landingCenterBtn = $("landingCenterBtn");
-  const domainCenterBtn = $("domainCenterBtn");
-  const openLandingPanelBtn = $("openLandingPanelBtn");
-  const viewLandingLinksBtn = $("viewLandingLinksBtn");
-  const openDomainPanelBtn = $("openDomainPanelBtn");
-  const refreshDomainsBtn = $("refreshDomainsBtn");
-  const backend2ExtraResult = $("backend2ExtraResult");
-  const landingSummaryText = $("landingSummaryText");
-  const domainSummaryText = $("domainSummaryText");
-
-  function normalizeApiUrl(url) {
-    return String(url || "").replace(/\/+$/, "");
+async function safeFetchRaw(base, path, options = {}) {
+  try {
+    const res = await fetch(normalizeApiUrl(base) + path, options);
+    const raw = await res.text();
+    const data = safeParseJson(raw);
+    return { ok: res.ok, status: res.status, data, raw };
+  } catch (e) {
+    return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
   }
+}
 
-  function getToken() {
-    return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
-  }
+async function resolveRoute(backend, canonicalPath, options = {}) {
+  const cacheKey = canonicalPath;
+  const cached = ROUTE_CACHE[backend]?.[cacheKey];
+  const base = apiBaseForBackend(backend);
 
-  function getRole() {
-    return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || "";
-  }
-
-  function getUsername() {
-    return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
-  }
-
-  function setSession(token, role = "", username = "") {
-    if (token) {
-      localStorage.setItem(AUTH_STORAGE_KEY, token);
-      localStorage.setItem("token", token);
-    }
-    if (role) {
-      localStorage.setItem(ROLE_STORAGE_KEY, role);
-      localStorage.setItem("role", role);
-    }
-    if (username) {
-      localStorage.setItem(USER_STORAGE_KEY, username);
-      localStorage.setItem("lastUser", username);
+  if (cached) {
+    const cachedRes = await safeFetchRaw(base, cached, options);
+    if (cachedRes.ok || !isRouteNotFoundResponse(cachedRes.status, cachedRes.data)) {
+      return { ...cachedRes, backend, resolvedPath: cached, canonicalPath };
     }
   }
 
-  function clearSession() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(ROLE_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("lastUser");
-    localStorage.removeItem("preferredBackend");
-    localStorage.removeItem("sessionBackend");
-    localStorage.removeItem("waitingPaymentId");
-  }
+  const candidates = buildRouteCandidates(canonicalPath);
+  let bestFailure = null;
 
-  function authHeaders() {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
+  for (const candidate of candidates) {
+    const res = await safeFetchRaw(base, candidate, options);
 
-  function apiBaseForBackend(backend) {
-    return backend === "legacy" ? LEGACY_API : PRIMARY_API;
-  }
-
-  function backendLabel(backend) {
-    return backend === "legacy" ? "AWS" : "Backend2";
-  }
-
-  function backendClass(backend) {
-    return backend === "legacy" ? "backend-legacy" : "backend-primary";
-  }
-
-  function buildPublicLink(itemOrSlug, backend) {
-    const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
-    return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
-  }
-
-  function updatePreferredButtons() {
-    if (preferPrimaryBtn) preferPrimaryBtn.classList.toggle("backend-active", preferredBackend === "primary");
-    if (preferLegacyBtn) preferLegacyBtn.classList.toggle("backend-active", preferredBackend === "legacy");
-  }
-
-  function setTopBackendBadge() {
-    if (!backendBadgeTop) return;
-    backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
-    backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-    if (sessionNote) {
-      sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+    if (res.ok) {
+      ROUTE_CACHE[backend][cacheKey] = candidate;
+      return { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
-    updatePreferredButtons();
-  }
 
-  function setBusy(button, busy, text = "") {
-    if (!button) return;
-    if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
-    button.disabled = !!busy;
-    button.textContent = busy ? text : button.dataset.originalText;
-  }
-
-  function showToast(message = "Copied!") {
-    if (!toast) return;
-    toast.textContent = message;
-    toast.style.display = "block";
-    clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(() => {
-      toast.style.display = "none";
-    }, 1800);
-  }
-
-  function pushNotification(message, type = "info") {
-    const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
-    notificationsStore.unshift({ id, message, type, time: Date.now() });
-    notificationsStore = notificationsStore.slice(0, 8);
-    renderNotifications();
-  }
-
-  function renderNotifications() {
-    if (!notificationsList) return;
-    if (!notificationsStore.length) {
-      notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
-      return;
+    if (!bestFailure) {
+      bestFailure = { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
-    notificationsList.innerHTML = notificationsStore.map(n => `
-      <div class="info-box" style="margin:0;">
-        <div><b>${escapeHtml(n.message)}</b></div>
-        <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
-      </div>
-    `).join("");
-  }
 
-  function setResult(message, isError = false, target = result) {
-    if (!target) return;
-    target.textContent = message;
-    target.className = "result " + (isError ? "error" : "success");
-    pushNotification(message, isError ? "error" : "success");
-  }
-
-  function setExtraResult(message, isError = false) {
-    if (!backend2ExtraResult) return;
-    backend2ExtraResult.textContent = message;
-    backend2ExtraResult.className = "result " + (isError ? "error" : "success");
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function escapeForJs(str) {
-    return String(str ?? "")
-      .replaceAll("\\", "\\\\")
-      .replaceAll("'", "\\'")
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "");
-  }
-
-  function fmtDate(ts) {
-    const n = Number(ts || 0);
-    if (!n) return "-";
-    return new Date(n).toLocaleString();
-  }
-
-  function fmtMoney(v) {
-    return `$${Number(v || 0).toFixed(2)}`;
-  }
-
-  function fmtExpire(ts) {
-    const n = Number(ts || 0);
-    if (!n) return '<span class="muted">No expiry</span>';
-    if (n <= Date.now()) return `<span class="expired">Expired</span>`;
-    const diff = n - Date.now();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
-  }
-
-  function formatPaymentStatus(status) {
-    const s = String(status || "").toLowerCase();
-    if (s === "verified") return `<span class="badge live">Verified</span>`;
-    if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
-    if (s === "pending") return `<span class="badge pending">Pending</span>`;
-    if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
-    return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
-  }
-
-  function normalizePlanLabel(planCode) {
-    const code = String(planCode || "").toLowerCase();
-    if (code === "premium_monthly") return "Premium Monthly";
-    if (code === "monthly") return "Monthly";
-    if (code === "weekly") return "Weekly";
-    if (code === "free_trial") return "Free Trial";
-    return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
-  }
-
-  function parseBillingCycleQuantity(value) {
-    const raw = String(value || "");
-    const parts = raw.split(":");
-    return parts.length === 2 ? Math.max(1, Number(parts[1] || 1)) : 1;
-  }
-
-  function getItemType(item) {
-    return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect";
-  }
-
-  function getStatusKey(link) {
-    if (link.paused) return "paused";
-    if (link.expire && Number(link.expire) <= Date.now()) return "expired";
-    return "live";
-  }
-
-  function getStatus(link) {
-    const key = getStatusKey(link);
-    if (key === "paused") return '<span class="pill paused">Paused</span>';
-    if (key === "expired") return '<span class="pill expired">Expired</span>';
-    return '<span class="pill live">Live</span>';
-  }
-
-  function scoreLink(link) {
-    let score = 0;
-    const clicks = Number(link.clicks || 0);
-    if (clicks > 20) score += 20;
-    if (clicks > 50) score += 30;
-    if (clicks > 100) score += 30;
-    if (!link.paused) score += 10;
-    if (!link.expire || Number(link.expire) > Date.now()) score += 10;
-    if (link.backend === "primary") score += 5;
-    return Math.min(score, 100);
-  }
-
-  function detectFraud(link) {
-    const clicks = Number(link.clicks || 0);
-    const risk = Number(link.maxRisk || 0);
-    if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
-    if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
-    return "✅ Normal";
-  }
-
-  function ensureAuth() {
-    const token = getToken();
-    if (!token) {
-      window.location.href = "index.html";
-      return false;
+    if (!isRouteNotFoundResponse(res.status, res.data) && res.status !== 405) {
+      return { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
+  }
+
+  return bestFailure || {
+    ok: false,
+    status: 0,
+    data: { message: "No matching route found" },
+    backend,
+    resolvedPath: "",
+    canonicalPath
+  };
+}
+
+async function authorizedFetch(canonicalPath, options = {}, backend, autoLogout = true) {
+  const targetBackend = backend || sessionBackend || preferredBackend || "primary";
+  const method = String(options.method || "GET").toUpperCase();
+  const headers = { ...authHeaders(), ...(options.headers || {}) };
+
+  if (method !== "GET" && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (targetBackend === "legacy") {
+    headers["x-rattle-fallback"] = "legacy";
+  }
+
+  const res = await resolveRoute(targetBackend, canonicalPath, {
+    ...options,
+    method,
+    headers
+  });
+
+  if (res.status === 401 && autoLogout) {
+    clearSession();
+    window.location.href = "index.html";
+  }
+
+  return { ...res, backend: targetBackend };
+}
+
+async function verifyMainSession(showToastMessage = false) {
+  const first = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+
+  if (first.ok) {
+    sessionBackend = preferredBackend;
+    localStorage.setItem("sessionBackend", sessionBackend);
+    meState = first.data || null;
+    renderMe();
+    setTopBackendBadge();
+    if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
     return true;
   }
 
-  async function safeFetchRaw(base, path, options = {}) {
-    try {
-      const res = await fetch(normalizeApiUrl(base) + path, options);
-      const raw = await res.text();
-      let data = {};
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { message: raw };
-      }
-      return { ok: res.ok, status: res.status, data, raw };
-    } catch (e) {
-      return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
-    }
-  }
+  const other = preferredBackend === "primary" ? "legacy" : "primary";
+  const second = await authorizedFetch("/me", { method: "GET" }, other, false);
 
-  function buildRouteCandidates(backend, path) {
-    const cleanPath = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-    const candidates = [];
-
-    if (backend === "primary") {
-      if (cleanPath === "/auth/me" || cleanPath === "/me") {
-        candidates.push("/auth/me", "/me");
-      } else if (cleanPath.startsWith("/auth/")) {
-        candidates.push(cleanPath, cleanPath.replace(/^\/auth/, ""));
-      } else if (cleanPath.startsWith("/app/")) {
-        candidates.push(cleanPath, cleanPath.replace(/^\/app/, ""));
-      } else {
-        candidates.push(`/app${cleanPath}`, cleanPath);
-      }
-    } else {
-      if (cleanPath === "/auth/me" || cleanPath === "/me") {
-        candidates.push("/me", "/auth/me");
-      } else if (cleanPath.startsWith("/app/")) {
-        candidates.push(cleanPath.replace(/^\/app/, ""), cleanPath);
-      } else if (cleanPath.startsWith("/auth/")) {
-        candidates.push(cleanPath.replace(/^\/auth/, ""), cleanPath);
-      } else {
-        candidates.push(cleanPath);
-      }
-    }
-
-    return [...new Set(candidates)];
-  }
-
-  async function callBackend(backend, path, options = {}) {
-    const headers = { ...(options.headers || {}) };
-    if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
-
-    const candidates = buildRouteCandidates(backend, path);
-    let first401 = null;
-    let lastRes = null;
-
-    for (const candidate of candidates) {
-      const res = await safeFetchRaw(apiBaseForBackend(backend), candidate, {
-        ...options,
-        headers
-      });
-
-      lastRes = { ...res, backend, resolvedPath: candidate };
-
-      if (res.ok) return { ...res, backend, resolvedPath: candidate };
-
-      if (res.status === 401 && !first401) {
-        first401 = { ...res, backend, resolvedPath: candidate };
-      }
-
-      if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) {
-        continue;
-      }
-
-      return { ...res, backend, resolvedPath: candidate };
-    }
-
-    return first401 || lastRes || { ok: false, status: 0, data: { message: "Failed to fetch" }, backend };
-  }
-
-  async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
-    const targetBackend = backend || sessionBackend;
-    const method = String(options.method || "GET").toUpperCase();
-    const headers = { ...authHeaders(), ...(options.headers || {}) };
-
-    if (method !== "GET" && !headers["Content-Type"]) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    const res = await callBackend(targetBackend, path, { ...options, headers });
-
-    if (res.status === 401 && autoLogout) {
-      clearSession();
-      window.location.href = "index.html";
-    }
-
-    return { ...res, backend: targetBackend };
-  }
-
-  async function verifyMainSession(showToastMessage = false) {
-    const preferredRes = await authorizedFetch("/auth/me", { method: "GET" }, preferredBackend, false);
-
-    if (preferredRes.ok) {
-      sessionBackend = preferredBackend;
-      localStorage.setItem("sessionBackend", sessionBackend);
-      meState = preferredRes.data || null;
-      renderMe();
-      setTopBackendBadge();
-      if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
-      return true;
-    }
-
-    const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
-    const fallbackRes = await authorizedFetch("/auth/me", { method: "GET" }, otherBackend, false);
-
-    if (fallbackRes.ok) {
-      sessionBackend = otherBackend;
-      localStorage.setItem("sessionBackend", sessionBackend);
-      meState = fallbackRes.data || null;
-      renderMe();
-      setTopBackendBadge();
-      if (showToastMessage) {
-        showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
-      }
-      return true;
-    }
-
-    const definitelyUnauthorized = preferredRes.status === 401 && fallbackRes.status === 401;
-    if (definitelyUnauthorized) {
-      logout();
-      return false;
-    }
-
-    if (accessSummary) {
-      accessSummary.textContent = "Session check failed, but auto logout was prevented.";
-    }
+  if (second.ok) {
+    sessionBackend = other;
+    localStorage.setItem("sessionBackend", sessionBackend);
+    meState = second.data || null;
+    renderMe();
+    setTopBackendBadge();
     if (showToastMessage) {
-      showToast("Session check failed, but you were not logged out.");
+      showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
     }
     return true;
   }
 
-  function normalizeLinkItem(item, backend) {
-    return {
-      ...item,
-      backend,
-      user: item.user || item.username || "",
-      clicks: Number(item.clicks || 0),
-      paused: !!item.paused,
-      expire: item.expire ? Number(item.expire) : null,
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      maxRisk: Number(item.maxRisk || item.max_risk || 0),
-      note: item.note || "",
-      campaign: item.campaign || "",
-      linkType: getItemType(item),
-      publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
+  if (first.status === 401 && second.status === 401) {
+    logout();
+    return false;
+  }
+
+  if (accessSummary) accessSummary.textContent = "Session check failed, but auto logout was prevented.";
+  if (showToastMessage) showToast("Session check failed");
+  return true;
+}
+
+function normalizeLinkItem(item, backend) {
+  return {
+    ...item,
+    backend,
+    user: item.user || item.username || "",
+    clicks: Number(item.clicks || 0),
+    paused: !!item.paused,
+    expire: item.expire ? Number(item.expire) : null,
+    createdAt: Number(item.createdAt || item.created_at || 0),
+    maxRisk: Number(item.maxRisk || item.max_risk || 0),
+    note: item.note || "",
+    campaign: item.campaign || "",
+    linkType: getItemType(item),
+    publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
+  };
+}
+
+function normalizePaymentItem(item, backend) {
+  return {
+    ...item,
+    backend,
+    amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+    createdAt: Number(item.createdAt || item.created_at || 0),
+    expiresAt: Number(item.expiresAt || item.expires_at || 0),
+    verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
+    quantity: Number(item.quantity || parseBillingCycleQuantity(item.billingCycle || item.billing_cycle || 1) || 1),
+    planCode: item.planCode || item.plan_code || null,
+    billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-"
+  };
+}
+
+function mergeLinks(primaryItems = [], legacyItems = []) {
+  return [
+    ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
+    ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
+  ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+}
+
+function sortPayments(payments = []) {
+  return [...payments].sort((a, b) => {
+    const rank = s => {
+      s = String(s || "").toLowerCase();
+      if (s === "awaiting_confirmation") return 0;
+      if (s === "pending") return 1;
+      if (s === "verified") return 2;
+      if (s === "cancelled") return 3;
+      return 4;
     };
+    const diff = rank(a.status) - rank(b.status);
+    if (diff !== 0) return diff;
+    return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+  });
+}
+
+function getPlanInfoByCode(code) {
+  const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+  return plans.find(p => String(p.code) === String(code)) || null;
+}
+
+function updateBillingPreview() {
+  if (!billingPreview) return;
+  const plan = getPlanInfoByCode(selectedPlan);
+  const qty = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
+  selectedPlanQuantity = qty;
+
+  if (!plan) {
+    billingPreview.textContent = "Choose a plan and quantity.";
+    return;
   }
 
-  function normalizePaymentItem(item, backend) {
-    return {
-      ...item,
-      backend,
-      amountUsd: Number(item.amountUsd || item.amount_usd || 0),
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      expiresAt: Number(item.expiresAt || item.expires_at || 0),
-      verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
-      quantity: Number(item.quantity || parseBillingCycleQuantity(item.billingCycle || item.billing_cycle || 1) || 1),
-      planCode: item.planCode || item.plan_code || null,
-      billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-"
+  const total = Number(plan.amountUsd || 0) * qty;
+  const cycleLabel = plan.code === "weekly"
+    ? `${qty} week${qty === 1 ? "" : "s"}`
+    : `${qty} month${qty === 1 ? "" : "s"}`;
+  const limits = plan.limits || {};
+
+  billingPreview.innerHTML = `${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
+}
+
+function renderMe() {
+  if (!meState) return;
+
+  if (meEmail) meEmail.textContent = meState.username || getUsername() || "-";
+  if (mePlan) mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
+  if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+  if (meRole) meRole.textContent = meState.role || getRole() || "-";
+  if (meEmailVerified) meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
+  if (mePrimaryDomain) mePrimaryDomain.textContent = meState.primaryDomain || "-";
+  if (meTwoFactor) meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
+  if (meTwoFactorMethod) meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
+
+  const status = String(meState.subscriptionStatus || "trial").toLowerCase();
+  const paused = !!meState.subscriptionPaused;
+  const planLimits = meState.planLimits || {};
+  const usage = meState.usage || {};
+  const remaining = meState.remaining || {};
+
+  const shortUsed = Number(usage.activeShortLinks || 0);
+  const shortLimit = Math.max(0, Number(planLimits.activeShortLinks || 0));
+  const landingUsed = Number(usage.activeLandingPages || 0);
+  const landingLimit = Math.max(0, Number(planLimits.activeLandingPages || 0));
+  const shortRemaining = Math.max(0, Number(remaining.activeShortLinks || 0));
+
+  if (activeShortLinksRemainingEl) activeShortLinksRemainingEl.textContent = shortRemaining;
+  if (activeShortLinksText) activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
+  if (activeLandingPagesText) activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
+  if (shortLinksProgressBar) shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
+  if (landingPagesProgressBar) landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
+
+  let summary = "";
+  let badgeClass = "trial";
+  let badgeText = "Trial";
+
+  if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+    badgeClass = "live";
+    badgeText = "Active";
+    summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short link slots left and ${Math.max(0, Number(remaining.activeLandingPages || 0))} landing slots left.`;
+  } else if (paused) {
+    badgeClass = "paused";
+    badgeText = "Paused";
+    summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
+  } else if (status === "expired") {
+    badgeClass = "expired";
+    badgeText = "Expired";
+    summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
+  } else {
+    badgeClass = "trial";
+    badgeText = "Trial";
+    summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
+  }
+
+  if (meState.emailVerified === false) summary += " Email verification is still incomplete.";
+  if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
+  if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
+
+  if (subscriptionBadge) {
+    subscriptionBadge.className = `badge ${badgeClass}`;
+    subscriptionBadge.textContent = badgeText;
+  }
+  if (accessSummary) accessSummary.textContent = summary;
+}
+
+async function loadMe(showLoading = false) {
+  if (showLoading && accessSummary) accessSummary.textContent = "Loading account...";
+  const ok = await verifyMainSession(false);
+  if (!ok && accessSummary) accessSummary.textContent = "Session expired";
+}
+
+async function loadPlans(showMessage = false) {
+  const primary = await resolveRoute("primary", "/plans", { method: "GET" });
+  const legacy = await resolveRoute("legacy", "/plans", { method: "GET" });
+  const res = primary.ok ? primary : legacy;
+
+  if (!res.ok) {
+    if (showMessage) setResult("Failed to load plans", true, upgradeResult);
+    return;
+  }
+
+  plansState = res.data || {};
+  const plans = Array.isArray(plansState?.plans)
+    ? plansState.plans
+    : Array.isArray(plansState)
+    ? plansState
+    : [];
+
+  plansState = { ...plansState, plans };
+
+  if (plans.length && !plans.some(p => p.code === selectedPlan)) {
+    selectedPlan = plans[0].code;
+  }
+
+  renderPlans();
+  renderCryptoOptions();
+  updateBillingPreview();
+
+  if (showMessage) setResult("Plans loaded", false, upgradeResult);
+}
+
+function renderPlans() {
+  if (!planGrid) return;
+  const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+  planGrid.innerHTML = plans.map(plan => `
+    <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
+      <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
+      <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
+      <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll(".plan-card").forEach(card => {
+    card.onclick = () => {
+      selectedPlan = card.dataset.plan;
+      renderPlans();
+      updateBillingPreview();
     };
+  });
+}
+
+function renderCryptoOptions() {
+  if (!cryptoSelect) return;
+  const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
+  cryptoSelect.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("");
+}
+
+function stopPaymentPolling() {
+  if (paymentPoller) {
+    clearInterval(paymentPoller);
+    paymentPoller = null;
+  }
+}
+
+function getLatestInterestingPayment() {
+  if (!paymentsStore.length) return null;
+  return paymentsStore.find(p => {
+    const s = String(p.status || "").toLowerCase();
+    return s === "awaiting_confirmation" || s === "pending";
+  }) || paymentsStore[0];
+}
+
+function renderLatestPayment(payment) {
+  if (!latestPaymentBox) return;
+  if (!payment) {
+    latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
+    return;
   }
 
-  function mergeLinks(primaryItems = [], legacyItems = []) {
-    return [
-      ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
-      ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
-    ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-  }
+  const status = String(payment.status || "").toLowerCase();
+  const waiting = status === "awaiting_confirmation";
+  const verified = status === "verified";
 
-  function sortPayments(payments = []) {
-    return [...payments].sort((a, b) => {
-      const rank = s => {
-        s = String(s || "").toLowerCase();
-        if (s === "awaiting_confirmation") return 0;
-        if (s === "pending") return 1;
-        if (s === "verified") return 2;
-        if (s === "cancelled") return 3;
-        return 4;
-      };
-      const diff = rank(a.status) - rank(b.status);
-      if (diff !== 0) return diff;
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
-  }
-
-  function getPlanInfoByCode(code) {
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    return plans.find(p => String(p.code) === String(code)) || null;
-  }
-
-  function updateBillingPreview() {
-    if (!billingPreview) return;
-    const plan = getPlanInfoByCode(selectedPlan);
-    const qty = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
-    selectedPlanQuantity = qty;
-
-    if (!plan) {
-      billingPreview.textContent = "Choose a plan and quantity.";
-      return;
-    }
-
-    const total = Number(plan.amountUsd || 0) * qty;
-    const cycleLabel = plan.code === "weekly"
-      ? `${qty} week${qty === 1 ? "" : "s"}`
-      : `${qty} month${qty === 1 ? "" : "s"}`;
-    const limits = plan.limits || {};
-
-    billingPreview.innerHTML = `${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
-  }
-
-  function renderMe() {
-    if (!meState) return;
-
-    if (meEmail) meEmail.textContent = meState.username || getUsername() || "-";
-    if (mePlan) mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
-    if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-    if (meRole) meRole.textContent = meState.role || getRole() || "-";
-    if (meEmailVerified) meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
-    if (mePrimaryDomain) mePrimaryDomain.textContent = meState.primaryDomain || "-";
-    if (meTwoFactor) meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
-    if (meTwoFactorMethod) meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
-
-    const status = String(meState.subscriptionStatus || "trial").toLowerCase();
-    const paused = !!meState.subscriptionPaused;
-    const planLimits = meState.planLimits || {};
-    const usage = meState.usage || {};
-    const remaining = meState.remaining || {};
-
-    const shortUsed = Number(usage.activeShortLinks || 0);
-    const shortLimit = Math.max(0, Number(planLimits.activeShortLinks || 0));
-    const landingUsed = Number(usage.activeLandingPages || 0);
-    const landingLimit = Math.max(0, Number(planLimits.activeLandingPages || 0));
-    const shortRemaining = Math.max(0, Number(remaining.activeShortLinks || 0));
-
-    if (activeShortLinksRemainingEl) activeShortLinksRemainingEl.textContent = shortRemaining;
-    if (activeShortLinksText) activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
-    if (activeLandingPagesText) activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
-    if (shortLinksProgressBar) shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
-    if (landingPagesProgressBar) landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
-
-    let summary = "";
-    let badgeClass = "trial";
-    let badgeText = "Trial";
-
-    if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
-      badgeClass = "live";
-      badgeText = "Active";
-      summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short link slots left and ${Math.max(0, Number(remaining.activeLandingPages || 0))} landing slots left.`;
-    } else if (paused) {
-      badgeClass = "paused";
-      badgeText = "Paused";
-      summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
-    } else if (status === "expired") {
-      badgeClass = "expired";
-      badgeText = "Expired";
-      summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
-    } else {
-      badgeClass = "trial";
-      badgeText = "Trial";
-      summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
-    }
-
-    if (meState.emailVerified === false) summary += " Email verification is still incomplete.";
-    if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
-    if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
-
-    if (subscriptionBadge) {
-      subscriptionBadge.className = `badge ${badgeClass}`;
-      subscriptionBadge.textContent = badgeText;
-    }
-    if (accessSummary) accessSummary.textContent = summary;
-  }
-
-  async function loadMe(showLoading = false) {
-    if (showLoading && accessSummary) accessSummary.textContent = "Loading account...";
-    const ok = await verifyMainSession(false);
-    if (!ok && accessSummary) accessSummary.textContent = "Session expired";
-  }
-
-  async function loadPlans(showMessage = false) {
-    const primary = await callBackend("primary", "/plans", { method: "GET" });
-    const legacy = await callBackend("legacy", "/plans", { method: "GET" });
-    const res = primary.ok ? primary : legacy;
-
-    if (!res.ok) {
-      if (showMessage) setResult("Failed to load plans", true, upgradeResult);
-      return;
-    }
-
-    plansState = res.data || {};
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    if (plans.length && !plans.some(p => p.code === selectedPlan)) {
-      selectedPlan = plans[0].code;
-    }
-
-    renderPlans();
-    renderCryptoOptions();
-    updateBillingPreview();
-
-    if (showMessage) setResult("Plans loaded", false, upgradeResult);
-  }
-
-  function renderPlans() {
-    if (!planGrid) return;
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    planGrid.innerHTML = plans.map(plan => `
-      <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
-        <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
-        <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
-        <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
+  latestPaymentBox.innerHTML = `
+    <div class="payment-box">
+      <div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code"></div>
+      <div>
+        <div>
+          <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+          <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
+          <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
+          ${formatPaymentStatus(payment.status)}
+        </div>
+        <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+        <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+        <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+        <div class="address-box">${escapeHtml(payment.address)}</div>
+        <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
+        <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+          <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+          <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
+        </div>
+        ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div><div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div></div>` : ""}
+        ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed</b></div><div class="muted" style="margin-top:8px;">Your plan should already be active.</div></div>` : ""}
       </div>
-    `).join("");
+    </div>
+  `;
+}
 
-    document.querySelectorAll(".plan-card").forEach(card => {
-      card.onclick = () => {
-        selectedPlan = card.dataset.plan;
-        renderPlans();
-        updateBillingPreview();
-      };
-    });
+function renderPaymentsTable() {
+  if (!paymentsTable) return;
+
+  if (!paymentsStore.length) {
+    paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
+    renderLatestPayment(null);
+    return;
   }
 
-  function renderCryptoOptions() {
-    if (!cryptoSelect) return;
-    const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
-    cryptoSelect.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("");
-  }
+  paymentsTable.innerHTML = paymentsStore.map(p => `
+    <tr>
+      <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
+      <td><code>${escapeHtml(p.id)}</code></td>
+      <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
+      <td>${Number(p.quantity || 1)}</td>
+      <td>${fmtMoney(p.amountUsd)}</td>
+      <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
+      <td>${formatPaymentStatus(p.status)}</td>
+      <td>${fmtDate(p.createdAt)}</td>
+      <td>${fmtDate(p.expiresAt)}</td>
+      <td>
+        <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
+        <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
+        <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
+      </td>
+    </tr>
+  `).join("");
 
-  function stopPaymentPolling() {
-    if (paymentPoller) {
-      clearInterval(paymentPoller);
-      paymentPoller = null;
+  renderLatestPayment(getLatestInterestingPayment());
+}
+
+async function loadPayments(showMessage = false) {
+  const [primaryRes, legacyRes] = await Promise.all([
+    authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
+    authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
+  ]);
+
+  const primaryPayments = Array.isArray(primaryRes.data?.payments)
+    ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
+    : Array.isArray(primaryRes.data)
+    ? primaryRes.data.map(p => normalizePaymentItem(p, "primary"))
+    : [];
+
+  const legacyPayments = Array.isArray(legacyRes.data?.payments)
+    ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
+    : Array.isArray(legacyRes.data)
+    ? legacyRes.data.map(p => normalizePaymentItem(p, "legacy"))
+    : [];
+
+  paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
+  renderPaymentsTable();
+
+  if (waitingPaymentId) {
+    const p = paymentsStore.find(x => x.id === waitingPaymentId);
+    if (p) handleWaitingPaymentState(p);
+    else {
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+      stopPaymentPolling();
     }
   }
 
-  function getLatestInterestingPayment() {
-    if (!paymentsStore.length) return null;
-    return paymentsStore.find(p => {
-      const s = String(p.status || "").toLowerCase();
-      return s === "awaiting_confirmation" || s === "pending";
-    }) || paymentsStore[0];
-  }
+  if (showMessage) showToast("Payments refreshed");
+}
 
-  function renderLatestPayment(payment) {
-    if (!latestPaymentBox) return;
-    if (!payment) {
-      latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
-      return;
-    }
+function renderPaymentRequestBox(payment, message = "") {
+  if (!paymentRequestBox) return;
 
-    const status = String(payment.status || "").toLowerCase();
-    const waiting = status === "awaiting_confirmation";
-    const verified = status === "verified";
+  const status = String(payment.status || "").toLowerCase();
+  const waiting = status === "awaiting_confirmation";
+  const verified = status === "verified";
 
-    latestPaymentBox.innerHTML = `
+  paymentRequestBox.innerHTML = `
+    <div class="card" style="margin:0;">
       <div class="payment-box">
         <div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code"></div>
         <div>
           <div>
             <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+            ${formatPaymentStatus(payment.status)}
             <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
             <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-            ${formatPaymentStatus(payment.status)}
           </div>
           <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-          <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-          <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+          <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+          <div class="muted" style="margin-top:8px;">Send to:</div>
           <div class="address-box">${escapeHtml(payment.address)}</div>
-          <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
-          <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+          <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
+          <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-            <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+            <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
             <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
           </div>
-          ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for admin confirmation...</b></div><div class="muted" style="margin-top:8px;">This payment was already submitted and is being checked.</div></div>` : ""}
-          ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed</b></div><div class="muted" style="margin-top:8px;">Your plan should already be active.</div></div>` : ""}
+          ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
+          ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div><div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div><div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div></div>` : ""}
+          ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed and successful</b></div><div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div></div>` : ""}
         </div>
       </div>
-    `;
-  }
+    </div>
+  `;
+}
 
-  function renderPaymentsTable() {
-    if (!paymentsTable) return;
+async function createPaymentRequest() {
+  const cryptoCode = cryptoSelect?.value;
+  const quantity = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
+  selectedPlanQuantity = quantity;
 
-    if (!paymentsStore.length) {
-      paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
-      renderLatestPayment(null);
-      return;
-    }
+  if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
+  if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
-    paymentsTable.innerHTML = paymentsStore.map(p => `
-      <tr>
-        <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
-        <td><code>${escapeHtml(p.id)}</code></td>
-        <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
-        <td>${Number(p.quantity || 1)}</td>
-        <td>${fmtMoney(p.amountUsd)}</td>
-        <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
-        <td>${formatPaymentStatus(p.status)}</td>
-        <td>${fmtDate(p.createdAt)}</td>
-        <td>${fmtDate(p.expiresAt)}</td>
-        <td>
-          <button type="button" class="copy" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
-          <button type="button" class="qr" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
-          <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
-        </td>
-      </tr>
-    `).join("");
+  setBusy(requestPaymentBtn, true, "Creating...");
 
-    renderLatestPayment(getLatestInterestingPayment());
-  }
+  let res = await authorizedFetch("/payment-request", {
+    method: "POST",
+    body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
+  }, preferredBackend, false);
 
-  async function loadPayments(showMessage = false) {
-    const [primaryRes, legacyRes] = await Promise.all([
-      authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
-      authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
-    ]);
-
-    const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments)
-      ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
-      : [];
-    const legacyPayments = legacyRes.ok && Array.isArray(legacyRes.data?.payments)
-      ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
-      : [];
-
-    paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
-    renderPaymentsTable();
-
-    if (waitingPaymentId) {
-      const p = paymentsStore.find(x => x.id === waitingPaymentId);
-      if (p) handleWaitingPaymentState(p);
-      else {
-        waitingPaymentId = "";
-        localStorage.removeItem("waitingPaymentId");
-        stopPaymentPolling();
-      }
-    }
-
-    if (showMessage) showToast("Payments refreshed");
-  }
-
-  function renderPaymentRequestBox(payment, message = "") {
-    if (!paymentRequestBox) return;
-
-    const status = String(payment.status || "").toLowerCase();
-    const waiting = status === "awaiting_confirmation";
-    const verified = status === "verified";
-
-    paymentRequestBox.innerHTML = `
-      <div class="card" style="margin:0;">
-        <div class="payment-box">
-          <div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code"></div>
-          <div>
-            <div>
-              <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-              ${formatPaymentStatus(payment.status)}
-              <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
-              <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-            </div>
-            <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-            <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-            <div class="muted" style="margin-top:8px;">Send to:</div>
-            <div class="address-box">${escapeHtml(payment.address)}</div>
-            <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
-            <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="copy" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-              <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
-              <button type="button" class="warn-btn" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
-            </div>
-            ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
-            ${waiting ? `<div class="waiting-box"><div><span class="spinner"></span><b>Waiting for payment confirmation...</b></div><div class="muted" style="margin-top:8px;">Your transfer was submitted. We are checking for admin verification.</div><div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div></div>` : ""}
-            ${verified ? `<div class="confirm-box"><div><b>✅ Payment confirmed and successful</b></div><div class="muted" style="margin-top:8px;">Your account should now reflect the active plan.</div></div>` : ""}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  async function createPaymentRequest() {
-    const cryptoCode = cryptoSelect?.value;
-    const quantity = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
-    selectedPlanQuantity = quantity;
-
-    if (!selectedPlan) return setResult("Choose a plan first", true, upgradeResult);
-    if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
-
-    setBusy(requestPaymentBtn, true, "Creating...");
-
-    let res = await authorizedFetch("/payment-request", {
+  if (res.status === 401) {
+    await verifyMainSession(false);
+    res = await authorizedFetch("/payment-request", {
       method: "POST",
       body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
     }, preferredBackend, false);
+  }
 
-    if (res.status === 401) {
-      await verifyMainSession(false);
-      res = await authorizedFetch("/payment-request", {
-        method: "POST",
-        body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
-      }, preferredBackend, false);
-    }
+  setBusy(requestPaymentBtn, false);
 
-    setBusy(requestPaymentBtn, false);
+  if (!res.ok) {
+    setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
+    return;
+  }
 
-    if (!res.ok) {
-      setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
-      return;
-    }
+  const payment = res.data?.payment
+    ? normalizePaymentItem(res.data.payment, res.backend)
+    : res.data?.id
+    ? normalizePaymentItem(res.data, res.backend)
+    : null;
 
-    const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend) : null;
-    if (!payment) {
-      setResult("Payment request created, but response was empty", true, upgradeResult);
-      return;
-    }
+  if (!payment) {
+    setResult("Payment request created, but response was empty", true, upgradeResult);
+    return;
+  }
 
+  waitingPaymentId = "";
+  localStorage.removeItem("waitingPaymentId");
+  stopPaymentPolling();
+  setResult("Payment request generated.", false, upgradeResult);
+  renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
+  await loadPayments(false);
+}
+
+async function markPaymentSent(paymentId, backend) {
+  const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
+  if (!payment) return;
+
+  const status = String(payment.status || "").toLowerCase();
+  if (status === "verified") return showToast("This payment is already verified");
+
+  if (status === "awaiting_confirmation") {
+    waitingPaymentId = payment.id;
+    localStorage.setItem("waitingPaymentId", payment.id);
+    renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
+    startPaymentPolling(payment.id, payment.backend);
+    return showToast("Already waiting for confirmation");
+  }
+
+  const res = await authorizedFetch("/payment-i-made", {
+    method: "POST",
+    body: JSON.stringify({ paymentId })
+  }, backend, false);
+
+  if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+
+  waitingPaymentId = payment.id;
+  localStorage.setItem("waitingPaymentId", payment.id);
+  showToast("Transfer submitted");
+  await loadPayments(false);
+
+  const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
+  renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
+  startPaymentPolling(updated.id, updated.backend);
+}
+
+function handleWaitingPaymentState(payment) {
+  const status = String(payment.status || "").toLowerCase();
+
+  if (status === "verified") {
     waitingPaymentId = "";
     localStorage.removeItem("waitingPaymentId");
     stopPaymentPolling();
-    setResult("Payment request generated.", false, upgradeResult);
-    renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
-    await loadPayments(false);
+    renderPaymentRequestBox(payment, "Payment confirmed.");
+    loadMe(false);
+    return;
   }
 
-  async function markPaymentSent(paymentId, backend) {
-    const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
-    if (!payment) return;
+  if (status === "awaiting_confirmation" || status === "pending") {
+    renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
+    startPaymentPolling(payment.id, payment.backend);
+    return;
+  }
 
-    const status = String(payment.status || "").toLowerCase();
-    if (status === "verified") return showToast("This payment is already verified");
+  waitingPaymentId = "";
+  localStorage.removeItem("waitingPaymentId");
+  stopPaymentPolling();
+}
 
-    if (status === "awaiting_confirmation") {
-      waitingPaymentId = payment.id;
-      localStorage.setItem("waitingPaymentId", payment.id);
-      renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
-      startPaymentPolling(payment.id, payment.backend);
-      return showToast("Already waiting for confirmation");
+function startPaymentPolling(paymentId, backend) {
+  stopPaymentPolling();
+
+  const run = async () => {
+    const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
+    if (!res.ok) return;
+
+    const incoming = Array.isArray(res.data?.payments)
+      ? res.data.payments.map(p => normalizePaymentItem(p, backend))
+      : Array.isArray(res.data)
+      ? res.data.map(p => normalizePaymentItem(p, backend))
+      : [];
+
+    const current = incoming.find(p => p.id === paymentId);
+    if (!current) return;
+
+    const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
+    paymentsStore = sortPayments([...incoming, ...otherPayments]);
+    renderPaymentsTable();
+
+    const status = String(current.status || "").toLowerCase();
+    const pollText = $("paymentPollText");
+    if (pollText) {
+      if (status === "awaiting_confirmation") {
+        pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+      } else if (status === "pending") {
+        pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
+      }
     }
-
-    const res = await authorizedFetch("/payment-i-made", {
-      method: "POST",
-      body: JSON.stringify({ paymentId })
-    }, backend, false);
-
-    if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
-
-    waitingPaymentId = payment.id;
-    localStorage.setItem("waitingPaymentId", payment.id);
-    showToast("Transfer submitted");
-    await loadPayments(false);
-
-    const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
-    renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
-    startPaymentPolling(updated.id, updated.backend);
-  }
-
-  function handleWaitingPaymentState(payment) {
-    const status = String(payment.status || "").toLowerCase();
 
     if (status === "verified") {
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
-      renderPaymentRequestBox(payment, "Payment confirmed.");
-      loadMe(false);
-      return;
+      renderPaymentRequestBox(current, "Payment confirmed and successful.");
+      await loadMe(false);
+      showToast("Payment confirmed");
     }
+  };
 
-    if (status === "awaiting_confirmation" || status === "pending") {
-      renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
-      startPaymentPolling(payment.id, payment.backend);
-      return;
-    }
+  run();
+  paymentPoller = setInterval(run, 5000);
+}
 
-    waitingPaymentId = "";
-    localStorage.removeItem("waitingPaymentId");
-    stopPaymentPolling();
+function openUpgradeModal() {
+  if (overlay) overlay.style.display = "block";
+  if (upgradeModal) upgradeModal.style.display = "block";
+  updateBillingPreview();
+  const p = waitingPaymentId ? paymentsStore.find(x => x.id === waitingPaymentId) : getLatestInterestingPayment();
+  if (p) renderPaymentRequestBox(p);
+}
+
+function closeUpgradeModal() {
+  if (upgradeModal) upgradeModal.style.display = "none";
+  syncOverlay();
+}
+
+function openSettingsModal() {
+  if (overlay) overlay.style.display = "block";
+  if (settingsModal) settingsModal.style.display = "block";
+  if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
+  if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
+  if (modalChartMetricSelect) modalChartMetricSelect.value = chartMetricSelect?.value || "clicks";
+  if (settingsSearchSummary) {
+    settingsSearchSummary.textContent = searchInput?.value?.trim()
+      ? `Searching for: ${searchInput.value.trim()}`
+      : "No active search";
+  }
+}
+
+function closeSettingsModal() {
+  if (settingsModal) settingsModal.style.display = "none";
+  syncOverlay();
+}
+
+function openSecurityModal() {
+  if (overlay) overlay.style.display = "block";
+  if (securityModal) securityModal.style.display = "block";
+  renderSecurityModal();
+}
+
+function closeSecurityModal() {
+  if (securityModal) securityModal.style.display = "none";
+  syncOverlay();
+}
+
+function closeAllModals() {
+  closeUpgradeModal();
+  closeSettingsModal();
+  closeSecurityModal();
+}
+
+function syncOverlay() {
+  const anyOpen = [upgradeModal, settingsModal, securityModal].some(m => m && m.style.display === "block");
+  if (overlay) overlay.style.display = anyOpen ? "block" : "none";
+}
+
+function showPaymentDetails(paymentId, backend = "") {
+  const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
+  if (!payment) return;
+  openUpgradeModal();
+  renderPaymentRequestBox(payment);
+}
+
+function updateMiniStats() {
+  const primaryItems = dataStore.filter(x => x.backend === "primary");
+  const legacyItems = dataStore.filter(x => x.backend === "legacy");
+
+  if (primaryLinksCount) primaryLinksCount.textContent = primaryItems.length;
+  if (legacyLinksCount) legacyLinksCount.textContent = legacyItems.length;
+  if (primaryClicksCount) primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
+  if (legacyClicksCount) legacyClicksCount.textContent = legacyItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
+  if (liveThreatCount) liveThreatCount.textContent = dataStore.filter(x => Number(x.maxRisk || 0) > 60).length;
+}
+
+async function checkBackendHealth() {
+  const [p, l] = await Promise.all([
+    resolveRoute("primary", "/health", { method: "GET" }),
+    resolveRoute("legacy", "/health", { method: "GET" })
+  ]);
+
+  if (primaryHealth) {
+    primaryHealth.innerHTML = p.ok
+      ? `<span class="chip live">Online</span> <span class="muted">${escapeHtml(p.resolvedPath || "health route found")}</span>`
+      : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
   }
 
-  function startPaymentPolling(paymentId, backend) {
-    stopPaymentPolling();
+  if (legacyHealth) {
+    legacyHealth.innerHTML = l.ok
+      ? `<span class="chip live">Online</span> <span class="muted">${escapeHtml(l.resolvedPath || "health route found")}</span>`
+      : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "No response")}</span>`;
+  }
+}
 
-    const run = async () => {
-      const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
-      if (!res.ok) return;
+function getFilteredData() {
+  const q = (searchInput?.value || "").trim().toLowerCase();
+  const backendOnly = backendFilter?.value || "all";
+  const itemTypeOnly = itemTypeFilter?.value || "all";
+  const statusOnly = statusFilter?.value || "all";
+  const dateRange = dateRangeFilter?.value || "all";
+  const onlyHighRisk = !!onlyHighRiskToggle?.checked;
+  const now = Date.now();
 
-      const incoming = Array.isArray(res.data?.payments)
-        ? res.data.payments.map(p => normalizePaymentItem(p, backend))
-        : [];
+  let filtered = dataStore.filter(item => {
+    const slug = String(item.slug || "").toLowerCase();
+    const url = String(item.url || "").toLowerCase();
+    const backend = String(item.backend || "").toLowerCase();
+    const itemType = getItemType(item);
 
-      const current = incoming.find(p => p.id === paymentId);
-      if (!current) return;
+    const queryMatch = !q
+      || slug.includes(q)
+      || url.includes(q)
+      || backend.includes(q)
+      || String(item.note || "").toLowerCase().includes(q)
+      || String(item.campaign || "").toLowerCase().includes(q);
 
-      const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
-      paymentsStore = sortPayments([...incoming, ...otherPayments]);
-      renderPaymentsTable();
+    const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+    const typeMatch = itemTypeOnly === "all" ? true : itemType === itemTypeOnly;
+    const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
+    const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
 
-      const status = String(current.status || "").toLowerCase();
-      const pollText = $("paymentPollText");
-      if (pollText) {
-        if (status === "awaiting_confirmation") {
-          pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-        } else if (status === "pending") {
-          pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
-        }
+    let dateMatch = true;
+    if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
+    if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
+    if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
+
+    return queryMatch && backendMatch && typeMatch && statusMatch && dateMatch && riskMatch;
+  });
+
+  const sortKey = sortFilter?.value || "newest";
+  filtered.sort((a, b) => {
+    if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+    if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
+    if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
+    if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
+    return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+  });
+
+  return filtered;
+}
+
+async function loadLinks(showLoading = false) {
+  if (loadingLinks) return;
+  loadingLinks = true;
+
+  if (showLoading) {
+    setBusy(refreshBtn, true, "Loading...");
+    setResult("Loading links...", false);
+  }
+
+  const [primaryRes, legacyRes] = await Promise.all([
+    authorizedFetch("/list", { method: "GET" }, "primary", false),
+    authorizedFetch("/list", { method: "GET" }, "legacy", false)
+  ]);
+
+  loadingLinks = false;
+  setBusy(refreshBtn, false);
+
+  const primaryItems = Array.isArray(primaryRes.data?.items)
+    ? primaryRes.data.items
+    : Array.isArray(primaryRes.data?.links)
+    ? primaryRes.data.links
+    : Array.isArray(primaryRes.data)
+    ? primaryRes.data
+    : [];
+
+  const legacyItems = Array.isArray(legacyRes.data?.items)
+    ? legacyRes.data.items
+    : Array.isArray(legacyRes.data?.links)
+    ? legacyRes.data.links
+    : Array.isArray(legacyRes.data)
+    ? legacyRes.data
+    : [];
+
+  dataStore = mergeLinks(primaryItems, legacyItems);
+
+  const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+  if (totalLinks) totalLinks.textContent = dataStore.length;
+  if (totalClicks) totalClicks.textContent = total;
+  if (avgClicks) avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+
+  updateMiniStats();
+  renderTable();
+  drawChart();
+  renderRanking();
+  renderSecurityInsights();
+  renderActivityTimeline();
+  renderOperationalBoard();
+  renderBackend2Summary();
+
+  if (showLoading) {
+    const primaryMsg = primaryRes.ok ? `Backend2 OK (${primaryRes.resolvedPath})` : `Backend2 failed`;
+    const legacyMsg = legacyRes.ok ? `AWS OK (${legacyRes.resolvedPath})` : `AWS failed`;
+    setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
+  }
+}
+
+function renderTable() {
+  if (!table) return;
+  const filtered = getFilteredData();
+
+  if (visibleStatsText) visibleStatsText.textContent = `${filtered.length} visible items`;
+
+  if (!filtered.length) {
+    table.innerHTML = `<tr><td colspan="12" class="muted">No items found</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = filtered.map(item => {
+    const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
+    const checked = selectedLinks.has(`${item.backend}:${item.slug}`) ? "checked" : "";
+    const itemType = getItemType(item);
+
+    return `
+      <tr>
+        <td><input class="row-select" type="checkbox" data-key="${escapeHtml(item.backend)}:${escapeHtml(item.slug)}" ${checked} /></td>
+        <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+        <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
+        <td><b>${escapeHtml(item.slug)}</b>${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}</td>
+        <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+        <td>${scoreLink(item)}/100</td>
+        <td>${detectFraud(item)}</td>
+        <td><a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a><div class="muted">${escapeHtml(item.url || "")}</div>${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}</td>
+        <td>${getStatus(item)}</td>
+        <td>${fmtExpire(item.expire)}</td>
+        <td>${fmtDate(item.createdAt)}</td>
+        <td>
+          <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
+          <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
+          <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
+          ${itemType === "redirect" ? `<button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Edit</button>`}
+          ${itemType === "redirect" ? `<button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Builder</button>`}
+          <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-type="${escapeHtml(itemType)}">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
+  document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
+  document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
+  document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
+  document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
+  document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend, btn.dataset.type));
+
+  document.querySelectorAll(".row-select").forEach(box => {
+    box.addEventListener("change", () => {
+      const key = box.dataset.key;
+      if (box.checked) selectedLinks.add(key);
+      else selectedLinks.delete(key);
+      syncSelectAllState();
+    });
+  });
+
+  syncSelectAllState();
+}
+
+function syncSelectAllState() {
+  if (!selectAllLinks) return;
+  const visible = [...document.querySelectorAll(".row-select")];
+
+  if (!visible.length) {
+    selectAllLinks.checked = false;
+    selectAllLinks.indeterminate = false;
+    return;
+  }
+
+  const checked = visible.filter(i => i.checked).length;
+  selectAllLinks.checked = checked === visible.length;
+  selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
+}
+
+function drawChart() {
+  const canvas = $("chart");
+  if (!canvas) return;
+  if (chart) chart.destroy();
+
+  const filtered = getFilteredData();
+  const metric = chartMetricSelect?.value || "clicks";
+  const sorted = [...filtered]
+    .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+    .slice(0, 12);
+
+  chart = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
+      datasets: [{
+        label: metric === "score" ? "Performance Score" : "Clicks",
+        data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#e2e8f0" } } },
+      scales: {
+        x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+        y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
       }
+    }
+  });
+}
 
-      if (status === "verified") {
-        waitingPaymentId = "";
-        localStorage.removeItem("waitingPaymentId");
-        stopPaymentPolling();
-        renderPaymentRequestBox(current, "Payment confirmed and successful.");
-        await loadMe(false);
-        showToast("Payment confirmed");
-      }
+function renderRanking() {
+  if (!ranking) return;
+  const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+  if (!sorted.length) {
+    ranking.innerHTML = `<div class="muted">No items yet</div>`;
+    return;
+  }
+
+  ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
+    <div class="ranking-item">
+      <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+      <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span> <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span></div>
+      <div>Clicks: ${Number(item.clicks || 0)}</div>
+      <div>Score: ${scoreLink(item)}/100</div>
+      <div>${detectFraud(item)}</div>
+    </div>
+  `).join("");
+}
+
+function renderSecurityInsights() {
+  if (!securityInsights) return;
+  const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
+  const paused = dataStore.filter(x => x.paused).length;
+  const expired = dataStore.filter(x => getStatusKey(x) === "expired").length;
+  const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+
+  securityInsights.innerHTML = `
+    <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
+    <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
+    <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
+    <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map(x => `${x.slug} (${x.maxRisk || 0})`).join(", ") : "No risk data yet."}</div></div>
+  `;
+}
+
+function getRiskSummaryText() {
+  const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60);
+  return `${risky.length} items currently show elevated risk markers.`;
+}
+
+function renderRiskItemsHtml() {
+  const risky = [...dataStore]
+    .filter(x => Number(x.maxRisk || 0) > 60)
+    .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+
+  if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
+
+  return risky.map(item => `
+    <div class="info-box">
+      <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+      <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${getItemType(item) === "redirect" ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>` : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
+        <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function showTwoFactorBox(html) {
+  const box = $("twoFactorSetupBox");
+  if (box) box.innerHTML = html;
+}
+
+async function startTotpSetup() {
+  const res = await authorizedFetch("/auth/security/2fa/setup", {
+    method: "POST",
+    body: JSON.stringify({ method: "totp" })
+  }, "primary", true);
+
+  if (!res.ok) {
+    return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start TOTP setup")}</div>`);
+  }
+
+  showTwoFactorBox(`
+    <div class="info-box">
+      <div><b>TOTP Secret</b></div>
+      <div class="code-box">${escapeHtml(res.data.secret || "")}</div>
+      <div class="muted" style="margin-top:8px;">Resolved route: ${escapeHtml(res.resolvedPath || "-")}</div>
+      <div class="muted">Add this secret to Google Authenticator, Authy, or another TOTP app. Then enter the generated code below.</div>
+      <div style="margin-top:10px;">
+        <input id="totpEnableCode" placeholder="Enter 6-digit code from app" />
+        <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableTotp()">Enable TOTP</button>
+      </div>
+      ${res.data.otpauthUrl ? `<div class="muted" style="margin-top:10px;">otpauth URL:</div><div class="code-box">${escapeHtml(res.data.otpauthUrl)}</div>` : ""}
+    </div>
+  `);
+}
+
+async function enableTotp() {
+  const code = $("totpEnableCode")?.value?.trim();
+  if (!code) return showToast("Enter the TOTP code");
+
+  const res = await authorizedFetch("/auth/security/2fa/enable", {
+    method: "POST",
+    body: JSON.stringify({ method: "totp", code })
+  }, "primary", true);
+
+  if (!res.ok) {
+    return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable TOTP")}</div>`);
+  }
+
+  showTwoFactorBox(`
+    <div class="confirm-box">
+      <b>✅ TOTP enabled</b>
+      <div class="muted" style="margin-top:8px;">Resolved route: ${escapeHtml(res.resolvedPath || "-")}</div>
+      <div class="muted" style="margin-top:8px;">Backup codes:</div>
+      <div class="code-box">${(res.data.backupCodes || []).map(escapeHtml).join("<br>")}</div>
+    </div>
+  `);
+
+  await loadMe(false);
+  renderSecurityModal();
+}
+
+async function startEmailOtpSetup() {
+  const res = await authorizedFetch("/auth/security/2fa/setup", {
+    method: "POST",
+    body: JSON.stringify({ method: "email_otp" })
+  }, "primary", true);
+
+  if (!res.ok) {
+    return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start email OTP setup")}</div>`);
+  }
+
+  showTwoFactorBox(`
+    <div class="info-box">
+      <div><b>Email OTP setup started</b></div>
+      <div class="muted" style="margin-top:8px;">Resolved route: ${escapeHtml(res.resolvedPath || "-")}</div>
+      <div class="muted">A code was sent to your email. Enter it below.</div>
+      <div style="margin-top:10px;">
+        <input id="emailOtpEnableCode" placeholder="Enter email code" />
+        <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableEmailOtp()">Enable Email OTP</button>
+      </div>
+    </div>
+  `);
+}
+
+async function enableEmailOtp() {
+  const code = $("emailOtpEnableCode")?.value?.trim();
+  if (!code) return showToast("Enter the email OTP code");
+
+  const res = await authorizedFetch("/auth/security/2fa/enable", {
+    method: "POST",
+    body: JSON.stringify({ method: "email_otp", code })
+  }, "primary", true);
+
+  if (!res.ok) {
+    return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable email OTP")}</div>`);
+  }
+
+  showTwoFactorBox(`<div class="confirm-box"><b>✅ Email OTP enabled</b><div class="muted" style="margin-top:8px;">Resolved route: ${escapeHtml(res.resolvedPath || "-")}</div></div>`);
+  await loadMe(false);
+  renderSecurityModal();
+}
+
+async function disableTwoFactor() {
+  if (!confirm("Disable two-factor authentication?")) return;
+
+  const res = await authorizedFetch("/auth/security/2fa/disable", { method: "POST" }, "primary", true);
+  if (!res.ok) return showToast(res.data?.message || "Could not disable 2FA");
+
+  showToast("2FA disabled");
+  await loadMe(false);
+  renderSecurityModal();
+}
+
+function renderSecurityModal() {
+  if (!securityModalContent) return;
+
+  const twoFactorEnabled = !!meState?.twoFactorEnabled;
+  const twoFactorMethod = meState?.twoFactorMethod || "";
+
+  securityModalContent.innerHTML = `
+    <div class="info-box">
+      <b>Two-Factor Authentication</b>
+      <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
+      <div class="grid-2" style="margin-top:12px;">
+        <div class="auth-box"><div class="muted">Setup TOTP</div><button type="button" class="pink-btn" onclick="startTotpSetup()">Start TOTP Setup</button></div>
+        <div class="auth-box"><div class="muted">Setup Email OTP</div><button type="button" class="pink-btn" onclick="startEmailOtpSetup()">Start Email OTP Setup</button></div>
+      </div>
+      <div id="twoFactorSetupBox" style="margin-top:14px;"></div>
+      ${twoFactorEnabled ? `<div style="margin-top:14px;"><button type="button" class="danger-btn" onclick="disableTwoFactor()">Disable 2FA</button></div>` : ""}
+    </div>
+    <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
+    ${renderRiskItemsHtml()}
+  `;
+}
+
+function renderActivityTimeline() {
+  if (!activityTimeline) return;
+  const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
+
+  activityTimeline.innerHTML = recent.length
+    ? recent.map(item => `
+      <div class="timeline-item">
+        <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+        <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
+      </div>
+    `).join("")
+    : `<div class="muted">No activity yet.</div>`;
+}
+
+function renderOperationalBoard() {
+  const review = $("boardReview");
+  const healthy = $("boardHealthy");
+  const attention = $("boardAttention");
+  if (!review || !healthy || !attention) return;
+
+  const needsReview = dataStore.filter(x => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
+  const healthyItems = dataStore.filter(x => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
+  const attentionItems = dataStore.filter(x => x.paused || getStatusKey(x) === "expired").slice(0, 4);
+
+  const makeCards = arr => arr.length
+    ? arr.map(item => `
+      <div class="kanban-card">
+        <div><b>${escapeHtml(item.slug)}</b></div>
+        <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
+      </div>
+    `).join("")
+    : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
+
+  review.innerHTML = makeCards(needsReview);
+  healthy.innerHTML = makeCards(healthyItems);
+  attention.innerHTML = makeCards(attentionItems);
+}
+
+function renderBackend2Summary() {
+  const primaryItems = dataStore.filter(x => x.backend === "primary");
+  const landings = primaryItems.filter(x => getItemType(x) === "landing").length;
+  const redirects = primaryItems.filter(x => getItemType(x) === "redirect").length;
+
+  if (landingSummaryText) {
+    landingSummaryText.textContent = `${landings} Backend2 landing pages currently loaded in this dashboard snapshot.`;
+  }
+  if (domainSummaryText) {
+    domainSummaryText.textContent = `Backend2 custom domains continue using TXT verification only. Short links loaded on Backend2: ${redirects}.`;
+  }
+}
+
+function getCreatePayload() {
+  const url = urlInput?.value.trim();
+  const slug = slugInput?.value.trim();
+  const expireHours = expireInput?.value.trim();
+  const campaign = campaignInput?.value.trim();
+  const note = noteInput?.value.trim();
+  const riskMode = riskModeSelect?.value || "standard";
+
+  if (!url) {
+    setResult("Enter URL", true);
+    return null;
+  }
+
+  const body = { url, riskMode };
+  if (slug) body.slug = slug;
+  if (campaign) body.campaign = campaign;
+  if (note) body.note = note;
+
+  if (expireHours) {
+    const hours = Number(expireHours);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setResult("Expire must be a positive number", true);
+      return null;
+    }
+    body.expire = Date.now() + hours * 60 * 60 * 1000;
+  }
+
+  return body;
+}
+
+async function createLinkForBackend(backend) {
+  const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
+  const body = getCreatePayload();
+  if (!body) return;
+
+  setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+  setResult(`Creating ${backendLabel(backend)} link...`, false);
+
+  let res = await authorizedFetch("/create", {
+    method: "POST",
+    body: JSON.stringify(body)
+  }, backend, false);
+
+  if (res.status === 401) {
+    await verifyMainSession(false);
+    res = await authorizedFetch("/create", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }, backend, false);
+  }
+
+  setBusy(button, false);
+
+  if (!res.ok) {
+    if (res.status === 402) {
+      await loadMe(false);
+      openUpgradeModal();
+    }
+    setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
+    return;
+  }
+
+  const link = res.data?.link || res.data?.shortLink || res.data?.url || "Success";
+  const usage = res.data?.usage || null;
+  const limits = res.data?.limits || null;
+
+  let summary = `${backendLabel(backend)} created: ${link}`;
+  if (backend === "primary" && usage && limits) {
+    summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
+  }
+
+  setResult(summary, false);
+
+  if (urlInput) urlInput.value = "";
+  if (slugInput) slugInput.value = "";
+  if (expireInput) expireInput.value = "";
+  if (campaignInput) campaignInput.value = "";
+  if (noteInput) noteInput.value = "";
+
+  await Promise.all([loadLinks(false), loadMe(false)]);
+}
+
+async function bulkCreateForBackend(backend) {
+  const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
+  const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
+  const count = Number(countInput?.value || 0);
+  const body = getCreatePayload();
+
+  if (!body) return;
+  if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
+
+  setBusy(button, true, `Creating ${backendLabel(backend)}...`);
+  setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
+
+  let success = 0;
+  for (let i = 0; i < count; i++) {
+    const requestBody = { ...body };
+    if (!requestBody.slug) delete requestBody.slug;
+
+    let res = await authorizedFetch("/create", {
+      method: "POST",
+      body: JSON.stringify(requestBody)
+    }, backend, false);
+
+    if (res.status === 401) {
+      await verifyMainSession(false);
+      res = await authorizedFetch("/create", {
+        method: "POST",
+        body: JSON.stringify(requestBody)
+      }, backend, false);
+    }
+
+    if (!res.ok) {
+      setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
+      break;
+    }
+
+    success++;
+    setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
+  }
+
+  setBusy(button, false);
+  await Promise.all([loadLinks(false), loadMe(false)]);
+}
+
+async function deleteLink(slug, backend, itemType = "redirect") {
+  const label = itemType === "landing" ? "landing page" : "short link";
+  if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
+
+  const canonicalDeletePath = itemType === "landing" ? "/landing/delete" : "/delete";
+
+  let res = await authorizedFetch(canonicalDeletePath, {
+    method: "POST",
+    body: JSON.stringify({ slug })
+  }, backend, false);
+
+  if (res.status === 401) {
+    await verifyMainSession(false);
+    res = await authorizedFetch(canonicalDeletePath, {
+      method: "POST",
+      body: JSON.stringify({ slug })
+    }, backend, false);
+  }
+
+  if (!res.ok) {
+    return showToast(`Delete failed on ${backendLabel(backend)}: ${res.data?.message || "Unknown error"}`);
+  }
+
+  selectedLinks.delete(`${backend}:${slug}`);
+  showToast(`Deleted from ${backendLabel(backend)}`);
+  await Promise.all([loadLinks(false), loadMe(false)]);
+}
+
+async function bulkDeleteSelected() {
+  const items = [...selectedLinks];
+  if (!items.length) return showToast("No selected items");
+  if (!confirm(`Delete ${items.length} selected items?`)) return;
+
+  for (const key of items) {
+    const [backend, slug] = key.split(":");
+    const item = dataStore.find(x => x.backend === backend && x.slug === slug);
+    await deleteLink(slug, backend, item ? getItemType(item) : "redirect");
+  }
+
+  selectedLinks.clear();
+  renderTable();
+}
+
+async function bulkCopySelected() {
+  const items = [...selectedLinks].map(key => {
+    const [backend, slug] = key.split(":");
+    const item = dataStore.find(x => x.backend === backend && x.slug === slug);
+    return item?.publicLink || buildPublicLink(slug, backend);
+  });
+
+  if (!items.length) return showToast("No selected items");
+  await copyLink(items.join("\n"));
+}
+
+async function copyLink(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Copied!");
+  } catch {
+    showToast("Copy failed");
+  }
+}
+
+function openLink(link) {
+  window.open(link, "_blank", "noopener,noreferrer");
+}
+
+function showQR(link) {
+  window.open(
+    "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
+function downloadTextFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportVisibleAsCsv() {
+  const rows = getFilteredData();
+  const header = ["backend", "type", "slug", "url", "clicks", "score", "fraud", "status", "expire", "createdAt"];
+  const lines = [header.join(",")].concat(rows.map(item => {
+    const values = [
+      backendLabel(item.backend),
+      getItemType(item),
+      item.slug || "",
+      item.url || "",
+      Number(item.clicks || 0),
+      scoreLink(item),
+      detectFraud(item),
+      getStatusKey(item),
+      item.expire || "",
+      item.createdAt || ""
+    ];
+    return values.map(v => `"${String(v).replaceAll('"', '""')}"`).join(",");
+  }));
+
+  downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
+}
+
+function exportVisibleAsJson() {
+  downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
+}
+
+async function getGeo(ip) {
+  if (!ip || ip === "unknown") {
+    return { country_name: "Unknown", latitude: 20, longitude: 0 };
+  }
+
+  try {
+    const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+    const data = await res.json();
+    return {
+      country_name: data.country_name || "Unknown",
+      latitude: data.latitude || 20,
+      longitude: data.longitude || 0
     };
+  } catch {
+    return { country_name: "Error", latitude: 20, longitude: 0 };
+  }
+}
 
-    run();
-    paymentPoller = setInterval(run, 5000);
+function destroyMap() {
+  if (map) {
+    map.remove();
+    map = null;
+  }
+}
+
+function closePanel() {
+  if (panel) panel.style.display = "none";
+  if (panelContent) panelContent.innerHTML = "";
+  destroyMap();
+  if (statsChartInstance) {
+    statsChartInstance.destroy();
+    statsChartInstance = null;
+  }
+}
+
+function openSupportPanel() {
+  if (!panel || !panelContent) return;
+
+  panel.style.display = "block";
+  panelContent.innerHTML = `
+    <h3>🆘 Support Center</h3>
+    <div class="info-box">
+      <b>Contact Support</b>
+      <div class="support-list" style="margin-top:8px;">
+        <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
+        <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
+        <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
+        <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
+      </div>
+    </div>
+    <div class="info-box"><b>Common Help Topics</b><div class="muted" style="margin-top:8px;">• login/session problems<br>• payment verification delay<br>• link paused or expired<br>• link analytics questions<br>• account verification help<br>• domain TXT verification</div></div>
+    <div class="info-box"><b>Before contacting support</b><div class="muted" style="margin-top:8px;">Include your email, payment ID if relevant, backend used, and a short explanation of the problem.</div></div>
+  `;
+}
+
+function toggleAllFaq(open) {
+  document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
+}
+
+function goToLandingPage() {
+  window.location.href = "landing.html";
+}
+
+function goToDomainManager() {
+  window.location.href = "domain-manager.html";
+}
+
+async function showGeo(slug, backend) {
+  if (!panel || !panelContent) return;
+
+  panel.style.display = "block";
+  panelContent.innerHTML = `<h3>🌍 Geo Map: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><div class="muted">Loading location data...</div><div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>`;
+
+  await new Promise(r => setTimeout(r, 60));
+  destroyMap();
+
+  const mapEl = $("map");
+  if (!mapEl) return;
+
+  map = L.map(mapEl).setView([20, 0], 2);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
+  const history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+  if (!history.length) {
+    L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
+    return;
   }
 
-  function openUpgradeModal() {
-    if (overlay) overlay.style.display = "block";
-    if (upgradeModal) upgradeModal.style.display = "block";
-    updateBillingPreview();
-    const p = waitingPaymentId ? paymentsStore.find(x => x.id === waitingPaymentId) : getLatestInterestingPayment();
-    if (p) renderPaymentRequestBox(p);
+  let offset = 0;
+  for (const h of history) {
+    const geo = await getGeo(h.ip);
+    let lat = Number(geo.latitude || 20);
+    let lng = Number(geo.longitude || 0);
+    lat += offset * 0.25;
+    lng += offset * 0.25;
+    offset++;
+
+    L.circle([lat, lng], {
+      radius: 45000,
+      color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
+    }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
+  }
+}
+
+async function showHistory(slug, backend) {
+  if (!panel || !panelContent) return;
+
+  panel.style.display = "block";
+  panelContent.innerHTML = `<h3>📊 Live Analytics: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><canvas id="statsChart" height="120"></canvas><div id="statsBody" style="margin-top:14px;"></div><h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4><div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>`;
+
+  await new Promise(r => setTimeout(r, 60));
+  destroyMap();
+
+  const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
+  let history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+  const link = dataStore.find(l => l.slug === slug && l.backend === backend);
+  if (!history.length && link && Number(link.clicks || 0) > 0) {
+    history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+      ip: "unknown",
+      time: Date.now() - (i * 30000),
+      risk: Number(link.maxRisk || 0),
+      vpn: false,
+      bot: false
+    }));
   }
 
-  function closeUpgradeModal() {
-    if (upgradeModal) upgradeModal.style.display = "none";
-    syncOverlay();
+  const statsBody = $("statsBody");
+  if (!history.length) {
+    if (statsBody) statsBody.innerHTML = "<p class='muted'>No clicks recorded</p>";
+    return;
   }
 
-  function openSettingsModal() {
-    if (overlay) overlay.style.display = "block";
-    if (settingsModal) settingsModal.style.display = "block";
-    if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
-    if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
-    if (modalChartMetricSelect) modalChartMetricSelect.value = chartMetricSelect?.value || "clicks";
-    if (settingsSearchSummary) {
-      settingsSearchSummary.textContent = searchInput?.value?.trim()
-        ? `Searching for: ${searchInput.value.trim()}`
-        : "No active search";
-    }
-  }
+  history = history.map(h => ({
+    ip: h.ip || "unknown",
+    time: Number(h.time || Date.now()),
+    risk: Number(h.risk || 0),
+    vpn: !!h.vpn,
+    bot: !!h.bot
+  })).sort((a, b) => a.time - b.time);
 
-  function closeSettingsModal() {
-    if (settingsModal) settingsModal.style.display = "none";
-    syncOverlay();
-  }
+  const labels = history.map(h => new Date(h.time).toLocaleTimeString());
+  const dataPoints = history.map((_, i) => i + 1);
 
-  function openSecurityModal() {
-    if (overlay) overlay.style.display = "block";
-    if (securityModal) securityModal.style.display = "block";
-    renderSecurityModal();
-  }
+  if (statsChartInstance) statsChartInstance.destroy();
 
-  function closeSecurityModal() {
-    if (securityModal) securityModal.style.display = "none";
-    syncOverlay();
-  }
-
-  function closeAllModals() {
-    closeUpgradeModal();
-    closeSettingsModal();
-    closeSecurityModal();
-  }
-
-  function syncOverlay() {
-    const anyOpen = [upgradeModal, settingsModal, securityModal].some(m => m && m.style.display === "block");
-    if (overlay) overlay.style.display = anyOpen ? "block" : "none";
-  }
-
-  function showPaymentDetails(paymentId, backend = "") {
-    const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
-    if (!payment) return;
-    openUpgradeModal();
-    renderPaymentRequestBox(payment);
-  }
-
-  function updateMiniStats() {
-    const primaryItems = dataStore.filter(x => x.backend === "primary");
-    const legacyItems = dataStore.filter(x => x.backend === "legacy");
-
-    if (primaryLinksCount) primaryLinksCount.textContent = primaryItems.length;
-    if (legacyLinksCount) legacyLinksCount.textContent = legacyItems.length;
-    if (primaryClicksCount) primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
-    if (legacyClicksCount) legacyClicksCount.textContent = legacyItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
-    if (liveThreatCount) liveThreatCount.textContent = dataStore.filter(x => Number(x.maxRisk || 0) > 60).length;
-  }
-
-  async function checkOneBackendHealth(backend) {
-    const health = await callBackend(backend, "/health", { method: "GET" });
-    if (health.ok) return health;
-    return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
-  }
-
-  async function checkBackendHealth() {
-    const [p, l] = await Promise.all([checkOneBackendHealth("primary"), checkOneBackendHealth("legacy")]);
-
-    if (primaryHealth) {
-      primaryHealth.innerHTML = p.ok
-        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-    }
-
-    if (legacyHealth) {
-      legacyHealth.innerHTML = l.ok
-        ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
-    }
-  }
-
-  function getFilteredData() {
-    const q = (searchInput?.value || "").trim().toLowerCase();
-    const backendOnly = backendFilter?.value || "all";
-    const itemTypeOnly = itemTypeFilter?.value || "all";
-    const statusOnly = statusFilter?.value || "all";
-    const dateRange = dateRangeFilter?.value || "all";
-    const onlyHighRisk = !!onlyHighRiskToggle?.checked;
-    const now = Date.now();
-
-    let filtered = dataStore.filter(item => {
-      const slug = String(item.slug || "").toLowerCase();
-      const url = String(item.url || "").toLowerCase();
-      const backend = String(item.backend || "").toLowerCase();
-      const itemType = getItemType(item);
-
-      const queryMatch = !q
-        || slug.includes(q)
-        || url.includes(q)
-        || backend.includes(q)
-        || String(item.note || "").toLowerCase().includes(q)
-        || String(item.campaign || "").toLowerCase().includes(q);
-
-      const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-      const typeMatch = itemTypeOnly === "all" ? true : itemType === itemTypeOnly;
-      const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
-      const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
-
-      let dateMatch = true;
-      if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
-      if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
-      if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
-
-      return queryMatch && backendMatch && typeMatch && statusMatch && dateMatch && riskMatch;
-    });
-
-    const sortKey = sortFilter?.value || "newest";
-    filtered.sort((a, b) => {
-      if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
-      if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
-      if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
-      if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
-
-    return filtered;
-  }
-
-  async function loadLinks(showLoading = false) {
-    if (loadingLinks) return;
-    loadingLinks = true;
-
-    if (showLoading) {
-      setBusy(refreshBtn, true, "Loading...");
-      setResult("Loading links...", false);
-    }
-
-    const [primaryRes, legacyRes] = await Promise.all([
-      authorizedFetch("/list", { method: "GET" }, "primary", false),
-      authorizedFetch("/list", { method: "GET" }, "legacy", false)
-    ]);
-
-    loadingLinks = false;
-    setBusy(refreshBtn, false);
-
-    const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
-    const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
-
-    dataStore = mergeLinks(primaryItems, legacyItems);
-
-    const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-    if (totalLinks) totalLinks.textContent = dataStore.length;
-    if (totalClicks) totalClicks.textContent = total;
-    if (avgClicks) avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
-
-    updateMiniStats();
-    renderTable();
-    drawChart();
-    renderRanking();
-    renderSecurityInsights();
-    renderActivityTimeline();
-    renderOperationalBoard();
-    renderBackend2Summary();
-
-    if (showLoading) {
-      const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
-      const primaryMsg = primaryRes.ok ? "Backend2 OK" : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
-      setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
-    }
-  }
-
-  function renderTable() {
-    if (!table) return;
-    const filtered = getFilteredData();
-
-    if (visibleStatsText) visibleStatsText.textContent = `${filtered.length} visible items`;
-
-    if (!filtered.length) {
-      table.innerHTML = `<tr><td colspan="12" class="muted">No items found</td></tr>`;
-      return;
-    }
-
-    table.innerHTML = filtered.map(item => {
-      const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
-      const checked = selectedLinks.has(`${item.backend}:${item.slug}`) ? "checked" : "";
-      const itemType = getItemType(item);
-
-      return `
-        <tr>
-          <td><input class="row-select" type="checkbox" data-key="${escapeHtml(item.backend)}:${escapeHtml(item.slug)}" ${checked} /></td>
-          <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
-          <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
-          <td><b>${escapeHtml(item.slug)}</b>${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}</td>
-          <td><span class="badge">${Number(item.clicks || 0)}</span></td>
-          <td>${scoreLink(item)}/100</td>
-          <td>${detectFraud(item)}</td>
-          <td><a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a><div class="muted">${escapeHtml(item.url || "")}</div>${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}</td>
-          <td>${getStatus(item)}</td>
-          <td>${fmtExpire(item.expire)}</td>
-          <td>${fmtDate(item.createdAt)}</td>
-          <td>
-            <button class="copy-btn copy" data-link="${escapeHtml(publicLink)}">Copy</button>
-            <button class="open-btn open" data-link="${escapeHtml(publicLink)}">Open</button>
-            <button class="qr-btn qr" data-link="${escapeHtml(publicLink)}">QR</button>
-            ${itemType === "redirect" ? `<button class="stats-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Edit</button>`}
-            ${itemType === "redirect" ? `<button class="geo-btn" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>` : `<button class="ghost-btn" onclick="goToLandingPage()">Builder</button>`}
-            <button class="delete-btn delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-type="${escapeHtml(itemType)}">Delete</button>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-    document.querySelectorAll(".copy-btn").forEach(btn => btn.onclick = () => copyLink(btn.dataset.link));
-    document.querySelectorAll(".open-btn").forEach(btn => btn.onclick = () => openLink(btn.dataset.link));
-    document.querySelectorAll(".qr-btn").forEach(btn => btn.onclick = () => showQR(btn.dataset.link));
-    document.querySelectorAll(".stats-btn").forEach(btn => btn.onclick = () => showHistory(btn.dataset.slug, btn.dataset.backend));
-    document.querySelectorAll(".geo-btn").forEach(btn => btn.onclick = () => showGeo(btn.dataset.slug, btn.dataset.backend));
-    document.querySelectorAll(".delete-btn").forEach(btn => btn.onclick = () => deleteLink(btn.dataset.slug, btn.dataset.backend, btn.dataset.type));
-
-    document.querySelectorAll(".row-select").forEach(box => {
-      box.addEventListener("change", () => {
-        const key = box.dataset.key;
-        if (box.checked) selectedLinks.add(key);
-        else selectedLinks.delete(key);
-        syncSelectAllState();
-      });
-    });
-
-    syncSelectAllState();
-  }
-
-  function syncSelectAllState() {
-    if (!selectAllLinks) return;
-    const visible = [...document.querySelectorAll(".row-select")];
-
-    if (!visible.length) {
-      selectAllLinks.checked = false;
-      selectAllLinks.indeterminate = false;
-      return;
-    }
-
-    const checked = visible.filter(i => i.checked).length;
-    selectAllLinks.checked = checked === visible.length;
-    selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
-  }
-
-  function drawChart() {
-    const canvas = $("chart");
-    if (!canvas) return;
-    if (chart) chart.destroy();
-
-    const filtered = getFilteredData();
-    const metric = chartMetricSelect?.value || "clicks";
-    const sorted = [...filtered]
-      .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
-      .slice(0, 12);
-
-    chart = new Chart(canvas, {
+  const statsCanvas = $("statsChart");
+  if (statsCanvas) {
+    statsChartInstance = new Chart(statsCanvas, {
       type: "line",
       data: {
-        labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
-        datasets: [{
-          label: metric === "score" ? "Performance Score" : "Clicks",
-          data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
-          tension: 0.35
-        }]
+        labels,
+        datasets: [{ label: "Clicks Timeline", data: dataPoints, tension: 0.4 }]
       },
       options: {
         responsive: true,
@@ -2013,999 +2722,357 @@
     });
   }
 
-  function renderRanking() {
-    if (!ranking) return;
-    const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-
-    if (!sorted.length) {
-      ranking.innerHTML = `<div class="muted">No items yet</div>`;
-      return;
+  const stats = {};
+  for (const h of history) {
+    if (!stats[h.ip]) {
+      stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
     }
-
-    ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
-      <div class="ranking-item">
-        <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-        <div><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span> <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span></div>
-        <div>Clicks: ${Number(item.clicks || 0)}</div>
-        <div>Score: ${scoreLink(item)}/100</div>
-        <div>${detectFraud(item)}</div>
-      </div>
-    `).join("");
+    stats[h.ip].count++;
+    stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
+    stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
   }
 
-  function renderSecurityInsights() {
-    if (!securityInsights) return;
-    const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
-    const paused = dataStore.filter(x => x.paused).length;
-    const expired = dataStore.filter(x => getStatusKey(x) === "expired").length;
-    const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+  const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
+  let html = `<div><b>Total Clicks:</b> ${history.length}</div><div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>`;
 
-    securityInsights.innerHTML = `
-      <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
-      <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
-      <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
-      <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map(x => `${x.slug} (${x.maxRisk || 0})`).join(", ") : "No risk data yet."}</div></div>
-    `;
+  sorted.slice(0, 10).forEach(([ip, data]) => {
+    const danger = data.risk > 70;
+    html += `<div style="margin-bottom:10px;padding:10px;border-radius:10px;background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};"><b>${escapeHtml(ip)}</b>${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}<br><small>Clicks: ${data.count}</small><br><small>Risk: ${data.risk}</small></div>`;
+  });
+
+  if (statsBody) statsBody.innerHTML = html;
+
+  const mapEl = $("map");
+  if (!mapEl) return;
+
+  map = L.map(mapEl).setView([20, 0], 2);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  let offset = 0;
+  for (const h of history) {
+    const geo = await getGeo(h.ip);
+    let lat = Number(geo.latitude || (Math.random() * 140 - 70));
+    let lng = Number(geo.longitude || (Math.random() * 360 - 180));
+    lat += offset * 0.22;
+    lng += offset * 0.22;
+    offset++;
+
+    L.circle([lat, lng], {
+      radius: 40000,
+      color: h.risk > 70 ? "#ef4444" : "#00ffff"
+    }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
   }
+}
 
-  function getRiskSummaryText() {
-    const risky = [...dataStore].filter(x => Number(x.maxRisk || 0) > 60);
-    return `${risky.length} items currently show elevated risk markers.`;
-  }
+async function processFile(file, backend) {
+  if (!file) return setResult("Choose a CSV file first", true);
 
-  function renderRiskItemsHtml() {
-    const risky = [...dataStore]
-      .filter(x => Number(x.maxRisk || 0) > 60)
-      .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return setResult("CSV is empty", true);
 
-    if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
-
-    return risky.map(item => `
-      <div class="info-box">
-        <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-        <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-          ${getItemType(item) === "redirect" ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>` : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
-          <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
-        </div>
-      </div>
-    `).join("");
-  }
-
-  function showTwoFactorBox(html) {
-    const box = $("twoFactorSetupBox");
-    if (box) box.innerHTML = html;
-  }
-
-  async function startTotpSetup() {
-    const res = await authorizedFetch("/auth/security/2fa/setup", {
-      method: "POST",
-      body: JSON.stringify({ method: "totp" })
-    }, "primary", true);
-
-    if (!res.ok) {
-      return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start TOTP setup")}</div>`);
+  let urls = [];
+  if (lines[0].toLowerCase().includes("url")) {
+    const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+    const urlIndex = header.indexOf("url");
+    if (urlIndex >= 0) {
+      urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
     }
-
-    showTwoFactorBox(`
-      <div class="info-box">
-        <div><b>TOTP Secret</b></div>
-        <div class="code-box">${escapeHtml(res.data.secret || "")}</div>
-        <div class="muted">Add this secret to Google Authenticator, Authy, or another TOTP app. Then enter the generated code below.</div>
-        <div style="margin-top:10px;">
-          <input id="totpEnableCode" placeholder="Enter 6-digit code from app" />
-          <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableTotp()">Enable TOTP</button>
-        </div>
-        ${res.data.otpauthUrl ? `<div class="muted" style="margin-top:10px;">otpauth URL:</div><div class="code-box">${escapeHtml(res.data.otpauthUrl)}</div>` : ""}
-      </div>
-    `);
+  } else {
+    urls = lines;
   }
 
-  async function enableTotp() {
-    const code = $("totpEnableCode")?.value?.trim();
-    if (!code) return showToast("Enter the TOTP code");
+  urls = urls.filter(Boolean);
+  if (!urls.length) return setResult("No URLs found in file", true);
 
-    const res = await authorizedFetch("/auth/security/2fa/enable", {
-      method: "POST",
-      body: JSON.stringify({ method: "totp", code })
-    }, "primary", true);
+  const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
+  setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
+  setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
 
-    if (!res.ok) {
-      return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable TOTP")}</div>`);
-    }
-
-    showTwoFactorBox(`
-      <div class="confirm-box">
-        <b>✅ TOTP enabled</b>
-        <div class="muted" style="margin-top:8px;">Backup codes:</div>
-        <div class="code-box">${(res.data.backupCodes || []).map(escapeHtml).join("<br>")}</div>
-      </div>
-    `);
-
-    await loadMe(false);
-    renderSecurityModal();
-  }
-
-  async function startEmailOtpSetup() {
-    const res = await authorizedFetch("/auth/security/2fa/setup", {
-      method: "POST",
-      body: JSON.stringify({ method: "email_otp" })
-    }, "primary", true);
-
-    if (!res.ok) {
-      return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start email OTP setup")}</div>`);
-    }
-
-    showTwoFactorBox(`
-      <div class="info-box">
-        <div><b>Email OTP setup started</b></div>
-        <div class="muted">A code was sent to your email. Enter it below.</div>
-        <div style="margin-top:10px;">
-          <input id="emailOtpEnableCode" placeholder="Enter email code" />
-          <button type="button" class="success-btn" style="margin-top:10px;" onclick="enableEmailOtp()">Enable Email OTP</button>
-        </div>
-      </div>
-    `);
-  }
-
-  async function enableEmailOtp() {
-    const code = $("emailOtpEnableCode")?.value?.trim();
-    if (!code) return showToast("Enter the email OTP code");
-
-    const res = await authorizedFetch("/auth/security/2fa/enable", {
-      method: "POST",
-      body: JSON.stringify({ method: "email_otp", code })
-    }, "primary", true);
-
-    if (!res.ok) {
-      return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable email OTP")}</div>`);
-    }
-
-    showTwoFactorBox(`<div class="confirm-box"><b>✅ Email OTP enabled</b></div>`);
-    await loadMe(false);
-    renderSecurityModal();
-  }
-
-  async function disableTwoFactor() {
-    if (!confirm("Disable two-factor authentication?")) return;
-
-    const res = await authorizedFetch("/auth/security/2fa/disable", { method: "POST" }, "primary", true);
-    if (!res.ok) return showToast(res.data?.message || "Could not disable 2FA");
-
-    showToast("2FA disabled");
-    await loadMe(false);
-    renderSecurityModal();
-  }
-
-  function renderSecurityModal() {
-    if (!securityModalContent) return;
-
-    const twoFactorEnabled = !!meState?.twoFactorEnabled;
-    const twoFactorMethod = meState?.twoFactorMethod || "";
-
-    securityModalContent.innerHTML = `
-      <div class="info-box">
-        <b>Two-Factor Authentication</b>
-        <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
-        <div class="grid-2" style="margin-top:12px;">
-          <div class="auth-box"><div class="muted">Setup TOTP</div><button type="button" class="pink-btn" onclick="startTotpSetup()">Start TOTP Setup</button></div>
-          <div class="auth-box"><div class="muted">Setup Email OTP</div><button type="button" class="pink-btn" onclick="startEmailOtpSetup()">Start Email OTP Setup</button></div>
-        </div>
-        <div id="twoFactorSetupBox" style="margin-top:14px;"></div>
-        ${twoFactorEnabled ? `<div style="margin-top:14px;"><button type="button" class="danger-btn" onclick="disableTwoFactor()">Disable 2FA</button></div>` : ""}
-      </div>
-      <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-      ${renderRiskItemsHtml()}
-    `;
-  }
-
-  function renderActivityTimeline() {
-    if (!activityTimeline) return;
-    const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
-
-    activityTimeline.innerHTML = recent.length
-      ? recent.map(item => `
-        <div class="timeline-item">
-          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
-        </div>
-      `).join("")
-      : `<div class="muted">No activity yet.</div>`;
-  }
-
-  function renderOperationalBoard() {
-    const review = $("boardReview");
-    const healthy = $("boardHealthy");
-    const attention = $("boardAttention");
-    if (!review || !healthy || !attention) return;
-
-    const needsReview = dataStore.filter(x => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
-    const healthyItems = dataStore.filter(x => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
-    const attentionItems = dataStore.filter(x => x.paused || getStatusKey(x) === "expired").slice(0, 4);
-
-    const makeCards = arr => arr.length
-      ? arr.map(item => `
-        <div class="kanban-card">
-          <div><b>${escapeHtml(item.slug)}</b></div>
-          <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
-        </div>
-      `).join("")
-      : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
-
-    review.innerHTML = makeCards(needsReview);
-    healthy.innerHTML = makeCards(healthyItems);
-    attention.innerHTML = makeCards(attentionItems);
-  }
-
-  function renderBackend2Summary() {
-    const primaryItems = dataStore.filter(x => x.backend === "primary");
-    const landings = primaryItems.filter(x => getItemType(x) === "landing").length;
-    const redirects = primaryItems.filter(x => getItemType(x) === "redirect").length;
-
-    if (landingSummaryText) {
-      landingSummaryText.textContent = `${landings} Backend2 landing pages currently loaded in this dashboard snapshot.`;
-    }
-    if (domainSummaryText) {
-      domainSummaryText.textContent = `Backend2 custom domains continue using TXT verification only. Short links loaded on Backend2: ${redirects}.`;
-    }
-  }
-
-  function getCreatePayload() {
-    const url = urlInput?.value.trim();
-    const slug = slugInput?.value.trim();
-    const expireHours = expireInput?.value.trim();
-    const campaign = campaignInput?.value.trim();
-    const note = noteInput?.value.trim();
-    const riskMode = riskModeSelect?.value || "standard";
-
-    if (!url) {
-      setResult("Enter URL", true);
-      return null;
-    }
-
-    const body = { url, riskMode };
-    if (slug) body.slug = slug;
-    if (campaign) body.campaign = campaign;
-    if (note) body.note = note;
-
-    if (expireHours) {
-      const hours = Number(expireHours);
-      if (!Number.isFinite(hours) || hours <= 0) {
-        setResult("Expire must be a positive number", true);
-        return null;
-      }
-      body.expire = Date.now() + hours * 60 * 60 * 1000;
-    }
-
-    return body;
-  }
-
-  async function createLinkForBackend(backend) {
-    const button = backend === "legacy" ? createLegacyBtn : createPrimaryBtn;
-    const body = getCreatePayload();
-    if (!body) return;
-
-    setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-    setResult(`Creating ${backendLabel(backend)} link...`, false);
-
+  let okCount = 0;
+  for (const url of urls) {
     let res = await authorizedFetch("/create", {
       method: "POST",
-      body: JSON.stringify(body)
+      body: JSON.stringify({ url })
     }, backend, false);
 
     if (res.status === 401) {
       await verifyMainSession(false);
       res = await authorizedFetch("/create", {
         method: "POST",
-        body: JSON.stringify(body)
-      }, backend, false);
-    }
-
-    setBusy(button, false);
-
-    if (!res.ok) {
-      if (res.status === 402) {
-        await loadMe(false);
-        openUpgradeModal();
-      }
-      setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
-      return;
-    }
-
-    const link = res.data?.link || "Success";
-    const usage = res.data?.usage || null;
-    const limits = res.data?.limits || null;
-
-    let summary = `${backendLabel(backend)} created: ${link}`;
-    if (backend === "primary" && usage && limits) {
-      summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
-    }
-
-    setResult(summary, false);
-
-    if (urlInput) urlInput.value = "";
-    if (slugInput) slugInput.value = "";
-    if (expireInput) expireInput.value = "";
-    if (campaignInput) campaignInput.value = "";
-    if (noteInput) noteInput.value = "";
-
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
-
-  async function bulkCreateForBackend(backend) {
-    const countInput = backend === "legacy" ? bulkCountLegacy : bulkCountPrimary;
-    const button = backend === "legacy" ? bulkLegacyBtn : bulkPrimaryBtn;
-    const count = Number(countInput?.value || 0);
-    const body = getCreatePayload();
-
-    if (!body) return;
-    if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
-
-    setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-    setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
-
-    let success = 0;
-    for (let i = 0; i < count; i++) {
-      const requestBody = { ...body };
-      if (!requestBody.slug) delete requestBody.slug;
-
-      let res = await authorizedFetch("/create", {
-        method: "POST",
-        body: JSON.stringify(requestBody)
-      }, backend, false);
-
-      if (res.status === 401) {
-        await verifyMainSession(false);
-        res = await authorizedFetch("/create", {
-          method: "POST",
-          body: JSON.stringify(requestBody)
-        }, backend, false);
-      }
-
-      if (!res.ok) {
-        setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
-        break;
-      }
-
-      success++;
-      setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
-    }
-
-    setBusy(button, false);
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
-
-  function getDeletePath(itemType) {
-    return itemType === "landing" ? "/landing/delete" : "/delete";
-  }
-
-  async function deleteLink(slug, backend, itemType = "redirect") {
-    const label = itemType === "landing" ? "landing page" : "short link";
-    if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
-
-    let res = await authorizedFetch(getDeletePath(itemType), {
-      method: "POST",
-      body: JSON.stringify({ slug })
-    }, backend, false);
-
-    if (res.status === 401) {
-      await verifyMainSession(false);
-      res = await authorizedFetch(getDeletePath(itemType), {
-        method: "POST",
-        body: JSON.stringify({ slug })
-      }, backend, false);
-    }
-
-    if (!res.ok) return showToast(`Delete failed on ${backendLabel(backend)}`);
-
-    selectedLinks.delete(`${backend}:${slug}`);
-    showToast(`Deleted from ${backendLabel(backend)}`);
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
-
-  async function bulkDeleteSelected() {
-    const items = [...selectedLinks];
-    if (!items.length) return showToast("No selected items");
-    if (!confirm(`Delete ${items.length} selected items?`)) return;
-
-    for (const key of items) {
-      const [backend, slug] = key.split(":");
-      const item = dataStore.find(x => x.backend === backend && x.slug === slug);
-      await deleteLink(slug, backend, item ? getItemType(item) : "redirect");
-    }
-
-    selectedLinks.clear();
-    renderTable();
-  }
-
-  async function bulkCopySelected() {
-    const items = [...selectedLinks].map(key => {
-      const [backend, slug] = key.split(":");
-      const item = dataStore.find(x => x.backend === backend && x.slug === slug);
-      return item?.publicLink || buildPublicLink(slug, backend);
-    });
-
-    if (!items.length) return showToast("No selected items");
-    await copyLink(items.join("\n"));
-  }
-
-  async function copyLink(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast("Copied!");
-    } catch {
-      showToast("Copy failed");
-    }
-  }
-
-  function openLink(link) {
-    window.open(link, "_blank", "noopener,noreferrer");
-  }
-
-  function showQR(link) {
-    window.open(
-      "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(link),
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
-
-  function downloadTextFile(filename, content, mime) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function exportVisibleAsCsv() {
-    const rows = getFilteredData();
-    const header = ["backend", "type", "slug", "url", "clicks", "score", "fraud", "status", "expire", "createdAt"];
-    const lines = [header.join(",")].concat(rows.map(item => {
-      const values = [
-        backendLabel(item.backend),
-        getItemType(item),
-        item.slug || "",
-        item.url || "",
-        Number(item.clicks || 0),
-        scoreLink(item),
-        detectFraud(item),
-        getStatusKey(item),
-        item.expire || "",
-        item.createdAt || ""
-      ];
-      return values.map(v => `"${String(v).replaceAll('"', '""')}"`).join(",");
-    }));
-
-    downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
-  }
-
-  function exportVisibleAsJson() {
-    downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
-  }
-
-  async function getGeo(ip) {
-    if (!ip || ip === "unknown") {
-      return { country_name: "Unknown", latitude: 20, longitude: 0 };
-    }
-
-    try {
-      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-      const data = await res.json();
-      return {
-        country_name: data.country_name || "Unknown",
-        latitude: data.latitude || 20,
-        longitude: data.longitude || 0
-      };
-    } catch {
-      return { country_name: "Error", latitude: 20, longitude: 0 };
-    }
-  }
-
-  function destroyMap() {
-    if (map) {
-      map.remove();
-      map = null;
-    }
-  }
-
-  function closePanel() {
-    if (panel) panel.style.display = "none";
-    if (panelContent) panelContent.innerHTML = "";
-    destroyMap();
-    if (statsChartInstance) {
-      statsChartInstance.destroy();
-      statsChartInstance = null;
-    }
-  }
-
-  function openSupportPanel() {
-    if (!panel || !panelContent) return;
-
-    panel.style.display = "block";
-    panelContent.innerHTML = `
-      <h3>🆘 Support Center</h3>
-      <div class="info-box">
-        <b>Contact Support</b>
-        <div class="support-list" style="margin-top:8px;">
-          <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
-          <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
-          <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
-          <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
-        </div>
-      </div>
-      <div class="info-box"><b>Common Help Topics</b><div class="muted" style="margin-top:8px;">• login/session problems<br>• payment verification delay<br>• link paused or expired<br>• link analytics questions<br>• account verification help<br>• domain TXT verification</div></div>
-      <div class="info-box"><b>Before contacting support</b><div class="muted" style="margin-top:8px;">Include your email, payment ID if relevant, backend used, and a short explanation of the problem.</div></div>
-    `;
-  }
-
-  function toggleAllFaq(open) {
-    document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
-  }
-
-  function goToLandingPage() {
-    window.location.href = "landing.html";
-  }
-
-  function goToDomainManager() {
-    window.location.href = "domain-manager.html";
-  }
-
-  async function showGeo(slug, backend) {
-    if (!panel || !panelContent) return;
-
-    panel.style.display = "block";
-    panelContent.innerHTML = `<h3>🌍 Geo Map: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><div class="muted">Loading location data...</div><div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>`;
-
-    await new Promise(r => setTimeout(r, 60));
-    destroyMap();
-
-    const mapEl = $("map");
-    if (!mapEl) return;
-
-    map = L.map(mapEl).setView([20, 0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
-
-    const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
-    const history = Array.isArray(res.data?.history) ? res.data.history : [];
-
-    if (!history.length) {
-      L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
-      return;
-    }
-
-    let offset = 0;
-    for (const h of history) {
-      const geo = await getGeo(h.ip);
-      let lat = Number(geo.latitude || 20);
-      let lng = Number(geo.longitude || 0);
-      lat += offset * 0.25;
-      lng += offset * 0.25;
-      offset++;
-
-      L.circle([lat, lng], {
-        radius: 45000,
-        color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
-      }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
-    }
-  }
-
-  async function showHistory(slug, backend) {
-    if (!panel || !panelContent) return;
-
-    panel.style.display = "block";
-    panelContent.innerHTML = `<h3>📊 Live Analytics: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><canvas id="statsChart" height="120"></canvas><div id="statsBody" style="margin-top:14px;"></div><h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4><div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>`;
-
-    await new Promise(r => setTimeout(r, 60));
-    destroyMap();
-
-    const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
-    let history = Array.isArray(res.data?.history) ? res.data.history : [];
-
-    const link = dataStore.find(l => l.slug === slug && l.backend === backend);
-    if (!history.length && link && Number(link.clicks || 0) > 0) {
-      history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-        ip: "unknown",
-        time: Date.now() - (i * 30000),
-        risk: Number(link.maxRisk || 0),
-        vpn: false,
-        bot: false
-      }));
-    }
-
-    const statsBody = $("statsBody");
-    if (!history.length) {
-      if (statsBody) statsBody.innerHTML = "<p class='muted'>No clicks recorded</p>";
-      return;
-    }
-
-    history = history.map(h => ({
-      ip: h.ip || "unknown",
-      time: Number(h.time || Date.now()),
-      risk: Number(h.risk || 0),
-      vpn: !!h.vpn,
-      bot: !!h.bot
-    })).sort((a, b) => a.time - b.time);
-
-    const labels = history.map(h => new Date(h.time).toLocaleTimeString());
-    const dataPoints = history.map((_, i) => i + 1);
-
-    if (statsChartInstance) statsChartInstance.destroy();
-
-    const statsCanvas = $("statsChart");
-    if (statsCanvas) {
-      statsChartInstance = new Chart(statsCanvas, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{ label: "Clicks Timeline", data: dataPoints, tension: 0.4 }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-          }
-        }
-      });
-    }
-
-    const stats = {};
-    for (const h of history) {
-      if (!stats[h.ip]) {
-        stats[h.ip] = { count: 0, risk: h.risk, vpn: h.vpn, bot: h.bot, last: h.time };
-      }
-      stats[h.ip].count++;
-      stats[h.ip].risk = Math.max(stats[h.ip].risk, h.risk);
-      stats[h.ip].last = Math.max(stats[h.ip].last, h.time);
-    }
-
-    const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
-    let html = `<div><b>Total Clicks:</b> ${history.length}</div><div class="muted" style="margin:6px 0 14px;">Unique IPs: ${sorted.length}</div>`;
-
-    sorted.slice(0, 10).forEach(([ip, data]) => {
-      const danger = data.risk > 70;
-      html += `<div style="margin-bottom:10px;padding:10px;border-radius:10px;background:${danger ? "rgba(239,68,68,0.18)" : "rgba(30,41,59,0.45)"};border:1px solid ${danger ? "rgba(239,68,68,0.4)" : "rgba(0,255,255,0.12)"};"><b>${escapeHtml(ip)}</b>${data.vpn ? "<span style='color:#f59e0b'> 🛰️ VPN</span>" : ""}${data.bot ? "<span style='color:#f59e0b'> 🤖 BOT</span>" : ""}${danger ? "<span style='color:#ef4444'> ⚠️ ATTACKER</span>" : ""}<br><small>Clicks: ${data.count}</small><br><small>Risk: ${data.risk}</small></div>`;
-    });
-
-    if (statsBody) statsBody.innerHTML = html;
-
-    const mapEl = $("map");
-    if (!mapEl) return;
-
-    map = L.map(mapEl).setView([20, 0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
-
-    let offset = 0;
-    for (const h of history) {
-      const geo = await getGeo(h.ip);
-      let lat = Number(geo.latitude || (Math.random() * 140 - 70));
-      let lng = Number(geo.longitude || (Math.random() * 360 - 180));
-      lat += offset * 0.22;
-      lng += offset * 0.22;
-      offset++;
-
-      L.circle([lat, lng], {
-        radius: 40000,
-        color: h.risk > 70 ? "#ef4444" : "#00ffff"
-      }).addTo(map).bindPopup(`<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`);
-    }
-  }
-
-  async function processFile(file, backend) {
-    if (!file) return setResult("Choose a CSV file first", true);
-
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (!lines.length) return setResult("CSV is empty", true);
-
-    let urls = [];
-    if (lines[0].toLowerCase().includes("url")) {
-      const header = lines[0].split(",").map(h => h.trim().toLowerCase());
-      const urlIndex = header.indexOf("url");
-      if (urlIndex >= 0) {
-        urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
-      }
-    } else {
-      urls = lines;
-    }
-
-    urls = urls.filter(Boolean);
-    if (!urls.length) return setResult("No URLs found in file", true);
-
-    const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
-    setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
-    setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
-
-    let okCount = 0;
-    for (const url of urls) {
-      let res = await authorizedFetch("/create", {
-        method: "POST",
         body: JSON.stringify({ url })
       }, backend, false);
-
-      if (res.status === 401) {
-        await verifyMainSession(false);
-        res = await authorizedFetch("/create", {
-          method: "POST",
-          body: JSON.stringify({ url })
-        }, backend, false);
-      }
-
-      if (!res.ok) {
-        setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
-        break;
-      }
-
-      okCount++;
-      setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
     }
 
-    setBusy(button, false);
+    if (!res.ok) {
+      setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
+      break;
+    }
 
-    if (backend === "legacy" && csvFileLegacy) csvFileLegacy.value = "";
-    if (backend === "primary" && csvFilePrimary) csvFilePrimary.value = "";
-
-    await Promise.all([loadLinks(false), loadMe(false)]);
+    okCount++;
+    setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
   }
 
-  async function uploadCSVForBackend(backend) {
-    const file = backend === "legacy" ? csvFileLegacy?.files?.[0] : csvFilePrimary?.files?.[0];
+  setBusy(button, false);
+
+  if (backend === "legacy" && csvFileLegacy) csvFileLegacy.value = "";
+  if (backend === "primary" && csvFilePrimary) csvFilePrimary.value = "";
+
+  await Promise.all([loadLinks(false), loadMe(false)]);
+}
+
+async function uploadCSVForBackend(backend) {
+  const file = backend === "legacy" ? csvFileLegacy?.files?.[0] : csvFilePrimary?.files?.[0];
+  await processFile(file, backend);
+}
+
+function refreshNow() {
+  Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
+}
+
+function applyAutoRefreshState() {
+  localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
+
+  if (autoRefreshToggle) autoRefreshToggle.checked = autoRefreshEnabled;
+  if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
+
+  if (liveSyncBadge) {
+    liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
+    liveSyncBadge.className = `badge ${autoRefreshEnabled ? "live" : "paused"}`;
+  }
+}
+
+function applyCompactModeState() {
+  localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
+  document.body.classList.toggle("compact", compactModeEnabled);
+
+  if (compactModeToggle) compactModeToggle.checked = compactModeEnabled;
+  if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
+}
+
+function logout() {
+  stopPaymentPolling();
+  clearSession();
+  window.location.href = "index.html";
+}
+
+function setupKeyboardShortcuts() {
+  [urlInput, slugInput, expireInput, campaignInput, noteInput].forEach(el => {
+    if (!el) return;
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter") createLinkForBackend(preferredBackend);
+    });
+  });
+
+  [searchInput, backendFilter, itemTypeFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
+    if (!el) return;
+    el.addEventListener("input", () => { renderTable(); drawChart(); });
+    el.addEventListener("change", () => { renderTable(); drawChart(); });
+  });
+}
+
+function wireDropZone(zone, backend) {
+  if (!zone) return;
+
+  ["dragenter", "dragover"].forEach(eventName => {
+    zone.addEventListener(eventName, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add("dragover");
+    });
+  });
+
+  ["dragleave", "dragend", "drop"].forEach(eventName => {
+    zone.addEventListener(eventName, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove("dragover");
+    });
+  });
+
+  zone.addEventListener("drop", async e => {
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
     await processFile(file, backend);
-  }
-
-  function refreshNow() {
-    Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
-  }
-
-  function applyAutoRefreshState() {
-    localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
-
-    if (autoRefreshToggle) autoRefreshToggle.checked = autoRefreshEnabled;
-    if (modalAutoRefreshToggle) modalAutoRefreshToggle.checked = autoRefreshEnabled;
-
-    if (liveSyncBadge) {
-      liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
-      liveSyncBadge.className = `badge ${autoRefreshEnabled ? "live" : "paused"}`;
-    }
-  }
-
-  function applyCompactModeState() {
-    localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
-    document.body.classList.toggle("compact", compactModeEnabled);
-
-    if (compactModeToggle) compactModeToggle.checked = compactModeEnabled;
-    if (modalCompactModeToggle) modalCompactModeToggle.checked = compactModeEnabled;
-  }
-
-  function logout() {
-    stopPaymentPolling();
-    clearSession();
-    window.location.href = "index.html";
-  }
-
-  function setupKeyboardShortcuts() {
-    [urlInput, slugInput, expireInput, campaignInput, noteInput].forEach(el => {
-      if (!el) return;
-      el.addEventListener("keydown", e => {
-        if (e.key === "Enter") createLinkForBackend(preferredBackend);
-      });
-    });
-
-    [searchInput, backendFilter, itemTypeFilter, statusFilter, dateRangeFilter, sortFilter, chartMetricSelect, onlyHighRiskToggle].forEach(el => {
-      if (!el) return;
-      el.addEventListener("input", () => { renderTable(); drawChart(); });
-      el.addEventListener("change", () => { renderTable(); drawChart(); });
-    });
-  }
-
-  function wireDropZone(zone, backend) {
-    if (!zone) return;
-
-    ["dragenter", "dragover"].forEach(eventName => {
-      zone.addEventListener(eventName, e => {
-        e.preventDefault();
-        e.stopPropagation();
-        zone.classList.add("dragover");
-      });
-    });
-
-    ["dragleave", "dragend", "drop"].forEach(eventName => {
-      zone.addEventListener(eventName, e => {
-        e.preventDefault();
-        e.stopPropagation();
-        zone.classList.remove("dragover");
-      });
-    });
-
-    zone.addEventListener("drop", async e => {
-      const file = e.dataTransfer?.files?.[0];
-      if (!file) return;
-      await processFile(file, backend);
-    });
-  }
-
-  function setPreferredBackend(next) {
-    preferredBackend = next === "legacy" ? "legacy" : "primary";
-    localStorage.setItem("preferredBackend", preferredBackend);
-    setTopBackendBadge();
-    showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
-  }
-
-  function setupFaq() {
-    document.querySelectorAll(".faq-q").forEach(btn => {
-      btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
-    });
-  }
-
-  function clearFilters() {
-    if (searchInput) searchInput.value = "";
-    if (backendFilter) backendFilter.value = "all";
-    if (itemTypeFilter) itemTypeFilter.value = "all";
-    if (statusFilter) statusFilter.value = "all";
-    if (dateRangeFilter) dateRangeFilter.value = "all";
-    if (sortFilter) sortFilter.value = "newest";
-    if (onlyHighRiskToggle) onlyHighRiskToggle.checked = false;
-    renderTable();
-    drawChart();
-  }
-
-  if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
-  if (upgradeBtn) upgradeBtn.addEventListener("click", openUpgradeModal);
-  if (quickSettingsBtn) quickSettingsBtn.addEventListener("click", openSettingsModal);
-  if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportVisibleAsCsv);
-  if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportVisibleAsJson);
-  if (createLegacyBtn) createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
-  if (createPrimaryBtn) createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
-  if (bulkLegacyBtn) bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
-  if (bulkPrimaryBtn) bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
-  if (uploadLegacyBtn) uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
-  if (uploadPrimaryBtn) uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
-  if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
-  if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
-  if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
-  if (clearFiltersBtn) clearFiltersBtn.addEventListener("click", clearFilters);
-  if (bulkCopyBtn) bulkCopyBtn.addEventListener("click", bulkCopySelected);
-  if (bulkDeleteBtn) bulkDeleteBtn.addEventListener("click", bulkDeleteSelected);
-  if (bulkRefreshStatsBtn) bulkRefreshStatsBtn.addEventListener("click", () => { renderTable(); drawChart(); renderSecurityInsights(); });
-  if (clearNotificationsBtn) clearNotificationsBtn.addEventListener("click", () => { notificationsStore = []; renderNotifications(); });
-  if (refreshActivityBtn) refreshActivityBtn.addEventListener("click", renderActivityTimeline);
-  if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperationalBoard);
-  if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
-  if (planQuantityInput) planQuantityInput.addEventListener("input", updateBillingPreview);
-  if (planQuantityInput) planQuantityInput.addEventListener("change", updateBillingPreview);
-
-  if (selectAllLinks) {
-    selectAllLinks.addEventListener("change", () => {
-      document.querySelectorAll(".row-select").forEach(box => {
-        box.checked = selectAllLinks.checked;
-        const key = box.dataset.key;
-        if (box.checked) selectedLinks.add(key);
-        else selectedLinks.delete(key);
-      });
-      syncSelectAllState();
-    });
-  }
-
-  if (compactModeToggle) compactModeToggle.addEventListener("change", () => {
-    compactModeEnabled = compactModeToggle.checked;
-    applyCompactModeState();
   });
+}
 
-  if (autoRefreshToggle) autoRefreshToggle.addEventListener("change", () => {
-    autoRefreshEnabled = autoRefreshToggle.checked;
-    applyAutoRefreshState();
+function setPreferredBackend(next) {
+  preferredBackend = next === "legacy" ? "legacy" : "primary";
+  localStorage.setItem("preferredBackend", preferredBackend);
+  setTopBackendBadge();
+  showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
+}
+
+function setupFaq() {
+  document.querySelectorAll(".faq-q").forEach(btn => {
+    btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
   });
+}
 
-  if (modalCompactModeToggle) modalCompactModeToggle.addEventListener("change", () => {
-    compactModeEnabled = modalCompactModeToggle.checked;
-    applyCompactModeState();
-  });
+function clearFilters() {
+  if (searchInput) searchInput.value = "";
+  if (backendFilter) backendFilter.value = "all";
+  if (itemTypeFilter) itemTypeFilter.value = "all";
+  if (statusFilter) statusFilter.value = "all";
+  if (dateRangeFilter) dateRangeFilter.value = "all";
+  if (sortFilter) sortFilter.value = "newest";
+  if (onlyHighRiskToggle) onlyHighRiskToggle.checked = false;
+  renderTable();
+  drawChart();
+}
 
-  if (modalAutoRefreshToggle) modalAutoRefreshToggle.addEventListener("change", () => {
-    autoRefreshEnabled = modalAutoRefreshToggle.checked;
-    applyAutoRefreshState();
-  });
+if (refreshBtn) refreshBtn.addEventListener("click", refreshNow);
+if (upgradeBtn) upgradeBtn.addEventListener("click", openUpgradeModal);
+if (quickSettingsBtn) quickSettingsBtn.addEventListener("click", openSettingsModal);
+if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportVisibleAsCsv);
+if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportVisibleAsJson);
+if (createLegacyBtn) createLegacyBtn.addEventListener("click", () => createLinkForBackend("legacy"));
+if (createPrimaryBtn) createPrimaryBtn.addEventListener("click", () => createLinkForBackend("primary"));
+if (bulkLegacyBtn) bulkLegacyBtn.addEventListener("click", () => bulkCreateForBackend("legacy"));
+if (bulkPrimaryBtn) bulkPrimaryBtn.addEventListener("click", () => bulkCreateForBackend("primary"));
+if (uploadLegacyBtn) uploadLegacyBtn.addEventListener("click", () => uploadCSVForBackend("legacy"));
+if (uploadPrimaryBtn) uploadPrimaryBtn.addEventListener("click", () => uploadCSVForBackend("primary"));
+if (requestPaymentBtn) requestPaymentBtn.addEventListener("click", createPaymentRequest);
+if (preferPrimaryBtn) preferPrimaryBtn.addEventListener("click", () => setPreferredBackend("primary"));
+if (preferLegacyBtn) preferLegacyBtn.addEventListener("click", () => setPreferredBackend("legacy"));
+if (clearFiltersBtn) clearFiltersBtn.addEventListener("click", clearFilters);
+if (bulkCopyBtn) bulkCopyBtn.addEventListener("click", bulkCopySelected);
+if (bulkDeleteBtn) bulkDeleteBtn.addEventListener("click", bulkDeleteSelected);
+if (bulkRefreshStatsBtn) bulkRefreshStatsBtn.addEventListener("click", () => { renderTable(); drawChart(); renderSecurityInsights(); });
+if (clearNotificationsBtn) clearNotificationsBtn.addEventListener("click", () => { notificationsStore = []; renderNotifications(); });
+if (refreshActivityBtn) refreshActivityBtn.addEventListener("click", renderActivityTimeline);
+if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperationalBoard);
+if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
+if (planQuantityInput) planQuantityInput.addEventListener("input", updateBillingPreview);
+if (planQuantityInput) planQuantityInput.addEventListener("change", updateBillingPreview);
 
-  if (modalChartMetricSelect) modalChartMetricSelect.addEventListener("change", () => {
-    if (chartMetricSelect) chartMetricSelect.value = modalChartMetricSelect.value;
-    drawChart();
-  });
-
-  if (verifySessionBtn) {
-    verifySessionBtn.addEventListener("click", async () => {
-      setBusy(verifySessionBtn, true, "Checking...");
-      await verifyMainSession(true);
-      setBusy(verifySessionBtn, false);
+if (selectAllLinks) {
+  selectAllLinks.addEventListener("change", () => {
+    document.querySelectorAll(".row-select").forEach(box => {
+      box.checked = selectAllLinks.checked;
+      const key = box.dataset.key;
+      if (box.checked) selectedLinks.add(key);
+      else selectedLinks.delete(key);
     });
+    syncSelectAllState();
+  });
+}
+
+if (compactModeToggle) compactModeToggle.addEventListener("change", () => {
+  compactModeEnabled = compactModeToggle.checked;
+  applyCompactModeState();
+});
+
+if (autoRefreshToggle) autoRefreshToggle.addEventListener("change", () => {
+  autoRefreshEnabled = autoRefreshToggle.checked;
+  applyAutoRefreshState();
+});
+
+if (modalCompactModeToggle) modalCompactModeToggle.addEventListener("change", () => {
+  compactModeEnabled = modalCompactModeToggle.checked;
+  applyCompactModeState();
+});
+
+if (modalAutoRefreshToggle) modalAutoRefreshToggle.addEventListener("change", () => {
+  autoRefreshEnabled = modalAutoRefreshToggle.checked;
+  applyAutoRefreshState();
+});
+
+if (modalChartMetricSelect) modalChartMetricSelect.addEventListener("change", () => {
+  if (chartMetricSelect) chartMetricSelect.value = modalChartMetricSelect.value;
+  drawChart();
+});
+
+if (verifySessionBtn) {
+  verifySessionBtn.addEventListener("click", async () => {
+    setBusy(verifySessionBtn, true, "Checking...");
+    await verifyMainSession(true);
+    setBusy(verifySessionBtn, false);
+  });
+}
+
+if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
+if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
+if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", goToLandingPage);
+if (viewLandingLinksBtn) viewLandingLinksBtn.addEventListener("click", () => {
+  setExtraResult("Opening landing.html ...");
+  goToLandingPage();
+});
+if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
+if (refreshDomainsBtn) refreshDomainsBtn.addEventListener("click", () => {
+  setExtraResult("Opening domain-manager.html ...");
+  goToDomainManager();
+});
+if ($("quickCreatePrimary")) $("quickCreatePrimary").addEventListener("click", () => createLinkForBackend("primary"));
+if ($("quickCreateLegacy")) $("quickCreateLegacy").addEventListener("click", () => createLinkForBackend("legacy"));
+if ($("quickPaymentBtn")) $("quickPaymentBtn").addEventListener("click", openUpgradeModal);
+if ($("quickLandingBtn")) $("quickLandingBtn").addEventListener("click", goToLandingPage);
+if ($("quickDomainBtn")) $("quickDomainBtn").addEventListener("click", goToDomainManager);
+if ($("quickSecurityBtn")) $("quickSecurityBtn").addEventListener("click", openSecurityModal);
+
+(async function init() {
+  if (!ensureAuth()) return;
+
+  setTopBackendBadge();
+  applyAutoRefreshState();
+  applyCompactModeState();
+  setupKeyboardShortcuts();
+  setupFaq();
+  renderNotifications();
+  wireDropZone(dropZoneLegacy, "legacy");
+  wireDropZone(dropZonePrimary, "primary");
+
+  await Promise.all([
+    loadPlans(false),
+    loadMe(true),
+    loadLinks(true),
+    loadPayments(false),
+    checkBackendHealth()
+  ]);
+
+  if (waitingPaymentId) {
+    const p = paymentsStore.find(x => x.id === waitingPaymentId);
+    if (p) startPaymentPolling(p.id, p.backend);
   }
 
-  if (landingCenterBtn) landingCenterBtn.addEventListener("click", goToLandingPage);
-  if (domainCenterBtn) domainCenterBtn.addEventListener("click", goToDomainManager);
-  if (openLandingPanelBtn) openLandingPanelBtn.addEventListener("click", goToLandingPage);
-  if (viewLandingLinksBtn) viewLandingLinksBtn.addEventListener("click", () => {
-    setExtraResult("Opening landing.html ...");
-    goToLandingPage();
-  });
-  if (openDomainPanelBtn) openDomainPanelBtn.addEventListener("click", goToDomainManager);
-  if (refreshDomainsBtn) refreshDomainsBtn.addEventListener("click", () => {
-    setExtraResult("Opening domain-manager.html ...");
-    goToDomainManager();
-  });
-  if ($("quickCreatePrimary")) $("quickCreatePrimary").addEventListener("click", () => createLinkForBackend("primary"));
-  if ($("quickCreateLegacy")) $("quickCreateLegacy").addEventListener("click", () => createLinkForBackend("legacy"));
-  if ($("quickPaymentBtn")) $("quickPaymentBtn").addEventListener("click", openUpgradeModal);
-  if ($("quickLandingBtn")) $("quickLandingBtn").addEventListener("click", goToLandingPage);
-  if ($("quickDomainBtn")) $("quickDomainBtn").addEventListener("click", goToDomainManager);
-  if ($("quickSecurityBtn")) $("quickSecurityBtn").addEventListener("click", openSecurityModal);
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    if (document.hidden || !autoRefreshEnabled) return;
+    loadMe(false);
+    loadLinks(false);
+    loadPayments(false);
+    checkBackendHealth();
+  }, 15000);
+})();
 
-  (async function init() {
-    if (!ensureAuth()) return;
-
-    setTopBackendBadge();
-    applyAutoRefreshState();
-    applyCompactModeState();
-    setupKeyboardShortcuts();
-    setupFaq();
-    renderNotifications();
-    wireDropZone(dropZoneLegacy, "legacy");
-    wireDropZone(dropZonePrimary, "primary");
-
-    await Promise.all([
-      loadPlans(false),
-      loadMe(true),
-      loadLinks(true),
-      loadPayments(false),
-      checkBackendHealth()
-    ]);
-
-    if (waitingPaymentId) {
-      const p = paymentsStore.find(x => x.id === waitingPaymentId);
-      if (p) startPaymentPolling(p.id, p.backend);
-    }
-
-    clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => {
-      if (document.hidden || !autoRefreshEnabled) return;
-      loadMe(false);
-      loadLinks(false);
-      loadPayments(false);
-      checkBackendHealth();
-    }, 15000);
-  })();
-
-  window.openSupportPanel = openSupportPanel;
-  window.toggleAllFaq = toggleAllFaq;
-  window.copyLink = copyLink;
-  window.showPaymentDetails = showPaymentDetails;
-  window.closePanel = closePanel;
-  window.openUpgradeModal = openUpgradeModal;
-  window.closeUpgradeModal = closeUpgradeModal;
-  window.closeSettingsModal = closeSettingsModal;
-  window.closeSecurityModal = closeSecurityModal;
-  window.closeAllModals = closeAllModals;
-  window.loadPayments = loadPayments;
-  window.loadPlans = loadPlans;
-  window.logout = logout;
-  window.markPaymentSent = markPaymentSent;
-  window.showToast = showToast;
-  window.goToLandingPage = goToLandingPage;
-  window.goToDomainManager = goToDomainManager;
-  window.showHistory = showHistory;
-  window.showGeo = showGeo;
-  window.deleteLink = deleteLink;
-  window.startTotpSetup = startTotpSetup;
-  window.enableTotp = enableTotp;
-  window.startEmailOtpSetup = startEmailOtpSetup;
-  window.enableEmailOtp = enableEmailOtp;
-  window.disableTwoFactor = disableTwoFactor;
+window.openSupportPanel = openSupportPanel;
+window.toggleAllFaq = toggleAllFaq;
+window.copyLink = copyLink;
+window.showPaymentDetails = showPaymentDetails;
+window.closePanel = closePanel;
+window.openUpgradeModal = openUpgradeModal;
+window.closeUpgradeModal = closeUpgradeModal;
+window.closeSettingsModal = closeSettingsModal;
+window.closeSecurityModal = closeSecurityModal;
+window.closeAllModals = closeAllModals;
+window.loadPayments = loadPayments;
+window.loadPlans = loadPlans;
+window.logout = logout;
+window.markPaymentSent = markPaymentSent;
+window.showToast = showToast;
+window.goToLandingPage = goToLandingPage;
+window.goToDomainManager = goToDomainManager;
+window.showHistory = showHistory;
+window.showGeo = showGeo;
+window.deleteLink = deleteLink;
+window.startTotpSetup = startTotpSetup;
+window.enableTotp = enableTotp;
+window.startEmailOtpSetup = startEmailOtpSetup;
+window.enableEmailOtp = enableEmailOtp;
+window.disableTwoFactor = disableTwoFactor;
 </script>
 </body>
 </html>
