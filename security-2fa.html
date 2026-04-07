@@ -416,7 +416,20 @@
       background:var(--surface);
       padding:18px;
     }
-    .qr-inner{
+
+    .qr-image{
+      max-width:220px;
+      width:100%;
+      aspect-ratio:1/1;
+      object-fit:contain;
+      border-radius:20px;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:10px;
+      display:block;
+    }
+
+    .qr-placeholder{
       width:220px;
       height:220px;
       border-radius:20px;
@@ -430,6 +443,7 @@
       position:relative;
       overflow:hidden;
     }
+
     .qr-center{
       width:68px;
       height:68px;
@@ -654,7 +668,7 @@
             <span>Recovery codes currently available for emergency account access.</span>
           </div>
           <div class="mini-kpi">
-            <b id="trustedDevicesCount">1</b>
+            <b id="trustedDevicesCount">0</b>
             <span>Trusted devices remembered for lower-friction login after successful 2FA verification.</span>
           </div>
         </div>
@@ -688,7 +702,7 @@
             <div class="step">
               <div class="step-number">3</div>
               <h4>Verify and enable</h4>
-              <p>Enter the current 6-digit code to finalize setup and activate two-factor protection.</p>
+              <p>Enter the current 6-digit code from your authenticator app to finalize setup and activate two-factor protection.</p>
             </div>
           </div>
 
@@ -711,6 +725,7 @@
                 <div class="actions" style="margin-bottom:14px;">
                   <button id="generateSecretBtn" class="btn-primary" type="button" onclick="generate2FASecret()">Generate Secret</button>
                   <button class="btn-secondary" type="button" onclick="copySecretKey()">Copy Secret</button>
+                  <button class="btn-secondary" type="button" onclick="copyOtpAuth()">Copy OTP URI</button>
                 </div>
 
                 <div class="field" style="margin-bottom:12px;">
@@ -732,17 +747,18 @@
               <div class="panel">
                 <div class="section-head" style="margin-bottom:12px;">
                   <div>
-                    <h3 style="font-size:20px;margin-bottom:4px;">QR preview</h3>
-                    <p>This is a styled placeholder preview. Replace the QR source with your backend QR image or generated canvas data in production.</p>
+                    <h3 style="font-size:20px;margin-bottom:4px;">QR code</h3>
+                    <p>Scan this with your authenticator app. It updates after secret generation.</p>
                   </div>
                 </div>
                 <div class="qr-wrap">
-                  <div class="qr-inner" id="qrInner">
+                  <div id="qrHolder" class="qr-placeholder">
                     <div class="qr-center">2FA</div>
                   </div>
                 </div>
-                <div class="tiny" style="margin-top:12px;">
-                  Production note: wire this panel to a backend endpoint like <code>/2fa/setup</code> that returns an <code>otpauth://</code> URI and optional QR image payload.
+                <div class="actions" style="margin-top:12px;">
+                  <button class="btn-secondary" type="button" onclick="openQrInNewTab()">Open QR</button>
+                  <button class="btn-secondary" type="button" onclick="downloadQrImage()">Download QR</button>
                 </div>
               </div>
             </div>
@@ -811,7 +827,7 @@
               </div>
 
               <div class="notice" style="margin-top:14px;">
-                Production note: connect this to a login step endpoint like <code>/2fa/verify-login</code> and exchange the challenge token plus the TOTP code for a final session token.
+                This page expects a backend challenge endpoint if you want full login-step verification.
               </div>
 
               <div id="verifyResult" class="result"></div>
@@ -900,7 +916,7 @@
               <span>Updated after successful setup or after step-two login verification.</span>
             </div>
             <div class="status-item">
-              <b id="trustedDevicesText">Trusted devices: 1</b>
+              <b id="trustedDevicesText">Trusted devices: 0</b>
               <span>Clear trusted devices if you signed in on a shared or lost device.</span>
             </div>
           </div>
@@ -914,22 +930,19 @@
         <div class="card section-card">
           <div class="section-head" style="margin-bottom:12px;">
             <div>
-              <h3>Production endpoints</h3>
-              <p>Suggested endpoint names to connect your frontend to Backend2 and optional legacy flows.</p>
+              <h3>Connected routes</h3>
+              <p>These are aligned to the auth style from your other pages.</p>
             </div>
           </div>
           <div class="info-box">
-            <b>Suggested Backend2 routes</b><br>
-            <code>POST /2fa/setup</code><br>
-            <code>POST /2fa/enable</code><br>
-            <code>POST /2fa/verify-login</code><br>
-            <code>POST /2fa/recovery-codes</code><br>
-            <code>POST /2fa/disable</code><br>
-            <code>POST /2fa/clear-trusted-devices</code><br>
-            <code>GET /2fa/status</code>
+            <b>Primary routes used</b><br>
+            <code>POST /auth/security/2fa/setup</code><br>
+            <code>POST /auth/security/2fa/enable</code><br>
+            <code>POST /auth/security/2fa/disable</code><br>
+            <code>GET /auth/me</code>
           </div>
           <div class="warn-box" style="margin-top:12px;">
-            Do not fully trust local frontend state for real 2FA. Final enforcement must happen on the server when password login succeeds but before issuing a final dashboard session.
+            Full login-challenge verification and preference persistence need matching backend routes if you want those sections fully enforced.
           </div>
         </div>
 
@@ -952,16 +965,23 @@
   </div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
+
+    const AUTH_STORAGE_KEY = "rattle_token";
+    const ROLE_STORAGE_KEY = "rattle_role";
+    const USER_STORAGE_KEY = "rattle_user";
 
     let pageMode = "setup";
-    let activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    let activeBackend = "primary";
     let twoFAEnabled = false;
     let currentSecret = "";
     let currentOtpAuth = "";
+    let currentQrUrl = "";
     let recoveryCodes = [];
-    let trustedDevicesCount = 1;
+    let trustedDevicesCount = 0;
     let lastVerifiedAt = null;
 
     const $ = id => document.getElementById(id);
@@ -982,6 +1002,7 @@
     const enabledStateSub = $("enabledStateSub");
     const lastVerifiedText = $("lastVerifiedText");
     const trustedDevicesText = $("trustedDevicesText");
+    const qrHolder = $("qrHolder");
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
@@ -1002,8 +1023,38 @@
       return backend === "legacy" ? "Legacy AWS" : "Backend2";
     }
 
+    function normalizeApiUrl(url) {
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    function authPrefix(backend) {
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
+
+    function buildAuthPath(backend, path) {
+      const clean = String(path || "").startsWith("/") ? path : `/${path}`;
+      return `${authPrefix(backend)}${clean}`;
+    }
+
+    function getToken() {
+      return (
+        localStorage.getItem(AUTH_STORAGE_KEY) ||
+        localStorage.getItem("token") ||
+        ""
+      );
+    }
+
+    function getUserEmail() {
+      return (
+        localStorage.getItem(USER_STORAGE_KEY) ||
+        localStorage.getItem("lastUser") ||
+        localStorage.getItem("rememberUser") ||
+        "user@rattlelink.local"
+      );
+    }
+
     function authHeaders() {
-      const token = localStorage.getItem("token") || "";
+      const token = getToken();
       return token ? { Authorization: `Bearer ${token}` } : {};
     }
 
@@ -1029,10 +1080,8 @@
     }
 
     function updateStatusUI() {
-      if (backendBadge) {
-        backendBadge.textContent = `Backend: ${backendLabel(activeBackend)}`;
-        backendBadge.className = "status-pill";
-      }
+      backendBadge.textContent = `Backend: ${backendLabel(activeBackend)}`;
+      backendBadge.className = "status-pill";
 
       const baseScore = 72;
       const score = twoFAEnabled ? 96 : baseScore;
@@ -1105,8 +1154,14 @@
       if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
       if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
 
+      const finalPath = buildAuthPath(backend, path);
+
       try {
-        const res = await fetch(apiBaseForBackend(backend).replace(/\/+$/, "") + path, { ...options, headers });
+        const res = await fetch(normalizeApiUrl(apiBaseForBackend(backend)) + finalPath, {
+          ...options,
+          method,
+          headers
+        });
         const raw = await res.text();
         let data = {};
         try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
@@ -1116,52 +1171,77 @@
       }
     }
 
+    function buildFallbackOtpAuth(secret, issuer, email) {
+      return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${encodeURIComponent(secret)}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+    }
+
+    function buildQrUrl(otpauthUrl) {
+      if (!otpauthUrl) return "";
+      return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(otpauthUrl)}`;
+    }
+
+    function renderQr() {
+      if (currentQrUrl) {
+        qrHolder.className = "";
+        qrHolder.innerHTML = `<img class="qr-image" src="${currentQrUrl}" alt="2FA QR Code" />`;
+        return;
+      }
+      qrHolder.className = "qr-placeholder";
+      qrHolder.innerHTML = `<div class="qr-center">2FA</div>`;
+    }
+
     async function refresh2FAStatus(showFeedback = false) {
-      activeBackend = (localStorage.getItem("authBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
-      const res = await safeFetch("/2fa/status", { method: "GET" }, activeBackend);
+      activeBackend = (localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+
+      const res = await safeFetch("/me", { method: "GET" }, activeBackend);
 
       if (res.ok) {
         const data = res.data || {};
-        twoFAEnabled = !!data.enabled;
-        trustedDevicesCount = Number(data.trustedDevicesCount || trustedDevicesCount || 0);
-        lastVerifiedAt = data.lastVerifiedAt || lastVerifiedAt;
-        recoveryCodes = Array.isArray(data.recoveryCodesPreview) ? data.recoveryCodesPreview : recoveryCodes;
-        updateRecoveryGrid();
+        twoFAEnabled = !!data.twoFactorEnabled;
+        trustedDevicesCount = Number(data.trustedDevicesCount || 0);
+        lastVerifiedAt = data.twoFactorEnabledAt || data.lastVerifiedAt || lastVerifiedAt;
         updateStatusUI();
         if (showFeedback) setResult(statusResult, `2FA status refreshed from ${backendLabel(res.backend)}.`);
         return;
       }
 
       updateStatusUI();
-      if (showFeedback) setResult(statusResult, `Could not load 2FA status. Using current page state. ${res.data?.message || ""}`.trim());
+      if (showFeedback) {
+        setResult(statusResult, `Could not load 2FA status. ${res.data?.message || ""}`.trim());
+      }
     }
 
     async function generate2FASecret() {
       setResult(setupResult, "Generating 2FA secret...");
-      const issuer = $("issuerLabel").value.trim() || "Rattle Link";
-      const email = localStorage.getItem("lastUser") || localStorage.getItem("rememberUser") || "user@rattlelink.local";
-      const fallbackSecret = generateRandomBase32(32);
-      const fallbackOtp = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${fallbackSecret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 
-      const res = await safeFetch("/2fa/setup", {
+      const issuer = $("issuerLabel").value.trim() || "Rattle Link";
+      const email = getUserEmail();
+      const fallbackSecret = generateRandomBase32(32);
+      const fallbackOtp = buildFallbackOtpAuth(fallbackSecret, issuer, email);
+
+      const res = await safeFetch("/security/2fa/setup", {
         method: "POST",
-        body: JSON.stringify({ issuer, label: email })
+        body: JSON.stringify({ method: "totp", issuer, label: email })
       }, activeBackend);
 
       if (res.ok) {
         currentSecret = String(res.data?.secret || fallbackSecret);
-        currentOtpAuth = String(res.data?.otpauthUrl || fallbackOtp);
+        currentOtpAuth = String(res.data?.otpauthUrl || res.data?.otpAuthUrl || fallbackOtp);
+        currentQrUrl = String(res.data?.qrImageUrl || buildQrUrl(currentOtpAuth));
         secretKeyBox.textContent = currentSecret;
         otpauthBox.textContent = currentOtpAuth;
+        renderQr();
         setResult(setupResult, `Secret generated from ${backendLabel(res.backend)}.`);
         return;
       }
 
       currentSecret = fallbackSecret;
       currentOtpAuth = fallbackOtp;
+      currentQrUrl = buildQrUrl(currentOtpAuth);
       secretKeyBox.textContent = currentSecret;
       otpauthBox.textContent = currentOtpAuth;
-      setResult(setupResult, `Using local preview secret because the setup endpoint is not connected yet.`);
+      renderQr();
+      setResult(setupResult, "Using preview secret because the live setup endpoint did not return data.");
     }
 
     async function enable2FA() {
@@ -1175,15 +1255,20 @@
         return;
       }
 
-      const res = await safeFetch("/2fa/enable", {
+      const res = await safeFetch("/security/2fa/enable", {
         method: "POST",
-        body: JSON.stringify({ secret: currentSecret, code })
+        body: JSON.stringify({ method: "totp", code })
       }, activeBackend);
 
       if (res.ok) {
         twoFAEnabled = true;
         lastVerifiedAt = Date.now();
-        recoveryCodes = Array.isArray(res.data?.recoveryCodes) ? res.data.recoveryCodes : generateRecoverySet();
+        recoveryCodes = Array.isArray(res.data?.backupCodes)
+          ? res.data.backupCodes
+          : Array.isArray(res.data?.recoveryCodes)
+          ? res.data.recoveryCodes
+          : generateRecoverySet();
+
         updateRecoveryGrid();
         updateStatusUI();
         switchMode("recovery");
@@ -1192,14 +1277,7 @@
         return;
       }
 
-      twoFAEnabled = true;
-      lastVerifiedAt = Date.now();
-      recoveryCodes = generateRecoverySet();
-      updateRecoveryGrid();
-      updateStatusUI();
-      switchMode("recovery");
-      setResult(setupResult, "2FA preview enabled locally. Connect the backend enable endpoint to make this real.");
-      setResult(recoveryResult, "Recovery codes generated locally for preview.");
+      setResult(setupResult, res.data?.message || "Could not enable 2FA.");
     }
 
     async function verify2FALogin() {
@@ -1229,9 +1307,7 @@
         return;
       }
 
-      lastVerifiedAt = Date.now();
-      updateStatusUI();
-      setResult(verifyResult, "2FA preview verification passed locally. Replace with final login token exchange in production.");
+      setResult(verifyResult, res.data?.message || "Challenge verification endpoint is not connected yet.");
     }
 
     function generateRecoverySet() {
@@ -1243,18 +1319,10 @@
     }
 
     async function generateRecoveryCodes() {
-      const res = await safeFetch("/2fa/recovery-codes", { method: "POST" }, activeBackend);
-      if (res.ok && Array.isArray(res.data?.codes)) {
-        recoveryCodes = res.data.codes;
-        updateRecoveryGrid();
-        updateStatusUI();
-        setResult(recoveryResult, `Recovery codes regenerated on ${backendLabel(res.backend)}.`);
-        return;
-      }
       recoveryCodes = generateRecoverySet();
       updateRecoveryGrid();
       updateStatusUI();
-      setResult(recoveryResult, "Recovery codes generated locally for preview.");
+      setResult(recoveryResult, "Recovery codes generated locally for safe backup preview.");
     }
 
     function updateRecoveryGrid() {
@@ -1277,6 +1345,41 @@
       } catch {
         setResult(setupResult, "Copy failed.");
       }
+    }
+
+    async function copyOtpAuth() {
+      if (!currentOtpAuth) {
+        setResult(setupResult, "No OTP URI to copy yet.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(currentOtpAuth);
+        setResult(setupResult, "OTP URI copied.");
+      } catch {
+        setResult(setupResult, "Copy failed.");
+      }
+    }
+
+    function openQrInNewTab() {
+      if (!currentQrUrl) {
+        setResult(setupResult, "Generate a secret first so the QR code can be built.");
+        return;
+      }
+      window.open(currentQrUrl, "_blank", "noopener,noreferrer");
+    }
+
+    function downloadQrImage() {
+      if (!currentQrUrl) {
+        setResult(setupResult, "Generate a secret first so the QR code can be downloaded.");
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = currentQrUrl;
+      a.download = "rattle-link-2fa-qr.png";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+      setResult(setupResult, "QR download opened.");
     }
 
     async function copyRecoveryCodes() {
@@ -1321,53 +1424,44 @@
         requireStepUpForSensitiveActions: $("stepUpToggle").checked
       };
 
-      const res = await safeFetch("/2fa/preferences", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }, activeBackend);
-
-      if (res.ok) {
-        setResult(prefsResult, `2FA preferences saved on ${backendLabel(res.backend)}.`);
-        return;
-      }
-
-      setResult(prefsResult, "Preferences saved locally for preview. Wire this to your backend preferences endpoint.");
+      localStorage.setItem("twofa_preferences", JSON.stringify(payload));
+      setResult(prefsResult, "2FA preferences saved locally.");
     }
 
     async function clearTrustedDevices() {
-      const res = await safeFetch("/2fa/clear-trusted-devices", { method: "POST" }, activeBackend);
       trustedDevicesCount = 0;
       updateStatusUI();
-      if (res.ok) {
-        setResult(statusResult, `Trusted devices cleared on ${backendLabel(res.backend)}.`);
-        return;
-      }
-      setResult(statusResult, "Trusted devices cleared locally for preview.");
+      setResult(statusResult, "Trusted devices cleared locally.");
     }
 
     async function disable2FA() {
       const confirmed = confirm("Disable two-factor authentication for this account?");
       if (!confirmed) return;
 
-      const res = await safeFetch("/2fa/disable", { method: "POST" }, activeBackend);
+      const res = await safeFetch("/security/2fa/disable", { method: "POST" }, activeBackend);
+
+      if (!res.ok) {
+        setResult(statusResult, res.data?.message || "Could not disable 2FA.");
+        return;
+      }
+
       twoFAEnabled = false;
       recoveryCodes = [];
       currentSecret = "";
       currentOtpAuth = "";
+      currentQrUrl = "";
       secretKeyBox.textContent = "Generate a secret to begin setup.";
       otpauthBox.textContent = "No OTP URI generated yet.";
+      renderQr();
       updateRecoveryGrid();
       updateStatusUI();
       clearOtpInputs();
       clearVerifyInputs();
 
-      if (res.ok) {
-        setResult(statusResult, `2FA disabled on ${backendLabel(res.backend)}.`);
-        return;
-      }
-      setResult(statusResult, "2FA disabled locally for preview. Connect the backend disable endpoint for production.");
+      setResult(statusResult, `2FA disabled on ${backendLabel(res.backend)}.`);
     }
 
+    renderQr();
     loadTheme();
     wireOtpInputs(".otp-digit");
     wireOtpInputs(".verify-digit");
