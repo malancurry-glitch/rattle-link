@@ -218,6 +218,16 @@
       min-width:120px;
       margin-top:0;
     }
+
+    .qr img{
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,.18);
+      background:#fff;
+      padding:8px;
+      max-width:200px;
+      width:100%;
+      height:auto;
+    }
   </style>
 </head>
 
@@ -280,6 +290,10 @@
     const PRIMARY_AUTH_BASE = "/auth";
     const LEGACY_AUTH_BASE = "";
 
+    const AUTH_STORAGE_KEY = "rattle_token";
+    const ROLE_STORAGE_KEY = "rattle_role";
+    const USER_STORAGE_KEY = "rattle_user";
+
     const emailInput = document.getElementById("email");
     const sendBtn = document.getElementById("sendBtn");
     const checkBtn = document.getElementById("checkBtn");
@@ -312,7 +326,6 @@
     function isUsableApiUrl(url){
       const clean = normalizeApiUrl(url);
       if(!clean) return false;
-      if(clean.includes("your-backend2-domain.com")) return false;
       return /^https?:\/\//i.test(clean);
     }
 
@@ -385,7 +398,8 @@
 
     function updateBackLink(){
       const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
-      backToIndex.href = buildIndexHref(email, currentBackend || localStorage.getItem("magicBackend") || "");
+      const backend = currentBackend || localStorage.getItem("magicBackend") || localStorage.getItem("authBackend") || "";
+      backToIndex.href = buildIndexHref(email, backend);
     }
 
     async function safeBody(res){
@@ -523,6 +537,14 @@
       return "Request failed";
     }
 
+    function rememberBackend(backend){
+      if(!backend) return;
+      currentBackend = backend;
+      localStorage.setItem("magicBackend", backend);
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
+    }
+
     function savePendingState(){
       if(currentRequestId) localStorage.setItem("magicRequestId", currentRequestId);
       else localStorage.removeItem("magicRequestId");
@@ -553,11 +575,13 @@
 
       clearStoredPending();
       statusSection.classList.add("hidden");
+      approveSection.classList.add("hidden");
       timerEl.textContent = "";
       stopPolling();
       stopTimer();
       qrBox.innerHTML = "";
       showBackendBadge(backendBadge, null);
+      showBackendBadge(approveBackendBadge, null);
       showMessage("Pending request cleared.", "warn");
       updateBackLink();
     }
@@ -621,9 +645,9 @@
 
       if(!token) return;
 
-      localStorage.setItem("rattle_token", token);
-      localStorage.setItem("rattle_role", role);
-      localStorage.setItem("rattle_user", user);
+      localStorage.setItem(AUTH_STORAGE_KEY, token);
+      localStorage.setItem(ROLE_STORAGE_KEY, role);
+      localStorage.setItem(USER_STORAGE_KEY, user);
 
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
@@ -682,7 +706,7 @@
 
         lastEmailUsed = email;
         currentRequestId = safeText(data.requestId) || null;
-        currentBackend = result.backend || "primary";
+        rememberBackend(result.backend || "primary");
 
         showBackendBadge(backendBadge, currentBackend);
         updateBackLink();
@@ -735,7 +759,7 @@
           return;
         }
 
-        currentBackend = result.backend || currentBackend || "primary";
+        rememberBackend(result.backend || currentBackend || "primary");
         currentRequestId = safeText(data.requestId) || currentRequestId;
         savePendingState();
         showBackendBadge(backendBadge, currentBackend);
@@ -793,12 +817,7 @@
         );
 
         const data = result.data || {};
-        currentBackend = result.backend || currentBackend || "primary";
-
-        localStorage.setItem("magicBackend", currentBackend);
-        localStorage.setItem("authBackend", currentBackend);
-        localStorage.setItem("sessionBackend", currentBackend);
-
+        rememberBackend(result.backend || currentBackend || "primary");
         savePendingState();
         showBackendBadge(backendBadge, currentBackend);
         updateBackLink();
@@ -870,9 +889,7 @@
         const data = result.data || {};
         const resolvedBackend = result.backend || currentBackend || "primary";
 
-        currentBackend = resolvedBackend;
-        localStorage.setItem("authBackend", resolvedBackend);
-        localStorage.setItem("sessionBackend", resolvedBackend);
+        rememberBackend(resolvedBackend);
 
         if(data.requiresTwoFactor){
           const method = safeText(data.method) || localStorage.getItem("pending2faMethod") || "";
@@ -936,10 +953,7 @@
         );
 
         const data = result.data || {};
-        currentBackend = result.backend || currentBackend || "primary";
-
-        localStorage.setItem("authBackend", currentBackend);
-        localStorage.setItem("sessionBackend", currentBackend);
+        rememberBackend(result.backend || currentBackend || "primary");
 
         showBackendBadge(approveBackendBadge, currentBackend);
         updateBackLink();
@@ -977,19 +991,19 @@
     }
 
     function generateQR(){
-      const email = safeText(emailInput.value).toLowerCase();
+      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
       if(!email) return showMessage("Enter email first ❌", "error");
       if(!isEmail(email)) return showMessage("Enter a valid email ❌", "error");
 
+      const backend = currentBackend || localStorage.getItem("magicBackend") || "primary";
       const query = [`email=${encodeURIComponent(email)}`];
-      if(currentBackend) query.push(`backend=${encodeURIComponent(currentBackend)}`);
+      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
 
       const qrUrl = `${window.location.origin}/magic-login.html?${query.join("&")}`;
 
       qrBox.innerHTML = `
         <img
           alt="QR Code"
-          style="border-radius:12px;border:1px solid rgba(0,255,255,.18);background:#fff;padding:8px;"
           src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}"
         />
       `;
@@ -1012,7 +1026,10 @@
         lastEmailUsed = email;
       }
 
-      if(backend === "legacy" || backend === "primary") currentBackend = backend;
+      if(backend === "legacy" || backend === "primary"){
+        rememberBackend(backend);
+      }
+
       if(exchange) currentExchange = exchange;
       updateBackLink();
 
@@ -1056,7 +1073,10 @@
         lastEmailUsed = savedEmail;
       }
 
-      if(savedBackend && !currentBackend) currentBackend = savedBackend;
+      if(savedBackend && !currentBackend){
+        rememberBackend(savedBackend);
+      }
+
       updateBackLink();
 
       if(savedRequestId){
