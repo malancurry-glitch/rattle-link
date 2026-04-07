@@ -501,6 +501,7 @@
         <div class="info-row">
           <span class="info-chip" id="methodChip">Method: Detecting...</span>
           <span class="info-chip" id="emailChip">User: Not set</span>
+          <span class="info-chip" id="backendChip">Backend: Detecting...</span>
         </div>
 
         <div class="field-grid">
@@ -543,8 +544,10 @@
   </div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
 
     let preferredBackend = null;
     let detectedMethod = null;
@@ -558,6 +561,7 @@
     const code = document.getElementById("code");
     const methodChip = document.getElementById("methodChip");
     const emailChip = document.getElementById("emailChip");
+    const backendChip = document.getElementById("backendChip");
     const methodText = document.getElementById("methodText");
     const tipText = document.getElementById("tipText");
 
@@ -600,6 +604,15 @@
 
     function buildHeaders(extra = {}) {
       return { "Content-Type": "application/json", ...extra };
+    }
+
+    function authPrefix(backend) {
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
+
+    function buildAuthPath(backend, path) {
+      const cleanPath = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      return `${authPrefix(backend)}${cleanPath}`;
     }
 
     function getForcedBackend() {
@@ -646,7 +659,7 @@
       const legacy = normalizeApiUrl(LEGACY_API);
 
       if (behavior === "primaryOnly") {
-        const result = await callApi(primary, path, options);
+        const result = await callApi(primary, buildAuthPath("primary", path), options);
         return { ...result, backend: "primary" };
       }
 
@@ -655,7 +668,7 @@
           ...options,
           headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
         };
-        const result = await callApi(legacy, path, legacyOptions);
+        const result = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
         return { ...result, backend: "legacy" };
       }
 
@@ -665,11 +678,11 @@
           ...options,
           headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
         };
-        const result = await callApi(legacy, path, legacyOptions);
+        const result = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
         return { ...result, backend: "legacy" };
       }
 
-      const primaryResult = await callApi(primary, path, options);
+      const primaryResult = await callApi(primary, buildAuthPath("primary", path), options);
       if (primaryResult.ok) return { ...primaryResult, backend: "primary" };
 
       if (primaryResult.networkError || primaryResult.status === 404 || primaryResult.status >= 500) {
@@ -677,11 +690,15 @@
           ...options,
           headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" })
         };
-        const legacyResult = await callApi(legacy, path, legacyOptions);
+        const legacyResult = await callApi(legacy, buildAuthPath("legacy", path), legacyOptions);
         return { ...legacyResult, backend: "legacy", firstAttempt: primaryResult };
       }
 
       return { ...primaryResult, backend: "primary" };
+    }
+
+    function updateBackendUi(backend) {
+      backendChip.textContent = `Backend: ${backendLabel(backend === "legacy" ? "legacy" : "primary")}`;
     }
 
     function updateMethodUi(method) {
@@ -722,7 +739,7 @@
 
       username.value = emailFromQuery || pendingEmail || lastUser || "";
       updateEmailUi();
-
+      updateBackendUi(getForcedBackend());
       updateMethodUi(methodFromQuery || lastMfaMethod || "unknown");
     }
 
@@ -765,6 +782,7 @@
 
         preferredBackend = verifyResult.backend || "primary";
         localStorage.setItem("authBackend", preferredBackend);
+        updateBackendUi(preferredBackend);
 
         const loginBehavior = preferredBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
         const loginResult = await apiHybrid(

@@ -700,8 +700,12 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
+    const PRIMARY_APP_BASE = "/app";
+    const LEGACY_APP_BASE = "";
 
     const AUTH_STORAGE_KEY = "rattle_token";
     const ROLE_STORAGE_KEY = "rattle_role";
@@ -856,9 +860,17 @@
     const landingSummaryText = $("landingSummaryText");
     const domainSummaryText = $("domainSummaryText");
 
+    function normalizeApiUrl(url) { return String(url || "").replace(/\/+$/, ""); }
+    function authPrefix(backend) { return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE; }
+    function appPrefix(backend) { return backend === "legacy" ? LEGACY_APP_BASE : PRIMARY_APP_BASE; }
+    function buildPath(prefix, path) {
+      const clean = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      return `${prefix}${clean}`;
+    }
+
     function getToken() { return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || ""; }
     function getRole() { return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || ""; }
-    function getUsername() { return localStorage.getItem(USER_STORAGE_KEY) || ""; }
+    function getUsername() { return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || ""; }
 
     function setSession(token, role = "", username = "") {
       if (token) {
@@ -869,7 +881,10 @@
         localStorage.setItem(ROLE_STORAGE_KEY, role);
         localStorage.setItem("role", role);
       }
-      if (username) localStorage.setItem(USER_STORAGE_KEY, username);
+      if (username) {
+        localStorage.setItem(USER_STORAGE_KEY, username);
+        localStorage.setItem("lastUser", username);
+      }
     }
 
     function clearSession() {
@@ -878,6 +893,7 @@
       localStorage.removeItem(USER_STORAGE_KEY);
       localStorage.removeItem("token");
       localStorage.removeItem("role");
+      localStorage.removeItem("lastUser");
       localStorage.removeItem("preferredBackend");
       localStorage.removeItem("sessionBackend");
       localStorage.removeItem("waitingPaymentId");
@@ -1072,7 +1088,9 @@
     async function callBackend(backend, path, options = {}) {
       const headers = { ...(options.headers || {}) };
       if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
-      return safeFetchRaw(apiBaseForBackend(backend), path, { ...options, headers });
+      const prefix = path.startsWith("/auth/") ? "" : appPrefix(backend);
+      const finalPath = buildPath(prefix, path);
+      return safeFetchRaw(apiBaseForBackend(backend), finalPath, { ...options, headers });
     }
 
     async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
@@ -1089,7 +1107,7 @@
     }
 
     async function verifyMainSession(showToastMessage = false) {
-      const preferredRes = await authorizedFetch("/me", { method: "GET" }, preferredBackend, false);
+      const preferredRes = await authorizedFetch("/auth/me", { method: "GET" }, preferredBackend, false);
       if (preferredRes.ok) {
         sessionBackend = preferredBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
@@ -1100,7 +1118,7 @@
         return true;
       }
       const otherBackend = preferredBackend === "primary" ? "legacy" : "primary";
-      const fallbackRes = await authorizedFetch("/me", { method: "GET" }, otherBackend, false);
+      const fallbackRes = await authorizedFetch("/auth/me", { method: "GET" }, otherBackend, false);
       if (fallbackRes.ok) {
         sessionBackend = otherBackend;
         localStorage.setItem("sessionBackend", sessionBackend);
@@ -1257,7 +1275,7 @@
     }
 
     async function loadPlans(showMessage = false) {
-      const primary = await callBackend("primary", "/plans", { method: "GET" });
+      const primary = await callBackend("primary", "/app/plans", { method: "GET" });
       const legacy = await callBackend("legacy", "/plans", { method: "GET" });
       const res = primary.ok ? primary : legacy;
       if (!res.ok) {
@@ -1380,7 +1398,7 @@
 
     async function loadPayments(showMessage = false) {
       const [primaryRes, legacyRes] = await Promise.all([
-        authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
+        authorizedFetch("/app/payments/me", { method: "GET" }, "primary", false),
         authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
       ]);
       const primaryPayments = primaryRes.ok && Array.isArray(primaryRes.data?.payments) ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary")) : [];
@@ -1444,10 +1462,10 @@
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
-      let res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+      let res = await authorizedFetch("/app/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+        res = await authorizedFetch("/app/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
       }
       setBusy(requestPaymentBtn, false);
       if (!res.ok) {
@@ -1479,7 +1497,8 @@
         startPaymentPolling(payment.id, payment.backend);
         return showToast("Already waiting for confirmation");
       }
-      const res = await authorizedFetch("/payment-i-made", { method: "POST", body: JSON.stringify({ paymentId }) }, backend, false);
+      const path = backend === "primary" ? "/app/payment-i-made" : "/payment-i-made";
+      const res = await authorizedFetch(path, { method: "POST", body: JSON.stringify({ paymentId }) }, backend, false);
       if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
       waitingPaymentId = payment.id;
       localStorage.setItem("waitingPaymentId", payment.id);
@@ -1513,7 +1532,8 @@
     function startPaymentPolling(paymentId, backend) {
       stopPaymentPolling();
       const run = async () => {
-        const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
+        const path = backend === "primary" ? "/app/payments/me" : "/payments/me";
+        const res = await authorizedFetch(path, { method: "GET" }, backend, false);
         if (!res.ok) return;
         const incoming = Array.isArray(res.data?.payments) ? res.data.payments.map(p => normalizePaymentItem(p, backend)) : [];
         const current = incoming.find(p => p.id === paymentId);
@@ -1589,9 +1609,11 @@
     }
 
     async function checkOneBackendHealth(backend) {
-      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
+      const healthPath = backend === "primary" ? "/app/health" : "/health";
+      const rootPath = backend === "primary" ? "/" : "/";
+      const health = await safeFetchRaw(apiBaseForBackend(backend), healthPath, { method: "GET" });
       if (health.ok) return health;
-      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
+      return safeFetchRaw(apiBaseForBackend(backend), rootPath, { method: "GET" });
     }
 
     async function checkBackendHealth() {
@@ -1645,7 +1667,7 @@
         setResult("Loading links...", false);
       }
       const [primaryRes, legacyRes] = await Promise.all([
-        authorizedFetch("/list", { method: "GET" }, "primary", false),
+        authorizedFetch("/app/list", { method: "GET" }, "primary", false),
         authorizedFetch("/list", { method: "GET" }, "legacy", false)
       ]);
       loadingLinks = false;
@@ -1822,7 +1844,7 @@
     }
 
     async function startTotpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "totp" }) }, "primary", true);
+      const res = await authorizedFetch("/auth/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "totp" }) }, "primary", true);
       if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start TOTP setup")}</div>`);
       showTwoFactorBox(`
         <div class="info-box">
@@ -1841,7 +1863,7 @@
     async function enableTotp() {
       const code = $("totpEnableCode")?.value?.trim();
       if (!code) return showToast("Enter the TOTP code");
-      const res = await authorizedFetch("/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "totp", code }) }, "primary", true);
+      const res = await authorizedFetch("/auth/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "totp", code }) }, "primary", true);
       if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable TOTP")}</div>`);
       showTwoFactorBox(`
         <div class="confirm-box">
@@ -1855,7 +1877,7 @@
     }
 
     async function startEmailOtpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "email_otp" }) }, "primary", true);
+      const res = await authorizedFetch("/auth/security/2fa/setup", { method: "POST", body: JSON.stringify({ method: "email_otp" }) }, "primary", true);
       if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start email OTP setup")}</div>`);
       showTwoFactorBox(`
         <div class="info-box">
@@ -1872,7 +1894,7 @@
     async function enableEmailOtp() {
       const code = $("emailOtpEnableCode")?.value?.trim();
       if (!code) return showToast("Enter the email OTP code");
-      const res = await authorizedFetch("/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "email_otp", code }) }, "primary", true);
+      const res = await authorizedFetch("/auth/security/2fa/enable", { method: "POST", body: JSON.stringify({ method: "email_otp", code }) }, "primary", true);
       if (!res.ok) return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable email OTP")}</div>`);
       showTwoFactorBox(`<div class="confirm-box"><b>✅ Email OTP enabled</b></div>`);
       await loadMe(false);
@@ -1881,7 +1903,7 @@
 
     async function disableTwoFactor() {
       if (!confirm("Disable two-factor authentication?")) return;
-      const res = await authorizedFetch("/security/2fa/disable", { method: "POST" }, "primary", true);
+      const res = await authorizedFetch("/auth/security/2fa/disable", { method: "POST" }, "primary", true);
       if (!res.ok) return showToast(res.data?.message || "Could not disable 2FA");
       showToast("2FA disabled");
       await loadMe(false);
@@ -1969,10 +1991,11 @@
       if (!body) return;
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Creating ${backendLabel(backend)} link...`, false);
-      let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
+      const path = backend === "primary" ? "/app/create" : "/create";
+      let res = await authorizedFetch(path, { method: "POST", body: JSON.stringify(body) }, backend, false);
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
+        res = await authorizedFetch(path, { method: "POST", body: JSON.stringify(body) }, backend, false);
       }
       setBusy(button, false);
       if (!res.ok) {
@@ -2003,14 +2026,15 @@
       if (!Number.isFinite(count) || count <= 0) return setResult("Invalid bulk count", true);
       setBusy(button, true, `Creating ${backendLabel(backend)}...`);
       setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
+      const path = backend === "primary" ? "/app/create" : "/create";
       let success = 0;
       for (let i = 0; i < count; i++) {
         const requestBody = { ...body };
         if (!requestBody.slug) delete requestBody.slug;
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
+        let res = await authorizedFetch(path, { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
         if (res.status === 401) {
           await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
+          res = await authorizedFetch(path, { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
         }
         if (!res.ok) {
           setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
@@ -2023,15 +2047,18 @@
       await Promise.all([loadLinks(false), loadMe(false)]);
     }
 
-    function getDeletePath(itemType) { return itemType === "landing" ? "/landing/delete" : "/delete"; }
+    function getDeletePath(itemType, backend) {
+      if (itemType === "landing") return backend === "primary" ? "/app/landing/delete" : "/landing/delete";
+      return backend === "primary" ? "/app/delete" : "/delete";
+    }
 
     async function deleteLink(slug, backend, itemType = "redirect") {
       const label = itemType === "landing" ? "landing page" : "short link";
       if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
-      let res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
+      let res = await authorizedFetch(getDeletePath(itemType, backend), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
+        res = await authorizedFetch(getDeletePath(itemType, backend), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
       }
       if (!res.ok) return showToast(`Delete failed on ${backendLabel(backend)}`);
       selectedLinks.delete(`${backend}:${slug}`);
@@ -2145,7 +2172,8 @@
       if (!mapEl) return;
       map = L.map(mapEl).setView([20, 0], 2);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
+      const path = backend === "primary" ? `/app/history?slug=${encodeURIComponent(slug)}` : `/history?slug=${encodeURIComponent(slug)}`;
+      const res = await authorizedFetch(path, { method: "GET" }, backend, false);
       const history = Array.isArray(res.data?.history) ? res.data.history : [];
       if (!history.length) return L.marker([20, 0]).addTo(map).bindPopup("No data").openPopup();
       let offset = 0;
@@ -2166,7 +2194,8 @@
       panelContent.innerHTML = `<h3>📊 Live Analytics: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><canvas id="statsChart" height="120"></canvas><div id="statsBody" style="margin-top:14px;"></div><h4 style="margin-top:18px;color:var(--cyan);">🌍 Geo Activity</h4><div id="map" style="height:300px;border-radius:12px;overflow:hidden;"></div>`;
       await new Promise(r => setTimeout(r, 60));
       destroyMap();
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
+      const path = backend === "primary" ? `/app/history?slug=${encodeURIComponent(slug)}` : `/history?slug=${encodeURIComponent(slug)}`;
+      const res = await authorizedFetch(path, { method: "GET" }, backend, false);
       let history = Array.isArray(res.data?.history) ? res.data.history : [];
       const link = dataStore.find(l => l.slug === slug && l.backend === backend);
       if (!history.length && link && Number(link.clicks || 0) > 0) {
@@ -2244,12 +2273,13 @@
       const button = backend === "legacy" ? uploadLegacyBtn : uploadPrimaryBtn;
       setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
       setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
+      const path = backend === "primary" ? "/app/create" : "/create";
       let okCount = 0;
       for (const url of urls) {
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
+        let res = await authorizedFetch(path, { method: "POST", body: JSON.stringify({ url }) }, backend, false);
         if (res.status === 401) {
           await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
+          res = await authorizedFetch(path, { method: "POST", body: JSON.stringify({ url }) }, backend, false);
         }
         if (!res.ok) {
           setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
