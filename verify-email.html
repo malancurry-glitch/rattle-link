@@ -378,9 +378,9 @@
 
         <div class="actions">
           <input id="tokenInput" class="input" placeholder="Paste verification token" />
-          <button id="verifyBtn" class="btn btn-primary" onclick="verifyToken()">Verify Email</button>
+          <button id="verifyBtn" class="btn btn-primary" type="button">Verify Email</button>
           <input id="emailInput" class="input" type="email" placeholder="Enter your email to resend verification" />
-          <button id="resendBtn" class="btn btn-secondary" onclick="resendVerification()">Resend Verification Email</button>
+          <button id="resendBtn" class="btn btn-secondary" type="button">Resend Verification Email</button>
         </div>
       </div>
 
@@ -510,6 +510,19 @@
       return `magic-login.html${q.length ? `?${q.join("&")}` : ""}`;
     }
 
+    function saveSession(token, role = "user", user = "", backend = "primary") {
+      localStorage.setItem("rattle_token", token);
+      localStorage.setItem("rattle_role", role);
+      localStorage.setItem("rattle_user", user);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("lastUser", user);
+
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
+    }
+
     async function safeBody(res) {
       const text = await res.text();
       if (!text) return {};
@@ -588,9 +601,14 @@
       const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
       const path = buildPath(rawPath, backend);
       const finalOptions = { ...options };
+
       if (backend === "legacy") {
-        finalOptions.headers = { ...(options.headers || {}), "x-rattle-fallback": "legacy" };
+        finalOptions.headers = {
+          ...(options.headers || {}),
+          "x-rattle-fallback": "legacy"
+        };
       }
+
       return callApi(baseUrl, path, finalOptions);
     }
 
@@ -608,6 +626,7 @@
       const first = await callBackend("primary", path, options);
       if (first.ok) return { ...first, backend: "primary" };
       if (!shouldFallback(path, first)) return { ...first, backend: "primary" };
+
       const second = await callBackend("legacy", path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
@@ -654,6 +673,11 @@
     }
 
     async function exchangeVerifyCode(exchange, email = "", backend = "") {
+      const behavior =
+        backend === "legacy" ? "legacyOnly" :
+        backend === "primary" ? "primaryOnly" :
+        "primaryThenLegacy";
+
       const result = await apiHybrid(
         "/verify-email/exchange",
         {
@@ -661,7 +685,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ exchange })
         },
-        backend === "legacy" ? "legacyOnly" : backend === "primary" ? "primaryOnly" : "primaryThenLegacy"
+        behavior
       );
 
       if (!result.ok) {
@@ -677,14 +701,16 @@
       syncUrl(email, usedBackend, "", exchange);
 
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role || "user");
-        localStorage.setItem("authBackend", usedBackend);
-        if (data.username || email) localStorage.setItem("lastUser", data.username || email);
+        saveSession(
+          data.token,
+          data.role || "user",
+          data.username || email,
+          usedBackend
+        );
 
-        const target = data.role === "admin" ? "admin.html" : "dashboard.html";
         showBanner("Email already verified. Redirecting to your account.");
         showMessage(`Email verified successfully on ${backendLabel(usedBackend)}. Redirecting...`, "success");
+        const target = data.role === "admin" ? "admin.html" : "dashboard.html";
         setTimeout(() => { window.location.href = target; }, 600);
         return true;
       }
@@ -716,26 +742,33 @@
           chooseVerifyBehavior()
         );
 
+        const data = result.data || {};
+
         if (result.ok) {
           forcedBackend = result.backend || forcedBackend || "primary";
           showBackendBadge(forcedBackend);
           showPostVerifyActions(email, forcedBackend);
           syncUrl(email, forcedBackend, token);
 
-          const data = result.data || {};
           showBanner("Verification succeeded. You can continue to login or magic login.");
-          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}. Redirecting to dashboard...`, "success");
-          resetButton(verifyBtn, "Verify Email");
 
           if (data.token) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("role", data.role || "user");
-            localStorage.setItem("authBackend", forcedBackend);
-            if (data.username || email) localStorage.setItem("lastUser", data.username || email);
+            saveSession(
+              data.token,
+              data.role || "user",
+              data.username || email,
+              forcedBackend
+            );
+
+            showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}. Redirecting to dashboard...`, "success");
             const target = data.role === "admin" ? "admin.html" : "dashboard.html";
+            resetButton(verifyBtn, "Verify Email");
             setTimeout(() => { window.location.href = target; }, 800);
             return;
           }
+
+          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}.`, "success");
+          resetButton(verifyBtn, "Verify Email");
           return;
         }
 
@@ -798,6 +831,8 @@
 
       if (backend === "primary" || backend === "legacy") {
         forcedBackend = backend;
+        localStorage.setItem("authBackend", backend);
+        localStorage.setItem("sessionBackend", backend);
         showBackendBadge(forcedBackend);
       } else {
         showBackendBadge("primary");
@@ -831,6 +866,17 @@
       showMessage("Verifying your email...", "warn");
       await verifyToken(token);
     }
+
+    verifyBtn.addEventListener("click", () => verifyToken());
+    resendBtn.addEventListener("click", resendVerification);
+
+    tokenInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyToken();
+    });
+
+    emailInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") resendVerification();
+    });
 
     autoVerify();
   </script>
