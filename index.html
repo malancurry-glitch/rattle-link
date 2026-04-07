@@ -381,15 +381,16 @@
   </footer>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
     const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
     const CAPTCHA_ENABLED = true;
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
 
     let mode = "login";
     let loginMethod = "password";
     let captchaWidgetId = null;
-    let captchaReady = false;
     let recaptchaLoaded = false;
     let recaptchaWaitTimer = null;
     let pendingMagicRequestId = null;
@@ -458,6 +459,15 @@
       return String(url || "").replace(/\/+$/, "");
     }
 
+    function authPrefix(backend) {
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
+
+    function buildPath(rawPath, backend) {
+      const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
+      return `${authPrefix(backend)}${clean}`;
+    }
+
     function backendLabel(name) {
       return name === "primary" ? "Backend 2" : "Legacy AWS";
     }
@@ -478,6 +488,7 @@
     function toggleTheme() {
       document.body.classList.toggle("dark");
       localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+      if (shouldUseCaptcha()) remountCaptcha();
     }
 
     function loadTheme() {
@@ -562,7 +573,6 @@
       const box = el("recaptchaBox");
       if (box) box.innerHTML = "";
       captchaWidgetId = null;
-      captchaReady = false;
     }
 
     function mountCaptcha() {
@@ -588,25 +598,25 @@
           sitekey: RECAPTCHA_SITE_KEY,
           theme: document.body.classList.contains("dark") ? "dark" : "light",
           callback: function () {
-            captchaReady = true;
             setCaptchaState("Captcha completed");
           },
           "expired-callback": function () {
-            captchaReady = false;
             setCaptchaState("Captcha expired");
           },
           "error-callback": function () {
-            captchaReady = false;
             setCaptchaState("Captcha error");
           }
         });
-        captchaReady = true;
         setCaptchaState("Captcha required");
       } catch (error) {
         console.error("reCAPTCHA render error:", error);
-        captchaReady = false;
         setCaptchaState("Captcha failed to load");
       }
+    }
+
+    function remountCaptcha() {
+      destroyCaptcha();
+      mountCaptcha();
     }
 
     function waitForCaptchaAndMount() {
@@ -650,7 +660,6 @@
       if (!window.grecaptcha || captchaWidgetId === null) return;
       try {
         window.grecaptcha.reset(captchaWidgetId);
-        captchaReady = true;
         setCaptchaState("Captcha required");
       } catch (error) {
         console.error("reCAPTCHA reset error:", error);
@@ -873,36 +882,40 @@
       return false;
     }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-      const primary = normalizeApiUrl(PRIMARY_API);
-      const legacy = normalizeApiUrl(LEGACY_API);
+    async function callBackend(backend, rawPath, options = {}) {
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const path = buildPath(rawPath, backend);
+      const finalOptions = { ...options };
+      if (backend === "legacy") {
+        finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
+      }
+      return callApi(baseUrl, path, finalOptions);
+    }
 
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
       if (behavior === "primaryOnly") {
-        const result = await callApi(primary, path, options);
+        const result = await callBackend("primary", path, options);
         return { ...result, backend: "primary" };
       }
       if (behavior === "legacyOnly") {
-        const legacyOptions = { ...options, headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" }) };
-        const result = await callApi(legacy, path, legacyOptions);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
       const forced = getForcedBackendFromState();
       if (forced === "primary") {
-        const result = await callApi(primary, path, options);
+        const result = await callBackend("primary", path, options);
         return { ...result, backend: "primary" };
       }
       if (forced === "legacy") {
-        const legacyOptions = { ...options, headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" }) };
-        const result = await callApi(legacy, path, legacyOptions);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
-      const first = await callApi(primary, path, options);
+      const first = await callBackend("primary", path, options);
       if (first.ok) return { ...first, backend: "primary" };
       if (!shouldFallbackToLegacy(path, first)) return { ...first, backend: "primary" };
-      const legacyOptions = { ...options, headers: buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" }) };
-      const second = await callApi(legacy, path, legacyOptions);
+      const second = await callBackend("legacy", path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
 
@@ -1080,7 +1093,13 @@
 
       try {
         const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
-        const result = await apiHybrid("/magic-status", { method: "POST", headers: buildHeaders(), body: JSON.stringify({ requestId }) }, behavior);
+        const method = pendingMagicBackend === "legacy" ? "POST" : "GET";
+        const payloadPath = method === "GET" ? `/magic-status?requestId=${encodeURIComponent(requestId)}` : "/magic-status";
+        const requestOptions = method === "GET"
+          ? { method, headers: buildHeaders() }
+          : { method, headers: buildHeaders(), body: JSON.stringify({ requestId }) };
+
+        const result = await apiHybrid(payloadPath, requestOptions, behavior);
         const data = result.data || {};
         pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
         setChosenBackend(pendingMagicBackend);
