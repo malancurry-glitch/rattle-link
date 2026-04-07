@@ -1118,14 +1118,57 @@
     function buildRouteCandidates(path) {
       const clean = String(path || "").startsWith("/") ? path : `/${path}`;
       const routeMap = {
-        "/me": ["/auth/me", "/me", "/profile", "/auth/profile", "/app/me"],
-        "/security/2fa/setup": ["/auth/security/2fa/setup", "/security/2fa/setup", "/auth/2fa/setup", "/2fa/setup"],
-        "/security/2fa/enable": ["/auth/security/2fa/enable", "/security/2fa/enable", "/auth/2fa/enable", "/2fa/enable"],
-        "/security/2fa/disable": ["/auth/security/2fa/disable", "/security/2fa/disable", "/auth/2fa/disable", "/2fa/disable"],
-        "/2fa/verify-login": ["/auth/2fa/verify-login", "/2fa/verify-login", "/security/2fa/verify-login", "/auth/security/2fa/verify-login"],
-        "/security/2fa/recovery": ["/auth/security/2fa/recovery", "/security/2fa/recovery", "/auth/2fa/recovery", "/2fa/recovery"],
-        "/security/2fa/preferences": ["/auth/security/2fa/preferences", "/security/2fa/preferences", "/auth/2fa/preferences", "/2fa/preferences"],
-        "/security/2fa/clear-trusted": ["/auth/security/2fa/clear-trusted", "/security/2fa/clear-trusted", "/auth/2fa/clear-trusted", "/2fa/clear-trusted"]
+        "/me": [
+          "/auth/me", "/me", "/profile", "/auth/profile", "/app/me"
+        ],
+        "/security/2fa/setup": [
+          "/auth/security/2fa/setup",
+          "/security/2fa/setup",
+          "/auth/2fa/setup",
+          "/2fa/setup"
+        ],
+        "/security/2fa/enable": [
+          "/auth/security/2fa/enable",
+          "/security/2fa/enable",
+          "/auth/2fa/enable",
+          "/2fa/enable"
+        ],
+        "/security/2fa/disable": [
+          "/auth/security/2fa/disable",
+          "/security/2fa/disable",
+          "/auth/2fa/disable",
+          "/2fa/disable"
+        ],
+        "/2fa/verify-login": [
+          "/auth/2fa/verify-login",
+          "/2fa/verify-login",
+          "/security/2fa/verify-login",
+          "/auth/security/2fa/verify-login",
+          "/auth/login/2fa/verify",
+          "/login/2fa/verify"
+        ],
+        "/security/2fa/recovery": [
+          "/auth/security/2fa/recovery",
+          "/security/2fa/recovery",
+          "/auth/2fa/recovery",
+          "/2fa/recovery",
+          "/auth/security/2fa/recovery/generate",
+          "/security/2fa/recovery/generate"
+        ],
+        "/security/2fa/preferences": [
+          "/auth/security/2fa/preferences",
+          "/security/2fa/preferences",
+          "/auth/2fa/preferences",
+          "/2fa/preferences"
+        ],
+        "/security/2fa/clear-trusted": [
+          "/auth/security/2fa/clear-trusted",
+          "/security/2fa/clear-trusted",
+          "/auth/2fa/clear-trusted",
+          "/2fa/clear-trusted",
+          "/auth/security/2fa/trusted/clear",
+          "/security/2fa/trusted/clear"
+        ]
       };
 
       if (routeMap[clean]) return routeMap[clean];
@@ -1182,7 +1225,13 @@
         }
       }
 
-      return firstUsefulFailure || { ok: false, status: 0, data: { message: "No matching route found" }, backend, resolvedPath: "" };
+      return firstUsefulFailure || {
+        ok: false,
+        status: 0,
+        data: { message: "No matching route found" },
+        backend,
+        resolvedPath: ""
+      };
     }
 
     async function apiCall(path, options = {}, backend = activeBackend) {
@@ -1755,6 +1804,17 @@
       }
       activeBackend = savedBackend === "legacy" ? "legacy" : "primary";
       backendSelect.value = activeBackend;
+
+      const savedPrefs = localStorage.getItem("twofa_preferences");
+      if (savedPrefs) {
+        try {
+          const prefs = JSON.parse(savedPrefs);
+          $("alwaysRequireToggle").checked = !!prefs.alwaysRequire2FA;
+          $("trustedDevicesToggle").checked = !!prefs.allowTrustedDevices;
+          $("stepUpToggle").checked = !!prefs.requireStepUpForSensitiveActions;
+        } catch {}
+      }
+
       updateStatusUI();
     }
 
