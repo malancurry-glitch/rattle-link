@@ -275,8 +275,10 @@
   </div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
 
     const emailInput = document.getElementById("email");
     const sendBtn = document.getElementById("sendBtn");
@@ -312,6 +314,15 @@
       if(!clean) return false;
       if(clean.includes("your-backend2-domain.com")) return false;
       return /^https?:\/\//i.test(clean);
+    }
+
+    function authPrefix(backend){
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
+
+    function buildPath(rawPath, backend){
+      const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
+      return `${authPrefix(backend)}${clean}`;
     }
 
     function getParams(){
@@ -465,21 +476,28 @@
       return false;
     }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
-      const primary = normalizeApiUrl(PRIMARY_API);
-      const legacy = normalizeApiUrl(LEGACY_API);
+    async function callBackend(backend, rawPath, options = {}){
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const path = buildPath(rawPath, backend);
+      const finalOptions = { ...options };
+      if(backend === "legacy"){
+        finalOptions.headers = { ...(options.headers || {}), "x-rattle-fallback": "legacy" };
+      }
+      return callApi(baseUrl, path, finalOptions);
+    }
 
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
       if(behavior === "primaryOnly"){
-        const result = await callApi(primary, path, options);
+        const result = await callBackend("primary", path, options);
         return { ...result, backend: "primary" };
       }
 
       if(behavior === "legacyOnly"){
-        const result = await callApi(legacy, path, options);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
-      const first = await callApi(primary, path, options);
+      const first = await callBackend("primary", path, options);
 
       if(first.ok){
         return { ...first, backend: "primary" };
@@ -489,7 +507,7 @@
         return { ...first, backend: "primary" };
       }
 
-      const second = await callApi(legacy, path, options);
+      const second = await callBackend("legacy", path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
 
