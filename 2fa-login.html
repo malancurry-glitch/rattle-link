@@ -315,7 +315,9 @@
     }
 
     .method-box,
-    .tip-box{
+    .tip-box,
+    .qr-box,
+    .secret-box{
       padding:14px;
       border-radius:16px;
       border:1px solid var(--line);
@@ -323,7 +325,9 @@
     }
 
     .method-box b,
-    .tip-box b{
+    .tip-box b,
+    .qr-box b,
+    .secret-box b{
       display:block;
       margin-bottom:6px;
       font-size:13px;
@@ -331,11 +335,36 @@
     }
 
     .method-box span,
-    .tip-box span{
+    .tip-box span,
+    .qr-box span,
+    .secret-box span{
       display:block;
       color:var(--text-soft);
       font-size:12px;
       line-height:1.7;
+    }
+
+    .secret-code{
+      margin-top:10px;
+      padding:12px;
+      border-radius:12px;
+      background:var(--surface);
+      border:1px dashed var(--line-strong);
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:13px;
+      word-break:break-all;
+    }
+
+    .qr-box img{
+      max-width:220px;
+      width:100%;
+      height:auto;
+      display:block;
+      margin:12px auto 0;
+      border-radius:18px;
+      background:#fff;
+      padding:10px;
+      border:1px solid var(--line);
     }
 
     .primary-btn,
@@ -424,6 +453,8 @@
       line-height:1.7;
     }
 
+    .hidden{ display:none !important; }
+
     @keyframes spin{
       to{ transform:rotate(360deg); }
     }
@@ -452,8 +483,8 @@
     <section class="hero">
       <div>
         <div class="eyebrow">🔐 Secure two-factor access</div>
-        <h1>Finish your login with a verification code.</h1>
-        <p>
+        <h1 id="heroTitle">Finish your login with a verification code.</h1>
+        <p id="heroSub">
           Enter the 2FA code from your authenticator app or from your email, depending on how your account security is configured.
         </p>
 
@@ -481,7 +512,7 @@
             <div class="brand-badge">🐍</div>
             <div class="brand-copy">
               <h2>Rattle Link</h2>
-              <p>Two-Factor Verification</p>
+              <p id="brandModeText">Two-Factor Verification</p>
             </div>
           </div>
 
@@ -492,13 +523,14 @@
         </div>
 
         <div class="head">
-          <h3>Enter your security code</h3>
-          <p>
+          <h3 id="headTitle">Enter your security code</h3>
+          <p id="headSub">
             Verify your identity to complete login. This page supports both authenticator app codes and email OTP codes.
           </p>
         </div>
 
         <div class="info-row">
+          <span class="info-chip" id="modeChip">Mode: Verify</span>
           <span class="info-chip" id="methodChip">Method: Detecting...</span>
           <span class="info-chip" id="emailChip">User: Not set</span>
           <span class="info-chip" id="backendChip">Backend: Detecting...</span>
@@ -506,7 +538,7 @@
 
         <div class="field-grid">
           <div class="method-box">
-            <b>Current login method</b>
+            <b id="methodTitle">Current login method</b>
             <span id="methodText">We will detect your two-factor method from the login response or URL.</span>
           </div>
 
@@ -515,8 +547,31 @@
             <input id="username" type="email" autocomplete="username email" placeholder="you@example.com" />
           </div>
 
+          <div id="setupSection" class="hidden">
+            <div class="method-box">
+              <b>Setup required</b>
+              <span id="setupText">Your account must complete 2FA setup before login can finish.</span>
+            </div>
+
+            <div class="secondary-actions">
+              <button class="secondary-btn" type="button" id="generateSetupBtn" onclick="generateSetupSecret()">Generate setup secret</button>
+            </div>
+
+            <div id="secretSection" class="secret-box hidden">
+              <b>Secret key</b>
+              <span>Add this secret to your authenticator app if you do not want to scan the QR code.</span>
+              <div id="secretValue" class="secret-code"></div>
+            </div>
+
+            <div id="qrSection" class="qr-box hidden">
+              <b>Scan QR code</b>
+              <span>Use Google Authenticator, Authy, Microsoft Authenticator, 1Password, or another TOTP app.</span>
+              <img id="qrImage" alt="2FA QR Code" />
+            </div>
+          </div>
+
           <div class="input-group">
-            <label for="code">Verification code</label>
+            <label for="code" id="codeLabel">Verification code</label>
             <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter 2FA code" maxlength="8" />
           </div>
 
@@ -526,7 +581,7 @@
           </div>
         </div>
 
-        <button class="primary-btn" id="verifyBtn" type="button" onclick="verifyTwoFactor()">
+        <button class="primary-btn" id="verifyBtn" type="button" onclick="submitCurrentMode()">
           <span id="btnText">Verify and continue</span>
           <span id="spinner" class="spinner"></span>
         </button>
@@ -536,7 +591,7 @@
         </button>
 
         <div id="error" class="error"></div>
-        <div class="helper">
+        <div class="helper" id="helperText">
           After successful verification, you will be redirected automatically.
         </div>
       </div>
@@ -551,6 +606,11 @@
 
     let preferredBackend = null;
     let detectedMethod = null;
+    let currentMode = "verify";
+    let currentSecret = "";
+    let currentOtpAuthUrl = "";
+    let currentExchange = "";
+    let currentToken = "";
 
     const card = document.getElementById("card");
     const errorBox = document.getElementById("error");
@@ -564,6 +624,21 @@
     const backendChip = document.getElementById("backendChip");
     const methodText = document.getElementById("methodText");
     const tipText = document.getElementById("tipText");
+    const modeChip = document.getElementById("modeChip");
+    const heroTitle = document.getElementById("heroTitle");
+    const heroSub = document.getElementById("heroSub");
+    const brandModeText = document.getElementById("brandModeText");
+    const headTitle = document.getElementById("headTitle");
+    const headSub = document.getElementById("headSub");
+    const helperText = document.getElementById("helperText");
+    const setupSection = document.getElementById("setupSection");
+    const secretSection = document.getElementById("secretSection");
+    const qrSection = document.getElementById("qrSection");
+    const secretValue = document.getElementById("secretValue");
+    const qrImage = document.getElementById("qrImage");
+    const setupText = document.getElementById("setupText");
+    const codeLabel = document.getElementById("codeLabel");
+    const methodTitle = document.getElementById("methodTitle");
 
     function qs() {
       return new URLSearchParams(window.location.search);
@@ -662,6 +737,9 @@
 
     function shouldFallbackToLegacy(path, result) {
       if (path === "/login/2fa/verify") return false;
+      if (path === "/security/2fa/setup") return false;
+      if (path === "/security/2fa/enable") return false;
+
       if (result.networkError) return true;
       if (result.status === 404) return true;
       if (result.status >= 500) return true;
@@ -742,22 +820,95 @@
 
       if (detectedMethod === "totp") {
         methodChip.textContent = "Method: Authenticator app";
-        methodText.textContent = "Your account is using TOTP. Enter the current code from your authenticator app.";
-        tipText.textContent = "Open your authenticator app and enter the latest 6-digit code.";
+        methodText.textContent = currentMode === "setup"
+          ? "Your account will use TOTP. Generate a secret, scan the QR code, then enter the first 6-digit code to complete setup."
+          : "Your account is using TOTP. Enter the current code from your authenticator app.";
+        tipText.textContent = currentMode === "setup"
+          ? "Generate your secret, scan the QR code in your authenticator app, then type the current 6-digit code."
+          : "Open your authenticator app and enter the latest 6-digit code.";
       } else if (detectedMethod === "email_otp") {
         methodChip.textContent = "Method: Email OTP";
         methodText.textContent = "Your account is using email OTP. Enter the code sent to your email inbox.";
         tipText.textContent = "Check your email for the login code, then paste it here.";
       } else {
         methodChip.textContent = "Method: Verification code";
-        methodText.textContent = "Enter your two-factor code to complete login.";
-        tipText.textContent = "Use your authenticator app code or the email OTP code sent to your inbox.";
+        methodText.textContent = currentMode === "setup"
+          ? "Complete 2FA setup for this account, then continue login."
+          : "Enter your two-factor code to complete login.";
+        tipText.textContent = currentMode === "setup"
+          ? "Setup generally requires an authenticator app. Generate a secret and confirm it with a code."
+          : "Use your authenticator app code or the email OTP code sent to your inbox.";
       }
     }
 
     function updateEmailUi() {
       const email = username.value.trim().toLowerCase();
       emailChip.textContent = email ? `User: ${email}` : "User: Not set";
+    }
+
+    function setMode(mode) {
+      currentMode = mode === "setup" ? "setup" : "verify";
+
+      const isSetup = currentMode === "setup";
+      modeChip.textContent = isSetup ? "Mode: Setup" : "Mode: Verify";
+      setupSection.classList.toggle("hidden", !isSetup);
+
+      if (isSetup) {
+        heroTitle.textContent = "Complete your two-factor setup to finish login.";
+        heroSub.textContent = "Your account was identified, but 2FA setup is incomplete. Generate your secret, add it to your authenticator app, then confirm with your first code.";
+        brandModeText.textContent = "Two-Factor Setup";
+        headTitle.textContent = "Complete two-factor setup";
+        headSub.textContent = "Add your account to an authenticator app, then enter the first generated code to finish setup and complete login.";
+        helperText.textContent = "After setup succeeds, login will finish automatically.";
+        btnText.textContent = "Complete setup and continue";
+        codeLabel.textContent = "First authenticator code";
+        methodTitle.textContent = "Setup mode";
+        setupText.textContent = "This account must complete 2FA enrollment before login can finish.";
+      } else {
+        heroTitle.textContent = "Finish your login with a verification code.";
+        heroSub.textContent = "Enter the 2FA code from your authenticator app or from your email, depending on how your account security is configured.";
+        brandModeText.textContent = "Two-Factor Verification";
+        headTitle.textContent = "Enter your security code";
+        headSub.textContent = "Verify your identity to complete login. This page supports both authenticator app codes and email OTP codes.";
+        helperText.textContent = "After successful verification, you will be redirected automatically.";
+        btnText.textContent = "Verify and continue";
+        codeLabel.textContent = "Verification code";
+        methodTitle.textContent = "Current login method";
+      }
+
+      updateMethodUi(detectedMethod || "unknown");
+    }
+
+    function buildQrUrl(otpauthUrl) {
+      if (!otpauthUrl) return "";
+      return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(otpauthUrl)}`;
+    }
+
+    function renderSetupArtifacts() {
+      if (currentSecret) {
+        secretSection.classList.remove("hidden");
+        secretValue.textContent = currentSecret;
+      } else {
+        secretSection.classList.add("hidden");
+        secretValue.textContent = "";
+      }
+
+      const qrUrl = buildQrUrl(currentOtpAuthUrl);
+      if (qrUrl) {
+        qrSection.classList.remove("hidden");
+        qrImage.src = qrUrl;
+      } else {
+        qrSection.classList.add("hidden");
+        qrImage.removeAttribute("src");
+      }
+    }
+
+    function getPendingEmail() {
+      return username.value.trim().toLowerCase();
+    }
+
+    function getPendingMethod() {
+      return detectedMethod || String(qs().get("method") || "").trim().toLowerCase() || String(localStorage.getItem("pending2faMethod") || "").trim().toLowerCase() || "";
     }
 
     function loadInitialState() {
@@ -767,6 +918,11 @@
       const lastUser = String(localStorage.getItem("lastUser") || "").trim().toLowerCase();
       const pendingEmail = String(localStorage.getItem("magicEmail") || "").trim().toLowerCase();
       const lastMfaMethod = String(localStorage.getItem("pending2faMethod") || "").trim().toLowerCase();
+      const modeFromQuery = String(qs().get("mode") || "").trim().toLowerCase();
+      const incompleteFlag = String(qs().get("incomplete") || "").trim().toLowerCase();
+
+      currentExchange = String(qs().get("exchange") || "").trim();
+      currentToken = String(qs().get("token") || "").trim();
 
       if (backendFromQuery === "primary" || backendFromQuery === "legacy") {
         preferredBackend = backendFromQuery;
@@ -777,7 +933,185 @@
       username.value = emailFromQuery || pendingEmail || lastUser || "";
       updateEmailUi();
       updateBackendUi(getForcedBackend());
-      updateMethodUi(methodFromQuery || lastMfaMethod || "unknown");
+      updateMethodUi(methodFromQuery || lastMfaMethod || "totp");
+
+      if (modeFromQuery === "setup" || incompleteFlag === "1" || localStorage.getItem("pending2faSetup") === "1") {
+        setMode("setup");
+      } else {
+        setMode("verify");
+      }
+    }
+
+    async function generateSetupSecret() {
+      showError("");
+      const user = getPendingEmail();
+
+      if (!user) {
+        showError("Enter your email first.");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const issuer = "Rattle Link";
+        const res = await apiHybrid(
+          "/security/2fa/setup",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({
+              method: "totp",
+              issuer,
+              label: user,
+              username: user,
+              email: user
+            })
+          },
+          getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
+        );
+
+        const data = res.data || {};
+
+        if (!res.ok) {
+          showError(data.message || data.error || "Could not generate 2FA setup secret.");
+          setLoading(false);
+          return;
+        }
+
+        preferredBackend = res.backend || getForcedBackend() || "primary";
+        localStorage.setItem("authBackend", preferredBackend);
+        localStorage.setItem("sessionBackend", preferredBackend);
+        updateBackendUi(preferredBackend);
+
+        currentSecret = String(data.secret || "").trim();
+        currentOtpAuthUrl = String(data.otpauthUrl || data.otpAuthUrl || "").trim();
+        detectedMethod = "totp";
+        localStorage.setItem("pending2faMethod", "totp");
+
+        renderSetupArtifacts();
+        updateMethodUi("totp");
+        showError(`2FA setup secret generated on ${backendLabel(preferredBackend)}.`, "success");
+      } catch (error) {
+        console.error("SETUP SECRET ERROR:", error);
+        showError("Could not generate setup secret.");
+      }
+
+      setLoading(false);
+    }
+
+    async function completeSetupAndLogin() {
+      showError("");
+      const user = getPendingEmail();
+      const enteredCode = code.value.trim();
+
+      if (!user) {
+        showError("Enter your email.");
+        return;
+      }
+
+      if (!currentSecret) {
+        showError("Generate your setup secret first.");
+        return;
+      }
+
+      if (!enteredCode || enteredCode.length < 6) {
+        showError("Enter the first authenticator code.");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const enableRes = await apiHybrid(
+          "/security/2fa/enable",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({
+              method: "totp",
+              code: enteredCode,
+              username: user,
+              email: user
+            })
+          },
+          getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
+        );
+
+        const enableData = enableRes.data || {};
+
+        if (!enableRes.ok) {
+          showError(enableData.message || enableData.error || "Could not complete 2FA setup.");
+          setLoading(false);
+          return;
+        }
+
+        preferredBackend = enableRes.backend || getForcedBackend() || "primary";
+        localStorage.setItem("authBackend", preferredBackend);
+        localStorage.setItem("sessionBackend", preferredBackend);
+        localStorage.setItem("pending2faMethod", "totp");
+        updateBackendUi(preferredBackend);
+
+        showError(`2FA setup completed on ${backendLabel(preferredBackend)}. Finishing login...`, "success");
+
+        let loginPayload = null;
+        if (currentExchange) {
+          loginPayload = { exchange: currentExchange };
+        } else if (currentToken) {
+          loginPayload = { token: currentToken };
+        }
+
+        if (!loginPayload) {
+          localStorage.removeItem("pending2faSetup");
+          setTimeout(() => {
+            window.location.href = "index.html?email=" + encodeURIComponent(user) + "&backend=" + encodeURIComponent(preferredBackend);
+          }, 700);
+          setLoading(false);
+          return;
+        }
+
+        const loginRes = await apiHybrid(
+          "/magic-login",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify(loginPayload)
+          },
+          preferredBackend === "legacy" ? "legacyOnly" : "primaryOnly"
+        );
+
+        const loginData = loginRes.data || {};
+
+        if (!loginRes.ok || !loginData.token) {
+          showError(loginData.message || loginData.error || "2FA setup finished, but final login failed.");
+          setLoading(false);
+          return;
+        }
+
+        saveSession(
+          loginData.token,
+          loginData.role || "user",
+          loginData.username || user,
+          loginRes.backend || preferredBackend
+        );
+
+        localStorage.removeItem("pending2faMethod");
+        localStorage.removeItem("pending2faSetup");
+        localStorage.removeItem("magicRequestId");
+        localStorage.removeItem("magicExpiresAt");
+        localStorage.removeItem("magicBackend");
+
+        showError(`2FA setup complete via ${backendLabel(loginRes.backend || preferredBackend)}. Redirecting...`, "success");
+
+        setTimeout(() => {
+          window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
+        }, 700);
+      } catch (error) {
+        console.error("2FA SETUP COMPLETE ERROR:", error);
+        showError("Setup completion failed.");
+      }
+
+      setLoading(false);
     }
 
     async function verifyTwoFactor() {
@@ -807,7 +1141,7 @@
           {
             method: "POST",
             headers: buildHeaders(),
-            body: JSON.stringify({ username: user, code: enteredCode })
+            body: JSON.stringify({ username: user, email: user, code: enteredCode })
           },
           verifyBehavior
         );
@@ -869,6 +1203,7 @@
         );
 
         localStorage.removeItem("pending2faMethod");
+        localStorage.removeItem("pending2faSetup");
         localStorage.removeItem("magicRequestId");
         localStorage.removeItem("magicExpiresAt");
         localStorage.removeItem("magicBackend");
@@ -886,11 +1221,19 @@
       setLoading(false);
     }
 
+    async function submitCurrentMode() {
+      if (currentMode === "setup") {
+        await completeSetupAndLogin();
+        return;
+      }
+      await verifyTwoFactor();
+    }
+
     function goBackToLogin() {
       const params = new URLSearchParams();
       const email = username.value.trim().toLowerCase();
       const backend = getForcedBackend();
-      const method = detectedMethod || localStorage.getItem("pending2faMethod") || "";
+      const method = getPendingMethod();
 
       if (email) params.set("email", email);
       if (backend) params.set("backend", backend);
@@ -902,15 +1245,16 @@
     username.addEventListener("input", updateEmailUi);
 
     username.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") verifyTwoFactor();
+      if (e.key === "Enter") submitCurrentMode();
     });
 
     code.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") verifyTwoFactor();
+      if (e.key === "Enter") submitCurrentMode();
     });
 
     loadTheme();
     loadInitialState();
+    renderSetupArtifacts();
   </script>
 </body>
 </html>
