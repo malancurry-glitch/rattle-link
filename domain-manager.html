@@ -515,7 +515,8 @@
   <div class="toast" id="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const DOMAINS_API_BASE = "/domains";
     let domainsStore = [];
     let activeDnsProvider = "cloudflare";
 
@@ -549,6 +550,11 @@
         return false;
       }
       return true;
+    }
+
+    function buildDomainPath(path) {
+      const cleanPath = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      return `${DOMAINS_API_BASE}${cleanPath}`;
     }
 
     function normalizeDomain(value) {
@@ -621,7 +627,7 @@
           headers["Content-Type"] = "application/json";
         }
 
-        const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, {
+        const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + buildDomainPath(path), {
           ...options,
           headers
         });
@@ -826,7 +832,7 @@
     }
 
     async function loadDnsInstructionsForDomain(domain) {
-      const res = await safeFetch(`/domains/dns-instructions?domain=${encodeURIComponent(domain)}`, { method: "GET" });
+      const res = await safeFetch(`/dns-instructions?domain=${encodeURIComponent(domain)}`, { method: "GET" });
       if (!res.ok) return null;
       return res.data || null;
     }
@@ -841,7 +847,7 @@
     }
 
     async function loadDomains(showToastMessage = false) {
-      const res = await safeFetch("/domains/me", { method: "GET" });
+      const res = await safeFetch("/me", { method: "GET" });
 
       if (!res.ok) {
         domainsStore = [];
@@ -877,7 +883,7 @@
       if (!isValidDomain(domain)) return setResult("Enter a valid domain", true);
 
       setBusy(addDomainBtn, true, "Adding...");
-      const res = await safeFetch("/domains/add", {
+      const res = await safeFetch("/add", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
@@ -893,18 +899,7 @@
       const connectValue = res.data?.instructions?.step2?.cloudflare?.value || res.data?.dns?.connect?.value || "-";
 
       setResult(
-`Domain added successfully.
-
-TXT Host:
-${txtName}
-
-TXT Value:
-${txtValue}
-
-Connect Value:
-${connectValue}
-
-Now create the DNS records, wait for propagation, then click Verify.`, false);
+`Domain added successfully.\n\nTXT Host:\n${txtName}\n\nTXT Value:\n${txtValue}\n\nConnect Value:\n${connectValue}\n\nNow create the DNS records, wait for propagation, then click Verify.`, false);
 
       domainInput.value = "";
       await loadDomains(false);
@@ -913,13 +908,13 @@ Now create the DNS records, wait for propagation, then click Verify.`, false);
     async function refreshDomain(domain) {
       if (!domain) return;
 
-      let res = await safeFetch("/domains/refresh", {
+      let res = await safeFetch("/refresh", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
 
       if (!res.ok) {
-        res = await safeFetch("/domains/verify", {
+        res = await safeFetch("/verify", {
           method: "POST",
           body: JSON.stringify({ domain, refreshOnly: true })
         });
@@ -936,7 +931,7 @@ Now create the DNS records, wait for propagation, then click Verify.`, false);
 
     async function verifyDomain(domain) {
       if (!domain) return;
-      const res = await safeFetch("/domains/verify", {
+      const res = await safeFetch("/verify", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
@@ -952,7 +947,7 @@ Now create the DNS records, wait for propagation, then click Verify.`, false);
 
     async function setPrimaryDomain(domain) {
       if (!domain) return;
-      const res = await safeFetch("/domains/set-primary", {
+      const res = await safeFetch("/set-primary", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
@@ -970,7 +965,7 @@ Now create the DNS records, wait for propagation, then click Verify.`, false);
       if (!domain) return;
       if (!confirm(`Remove domain ${domain}?`)) return;
 
-      const res = await safeFetch("/domains/remove", {
+      const res = await safeFetch("/remove", {
         method: "POST",
         body: JSON.stringify({ domain })
       });
