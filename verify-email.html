@@ -364,7 +364,7 @@
           <div id="backendBadge" class="backend-badge hidden"></div>
         </div>
         <p class="panel-copy">
-          Opened from your email? Keep this page open. If a valid token exists in the URL, verification runs automatically.
+          Opened from your email? Keep this page open. If a valid token or exchange exists in the URL, verification runs automatically.
         </p>
       </div>
 
@@ -392,7 +392,7 @@
       <div class="help-grid">
         <div class="help-box">
           <b>Auto verify</b>
-          <span>If token is present in the URL, verification starts by itself.</span>
+          <span>If token or exchange is present in the URL, verification starts by itself.</span>
         </div>
         <div class="help-box">
           <b>No token?</b>
@@ -417,8 +417,10 @@
   </div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
 
     const tokenInput = document.getElementById("tokenInput");
     const emailInput = document.getElementById("emailInput");
@@ -444,6 +446,15 @@
     function isUsableApiUrl(url) {
       const clean = normalizeApiUrl(url);
       return !!clean && /^https?:\/\//i.test(clean);
+    }
+
+    function authPrefix(backend) {
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
+
+    function buildPath(rawPath, backend) {
+      const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
+      return `${authPrefix(backend)}${clean}`;
     }
 
     function backendLabel(name) {
@@ -573,24 +584,31 @@
       return false;
     }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-      const primary = normalizeApiUrl(PRIMARY_API);
-      const legacy = normalizeApiUrl(LEGACY_API);
+    async function callBackend(backend, rawPath, options = {}) {
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const path = buildPath(rawPath, backend);
+      const finalOptions = { ...options };
+      if (backend === "legacy") {
+        finalOptions.headers = { ...(options.headers || {}), "x-rattle-fallback": "legacy" };
+      }
+      return callApi(baseUrl, path, finalOptions);
+    }
 
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
       if (behavior === "primaryOnly") {
-        const result = await callApi(primary, path, options);
+        const result = await callBackend("primary", path, options);
         return { ...result, backend: "primary" };
       }
 
       if (behavior === "legacyOnly") {
-        const result = await callApi(legacy, path, options);
+        const result = await callBackend("legacy", path, options);
         return { ...result, backend: "legacy" };
       }
 
-      const first = await callApi(primary, path, options);
+      const first = await callBackend("primary", path, options);
       if (first.ok) return { ...first, backend: "primary" };
       if (!shouldFallback(path, first)) return { ...first, backend: "primary" };
-      const second = await callApi(legacy, path, options);
+      const second = await callBackend("legacy", path, options);
       return { ...second, backend: "legacy", firstAttempt: first };
     }
 
