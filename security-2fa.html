@@ -623,6 +623,37 @@
       </div>
     </div>
 
+    <div class="card section-card" style="margin-bottom:20px;">
+      <div class="section-head" style="margin-bottom:12px;">
+        <div>
+          <h3>Account identification</h3>
+          <p>Use your signed-in session automatically, or enter the email for the account you want to finish 2FA setup for.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Account email</label>
+          <input id="accountEmail" type="email" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label>Backend</label>
+          <select id="backendSelect">
+            <option value="primary">Backend2</option>
+            <option value="legacy">Legacy AWS</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:14px;">
+        <button class="btn-primary" type="button" onclick="identifyAccount()">Identify Account</button>
+        <button class="btn-secondary" type="button" onclick="useRememberedAccount()">Use Remembered Account</button>
+        <button class="btn-secondary" type="button" onclick="clearIdentifiedAccount()">Clear Account</button>
+      </div>
+
+      <div id="identifyResult" class="result"></div>
+    </div>
+
     <div class="hero">
       <div class="card hero-left">
         <div class="eyebrow">🔐 Account security</div>
@@ -685,6 +716,7 @@
             </div>
             <div class="badge-row">
               <span id="backendBadge" class="status-pill">Backend: Checking...</span>
+              <span id="accountBadge" class="status-pill">Account: Unknown</span>
             </div>
           </div>
 
@@ -739,7 +771,7 @@
                 </div>
 
                 <div class="field">
-                  <label>Account label</label>
+                  <label>Issuer label</label>
                   <input id="issuerLabel" value="Rattle Link" />
                 </div>
               </div>
@@ -824,10 +856,6 @@
               <div class="actions">
                 <button id="verifyLoginBtn" class="btn-primary" type="button" onclick="verify2FALogin()">Verify Login</button>
                 <button class="btn-secondary" type="button" onclick="clearVerifyInputs()">Clear Code</button>
-              </div>
-
-              <div class="notice" style="margin-top:14px;">
-                This page expects a backend challenge endpoint if you want full login-step verification.
               </div>
 
               <div id="verifyResult" class="result"></div>
@@ -931,18 +959,19 @@
           <div class="section-head" style="margin-bottom:12px;">
             <div>
               <h3>Connected routes</h3>
-              <p>These are aligned to the auth style from your other pages.</p>
+              <p>This page auto-tests route variants to avoid route-not-found errors.</p>
             </div>
           </div>
           <div class="info-box">
-            <b>Primary routes used</b><br>
-            <code>POST /auth/security/2fa/setup</code><br>
-            <code>POST /auth/security/2fa/enable</code><br>
-            <code>POST /auth/security/2fa/disable</code><br>
-            <code>GET /auth/me</code>
+            <b>Auto-detected route families</b><br>
+            <code>/auth/security/2fa/setup</code><br>
+            <code>/security/2fa/setup</code><br>
+            <code>/auth/2fa/setup</code><br>
+            <code>/2fa/setup</code><br>
+            <code>/auth/me</code> / <code>/me</code>
           </div>
           <div class="warn-box" style="margin-top:12px;">
-            Full login-challenge verification and preference persistence need matching backend routes if you want those sections fully enforced.
+            If your backend does not support a route, this page will try alternative route shapes before failing.
           </div>
         </div>
 
@@ -967,12 +996,15 @@
   <script>
     const PRIMARY_API = "https://api.rattleshortapi.it.com";
     const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const PRIMARY_AUTH_BASE = "/auth";
-    const LEGACY_AUTH_BASE = "";
 
     const AUTH_STORAGE_KEY = "rattle_token";
     const ROLE_STORAGE_KEY = "rattle_role";
     const USER_STORAGE_KEY = "rattle_user";
+
+    const ROUTE_CACHE = {
+      primary: {},
+      legacy: {}
+    };
 
     let pageMode = "setup";
     let activeBackend = "primary";
@@ -983,6 +1015,8 @@
     let recoveryCodes = [];
     let trustedDevicesCount = 0;
     let lastVerifiedAt = null;
+    let identifiedEmail = "";
+    let resolvedMeData = null;
 
     const $ = id => document.getElementById(id);
     const statusPill = $("statusPill");
@@ -990,6 +1024,7 @@
     const recoveryCount = $("recoveryCount");
     const trustedDevicesCountEl = $("trustedDevicesCount");
     const backendBadge = $("backendBadge");
+    const accountBadge = $("accountBadge");
     const secretKeyBox = $("secretKeyBox");
     const otpauthBox = $("otpauthBox");
     const setupResult = $("setupResult");
@@ -997,12 +1032,15 @@
     const recoveryResult = $("recoveryResult");
     const prefsResult = $("prefsResult");
     const statusResult = $("statusResult");
+    const identifyResult = $("identifyResult");
     const recoveryCodesWrap = $("recoveryCodesWrap");
     const enabledStateText = $("enabledStateText");
     const enabledStateSub = $("enabledStateSub");
     const lastVerifiedText = $("lastVerifiedText");
     const trustedDevicesText = $("trustedDevicesText");
     const qrHolder = $("qrHolder");
+    const accountEmail = $("accountEmail");
+    const backendSelect = $("backendSelect");
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
@@ -1027,30 +1065,26 @@
       return String(url || "").replace(/\/+$/, "");
     }
 
-    function authPrefix(backend) {
-      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
-    }
-
-    function buildAuthPath(backend, path) {
-      const clean = String(path || "").startsWith("/") ? path : `/${path}`;
-      return `${authPrefix(backend)}${clean}`;
-    }
-
     function getToken() {
+      return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
+    }
+
+    function getStoredEmail() {
       return (
-        localStorage.getItem(AUTH_STORAGE_KEY) ||
-        localStorage.getItem("token") ||
+        localStorage.getItem("twofa_identified_email") ||
+        localStorage.getItem(USER_STORAGE_KEY) ||
+        localStorage.getItem("lastUser") ||
+        localStorage.getItem("rememberUser") ||
         ""
       );
     }
 
-    function getUserEmail() {
-      return (
-        localStorage.getItem(USER_STORAGE_KEY) ||
-        localStorage.getItem("lastUser") ||
-        localStorage.getItem("rememberUser") ||
-        "user@rattlelink.local"
-      );
+    function setStoredEmail(email) {
+      if (email) localStorage.setItem("twofa_identified_email", email);
+    }
+
+    function clearStoredEmail() {
+      localStorage.removeItem("twofa_identified_email");
     }
 
     function authHeaders() {
@@ -1068,6 +1102,103 @@
       el.className = "result" + (type ? ` ${type}` : "");
     }
 
+    function safeParseJson(raw) {
+      try {
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return { message: raw };
+      }
+    }
+
+    function isRouteNotFoundResponse(status, data) {
+      const msg = String(data?.message || data?.error || data?.detail || "").toLowerCase();
+      return status === 404 || msg.includes("route not found") || msg.includes("cannot get") || msg.includes("not found");
+    }
+
+    function buildRouteCandidates(path) {
+      const clean = String(path || "").startsWith("/") ? path : `/${path}`;
+      const routeMap = {
+        "/me": ["/auth/me", "/me", "/profile", "/auth/profile", "/app/me"],
+        "/security/2fa/setup": ["/auth/security/2fa/setup", "/security/2fa/setup", "/auth/2fa/setup", "/2fa/setup"],
+        "/security/2fa/enable": ["/auth/security/2fa/enable", "/security/2fa/enable", "/auth/2fa/enable", "/2fa/enable"],
+        "/security/2fa/disable": ["/auth/security/2fa/disable", "/security/2fa/disable", "/auth/2fa/disable", "/2fa/disable"],
+        "/2fa/verify-login": ["/auth/2fa/verify-login", "/2fa/verify-login", "/security/2fa/verify-login", "/auth/security/2fa/verify-login"],
+        "/security/2fa/recovery": ["/auth/security/2fa/recovery", "/security/2fa/recovery", "/auth/2fa/recovery", "/2fa/recovery"],
+        "/security/2fa/preferences": ["/auth/security/2fa/preferences", "/security/2fa/preferences", "/auth/2fa/preferences", "/2fa/preferences"],
+        "/security/2fa/clear-trusted": ["/auth/security/2fa/clear-trusted", "/security/2fa/clear-trusted", "/auth/2fa/clear-trusted", "/2fa/clear-trusted"]
+      };
+
+      if (routeMap[clean]) return routeMap[clean];
+
+      return [...new Set([
+        clean,
+        `/auth${clean}`,
+        `/app${clean}`,
+        clean.replace(/^\/auth/, ""),
+        clean.replace(/^\/app/, "")
+      ])];
+    }
+
+    async function safeFetchRaw(base, path, options = {}) {
+      try {
+        const res = await fetch(normalizeApiUrl(base) + path, options);
+        const raw = await res.text();
+        const data = safeParseJson(raw);
+        return { ok: res.ok, status: res.status, data, raw, path };
+      } catch (e) {
+        return { ok: false, status: 0, data: { message: e?.message || "Request failed" }, raw: "", path };
+      }
+    }
+
+    async function resolveRoute(backend, canonicalPath, options = {}) {
+      const cacheKey = canonicalPath;
+      const cached = ROUTE_CACHE[backend]?.[cacheKey];
+      const base = apiBaseForBackend(backend);
+
+      if (cached) {
+        const quick = await safeFetchRaw(base, cached, options);
+        if (quick.ok || !isRouteNotFoundResponse(quick.status, quick.data)) {
+          return { ...quick, backend, resolvedPath: cached };
+        }
+      }
+
+      const candidates = buildRouteCandidates(canonicalPath);
+      let firstUsefulFailure = null;
+
+      for (const candidate of candidates) {
+        const res = await safeFetchRaw(base, candidate, options);
+
+        if (res.ok) {
+          ROUTE_CACHE[backend][cacheKey] = candidate;
+          return { ...res, backend, resolvedPath: candidate };
+        }
+
+        if (!firstUsefulFailure) {
+          firstUsefulFailure = { ...res, backend, resolvedPath: candidate };
+        }
+
+        if (!isRouteNotFoundResponse(res.status, res.data) && res.status !== 405) {
+          return { ...res, backend, resolvedPath: candidate };
+        }
+      }
+
+      return firstUsefulFailure || { ok: false, status: 0, data: { message: "No matching route found" }, backend, resolvedPath: "" };
+    }
+
+    async function apiCall(path, options = {}, backend = activeBackend) {
+      const method = String(options.method || "GET").toUpperCase();
+      const headers = { ...authHeaders(), ...(options.headers || {}) };
+
+      if (method !== "GET" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+      if (backend === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
+      return resolveRoute(backend, path, { ...options, method, headers });
+    }
+
     function generateRandomBase32(length = 32) {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
       let out = "";
@@ -1079,9 +1210,13 @@
       return ts ? new Date(ts).toLocaleString() : "Never";
     }
 
-    function updateStatusUI() {
+    function updateBadges() {
       backendBadge.textContent = `Backend: ${backendLabel(activeBackend)}`;
-      backendBadge.className = "status-pill";
+      accountBadge.textContent = `Account: ${identifiedEmail || "Unknown"}`;
+    }
+
+    function updateStatusUI() {
+      updateBadges();
 
       const baseScore = 72;
       const score = twoFAEnabled ? 96 : baseScore;
@@ -1148,29 +1283,6 @@
       });
     }
 
-    async function safeFetch(path, options = {}, backend = activeBackend) {
-      const headers = { ...authHeaders(), ...(options.headers || {}) };
-      const method = String(options.method || "GET").toUpperCase();
-      if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-      if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
-
-      const finalPath = buildAuthPath(backend, path);
-
-      try {
-        const res = await fetch(normalizeApiUrl(apiBaseForBackend(backend)) + finalPath, {
-          ...options,
-          method,
-          headers
-        });
-        const raw = await res.text();
-        let data = {};
-        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
-        return { ok: res.ok, status: res.status, data, backend };
-      } catch (e) {
-        return { ok: false, status: 0, data: { message: e?.message || "Request failed" }, backend };
-      }
-    }
-
     function buildFallbackOtpAuth(secret, issuer, email) {
       return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${encodeURIComponent(secret)}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
     }
@@ -1190,24 +1302,99 @@
       qrHolder.innerHTML = `<div class="qr-center">2FA</div>`;
     }
 
-    async function refresh2FAStatus(showFeedback = false) {
-      activeBackend = (localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+    function getIdentifiedEmail() {
+      const inputEmail = String(accountEmail.value || "").trim().toLowerCase();
+      if (inputEmail) return inputEmail;
+      if (identifiedEmail) return identifiedEmail;
+      return getStoredEmail().toLowerCase();
+    }
 
-      const res = await safeFetch("/me", { method: "GET" }, activeBackend);
+    function isEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
 
-      if (res.ok) {
-        const data = res.data || {};
-        twoFAEnabled = !!data.twoFactorEnabled;
-        trustedDevicesCount = Number(data.trustedDevicesCount || 0);
-        lastVerifiedAt = data.twoFactorEnabledAt || data.lastVerifiedAt || lastVerifiedAt;
-        updateStatusUI();
-        if (showFeedback) setResult(statusResult, `2FA status refreshed from ${backendLabel(res.backend)}.`);
+    async function identifyAccount() {
+      const email = String(accountEmail.value || "").trim().toLowerCase();
+      const backend = backendSelect.value === "legacy" ? "legacy" : "primary";
+
+      if (!email) {
+        setResult(identifyResult, "Enter an email first.");
+        return;
+      }
+      if (!isEmail(email)) {
+        setResult(identifyResult, "Enter a valid email address.");
         return;
       }
 
+      identifiedEmail = email;
+      activeBackend = backend;
+      setStoredEmail(email);
+      localStorage.setItem("twofa_backend", backend);
+
+      await refresh2FAStatus(false);
+      setResult(identifyResult, `Account identified: ${email} on ${backendLabel(backend)}.`);
+    }
+
+    function useRememberedAccount() {
+      const savedEmail = getStoredEmail();
+      const savedBackend = localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary";
+
+      if (savedEmail) {
+        accountEmail.value = savedEmail;
+        identifiedEmail = savedEmail;
+      }
+      activeBackend = savedBackend === "legacy" ? "legacy" : "primary";
+      backendSelect.value = activeBackend;
+      refresh2FAStatus(true);
+    }
+
+    function clearIdentifiedAccount() {
+      identifiedEmail = "";
+      accountEmail.value = "";
+      clearStoredEmail();
+      resolvedMeData = null;
       updateStatusUI();
+      setResult(identifyResult, "Cleared identified account.");
+    }
+
+    async function refresh2FAStatus(showFeedback = false) {
+      activeBackend = backendSelect.value === "legacy"
+        ? "legacy"
+        : ((localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary") === "legacy" ? "legacy" : "primary");
+
+      const res = await apiCall("/me", { method: "GET" }, activeBackend);
+      const email = getIdentifiedEmail();
+
+      if (res.ok) {
+        const data = res.data || {};
+        resolvedMeData = data;
+
+        if (!identifiedEmail) {
+          identifiedEmail = (data.username || data.email || email || "").toLowerCase();
+          if (identifiedEmail) {
+            accountEmail.value = identifiedEmail;
+            setStoredEmail(identifiedEmail);
+          }
+        }
+
+        twoFAEnabled = !!(data.twoFactorEnabled || data.two_factor_enabled);
+        trustedDevicesCount = Number(data.trustedDevicesCount || data.trusted_devices_count || 0);
+        lastVerifiedAt = data.twoFactorEnabledAt || data.lastVerifiedAt || data.last_verified_at || lastVerifiedAt;
+        updateStatusUI();
+
+        if (showFeedback) {
+          setResult(statusResult, `2FA status refreshed from ${backendLabel(res.backend)} using ${res.resolvedPath}.`);
+        }
+        return;
+      }
+
+      if (email) {
+        identifiedEmail = email;
+      }
+      updateStatusUI();
+
       if (showFeedback) {
-        setResult(statusResult, `Could not load 2FA status. ${res.data?.message || ""}`.trim());
+        setResult(statusResult, `Could not load 2FA status. ${res.data?.message || "No matching route responded."}`);
       }
     }
 
@@ -1215,23 +1402,34 @@
       setResult(setupResult, "Generating 2FA secret...");
 
       const issuer = $("issuerLabel").value.trim() || "Rattle Link";
-      const email = getUserEmail();
+      const email = getIdentifiedEmail();
+      if (!email) {
+        setResult(setupResult, "Identify account email first.");
+        return;
+      }
+
       const fallbackSecret = generateRandomBase32(32);
       const fallbackOtp = buildFallbackOtpAuth(fallbackSecret, issuer, email);
 
-      const res = await safeFetch("/security/2fa/setup", {
+      const res = await apiCall("/security/2fa/setup", {
         method: "POST",
-        body: JSON.stringify({ method: "totp", issuer, label: email })
+        body: JSON.stringify({
+          method: "totp",
+          issuer,
+          label: email,
+          email,
+          username: email
+        })
       }, activeBackend);
 
       if (res.ok) {
         currentSecret = String(res.data?.secret || fallbackSecret);
-        currentOtpAuth = String(res.data?.otpauthUrl || res.data?.otpAuthUrl || fallbackOtp);
-        currentQrUrl = String(res.data?.qrImageUrl || buildQrUrl(currentOtpAuth));
+        currentOtpAuth = String(res.data?.otpauthUrl || res.data?.otpAuthUrl || res.data?.otpauth || fallbackOtp);
+        currentQrUrl = String(res.data?.qrImageUrl || res.data?.qr || buildQrUrl(currentOtpAuth));
         secretKeyBox.textContent = currentSecret;
         otpauthBox.textContent = currentOtpAuth;
         renderQr();
-        setResult(setupResult, `Secret generated from ${backendLabel(res.backend)}.`);
+        setResult(setupResult, `Secret generated from ${backendLabel(res.backend)} via ${res.resolvedPath}.`);
         return;
       }
 
@@ -1241,11 +1439,17 @@
       secretKeyBox.textContent = currentSecret;
       otpauthBox.textContent = currentOtpAuth;
       renderQr();
-      setResult(setupResult, "Using preview secret because the live setup endpoint did not return data.");
+      setResult(setupResult, `Live setup route unavailable, so a local preview secret was generated. ${res.data?.message || ""}`.trim());
     }
 
     async function enable2FA() {
       const code = getOtpFromInputs(".otp-digit");
+      const email = getIdentifiedEmail();
+
+      if (!email) {
+        setResult(setupResult, "Identify account email first.");
+        return;
+      }
       if (!currentSecret) {
         setResult(setupResult, "Generate a secret first.");
         return;
@@ -1255,9 +1459,15 @@
         return;
       }
 
-      const res = await safeFetch("/security/2fa/enable", {
+      const res = await apiCall("/security/2fa/enable", {
         method: "POST",
-        body: JSON.stringify({ method: "totp", code })
+        body: JSON.stringify({
+          method: "totp",
+          code,
+          email,
+          username: email,
+          secret: currentSecret
+        })
       }, activeBackend);
 
       if (res.ok) {
@@ -1272,7 +1482,7 @@
         updateRecoveryGrid();
         updateStatusUI();
         switchMode("recovery");
-        setResult(setupResult, `2FA enabled successfully on ${backendLabel(res.backend)}.`);
+        setResult(setupResult, `2FA enabled successfully on ${backendLabel(res.backend)} via ${res.resolvedPath}.`);
         setResult(recoveryResult, "Save your recovery codes now. Each code should work once.");
         return;
       }
@@ -1284,7 +1494,12 @@
       const code = getOtpFromInputs(".verify-digit");
       const challengeToken = $("challengeToken").value.trim();
       const rememberDevice = $("rememberDeviceSelect").value === "1";
+      const email = getIdentifiedEmail();
 
+      if (!email) {
+        setResult(verifyResult, "Identify account email first.");
+        return;
+      }
       if (!challengeToken) {
         setResult(verifyResult, "Enter a pending challenge token.");
         return;
@@ -1294,16 +1509,22 @@
         return;
       }
 
-      const res = await safeFetch("/2fa/verify-login", {
+      const res = await apiCall("/2fa/verify-login", {
         method: "POST",
-        body: JSON.stringify({ challengeToken, code, rememberDevice })
+        body: JSON.stringify({
+          challengeToken,
+          code,
+          rememberDevice,
+          email,
+          username: email
+        })
       }, activeBackend);
 
       if (res.ok) {
         lastVerifiedAt = Date.now();
         if (rememberDevice) trustedDevicesCount = Math.max(1, trustedDevicesCount);
         updateStatusUI();
-        setResult(verifyResult, `2FA login verification succeeded on ${backendLabel(res.backend)}.`);
+        setResult(verifyResult, `2FA login verification succeeded on ${backendLabel(res.backend)} via ${res.resolvedPath}.`);
         return;
       }
 
@@ -1319,10 +1540,32 @@
     }
 
     async function generateRecoveryCodes() {
+      const email = getIdentifiedEmail();
+      if (!email) {
+        setResult(recoveryResult, "Identify account email first.");
+        return;
+      }
+
+      const res = await apiCall("/security/2fa/recovery", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          username: email
+        })
+      }, activeBackend);
+
+      if (res.ok && (Array.isArray(res.data?.recoveryCodes) || Array.isArray(res.data?.backupCodes))) {
+        recoveryCodes = Array.isArray(res.data?.recoveryCodes) ? res.data.recoveryCodes : res.data.backupCodes;
+        updateRecoveryGrid();
+        updateStatusUI();
+        setResult(recoveryResult, `Recovery codes generated from ${backendLabel(res.backend)}.`);
+        return;
+      }
+
       recoveryCodes = generateRecoverySet();
       updateRecoveryGrid();
       updateStatusUI();
-      setResult(recoveryResult, "Recovery codes generated locally for safe backup preview.");
+      setResult(recoveryResult, "Recovery endpoint missing, so local backup preview codes were generated.");
     }
 
     function updateRecoveryGrid() {
@@ -1418,19 +1661,48 @@
     }
 
     async function save2FAPreferences() {
+      const email = getIdentifiedEmail();
       const payload = {
         alwaysRequire2FA: $("alwaysRequireToggle").checked,
         allowTrustedDevices: $("trustedDevicesToggle").checked,
-        requireStepUpForSensitiveActions: $("stepUpToggle").checked
+        requireStepUpForSensitiveActions: $("stepUpToggle").checked,
+        email,
+        username: email
       };
 
       localStorage.setItem("twofa_preferences", JSON.stringify(payload));
+
+      const res = await apiCall("/security/2fa/preferences", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }, activeBackend);
+
+      if (res.ok) {
+        setResult(prefsResult, `2FA preferences saved on ${backendLabel(res.backend)}.`);
+        return;
+      }
+
       setResult(prefsResult, "2FA preferences saved locally.");
     }
 
     async function clearTrustedDevices() {
+      const email = getIdentifiedEmail();
+      const res = await apiCall("/security/2fa/clear-trusted", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          username: email
+        })
+      }, activeBackend);
+
       trustedDevicesCount = 0;
       updateStatusUI();
+
+      if (res.ok) {
+        setResult(statusResult, `Trusted devices cleared on ${backendLabel(res.backend)}.`);
+        return;
+      }
+
       setResult(statusResult, "Trusted devices cleared locally.");
     }
 
@@ -1438,7 +1710,19 @@
       const confirmed = confirm("Disable two-factor authentication for this account?");
       if (!confirmed) return;
 
-      const res = await safeFetch("/security/2fa/disable", { method: "POST" }, activeBackend);
+      const email = getIdentifiedEmail();
+      if (!email) {
+        setResult(statusResult, "Identify account email first.");
+        return;
+      }
+
+      const res = await apiCall("/security/2fa/disable", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          username: email
+        })
+      }, activeBackend);
 
       if (!res.ok) {
         setResult(statusResult, res.data?.message || "Could not disable 2FA.");
@@ -1458,7 +1742,20 @@
       clearOtpInputs();
       clearVerifyInputs();
 
-      setResult(statusResult, `2FA disabled on ${backendLabel(res.backend)}.`);
+      setResult(statusResult, `2FA disabled on ${backendLabel(res.backend)} via ${res.resolvedPath}.`);
+    }
+
+    function bootstrapAccount() {
+      const savedEmail = getStoredEmail();
+      const savedBackend = localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary";
+
+      if (savedEmail) {
+        identifiedEmail = savedEmail.toLowerCase();
+        accountEmail.value = identifiedEmail;
+      }
+      activeBackend = savedBackend === "legacy" ? "legacy" : "primary";
+      backendSelect.value = activeBackend;
+      updateStatusUI();
     }
 
     renderQr();
@@ -1466,7 +1763,7 @@
     wireOtpInputs(".otp-digit");
     wireOtpInputs(".verify-digit");
     updateRecoveryGrid();
-    updateStatusUI();
+    bootstrapAccount();
     refresh2FAStatus(false);
   </script>
 </body>
