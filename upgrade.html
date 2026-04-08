@@ -149,6 +149,7 @@
       background:var(--card-2);
       cursor:pointer;
       transition:.2s ease;
+      user-select:none;
     }
 
     .plan:hover,.crypto:hover{
@@ -278,7 +279,7 @@
       font-weight:600;
     }
 
-    .waiting-box,.confirm-box,.expired-box,.route-box{
+    .waiting-box,.confirm-box,.expired-box{
       margin-top:14px;
       padding:14px;
       border-radius:14px;
@@ -287,7 +288,6 @@
     .waiting-box{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35)}
     .confirm-box{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
     .expired-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
-    .route-box{background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.18)}
 
     .spinner{
       width:18px;
@@ -342,6 +342,8 @@
         <span id="routePlansBadge" class="pill">Plans route: -</span>
         <span id="routeMeBadge" class="pill">Profile route: -</span>
         <span id="routePaymentsBadge" class="pill">Payments route: -</span>
+        <span id="routeCreatePaymentBadge" class="pill">Create payment route: -</span>
+        <span id="routeTransferBadge" class="pill">Transfer route: -</span>
       </div>
     </div>
 
@@ -487,13 +489,22 @@
   <script>
     const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
-    const ROUTE_CACHE_KEY = "upgrade_route_cache_v1";
+    const ROUTE_CACHE_KEY = "upgrade_route_cache_v2";
     const WAITING_PAYMENT_KEY = "waitingPaymentId";
     const LAST_PAYMENT_KEY = "lastPaymentId";
     const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
     const LAST_BACKEND_KEY = "authBackend";
 
     const ROUTE_CACHE = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+
+    const FALLBACK_CRYPTO_OPTIONS = [
+      { code: "BTC", asset: "BTC", network: "Bitcoin", label: "Bitcoin" },
+      { code: "ETH", asset: "ETH", network: "Ethereum", label: "Ethereum" },
+      { code: "USDT_TRC20", asset: "USDT", network: "TRC20", label: "USDT (TRC20)" },
+      { code: "USDT_ERC20", asset: "USDT", network: "ERC20", label: "USDT (ERC20)" },
+      { code: "USDC_ERC20", asset: "USDC", network: "ERC20", label: "USDC (ERC20)" },
+      { code: "LTC", asset: "LTC", network: "Litecoin", label: "Litecoin" }
+    ];
 
     const meUser = document.getElementById("meUser");
     const meStatusWrap = document.getElementById("meStatusWrap");
@@ -542,6 +553,8 @@
     const routePlansBadge = document.getElementById("routePlansBadge");
     const routeMeBadge = document.getElementById("routeMeBadge");
     const routePaymentsBadge = document.getElementById("routePaymentsBadge");
+    const routeCreatePaymentBadge = document.getElementById("routeCreatePaymentBadge");
+    const routeTransferBadge = document.getElementById("routeTransferBadge");
 
     let plansData = [];
     let cryptoData = [];
@@ -594,7 +607,9 @@
           "/plans",
           "/billing/plans",
           "/auth/plans",
-          "/auth/billing/plans"
+          "/auth/billing/plans",
+          "/subscription/plans",
+          "/auth/subscription/plans"
         ],
         me: [
           "/me",
@@ -606,7 +621,9 @@
           "/payments/me",
           "/auth/payments/me",
           "/billing/payments/me",
-          "/auth/billing/payments/me"
+          "/auth/billing/payments/me",
+          "/payments",
+          "/auth/payments"
         ],
         createPayment: [
           "/payment-request",
@@ -614,7 +631,9 @@
           "/payments/request",
           "/auth/payments/request",
           "/billing/payment-request",
-          "/auth/billing/payment-request"
+          "/auth/billing/payment-request",
+          "/payments/create",
+          "/auth/payments/create"
         ],
         paymentIMade: [
           "/payment-i-made",
@@ -622,7 +641,9 @@
           "/payments/i-made",
           "/auth/payments/i-made",
           "/billing/payment-i-made",
-          "/auth/billing/payment-i-made"
+          "/auth/billing/payment-i-made",
+          "/payments/mark-sent",
+          "/auth/payments/mark-sent"
         ]
       };
       return map[kind] || [];
@@ -642,6 +663,10 @@
           data = text ? JSON.parse(text) : {};
         }catch{
           data = { message: text };
+        }
+
+        if(res.status === 401){
+          return { ok:false, status:401, data, path };
         }
 
         return { ok: res.ok, status: res.status, data, path };
@@ -734,15 +759,68 @@
 
     function getPlanLimits(data){
       return data.planLimits || data.limits || {
-        activeShortLinks: Number(data.trialLinksLimit || 0),
+        activeShortLinks: Number(data.trialLinksLimit || data.trial_links_limit || 0),
         activeLandingPages: 0
       };
     }
 
     function getUsage(data){
       return data.usage || {
-        activeShortLinks: Number(data.trialLinksUsed || 0),
+        activeShortLinks: Number(data.trialLinksUsed || data.trial_links_used || 0),
         activeLandingPages: 0
+      };
+    }
+
+    function normalizePlan(plan, index = 0){
+      const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
+      const amountUsd = Number(plan.amountUsd || plan.amount_usd || plan.price || 0);
+      return {
+        ...plan,
+        code,
+        label: plan.label || plan.name || code,
+        amountUsd,
+        unit: plan.unit || plan.interval || "",
+        durationDaysPerUnit: Number(plan.durationDaysPerUnit || plan.duration_days_per_unit || plan.durationDays || 30),
+        limits: plan.limits || {
+          activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
+          activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
+        }
+      };
+    }
+
+    function normalizeCrypto(item, index = 0){
+      const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || `CRYPTO_${index + 1}`;
+      const asset = item.asset || item.symbol || code;
+      const network = item.network || item.networkCode || item.network_code || "";
+      return {
+        ...item,
+        code,
+        asset,
+        network,
+        label: item.label || `${asset}${network ? ` (${network})` : ""}`
+      };
+    }
+
+    function extractPlansAndCrypto(data){
+      let plans = [];
+      let cryptos = [];
+
+      if(Array.isArray(data?.plans)) plans = data.plans;
+      else if(Array.isArray(data?.data?.plans)) plans = data.data.plans;
+      else if(Array.isArray(data?.subscriptions)) plans = data.subscriptions;
+      else if(Array.isArray(data)) plans = data;
+
+      if(Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
+      else if(Array.isArray(data?.crypto)) cryptos = data.crypto;
+      else if(Array.isArray(data?.cryptos)) cryptos = data.cryptos;
+      else if(Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
+      else if(Array.isArray(data?.coins)) cryptos = data.coins;
+      else if(Array.isArray(data?.assets)) cryptos = data.assets;
+      else if(Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
+
+      return {
+        plans: plans.map(normalizePlan),
+        cryptos: cryptos.map(normalizeCrypto)
       };
     }
 
@@ -774,43 +852,60 @@
     }
 
     function renderPlans(){
+      if(!plansData.length){
+        plansBox.innerHTML = `<div class="muted">No plans returned by backend.</div>`;
+        return;
+      }
+
       plansBox.innerHTML = plansData.map(plan => `
         <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
           <div class="muted">${plan.label || plan.code}</div>
-          <div class="price">$${Number(plan.amountUsd || plan.amount_usd || 0)}</div>
+          <div class="price">$${Number(plan.amountUsd || 0)}</div>
           <div class="muted">${plan.unit ? `Every ${plan.unit}` : (plan.code || "-")}</div>
           <ul>
             <li>${Number(plan.limits?.activeShortLinks || 0)} active short links</li>
             <li>${Number(plan.limits?.activeLandingPages || 0)} active landing pages</li>
-            <li>${Number(plan.durationDaysPerUnit || plan.duration_days_per_unit || 0)} day access window per payment unit</li>
+            <li>${Number(plan.durationDaysPerUnit || 0)} day access window per payment unit</li>
           </ul>
         </div>
       `).join("");
 
       plansBox.querySelectorAll(".plan").forEach(el => {
-        el.onclick = () => {
+        el.addEventListener("click", () => {
           selectedPlan = el.dataset.plan;
           renderPlans();
           updateSelection();
-        };
+        });
       });
     }
 
     function renderCrypto(){
+      if(!cryptoData.length){
+        cryptoBox.innerHTML = `<div class="muted">No crypto options returned by backend. Fallback options were also unavailable.</div>`;
+        return;
+      }
+
       cryptoBox.innerHTML = cryptoData.map(item => `
-        <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
+        <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}" tabindex="0" role="button" aria-label="Select ${item.label}">
           <div><b>${item.asset || item.code}</b></div>
-          <div class="muted">${item.network || item.networkCode || "-"}</div>
+          <div class="muted">${item.network || "-"}</div>
           <div style="margin-top:6px;">${item.label || item.code}</div>
         </div>
       `).join("");
 
       cryptoBox.querySelectorAll(".crypto").forEach(el => {
-        el.onclick = () => {
+        const selectCrypto = () => {
           selectedCrypto = el.dataset.code;
           renderCrypto();
           updateSelection();
         };
+        el.addEventListener("click", selectCrypto);
+        el.addEventListener("keydown", (e) => {
+          if(e.key === "Enter" || e.key === " "){
+            e.preventDefault();
+            selectCrypto();
+          }
+        });
       });
     }
 
@@ -818,7 +913,7 @@
       const plan = plansData.find(x => x.code === selectedPlan);
       const crypto = cryptoData.find(x => x.code === selectedCrypto);
       const qty = getSelectedQuantity();
-      const amount = Number(plan?.amountUsd || plan?.amount_usd || 0);
+      const amount = Number(plan?.amountUsd || 0);
       const total = amount * qty;
 
       selectedPlanText.textContent = plan ? `${plan.label || plan.code} (${plan.code})` : "None";
@@ -900,15 +995,16 @@
     function normalizePayment(payment){
       return {
         ...payment,
+        id: payment.id || payment.paymentId || payment.payment_id || "-",
         billingCycle: payment.billingCycle || payment.billing_cycle || payment.planCode || payment.plan_code || "-",
         amountUsd: Number(payment.amountUsd || payment.amount_usd || 0),
-        cryptoCode: payment.cryptoCode || payment.crypto_code || payment.asset || "-",
+        cryptoCode: payment.cryptoCode || payment.crypto_code || payment.asset || payment.crypto || "-",
         networkCode: payment.networkCode || payment.network_code || payment.network || "-",
         createdAt: Number(payment.createdAt || payment.created_at || 0),
         expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
         verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
-        qrImageUrl: payment.qrImageUrl || payment.qr_image_url || "",
-        qrText: payment.qrText || payment.qr_text || "",
+        qrImageUrl: payment.qrImageUrl || payment.qr_image_url || payment.qr || "",
+        qrText: payment.qrText || payment.qr_text || payment.qrPayload || payment.qr_payload || "",
         routeUsed: payment.routeUsed || payment.route_used || localStorage.getItem(LAST_PAYMENT_ROUTE_KEY) || "-"
       };
     }
@@ -917,14 +1013,19 @@
       const payment = normalizePayment(rawPayment);
       latestPayment = payment;
 
-      if(payment.id) localStorage.setItem(LAST_PAYMENT_KEY, payment.id);
+      if(payment.id && payment.id !== "-") localStorage.setItem(LAST_PAYMENT_KEY, payment.id);
       if(payment.routeUsed) localStorage.setItem(LAST_PAYMENT_ROUTE_KEY, payment.routeUsed);
 
       emptyPaymentState.classList.add("hidden");
       paymentState.classList.remove("hidden");
 
-      paymentQr.src = payment.qrImageUrl || "";
-      paymentQr.style.display = payment.qrImageUrl ? "block" : "none";
+      if(payment.qrImageUrl){
+        paymentQr.src = payment.qrImageUrl;
+        paymentQr.style.display = "block";
+      } else {
+        paymentQr.removeAttribute("src");
+        paymentQr.style.display = "none";
+      }
 
       paymentId.textContent = payment.id || "-";
       paymentPlan.textContent = payment.billingCycle || "-";
@@ -980,10 +1081,10 @@
       `).join("");
 
       paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
-        row.onclick = () => {
+        row.addEventListener("click", () => {
           const item = (window.__payments || []).find(x => x.id === row.dataset.id);
           if(item) openPayment(item);
-        };
+        });
       });
     }
 
@@ -996,8 +1097,9 @@
         return;
       }
 
-      plansData = Array.isArray(res.data?.plans) ? res.data.plans : (Array.isArray(res.data) ? res.data : []);
-      cryptoData = Array.isArray(res.data?.cryptoOptions) ? res.data.cryptoOptions : (Array.isArray(res.data?.crypto) ? res.data.crypto : []);
+      const extracted = extractPlansAndCrypto(res.data || {});
+      plansData = extracted.plans;
+      cryptoData = extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
 
       if(!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
       if(!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
@@ -1005,6 +1107,10 @@
       renderPlans();
       renderCrypto();
       updateSelection();
+
+      if(!extracted.cryptos.length){
+        showMsg("Backend did not return crypto options, so fallback crypto choices were loaded.", "warn");
+      }
     }
 
     async function loadMe(){
@@ -1012,6 +1118,10 @@
       setRouteBadge(routeMeBadge, `Profile route: ${res.matchedPath || "-"}`);
 
       if(!res.ok){
+        if(res.status === 401){
+          logout();
+          return;
+        }
         showMsg(res.data?.message || "Failed to load account", "error");
         return;
       }
@@ -1042,11 +1152,22 @@
       setRouteBadge(routePaymentsBadge, `Payments route: ${res.matchedPath || "-"}`);
 
       if(!res.ok){
+        if(res.status === 401){
+          logout();
+          return null;
+        }
         showMsg(res.data?.message || "Failed to load payments", "error");
         return null;
       }
 
-      const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : (Array.isArray(res.data) ? res.data : []);
+      const rawPayments = Array.isArray(res.data?.payments)
+        ? res.data.payments
+        : Array.isArray(res.data?.items)
+        ? res.data.items
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+
       const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
       window.__payments = payments;
       renderPaymentsTable(payments);
@@ -1093,19 +1214,26 @@
 
       const res = await callMatched("createPayment", "POST", {
         planCode: selectedPlan,
+        plan: selectedPlan,
         cryptoCode: selectedCrypto,
+        crypto: selectedCrypto,
         quantity: qty
       });
 
       btn.disabled = false;
       btn.textContent = "Create Payment Request";
+      setRouteBadge(routeCreatePaymentBadge, `Create payment route: ${res.matchedPath || "-"}`);
 
       if(!res.ok){
+        if(res.status === 401){
+          logout();
+          return;
+        }
         showMsg(res.data?.message || "Could not create payment request", "error");
         return;
       }
 
-      const payment = res.data?.payment || res.data;
+      const payment = res.data?.payment || res.data?.data?.payment || res.data;
       localStorage.removeItem(WAITING_PAYMENT_KEY);
       stopPaymentPolling();
       resetWaitingState();
@@ -1148,7 +1276,15 @@
           return;
         }
 
-        const payments = prioritizePayments((Array.isArray(res.data?.payments) ? res.data.payments : []).map(p => ({ ...p, routeUsed: res.matchedPath })));
+        const rawPayments = Array.isArray(res.data?.payments)
+          ? res.data.payments
+          : Array.isArray(res.data?.items)
+          ? res.data.items
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
+
+        const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
         window.__payments = payments;
         renderPaymentsTable(payments);
 
@@ -1194,7 +1330,7 @@
     }
 
     async function userMadeTransfer(){
-      if(!latestPayment || !latestPayment.id) return showMsg("Create or open a payment request first", "warn");
+      if(!latestPayment || !latestPayment.id || latestPayment.id === "-") return showMsg("Create or open a payment request first", "warn");
 
       const currentStatus = String(latestPayment.status || "").toLowerCase();
       if(currentStatus === "verified"){
@@ -1216,11 +1352,20 @@
       iTransferredBtn.disabled = true;
       iTransferredBtn.textContent = "Saving...";
 
-      const res = await callMatched("paymentIMade", "POST", { paymentId: latestPayment.id });
+      const res = await callMatched("paymentIMade", "POST", {
+        paymentId: latestPayment.id,
+        id: latestPayment.id
+      });
+
+      iTransferredBtn.disabled = false;
+      iTransferredBtn.textContent = "I Made a Transfer";
+      setRouteBadge(routeTransferBadge, `Transfer route: ${res.matchedPath || "-"}`);
 
       if(!res.ok){
-        iTransferredBtn.disabled = false;
-        iTransferredBtn.textContent = "I Made a Transfer";
+        if(res.status === 401){
+          logout();
+          return;
+        }
         showMsg(res.data?.message || "Could not mark payment as sent", "error");
         return;
       }
