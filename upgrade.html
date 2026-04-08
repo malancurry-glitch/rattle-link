@@ -844,48 +844,29 @@ function renderPlans() {
 function renderCrypto() {
   if (!cryptoBox) return;
 
-  // ✅ Ensure crypto data exists
   if (!cryptoData || !cryptoData.length) {
-    cryptoData = [
-      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
-      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
-      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
-      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
-      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
-      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
-      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
-    ];
+    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
   }
 
-  // ✅ Default selection (IMPORTANT)
   if (!selectedCrypto && cryptoData.length) {
     selectedCrypto = cryptoData[0].code;
   }
 
-  // ✅ Render UI
   cryptoBox.innerHTML = cryptoData.map(item => `
     <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
-      <div><b>${item.asset || item.code}</b></div>
-      <div class="muted">${item.network || "-"}</div>
-      <div style="margin-top:6px;">${item.label || item.code}</div>
+      <div><b>${item.asset}</b></div>
+      <div class="muted">${item.network}</div>
+      <div>${item.label}</div>
     </div>
   `).join("");
 
-  // ✅ Attach click handlers
-  const nodes = cryptoBox.querySelectorAll(".crypto");
-
-  nodes.forEach(el => {
-    el.addEventListener("click", () => {
+  cryptoBox.querySelectorAll(".crypto").forEach(el => {
+    el.onclick = () => {
       selectedCrypto = el.dataset.code;
-
-      console.log("✅ Selected crypto:", selectedCrypto);
-
-      renderCrypto();     // refresh UI highlight
-      updateSelection();  // update summary
-    });
+      renderCrypto();
+      updateSelection();
+    };
   });
-
-  console.log("🔥 Crypto UI ready:", cryptoData);
 }
 
 function updateSelection() {
