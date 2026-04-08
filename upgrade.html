@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upgrade - Rattle Link</title>
+  <meta name="description" content="Upgrade your Rattle Link plan, create crypto payment requests, and track subscription activation." />
   <style>
     :root{
       --bg:#020617;
-      --bg2:#000;
-      --card:rgba(2,6,23,.86);
+      --bg2:#000000;
+      --card:rgba(2,6,23,.88);
+      --card-2:#010816;
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -17,7 +19,10 @@
       --yellow:#f59e0b;
       --blue:#3b82f6;
       --purple:#8b5cf6;
-      --border:rgba(0,255,255,.18);
+      --line:rgba(0,255,255,.18);
+      --line-strong:rgba(0,255,255,.34);
+      --shadow:0 0 18px rgba(0,255,255,.08);
+      --radius:16px;
     }
 
     *{box-sizing:border-box}
@@ -51,10 +56,10 @@
 
     .card{
       background:var(--card);
-      border:1px solid var(--border);
-      border-radius:16px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
       padding:16px;
-      box-shadow:0 0 18px rgba(0,255,255,.08);
+      box-shadow:var(--shadow);
       backdrop-filter:blur(10px);
       margin-bottom:16px;
     }
@@ -73,6 +78,7 @@
       border:1px solid rgba(255,255,255,.14);
       margin-right:6px;
       margin-bottom:6px;
+      background:#08111f;
     }
 
     .status-trial{color:var(--yellow);background:#2b1a00}
@@ -83,11 +89,12 @@
     .status-awaiting{color:#60a5fa;background:#172554}
     .status-verified{color:var(--green);background:#052e16}
     .status-cancelled{color:var(--red);background:#2b0000}
+    .status-unknown{color:#cbd5e1;background:#172033}
 
     button,a.btn{
       background:#020617;
       color:var(--cyan);
-      border:1px solid var(--border);
+      border:1px solid var(--line);
       border-radius:10px;
       padding:10px 13px;
       cursor:pointer;
@@ -97,8 +104,18 @@
       font-size:13px;
     }
 
-    button:hover,a.btn:hover{box-shadow:0 0 14px rgba(0,255,255,.18);transform:translateY(-1px)}
-    button:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+    button:hover,a.btn:hover{
+      box-shadow:0 0 14px rgba(0,255,255,.18);
+      transform:translateY(-1px);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
     .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
     .btn-green{color:var(--green);border-color:var(--green)}
     .btn-red{color:var(--red);border-color:var(--red)}
@@ -109,39 +126,107 @@
     .field{margin-bottom:12px}
     label{display:block;margin-bottom:6px;font-size:12px;color:var(--muted)}
 
+    select,input{
+      width:100%;
+      background:#000;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:11px 12px;
+      outline:none;
+    }
+
+    select:focus,input:focus{
+      border-color:var(--line-strong);
+      box-shadow:0 0 0 3px rgba(0,255,255,.08);
+    }
+
     .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
     .plan,.crypto{
-      border:1px solid var(--border);
+      border:1px solid var(--line);
       border-radius:14px;
       padding:14px;
-      background:#010816;
+      background:var(--card-2);
       cursor:pointer;
       transition:.2s ease;
     }
 
-    .plan:hover,.crypto:hover{transform:translateY(-2px);box-shadow:0 0 16px rgba(0,255,255,.14)}
-    .plan.active,.crypto.active{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,255,255,.18)}
-    .plan .price{font-size:28px;color:var(--cyan);font-weight:700;margin:8px 0}
-    .plan ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
-    .crypto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .plan:hover,.crypto:hover{
+      transform:translateY(-2px);
+      box-shadow:0 0 16px rgba(0,255,255,.14);
+    }
+
+    .plan.active,.crypto.active{
+      border-color:var(--cyan);
+      box-shadow:0 0 18px rgba(0,255,255,.18);
+    }
+
+    .plan .price{
+      font-size:28px;
+      color:var(--cyan);
+      font-weight:700;
+      margin:8px 0;
+    }
+
+    .plan ul{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .crypto-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
 
     .summary,.mini{
-      background:#010816;
-      border:1px solid var(--border);
+      background:var(--card-2);
+      border:1px solid var(--line);
       border-radius:14px;
       padding:14px;
     }
 
-    .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-    .mini .v{font-size:24px;font-weight:700;color:var(--cyan)}
+    .kpi{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+    }
 
-    .payment-box{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
-    .qr-box{text-align:center;background:#fff;border-radius:14px;padding:12px;min-height:264px}
-    .qr-box img{width:100%;max-width:220px;display:block;margin:0 auto;border-radius:10px}
+    .mini .v{
+      font-size:24px;
+      font-weight:700;
+      color:var(--cyan);
+    }
+
+    .payment-box{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+
+    .qr-box{
+      text-align:center;
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+      min-height:264px;
+    }
+
+    .qr-box img{
+      width:100%;
+      max-width:220px;
+      display:block;
+      margin:0 auto;
+      border-radius:10px;
+    }
 
     .address-box{
       background:#000;
-      border:1px solid var(--border);
+      border:1px solid var(--line);
       border-radius:12px;
       padding:12px;
       word-break:break-all;
@@ -149,27 +234,81 @@
       font-size:13px;
     }
 
-    table{width:100%;border-collapse:collapse;min-width:760px}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top;font-size:13px}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+
+    th,td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
     tbody tr[data-id]{cursor:pointer}
     tbody tr[data-id]:hover{background:rgba(15,23,42,.55)}
     .table-wrap{overflow:auto;width:100%}
 
-    .message{min-height:22px;margin-top:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
-    .hidden{display:none !important}
-    .copy-row{display:flex;gap:8px;align-items:stretch;margin-top:10px}
-    .copy-row .address-box{flex:1;margin:0}
-    .timer{font-size:13px;margin-top:10px;color:var(--yellow);font-weight:600}
+    .message{
+      min-height:22px;
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
 
-    .waiting-box,.confirm-box,.expired-box{margin-top:14px;padding:14px;border-radius:14px}
+    .hidden{display:none !important}
+
+    .copy-row{
+      display:flex;
+      gap:8px;
+      align-items:stretch;
+      margin-top:10px;
+    }
+
+    .copy-row .address-box{flex:1;margin:0}
+
+    .timer{
+      font-size:13px;
+      margin-top:10px;
+      color:var(--yellow);
+      font-weight:600;
+    }
+
+    .waiting-box,.confirm-box,.expired-box,.route-box{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+    }
+
     .waiting-box{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35)}
     .confirm-box{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
     .expired-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
+    .route-box{background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.18)}
 
     .spinner{
-      width:18px;height:18px;border:2px solid rgba(255,255,255,.2);
-      border-top:2px solid var(--cyan);border-radius:50%;display:inline-block;
-      animation:spin 1s linear infinite;vertical-align:middle;margin-right:8px;
+      width:18px;
+      height:18px;
+      border:2px solid rgba(255,255,255,.2);
+      border-top:2px solid var(--cyan);
+      border-radius:50%;
+      display:inline-block;
+      animation:spin 1s linear infinite;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+
+    .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .pill{
+      font-size:11px;
+      padding:6px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#05111f;
+      color:var(--muted);
     }
 
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -192,6 +331,17 @@
         <a class="btn btn-purple" href="billing.html">Billing Center</a>
         <button id="refreshBtn" class="btn-primary" type="button">Refresh</button>
         <button id="logoutBtn" class="btn-red" type="button">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔌 Route Detection</h3>
+      <div class="muted">This page auto-detects matching backend routes and remembers the ones that respond successfully.</div>
+      <div class="pill-row">
+        <span id="backendBadge" class="pill">Backend: detecting...</span>
+        <span id="routePlansBadge" class="pill">Plans route: -</span>
+        <span id="routeMeBadge" class="pill">Profile route: -</span>
+        <span id="routePaymentsBadge" class="pill">Payments route: -</span>
       </div>
     </div>
 
@@ -218,6 +368,12 @@
 
         <div class="card">
           <h2>📦 Choose Plan</h2>
+
+          <div class="field">
+            <label for="quantityInput">Quantity</label>
+            <input id="quantityInput" type="number" min="1" step="1" value="1" />
+          </div>
+
           <div id="plansBox" class="plans"></div>
 
           <div class="field" style="margin-top:16px;">
@@ -229,6 +385,7 @@
             <div><b>Selected Plan:</b> <span id="selectedPlanText">None</span></div>
             <div style="margin-top:8px;"><b>Selected Crypto:</b> <span id="selectedCryptoText">None</span></div>
             <div style="margin-top:8px;"><b>Amount:</b> <span id="selectedAmountText">$0</span></div>
+            <div style="margin-top:8px;"><b>Total with Quantity:</b> <span id="selectedTotalText">$0</span></div>
           </div>
 
           <div class="row" style="margin-top:14px;">
@@ -264,6 +421,7 @@
                   <div style="margin-top:8px;"><b>Status:</b> <span id="paymentStatus">-</span></div>
                   <div style="margin-top:8px;"><b>Created:</b> <span id="paymentCreated">-</span></div>
                   <div style="margin-top:8px;"><b>Expires:</b> <span id="paymentExpires">-</span></div>
+                  <div style="margin-top:8px;"><b>Matched Route:</b> <span id="paymentRouteUsed">-</span></div>
                 </div>
 
                 <div class="copy-row">
@@ -329,6 +487,14 @@
   <script>
     const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
+    const ROUTE_CACHE_KEY = "upgrade_route_cache_v1";
+    const WAITING_PAYMENT_KEY = "waitingPaymentId";
+    const LAST_PAYMENT_KEY = "lastPaymentId";
+    const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
+    const LAST_BACKEND_KEY = "authBackend";
+
+    const ROUTE_CACHE = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+
     const meUser = document.getElementById("meUser");
     const meStatusWrap = document.getElementById("meStatusWrap");
     const meLinksRemaining = document.getElementById("meLinksRemaining");
@@ -345,6 +511,8 @@
     const selectedPlanText = document.getElementById("selectedPlanText");
     const selectedCryptoText = document.getElementById("selectedCryptoText");
     const selectedAmountText = document.getElementById("selectedAmountText");
+    const selectedTotalText = document.getElementById("selectedTotalText");
+    const quantityInput = document.getElementById("quantityInput");
     const upgradeMsg = document.getElementById("upgradeMsg");
 
     const emptyPaymentState = document.getElementById("emptyPaymentState");
@@ -361,6 +529,7 @@
     const paymentTimer = document.getElementById("paymentTimer");
     const paymentCreated = document.getElementById("paymentCreated");
     const paymentExpires = document.getElementById("paymentExpires");
+    const paymentRouteUsed = document.getElementById("paymentRouteUsed");
     const paymentsTable = document.getElementById("paymentsTable");
 
     const iTransferredBtn = document.getElementById("iTransferredBtn");
@@ -368,6 +537,11 @@
     const confirmedBox = document.getElementById("confirmedBox");
     const expiredBox = document.getElementById("expiredBox");
     const pollStatusText = document.getElementById("pollStatusText");
+
+    const backendBadge = document.getElementById("backendBadge");
+    const routePlansBadge = document.getElementById("routePlansBadge");
+    const routeMeBadge = document.getElementById("routeMeBadge");
+    const routePaymentsBadge = document.getElementById("routePaymentsBadge");
 
     let plansData = [];
     let cryptoData = [];
@@ -378,17 +552,31 @@
     let paymentCountdown = null;
     let paymentPoller = null;
     let redirectTimer = null;
+    let detectedBackend = (localStorage.getItem(LAST_BACKEND_KEY) || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+
+    function saveRouteCache(){
+      localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(ROUTE_CACHE));
+    }
+
+    function setRouteBadge(el, text){
+      el.textContent = text;
+    }
+
+    function setBackendBadge(){
+      backendBadge.textContent = `Backend: ${detectedBackend === "legacy" ? "Legacy AWS" : "Backend2"}`;
+    }
 
     function authHeaders(includeJson = true){
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("token") || localStorage.getItem("rattle_token") || "";
       const headers = {};
       if (includeJson) headers["Content-Type"] = "application/json";
       if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (detectedBackend === "legacy") headers["x-rattle-fallback"] = "legacy";
       return headers;
     }
 
     function ensureAuth(){
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("rattle_token");
       if(!token){
         window.location.href = "index.html";
         return false;
@@ -396,9 +584,53 @@
       return true;
     }
 
-    async function safeFetch(url, method = "GET", body = null){
+    function normalizeApiUrl(url){
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    function routeCandidates(kind){
+      const map = {
+        plans: [
+          "/plans",
+          "/billing/plans",
+          "/auth/plans",
+          "/auth/billing/plans"
+        ],
+        me: [
+          "/me",
+          "/auth/me",
+          "/profile",
+          "/auth/profile"
+        ],
+        paymentsMe: [
+          "/payments/me",
+          "/auth/payments/me",
+          "/billing/payments/me",
+          "/auth/billing/payments/me"
+        ],
+        createPayment: [
+          "/payment-request",
+          "/auth/payment-request",
+          "/payments/request",
+          "/auth/payments/request",
+          "/billing/payment-request",
+          "/auth/billing/payment-request"
+        ],
+        paymentIMade: [
+          "/payment-i-made",
+          "/auth/payment-i-made",
+          "/payments/i-made",
+          "/auth/payments/i-made",
+          "/billing/payment-i-made",
+          "/auth/billing/payment-i-made"
+        ]
+      };
+      return map[kind] || [];
+    }
+
+    async function fetchRaw(path, method = "GET", body = null){
       try{
-        const res = await fetch(url, {
+        const res = await fetch(normalizeApiUrl(API) + path, {
           method,
           headers: authHeaders(method !== "GET"),
           body: body ? JSON.stringify(body) : null
@@ -412,15 +644,47 @@
           data = { message: text };
         }
 
-        if(res.status === 401){
-          logout();
-          return { ok:false, status:401, data };
+        return { ok: res.ok, status: res.status, data, path };
+      }catch(error){
+        return { ok:false, status:0, data:{ message:error?.message || "Network error" }, path };
+      }
+    }
+
+    function routeLooksValid(result){
+      if(result.ok) return true;
+      if(result.status === 401) return true;
+      if(result.status === 403) return true;
+      if(result.status === 400) return true;
+      return false;
+    }
+
+    async function callMatched(kind, method = "GET", body = null){
+      const cacheKey = `${detectedBackend}:${kind}`;
+      const cached = ROUTE_CACHE[cacheKey];
+
+      if(cached){
+        const test = await fetchRaw(cached, method, body);
+        if(routeLooksValid(test)){
+          return { ...test, matchedPath: cached };
+        }
+      }
+
+      const candidates = routeCandidates(kind);
+      let bestFailure = null;
+
+      for(const path of candidates){
+        const res = await fetchRaw(path, method, body);
+
+        if(routeLooksValid(res)){
+          ROUTE_CACHE[cacheKey] = path;
+          saveRouteCache();
+          return { ...res, matchedPath: path };
         }
 
-        return { ok:res.ok, status:res.status, data };
-      }catch(error){
-        return { ok:false, status:0, data:{ message:error?.message || "Network error" } };
+        if(!bestFailure) bestFailure = { ...res, matchedPath: path };
       }
+
+      return bestFailure || { ok:false, status:0, data:{ message:"No matching route found" }, matchedPath:"-" };
     }
 
     function showMsg(text, type = "warn"){
@@ -431,9 +695,12 @@
     function logout(){
       stopPaymentCountdown();
       stopPaymentPolling();
-      localStorage.removeItem("waitingPaymentId");
+      localStorage.removeItem(WAITING_PAYMENT_KEY);
+      localStorage.removeItem(LAST_PAYMENT_KEY);
       localStorage.removeItem("token");
       localStorage.removeItem("role");
+      localStorage.removeItem("rattle_token");
+      localStorage.removeItem("rattle_role");
       window.location.href = "index.html";
     }
 
@@ -457,45 +724,65 @@
       if(s === "awaiting_confirmation") return `<span class="badge status-awaiting">AWAITING CONFIRMATION</span>`;
       if(s === "pending") return `<span class="badge status-pending">PENDING</span>`;
       if(s === "cancelled") return `<span class="badge status-cancelled">CANCELLED</span>`;
-      return `<span class="badge status-expired">${(s || "unknown").toUpperCase()}</span>`;
+      if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
+      return `<span class="badge status-unknown">${(s || "unknown").toUpperCase()}</span>`;
     }
 
     function boolLabel(value){
       return value ? `<span class="success">Yes ✅</span>` : `<span class="error">No ❌</span>`;
     }
 
+    function getPlanLimits(data){
+      return data.planLimits || data.limits || {
+        activeShortLinks: Number(data.trialLinksLimit || 0),
+        activeLandingPages: 0
+      };
+    }
+
+    function getUsage(data){
+      return data.usage || {
+        activeShortLinks: Number(data.trialLinksUsed || 0),
+        activeLandingPages: 0
+      };
+    }
+
     function renderMe(){
       if(!meData) return;
 
-      const limits = meData.planLimits || { activeShortLinks: 0, activeLandingPages: 0 };
-      const usage = meData.usage || { activeShortLinks: 0, activeLandingPages: 0 };
+      const limits = getPlanLimits(meData);
+      const usage = getUsage(meData);
       const remaining = meData.remaining || {
         activeShortLinks: Math.max(0, Number(limits.activeShortLinks || 0) - Number(usage.activeShortLinks || 0)),
         activeLandingPages: Math.max(0, Number(limits.activeLandingPages || 0) - Number(usage.activeLandingPages || 0))
       };
 
-      meUser.textContent = meData.username || "-";
-      meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || "trial");
+      meUser.textContent = meData.username || meData.email || "-";
+      meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || meData.subscription_status || "trial");
       meLinksRemaining.textContent = Number(remaining.activeShortLinks || 0);
-      mePlan.textContent = meData.subscriptionPlan || (meData.accessSource === "trial" ? "free_trial" : "-");
-      meExpires.textContent = meData.subscriptionExpiresAt ? formatDate(meData.subscriptionExpiresAt) : "No active paid plan";
-      meCanGenerate.innerHTML = boolLabel(!!meData.canGenerateLinks);
-      meCanLandings.innerHTML = boolLabel(!!meData.canGenerateLandingPages);
-      meEmailVerified.innerHTML = meData.emailVerified ? `<span class="success">Verified ✅</span>` : `<span class="warn">Not verified</span>`;
-      mePrimaryDomain.textContent = meData.primaryDomain || "-";
+      mePlan.textContent = meData.subscriptionPlan || meData.subscription_plan || (meData.accessSource === "trial" ? "free_trial" : "-");
+      meExpires.textContent = (meData.subscriptionExpiresAt || meData.subscription_expires_at) ? formatDate(meData.subscriptionExpiresAt || meData.subscription_expires_at) : "No active paid plan";
+      meCanGenerate.innerHTML = boolLabel(!!(meData.canGenerateLinks ?? true));
+      meCanLandings.innerHTML = boolLabel(!!(meData.canGenerateLandingPages ?? true));
+      meEmailVerified.innerHTML = (meData.emailVerified || meData.email_verified) ? `<span class="success">Verified ✅</span>` : `<span class="warn">Not verified</span>`;
+      mePrimaryDomain.textContent = meData.primaryDomain || meData.primary_domain || "-";
       meUsage.textContent = `${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links • ${Number(usage.activeLandingPages || 0)}/${Number(limits.activeLandingPages || 0)} landing pages`;
+    }
+
+    function getSelectedQuantity(){
+      const q = Number(quantityInput.value || 1);
+      return Number.isFinite(q) && q > 0 ? Math.floor(q) : 1;
     }
 
     function renderPlans(){
       plansBox.innerHTML = plansData.map(plan => `
         <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
-          <div class="muted">${plan.label}</div>
-          <div class="price">$${Number(plan.amountUsd || 0)}</div>
-          <div class="muted">${plan.unit ? `Every ${plan.unit}` : plan.code}</div>
+          <div class="muted">${plan.label || plan.code}</div>
+          <div class="price">$${Number(plan.amountUsd || plan.amount_usd || 0)}</div>
+          <div class="muted">${plan.unit ? `Every ${plan.unit}` : (plan.code || "-")}</div>
           <ul>
             <li>${Number(plan.limits?.activeShortLinks || 0)} active short links</li>
             <li>${Number(plan.limits?.activeLandingPages || 0)} active landing pages</li>
-            <li>${Number(plan.durationDaysPerUnit || 0)} day access window per payment unit</li>
+            <li>${Number(plan.durationDaysPerUnit || plan.duration_days_per_unit || 0)} day access window per payment unit</li>
           </ul>
         </div>
       `).join("");
@@ -512,9 +799,9 @@
     function renderCrypto(){
       cryptoBox.innerHTML = cryptoData.map(item => `
         <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
-          <div><b>${item.asset}</b></div>
-          <div class="muted">${item.network}</div>
-          <div style="margin-top:6px;">${item.label}</div>
+          <div><b>${item.asset || item.code}</b></div>
+          <div class="muted">${item.network || item.networkCode || "-"}</div>
+          <div style="margin-top:6px;">${item.label || item.code}</div>
         </div>
       `).join("");
 
@@ -530,18 +817,32 @@
     function updateSelection(){
       const plan = plansData.find(x => x.code === selectedPlan);
       const crypto = cryptoData.find(x => x.code === selectedCrypto);
-      selectedPlanText.textContent = plan ? `${plan.label} (${plan.code})` : "None";
-      selectedCryptoText.textContent = crypto ? crypto.label : "None";
-      selectedAmountText.textContent = plan ? `$${Number(plan.amountUsd || 0)}` : "$0";
+      const qty = getSelectedQuantity();
+      const amount = Number(plan?.amountUsd || plan?.amount_usd || 0);
+      const total = amount * qty;
+
+      selectedPlanText.textContent = plan ? `${plan.label || plan.code} (${plan.code})` : "None";
+      selectedCryptoText.textContent = crypto ? (crypto.label || crypto.code) : "None";
+      selectedAmountText.textContent = plan ? `$${amount}` : "$0";
+      selectedTotalText.textContent = `$${total}`;
     }
 
     function stopPaymentCountdown(){
-      if(paymentCountdown){ clearInterval(paymentCountdown); paymentCountdown = null; }
+      if(paymentCountdown){
+        clearInterval(paymentCountdown);
+        paymentCountdown = null;
+      }
     }
 
     function stopPaymentPolling(){
-      if(paymentPoller){ clearInterval(paymentPoller); paymentPoller = null; }
-      if(redirectTimer){ clearTimeout(redirectTimer); redirectTimer = null; }
+      if(paymentPoller){
+        clearInterval(paymentPoller);
+        paymentPoller = null;
+      }
+      if(redirectTimer){
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
     }
 
     function resetWaitingState(){
@@ -599,25 +900,32 @@
     function normalizePayment(payment){
       return {
         ...payment,
-        billingCycle: payment.billingCycle || payment.billing_cycle || "-",
+        billingCycle: payment.billingCycle || payment.billing_cycle || payment.planCode || payment.plan_code || "-",
         amountUsd: Number(payment.amountUsd || payment.amount_usd || 0),
-        cryptoCode: payment.cryptoCode || payment.crypto_code || "-",
-        networkCode: payment.networkCode || payment.network_code || "-",
+        cryptoCode: payment.cryptoCode || payment.crypto_code || payment.asset || "-",
+        networkCode: payment.networkCode || payment.network_code || payment.network || "-",
         createdAt: Number(payment.createdAt || payment.created_at || 0),
         expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
         verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
         qrImageUrl: payment.qrImageUrl || payment.qr_image_url || "",
-        qrText: payment.qrText || payment.qr_text || ""
+        qrText: payment.qrText || payment.qr_text || "",
+        routeUsed: payment.routeUsed || payment.route_used || localStorage.getItem(LAST_PAYMENT_ROUTE_KEY) || "-"
       };
     }
 
     function openPayment(rawPayment){
       const payment = normalizePayment(rawPayment);
       latestPayment = payment;
+
+      if(payment.id) localStorage.setItem(LAST_PAYMENT_KEY, payment.id);
+      if(payment.routeUsed) localStorage.setItem(LAST_PAYMENT_ROUTE_KEY, payment.routeUsed);
+
       emptyPaymentState.classList.add("hidden");
       paymentState.classList.remove("hidden");
 
       paymentQr.src = payment.qrImageUrl || "";
+      paymentQr.style.display = payment.qrImageUrl ? "block" : "none";
+
       paymentId.textContent = payment.id || "-";
       paymentPlan.textContent = payment.billingCycle || "-";
       paymentAmount.textContent = `$${payment.amountUsd}`;
@@ -628,25 +936,29 @@
       paymentQrText.textContent = payment.qrText || "-";
       paymentCreated.textContent = formatDate(payment.createdAt);
       paymentExpires.textContent = formatDate(payment.expiresAt);
+      paymentRouteUsed.textContent = payment.routeUsed || "-";
 
       if(payment.expiresAt) startPaymentCountdown(payment.expiresAt);
       else paymentTimer.textContent = "";
 
-      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
       const paymentStatusValue = String(payment.status || "").toLowerCase();
 
       if(paymentStatusValue === "verified") return setConfirmedMode();
-      if(paymentStatusValue === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())) return setExpiredMode();
+      if(paymentStatusValue === "cancelled" || paymentStatusValue === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())) return setExpiredMode();
+
       if(waitingPaymentId && waitingPaymentId === payment.id) {
         setWaitingMode(true);
         pollStatusText.textContent = `Checking payment ${payment.id}...`;
         return;
       }
+
       if(paymentStatusValue === "awaiting_confirmation") {
         setWaitingMode(true);
         pollStatusText.textContent = "Waiting for admin confirmation...";
         return;
       }
+
       resetWaitingState();
     }
 
@@ -669,27 +981,41 @@
 
       paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
         row.onclick = () => {
-          const item = window.__payments.find(x => x.id === row.dataset.id);
+          const item = (window.__payments || []).find(x => x.id === row.dataset.id);
           if(item) openPayment(item);
         };
       });
     }
 
     async function loadPlans(){
-      const res = await safeFetch(`${API}/plans`);
-      if(!res.ok){ showMsg(res.data?.message || "Failed to load plans", "error"); return; }
-      plansData = Array.isArray(res.data?.plans) ? res.data.plans : [];
-      cryptoData = Array.isArray(res.data?.cryptoOptions) ? res.data.cryptoOptions : [];
+      const res = await callMatched("plans", "GET");
+      setRouteBadge(routePlansBadge, `Plans route: ${res.matchedPath || "-"}`);
+
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load plans", "error");
+        return;
+      }
+
+      plansData = Array.isArray(res.data?.plans) ? res.data.plans : (Array.isArray(res.data) ? res.data : []);
+      cryptoData = Array.isArray(res.data?.cryptoOptions) ? res.data.cryptoOptions : (Array.isArray(res.data?.crypto) ? res.data.crypto : []);
+
       if(!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
       if(!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
+
       renderPlans();
       renderCrypto();
       updateSelection();
     }
 
     async function loadMe(){
-      const res = await safeFetch(`${API}/me`);
-      if(!res.ok){ showMsg(res.data?.message || "Failed to load account", "error"); return; }
+      const res = await callMatched("me", "GET");
+      setRouteBadge(routeMeBadge, `Profile route: ${res.matchedPath || "-"}`);
+
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load account", "error");
+        return;
+      }
+
       meData = res.data || {};
       renderMe();
     }
@@ -702,7 +1028,8 @@
           if (s === "pending") return 1;
           if (s === "verified") return 2;
           if (s === "cancelled") return 3;
-          return 4;
+          if (s === "expired") return 4;
+          return 5;
         };
         const diff = rank(a.status) - rank(b.status);
         if(diff !== 0) return diff;
@@ -711,18 +1038,29 @@
     }
 
     async function loadPayments(openLatestPending = false){
-      const res = await safeFetch(`${API}/payments/me`);
-      if(!res.ok){ showMsg(res.data?.message || "Failed to load payments", "error"); return null; }
+      const res = await callMatched("paymentsMe", "GET");
+      setRouteBadge(routePaymentsBadge, `Payments route: ${res.matchedPath || "-"}`);
 
-      const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : [];
-      const payments = prioritizePayments(rawPayments);
+      if(!res.ok){
+        showMsg(res.data?.message || "Failed to load payments", "error");
+        return null;
+      }
+
+      const rawPayments = Array.isArray(res.data?.payments) ? res.data.payments : (Array.isArray(res.data) ? res.data : []);
+      const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
       window.__payments = payments;
       renderPaymentsTable(payments);
 
-      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
       if(waitingPaymentId){
         const waitingPayment = payments.find(x => x.id === waitingPaymentId);
         if(waitingPayment){ openPayment(waitingPayment); return waitingPayment; }
+      }
+
+      const lastPaymentId = localStorage.getItem(LAST_PAYMENT_KEY);
+      if(lastPaymentId){
+        const lastPayment = payments.find(x => x.id === lastPaymentId);
+        if(lastPayment){ openPayment(lastPayment); return lastPayment; }
       }
 
       if(openLatestPending){
@@ -746,14 +1084,17 @@
       if(!selectedPlan) return showMsg("Choose a plan first", "warn");
       if(!selectedCrypto) return showMsg("Choose a crypto option first", "warn");
 
+      const qty = getSelectedQuantity();
+      if(qty < 1) return showMsg("Quantity must be at least 1", "warn");
+
       const btn = document.getElementById("createPaymentBtn");
       btn.disabled = true;
       btn.textContent = "Creating...";
 
-      const res = await safeFetch(`${API}/payment-request`, "POST", {
+      const res = await callMatched("createPayment", "POST", {
         planCode: selectedPlan,
         cryptoCode: selectedCrypto,
-        quantity: 1
+        quantity: qty
       });
 
       btn.disabled = false;
@@ -764,14 +1105,14 @@
         return;
       }
 
-      const payment = res.data?.payment;
-      localStorage.removeItem("waitingPaymentId");
+      const payment = res.data?.payment || res.data;
+      localStorage.removeItem(WAITING_PAYMENT_KEY);
       stopPaymentPolling();
       resetWaitingState();
 
       if(payment){
-        openPayment(payment);
-        showMsg("Payment request created. Send the payment, then click I Made a Transfer.", "success");
+        openPayment({ ...payment, routeUsed: res.matchedPath });
+        showMsg(`Payment request created using ${res.matchedPath}. Send the payment, then click I Made a Transfer.`, "success");
       } else {
         showMsg("Payment request created", "success");
       }
@@ -801,13 +1142,13 @@
       pollStatusText.textContent = `Checking payment ${paymentIdValue}...`;
 
       const check = async () => {
-        const res = await safeFetch(`${API}/payments/me`);
+        const res = await callMatched("paymentsMe", "GET");
         if(!res.ok){
           pollStatusText.textContent = "Network issue while checking payment status...";
           return;
         }
 
-        const payments = prioritizePayments(Array.isArray(res.data?.payments) ? res.data.payments : []);
+        const payments = prioritizePayments((Array.isArray(res.data?.payments) ? res.data.payments : []).map(p => ({ ...p, routeUsed: res.matchedPath })));
         window.__payments = payments;
         renderPaymentsTable(payments);
 
@@ -821,7 +1162,7 @@
         const status = String(payment.status || "").toLowerCase();
 
         if(status === "verified"){
-          localStorage.removeItem("waitingPaymentId");
+          localStorage.removeItem(WAITING_PAYMENT_KEY);
           stopPaymentPolling();
           setConfirmedMode();
           await loadMe();
@@ -832,8 +1173,8 @@
           return;
         }
 
-        if(status === "cancelled" || (payment.expiresAt && payment.expiresAt <= Date.now())){
-          localStorage.removeItem("waitingPaymentId");
+        if(status === "cancelled" || status === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())){
+          localStorage.removeItem(WAITING_PAYMENT_KEY);
           stopPaymentPolling();
           setExpiredMode();
           showMsg("Payment expired or cancelled. Create a new one.", "error");
@@ -861,13 +1202,13 @@
         return setConfirmedMode();
       }
 
-      if(currentStatus === "cancelled" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())){
+      if(currentStatus === "cancelled" || currentStatus === "expired" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())){
         showMsg("This payment is expired or cancelled. Create a new one.", "error");
         return setExpiredMode();
       }
 
       if(currentStatus === "awaiting_confirmation"){
-        localStorage.setItem("waitingPaymentId", latestPayment.id);
+        localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
         showMsg("This payment is already waiting for admin confirmation", "success");
         return pollPaymentUntilVerified(latestPayment.id);
       }
@@ -875,7 +1216,7 @@
       iTransferredBtn.disabled = true;
       iTransferredBtn.textContent = "Saving...";
 
-      const res = await safeFetch(`${API}/payment-i-made`, "POST", { paymentId: latestPayment.id });
+      const res = await callMatched("paymentIMade", "POST", { paymentId: latestPayment.id });
 
       if(!res.ok){
         iTransferredBtn.disabled = false;
@@ -884,8 +1225,8 @@
         return;
       }
 
-      localStorage.setItem("waitingPaymentId", latestPayment.id);
-      showMsg("Transfer marked. Waiting for admin confirmation...", "success");
+      localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
+      showMsg(`Transfer marked using ${res.matchedPath}. Waiting for admin confirmation...`, "success");
       await loadPayments(false);
       pollPaymentUntilVerified(latestPayment.id);
     }
@@ -908,13 +1249,16 @@
       showMsg("Subscription status checked", "success");
     };
     document.getElementById("iTransferredBtn").onclick = userMadeTransfer;
+    quantityInput.addEventListener("input", updateSelection);
 
     (async function init(){
       if(!ensureAuth()) return;
+      setBackendBadge();
       await loadPlans();
       await loadMe();
       const payment = await loadPayments(true);
-      const waitingPaymentId = localStorage.getItem("waitingPaymentId");
+
+      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
       if(waitingPaymentId){
         if(payment && payment.id === waitingPaymentId){
           pollPaymentUntilVerified(waitingPaymentId);
@@ -924,7 +1268,7 @@
             openPayment(existing);
             pollPaymentUntilVerified(waitingPaymentId);
           } else {
-            localStorage.removeItem("waitingPaymentId");
+            localStorage.removeItem(WAITING_PAYMENT_KEY);
           }
         }
       }
