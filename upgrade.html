@@ -487,949 +487,1013 @@
   </div>
 
   <script>
-    const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
+const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
-    const ROUTE_CACHE_KEY = "upgrade_route_cache_v3";
-    const WAITING_PAYMENT_KEY = "waitingPaymentId";
-    const LAST_PAYMENT_KEY = "lastPaymentId";
-    const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
-    const LAST_BACKEND_KEY = "authBackend";
+const ROUTE_CACHE_KEY = "upgrade_route_cache_v4";
+const WAITING_PAYMENT_KEY = "waitingPaymentId";
+const LAST_PAYMENT_KEY = "lastPaymentId";
+const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
+const LAST_BACKEND_KEY = "authBackend";
 
-    const ROUTE_CACHE = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+let ROUTE_CACHE = {};
+try {
+  ROUTE_CACHE = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
+} catch {
+  ROUTE_CACHE = {};
+}
 
-    const FALLBACK_CRYPTO_OPTIONS = [
-      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
-      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
-      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
-      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
-      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
-      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
-      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
-    ];
+const FALLBACK_CRYPTO_OPTIONS = [
+  { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+  { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+  { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+  { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+  { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+  { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+  { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
+];
 
-    const meUser = document.getElementById("meUser");
-    const meStatusWrap = document.getElementById("meStatusWrap");
-    const meLinksRemaining = document.getElementById("meLinksRemaining");
-    const mePlan = document.getElementById("mePlan");
-    const meExpires = document.getElementById("meExpires");
-    const meCanGenerate = document.getElementById("meCanGenerate");
-    const meCanLandings = document.getElementById("meCanLandings");
-    const meEmailVerified = document.getElementById("meEmailVerified");
-    const meUsage = document.getElementById("meUsage");
-    const mePrimaryDomain = document.getElementById("mePrimaryDomain");
+const meUser = document.getElementById("meUser");
+const meStatusWrap = document.getElementById("meStatusWrap");
+const meLinksRemaining = document.getElementById("meLinksRemaining");
+const mePlan = document.getElementById("mePlan");
+const meExpires = document.getElementById("meExpires");
+const meCanGenerate = document.getElementById("meCanGenerate");
+const meCanLandings = document.getElementById("meCanLandings");
+const meEmailVerified = document.getElementById("meEmailVerified");
+const meUsage = document.getElementById("meUsage");
+const mePrimaryDomain = document.getElementById("mePrimaryDomain");
 
-    const plansBox = document.getElementById("plansBox");
-    const cryptoBox = document.getElementById("cryptoBox");
-    const selectedPlanText = document.getElementById("selectedPlanText");
-    const selectedCryptoText = document.getElementById("selectedCryptoText");
-    const selectedAmountText = document.getElementById("selectedAmountText");
-    const selectedTotalText = document.getElementById("selectedTotalText");
-    const quantityInput = document.getElementById("quantityInput");
-    const upgradeMsg = document.getElementById("upgradeMsg");
+const plansBox = document.getElementById("plansBox");
+const cryptoBox = document.getElementById("cryptoBox");
+const selectedPlanText = document.getElementById("selectedPlanText");
+const selectedCryptoText = document.getElementById("selectedCryptoText");
+const selectedAmountText = document.getElementById("selectedAmountText");
+const selectedTotalText = document.getElementById("selectedTotalText");
+const quantityInput = document.getElementById("quantityInput");
+const upgradeMsg = document.getElementById("upgradeMsg");
 
-    const emptyPaymentState = document.getElementById("emptyPaymentState");
-    const paymentState = document.getElementById("paymentState");
-    const paymentQr = document.getElementById("paymentQr");
-    const paymentId = document.getElementById("paymentId");
-    const paymentPlan = document.getElementById("paymentPlan");
-    const paymentAmount = document.getElementById("paymentAmount");
-    const paymentAsset = document.getElementById("paymentAsset");
-    const paymentNetwork = document.getElementById("paymentNetwork");
-    const paymentStatus = document.getElementById("paymentStatus");
-    const paymentAddress = document.getElementById("paymentAddress");
-    const paymentQrText = document.getElementById("paymentQrText");
-    const paymentTimer = document.getElementById("paymentTimer");
-    const paymentCreated = document.getElementById("paymentCreated");
-    const paymentExpires = document.getElementById("paymentExpires");
-    const paymentRouteUsed = document.getElementById("paymentRouteUsed");
-    const paymentsTable = document.getElementById("paymentsTable");
+const emptyPaymentState = document.getElementById("emptyPaymentState");
+const paymentState = document.getElementById("paymentState");
+const paymentQr = document.getElementById("paymentQr");
+const paymentId = document.getElementById("paymentId");
+const paymentPlan = document.getElementById("paymentPlan");
+const paymentAmount = document.getElementById("paymentAmount");
+const paymentAsset = document.getElementById("paymentAsset");
+const paymentNetwork = document.getElementById("paymentNetwork");
+const paymentStatus = document.getElementById("paymentStatus");
+const paymentAddress = document.getElementById("paymentAddress");
+const paymentQrText = document.getElementById("paymentQrText");
+const paymentTimer = document.getElementById("paymentTimer");
+const paymentCreated = document.getElementById("paymentCreated");
+const paymentExpires = document.getElementById("paymentExpires");
+const paymentRouteUsed = document.getElementById("paymentRouteUsed");
+const paymentsTable = document.getElementById("paymentsTable");
 
-    const iTransferredBtn = document.getElementById("iTransferredBtn");
-    const waitingBox = document.getElementById("waitingBox");
-    const confirmedBox = document.getElementById("confirmedBox");
-    const expiredBox = document.getElementById("expiredBox");
-    const pollStatusText = document.getElementById("pollStatusText");
+const iTransferredBtn = document.getElementById("iTransferredBtn");
+const waitingBox = document.getElementById("waitingBox");
+const confirmedBox = document.getElementById("confirmedBox");
+const expiredBox = document.getElementById("expiredBox");
+const pollStatusText = document.getElementById("pollStatusText");
 
-    const backendBadge = document.getElementById("backendBadge");
-    const routePlansBadge = document.getElementById("routePlansBadge");
-    const routeMeBadge = document.getElementById("routeMeBadge");
-    const routePaymentsBadge = document.getElementById("routePaymentsBadge");
-    const routeCreatePaymentBadge = document.getElementById("routeCreatePaymentBadge");
-    const routeTransferBadge = document.getElementById("routeTransferBadge");
+const backendBadge = document.getElementById("backendBadge");
+const routePlansBadge = document.getElementById("routePlansBadge");
+const routeMeBadge = document.getElementById("routeMeBadge");
+const routePaymentsBadge = document.getElementById("routePaymentsBadge");
+const routeCreatePaymentBadge = document.getElementById("routeCreatePaymentBadge");
+const routeTransferBadge = document.getElementById("routeTransferBadge");
 
-    let plansData = [];
-    let cryptoData = [];
-    let meData = null;
-    let selectedPlan = null;
-    let selectedCrypto = null;
-    let latestPayment = null;
-    let paymentCountdown = null;
-    let paymentPoller = null;
-    let redirectTimer = null;
-    let detectedBackend = (localStorage.getItem(LAST_BACKEND_KEY) || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+let plansData = [];
+let cryptoData = [];
+let meData = null;
+let selectedPlan = null;
+let selectedCrypto = null;
+let latestPayment = null;
+let paymentCountdown = null;
+let paymentPoller = null;
+let redirectTimer = null;
+let detectedBackend = (localStorage.getItem(LAST_BACKEND_KEY) || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
 
-    function saveRouteCache(){
-      localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(ROUTE_CACHE));
+function saveRouteCache() {
+  localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(ROUTE_CACHE));
+}
+
+function clearBadRouteCache(cacheKey) {
+  delete ROUTE_CACHE[cacheKey];
+  saveRouteCache();
+}
+
+function setRouteBadge(el, text) {
+  el.textContent = text;
+}
+
+function setBackendBadge() {
+  backendBadge.textContent = `Backend: ${detectedBackend === "legacy" ? "Legacy AWS" : "Backend2"}`;
+}
+
+function authHeaders(includeJson = true) {
+  const token = localStorage.getItem("token") || localStorage.getItem("rattle_token") || "";
+  const headers = {};
+  if (includeJson) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (detectedBackend === "legacy") headers["x-rattle-fallback"] = "legacy";
+  return headers;
+}
+
+function ensureAuth() {
+  const token = localStorage.getItem("token") || localStorage.getItem("rattle_token");
+  if (!token) {
+    window.location.href = "index.html";
+    return false;
+  }
+  return true;
+}
+
+function normalizeApiUrl(url) {
+  return String(url || "").replace(/\/+$/, "");
+}
+
+function routeCandidates(kind) {
+  const map = {
+    plans: [
+      "/auth/plans",
+      "/plans",
+      "/billing/plans",
+      "/auth/billing/plans",
+      "/subscription/plans",
+      "/auth/subscription/plans"
+    ],
+    me: [
+      "/auth/me",
+      "/me",
+      "/profile",
+      "/auth/profile"
+    ],
+    paymentsMe: [
+      "/auth/payments/me",
+      "/payments/me",
+      "/billing/payments/me",
+      "/auth/billing/payments/me",
+      "/payments",
+      "/auth/payments"
+    ],
+    createPayment: [
+      "/auth/payment-request",
+      "/payment-request",
+      "/payments/request",
+      "/auth/payments/request",
+      "/billing/payment-request",
+      "/auth/billing/payment-request",
+      "/payments/create",
+      "/auth/payments/create"
+    ],
+    paymentIMade: [
+      "/auth/payment-i-made",
+      "/payment-i-made",
+      "/payments/i-made",
+      "/auth/payments/i-made",
+      "/billing/payment-i-made",
+      "/auth/billing/payment-i-made",
+      "/payments/mark-sent",
+      "/auth/payments/mark-sent"
+    ]
+  };
+  return map[kind] || [];
+}
+
+async function fetchRaw(path, method = "GET", body = null) {
+  try {
+    const res = await fetch(normalizeApiUrl(API) + path, {
+      method,
+      headers: authHeaders(method !== "GET"),
+      body: body ? JSON.stringify(body) : null
+    });
+
+    const text = await res.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { message: text };
     }
 
-    function setRouteBadge(el, text){
-      el.textContent = text;
+    return { ok: res.ok, status: res.status, data, path };
+  } catch (error) {
+    return { ok: false, status: 0, data: { message: error?.message || "Network error" }, path };
+  }
+}
+
+function looksLikePlansResponse(data) {
+  return Array.isArray(data?.plans)
+    || Array.isArray(data?.subscriptions)
+    || Array.isArray(data?.data?.plans)
+    || Array.isArray(data?.cryptoOptions)
+    || Array.isArray(data?.cryptos)
+    || Array.isArray(data?.coins)
+    || Array.isArray(data);
+}
+
+function looksLikeMeResponse(data) {
+  return !!(
+    data &&
+    (
+      typeof data.username === "string" ||
+      typeof data.email === "string" ||
+      "subscriptionStatus" in data ||
+      "subscription_status" in data ||
+      "role" in data
+    )
+  );
+}
+
+function looksLikePaymentsResponse(data) {
+  return Array.isArray(data?.payments)
+    || Array.isArray(data?.items)
+    || Array.isArray(data);
+}
+
+function looksLikeCreatePaymentResponse(data) {
+  return !!(
+    data?.payment ||
+    data?.data?.payment ||
+    data?.id ||
+    data?.paymentId ||
+    data?.payment_id
+  );
+}
+
+function looksLikeTransferResponse(data) {
+  return !!(
+    data?.payment ||
+    data?.message ||
+    data?.status
+  );
+}
+
+function isMatchedRouteGood(kind, result) {
+  if (!result.ok) return false;
+
+  if (kind === "plans") return looksLikePlansResponse(result.data);
+  if (kind === "me") return looksLikeMeResponse(result.data);
+  if (kind === "paymentsMe") return looksLikePaymentsResponse(result.data);
+  if (kind === "createPayment") return looksLikeCreatePaymentResponse(result.data);
+  if (kind === "paymentIMade") return looksLikeTransferResponse(result.data);
+
+  return result.ok;
+}
+
+async function callMatched(kind, method = "GET", body = null) {
+  const cacheKey = `${detectedBackend}:${kind}`;
+  const cached = ROUTE_CACHE[cacheKey];
+
+  if (cached) {
+    const test = await fetchRaw(cached, method, body);
+    if (isMatchedRouteGood(kind, test)) {
+      return { ...test, matchedPath: cached };
+    }
+    clearBadRouteCache(cacheKey);
+  }
+
+  const candidates = routeCandidates(kind);
+  let bestFailure = null;
+
+  for (const path of candidates) {
+    const res = await fetchRaw(path, method, body);
+
+    if (isMatchedRouteGood(kind, res)) {
+      ROUTE_CACHE[cacheKey] = path;
+      saveRouteCache();
+      return { ...res, matchedPath: path };
     }
 
-    function setBackendBadge(){
-      backendBadge.textContent = `Backend: ${detectedBackend === "legacy" ? "Legacy AWS" : "Backend2"}`;
+    if (!bestFailure || (bestFailure.status === 404 && res.status !== 404)) {
+      bestFailure = { ...res, matchedPath: path };
     }
+  }
 
-    function authHeaders(includeJson = true){
-      const token = localStorage.getItem("token") || localStorage.getItem("rattle_token") || "";
-      const headers = {};
-      if (includeJson) headers["Content-Type"] = "application/json";
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      if (detectedBackend === "legacy") headers["x-rattle-fallback"] = "legacy";
-      return headers;
+  return bestFailure || { ok: false, status: 0, data: { message: "No matching route found" }, matchedPath: "-" };
+}
+
+function showMsg(text, type = "warn") {
+  upgradeMsg.textContent = text;
+  upgradeMsg.className = `message ${type}`;
+}
+
+function logout() {
+  stopPaymentCountdown();
+  stopPaymentPolling();
+  localStorage.removeItem(WAITING_PAYMENT_KEY);
+  localStorage.removeItem(LAST_PAYMENT_KEY);
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("rattle_token");
+  localStorage.removeItem("rattle_role");
+  window.location.href = "index.html";
+}
+
+function formatDate(ts) {
+  const n = Number(ts || 0);
+  if (!n) return "-";
+  return new Date(n).toLocaleString();
+}
+
+function statusBadge(status) {
+  const s = String(status || "trial").toLowerCase();
+  if (s === "active") return `<span class="badge status-active">ACTIVE</span>`;
+  if (s === "paused") return `<span class="badge status-paused">PAUSED</span>`;
+  if (s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
+  return `<span class="badge status-trial">${s.toUpperCase()}</span>`;
+}
+
+function paymentStatusBadge(status) {
+  const s = String(status || "").toLowerCase();
+  if (s === "verified") return `<span class="badge status-verified">VERIFIED</span>`;
+  if (s === "awaiting_confirmation") return `<span class="badge status-awaiting">AWAITING CONFIRMATION</span>`;
+  if (s === "pending") return `<span class="badge status-pending">PENDING</span>`;
+  if (s === "cancelled") return `<span class="badge status-cancelled">CANCELLED</span>`;
+  if (s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
+  return `<span class="badge status-unknown">${(s || "unknown").toUpperCase()}</span>`;
+}
+
+function boolLabel(value) {
+  return value ? `<span class="success">Yes ✅</span>` : `<span class="error">No ❌</span>`;
+}
+
+function getPlanLimits(data) {
+  return data.planLimits || data.limits || {
+    activeShortLinks: Number(data.trialLinksLimit || data.trial_links_limit || 0),
+    activeLandingPages: 0
+  };
+}
+
+function getUsage(data) {
+  return data.usage || {
+    activeShortLinks: Number(data.trialLinksUsed || data.trial_links_used || 0),
+    activeLandingPages: 0
+  };
+}
+
+function normalizePlan(plan, index = 0) {
+  const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
+  const amountUsd = Number(plan.amountUsd || plan.amount_usd || plan.price || 0);
+  return {
+    ...plan,
+    code,
+    label: plan.label || plan.name || code,
+    amountUsd,
+    unit: plan.unit || plan.interval || "",
+    durationDaysPerUnit: Number(plan.durationDaysPerUnit || plan.duration_days_per_unit || plan.durationDays || 30),
+    limits: plan.limits || {
+      activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
+      activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
     }
-
-    function ensureAuth(){
-      const token = localStorage.getItem("token") || localStorage.getItem("rattle_token");
-      if(!token){
-        window.location.href = "index.html";
-        return false;
-      }
-      return true;
-    }
-
-    function normalizeApiUrl(url){
-      return String(url || "").replace(/\/+$/, "");
-    }
-
-    function routeCandidates(kind){
-      const map = {
-        plans: [
-          "/auth/plans",
-          "/plans",
-          "/billing/plans",
-          "/auth/billing/plans",
-          "/subscription/plans",
-          "/auth/subscription/plans"
-        ],
-        me: [
-          "/auth/me",
-          "/me",
-          "/profile",
-          "/auth/profile"
-        ],
-        paymentsMe: [
-          "/auth/payments/me",
-          "/payments/me",
-          "/billing/payments/me",
-          "/auth/billing/payments/me",
-          "/payments",
-          "/auth/payments"
-        ],
-        createPayment: [
-          "/auth/payment-request",
-          "/payment-request",
-          "/payments/request",
-          "/auth/payments/request",
-          "/billing/payment-request",
-          "/auth/billing/payment-request",
-          "/payments/create",
-          "/auth/payments/create"
-        ],
-        paymentIMade: [
-          "/auth/payment-i-made",
-          "/payment-i-made",
-          "/payments/i-made",
-          "/auth/payments/i-made",
-          "/billing/payment-i-made",
-          "/auth/billing/payment-i-made",
-          "/payments/mark-sent",
-          "/auth/payments/mark-sent"
-        ]
-      };
-      return map[kind] || [];
-    }
-
-    async function fetchRaw(path, method = "GET", body = null){
-      try{
-        const res = await fetch(normalizeApiUrl(API) + path, {
-          method,
-          headers: authHeaders(method !== "GET"),
-          body: body ? JSON.stringify(body) : null
-        });
-
-        const text = await res.text();
-        let data = {};
-        try{
-          data = text ? JSON.parse(text) : {};
-        }catch{
-          data = { message: text };
-        }
-
-        return { ok: res.ok, status: res.status, data, path };
-      }catch(error){
-        return { ok:false, status:0, data:{ message:error?.message || "Network error" }, path };
-      }
-    }
-
-    function routeLooksValid(result){
-      if(result.ok) return true;
-      if(result.status === 401) return true;
-      if(result.status === 403) return true;
-      if(result.status === 400) return true;
-      return false;
-    }
-
-    async function callMatched(kind, method = "GET", body = null){
-      const cacheKey = `${detectedBackend}:${kind}`;
-      const cached = ROUTE_CACHE[cacheKey];
-
-      if(cached){
-        const test = await fetchRaw(cached, method, body);
-        if(routeLooksValid(test)){
-          return { ...test, matchedPath: cached };
-        }
-      }
-
-      const candidates = routeCandidates(kind);
-      let bestFailure = null;
-
-      for(const path of candidates){
-        const res = await fetchRaw(path, method, body);
-
-        if(routeLooksValid(res)){
-          ROUTE_CACHE[cacheKey] = path;
-          saveRouteCache();
-          return { ...res, matchedPath: path };
-        }
-
-        if(!bestFailure || (bestFailure.status === 404 && res.status !== 404)){
-          bestFailure = { ...res, matchedPath: path };
-        }
-      }
-
-      return bestFailure || { ok:false, status:0, data:{ message:"No matching route found" }, matchedPath:"-" };
-    }
-
-    function showMsg(text, type = "warn"){
-      upgradeMsg.textContent = text;
-      upgradeMsg.className = `message ${type}`;
-    }
-
-    function logout(){
-      stopPaymentCountdown();
-      stopPaymentPolling();
-      localStorage.removeItem(WAITING_PAYMENT_KEY);
-      localStorage.removeItem(LAST_PAYMENT_KEY);
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("rattle_token");
-      localStorage.removeItem("rattle_role");
-      window.location.href = "index.html";
-    }
-
-    function formatDate(ts){
-      const n = Number(ts || 0);
-      if(!n) return "-";
-      return new Date(n).toLocaleString();
-    }
-
-    function statusBadge(status){
-      const s = String(status || "trial").toLowerCase();
-      if(s === "active") return `<span class="badge status-active">ACTIVE</span>`;
-      if(s === "paused") return `<span class="badge status-paused">PAUSED</span>`;
-      if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
-      return `<span class="badge status-trial">${s.toUpperCase()}</span>`;
-    }
-
-    function paymentStatusBadge(status){
-      const s = String(status || "").toLowerCase();
-      if(s === "verified") return `<span class="badge status-verified">VERIFIED</span>`;
-      if(s === "awaiting_confirmation") return `<span class="badge status-awaiting">AWAITING CONFIRMATION</span>`;
-      if(s === "pending") return `<span class="badge status-pending">PENDING</span>`;
-      if(s === "cancelled") return `<span class="badge status-cancelled">CANCELLED</span>`;
-      if(s === "expired") return `<span class="badge status-expired">EXPIRED</span>`;
-      return `<span class="badge status-unknown">${(s || "unknown").toUpperCase()}</span>`;
-    }
-
-    function boolLabel(value){
-      return value ? `<span class="success">Yes ✅</span>` : `<span class="error">No ❌</span>`;
-    }
-
-    function getPlanLimits(data){
-      return data.planLimits || data.limits || {
-        activeShortLinks: Number(data.trialLinksLimit || data.trial_links_limit || 0),
-        activeLandingPages: 0
-      };
-    }
-
-    function getUsage(data){
-      return data.usage || {
-        activeShortLinks: Number(data.trialLinksUsed || data.trial_links_used || 0),
-        activeLandingPages: 0
-      };
-    }
-
-    function normalizePlan(plan, index = 0){
-      const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
-      const amountUsd = Number(plan.amountUsd || plan.amount_usd || plan.price || 0);
-      return {
-        ...plan,
-        code,
-        label: plan.label || plan.name || code,
-        amountUsd,
-        unit: plan.unit || plan.interval || "",
-        durationDaysPerUnit: Number(plan.durationDaysPerUnit || plan.duration_days_per_unit || plan.durationDays || 30),
-        limits: plan.limits || {
-          activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
-          activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
-        }
-      };
-    }
-
-    function normalizeCrypto(item, index = 0){
-      const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || `CRYPTO_${index + 1}`;
-      const asset = item.asset || item.symbol || code;
-      const network = item.network || item.networkCode || item.network_code || "";
-      return {
-        ...item,
-        code,
-        asset,
-        network,
-        label: item.label || `${asset}${network ? ` (${network})` : ""}`
-      };
-    }
-
-    function extractPlansAndCrypto(data){
-      let plans = [];
-      let cryptos = [];
-
-      if(Array.isArray(data?.plans)) plans = data.plans;
-      else if(data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
-      else if(Array.isArray(data?.data?.plans)) plans = data.data.plans;
-      else if(Array.isArray(data?.subscriptions)) plans = data.subscriptions;
-      else if(Array.isArray(data)) plans = data;
-
-      if(Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
-      else if(data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
-      else if(Array.isArray(data?.crypto)) cryptos = data.crypto;
-      else if(data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
-      else if(Array.isArray(data?.cryptos)) cryptos = data.cryptos;
-      else if(Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
-      else if(Array.isArray(data?.coins)) cryptos = data.coins;
-      else if(Array.isArray(data?.assets)) cryptos = data.assets;
-      else if(Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
-
-      return {
-        plans: plans.map(normalizePlan).filter(x => x.code),
-        cryptos: cryptos.map(normalizeCrypto).filter(x => x.code)
-      };
-    }
-
-    function renderMe(){
-      if(!meData) return;
-
-      const limits = getPlanLimits(meData);
-      const usage = getUsage(meData);
-      const remaining = meData.remaining || {
-        activeShortLinks: Math.max(0, Number(limits.activeShortLinks || 0) - Number(usage.activeShortLinks || 0)),
-        activeLandingPages: Math.max(0, Number(limits.activeLandingPages || 0) - Number(usage.activeLandingPages || 0))
-      };
-
-      meUser.textContent = meData.username || meData.email || "-";
-      meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || meData.subscription_status || "trial");
-      meLinksRemaining.textContent = Number(remaining.activeShortLinks || 0);
-      mePlan.textContent = meData.subscriptionPlan || meData.subscription_plan || (meData.accessSource === "trial" ? "free_trial" : "-");
-      meExpires.textContent = (meData.subscriptionExpiresAt || meData.subscription_expires_at) ? formatDate(meData.subscriptionExpiresAt || meData.subscription_expires_at) : "No active paid plan";
-      meCanGenerate.innerHTML = boolLabel(!!(meData.canGenerateLinks ?? true));
-      meCanLandings.innerHTML = boolLabel(!!(meData.canGenerateLandingPages ?? true));
-      meEmailVerified.innerHTML = (meData.emailVerified || meData.email_verified) ? `<span class="success">Verified ✅</span>` : `<span class="warn">Not verified</span>`;
-      mePrimaryDomain.textContent = meData.primaryDomain || meData.primary_domain || "-";
-      meUsage.textContent = `${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links • ${Number(usage.activeLandingPages || 0)}/${Number(limits.activeLandingPages || 0)} landing pages`;
-    }
-
-    function getSelectedQuantity(){
-      const q = Number(quantityInput.value || 1);
-      return Number.isFinite(q) && q > 0 ? Math.floor(q) : 1;
-    }
-
-    function renderPlans(){
-      if(!plansData.length){
-        plansBox.innerHTML = `<div class="muted">No plans returned by backend.</div>`;
-        return;
-      }
-
-      plansBox.innerHTML = plansData.map(plan => `
-        <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
-          <div class="muted">${plan.label || plan.code}</div>
-          <div class="price">$${Number(plan.amountUsd || 0)}</div>
-          <div class="muted">${plan.unit ? `Every ${plan.unit}` : (plan.code || "-")}</div>
-          <ul>
-            <li>${Number(plan.limits?.activeShortLinks || 0)} active short links</li>
-            <li>${Number(plan.limits?.activeLandingPages || 0)} active landing pages</li>
-            <li>${Number(plan.durationDaysPerUnit || 0)} day access window per payment unit</li>
-          </ul>
-        </div>
-      `).join("");
-
-      plansBox.querySelectorAll(".plan").forEach(el => {
-        el.addEventListener("click", () => {
-          selectedPlan = el.dataset.plan;
-          renderPlans();
-          updateSelection();
-        });
-      });
-    }
-
-    function renderCrypto(){
-      if(!cryptoData.length){
-        cryptoBox.innerHTML = `<div class="muted">No crypto options are available.</div>`;
-        return;
-      }
-
-      cryptoBox.innerHTML = cryptoData.map(item => `
-        <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}" tabindex="0" role="button" aria-label="Select ${item.label}">
-          <div><b>${item.asset || item.code}</b></div>
-          <div class="muted">${item.network || "-"}</div>
-          <div style="margin-top:6px;">${item.label || item.code}</div>
-        </div>
-      `).join("");
-
-      cryptoBox.querySelectorAll(".crypto").forEach(el => {
-        const selectCrypto = () => {
-          selectedCrypto = el.dataset.code;
-          renderCrypto();
-          updateSelection();
-        };
-        el.addEventListener("click", selectCrypto);
-        el.addEventListener("keydown", (e) => {
-          if(e.key === "Enter" || e.key === " "){
-            e.preventDefault();
-            selectCrypto();
-          }
-        });
-      });
-    }
-
-    function updateSelection(){
-      const plan = plansData.find(x => x.code === selectedPlan);
-      const crypto = cryptoData.find(x => x.code === selectedCrypto);
-      const qty = getSelectedQuantity();
-      const amount = Number(plan?.amountUsd || 0);
-      const total = amount * qty;
-
-      selectedPlanText.textContent = plan ? `${plan.label || plan.code} (${plan.code})` : "None";
-      selectedCryptoText.textContent = crypto ? (crypto.label || crypto.code) : "None";
-      selectedAmountText.textContent = plan ? `$${amount}` : "$0";
-      selectedTotalText.textContent = `$${total}`;
-    }
-
-    function stopPaymentCountdown(){
-      if(paymentCountdown){
-        clearInterval(paymentCountdown);
-        paymentCountdown = null;
-      }
-    }
-
-    function stopPaymentPolling(){
-      if(paymentPoller){
-        clearInterval(paymentPoller);
-        paymentPoller = null;
-      }
-      if(redirectTimer){
-        clearTimeout(redirectTimer);
-        redirectTimer = null;
-      }
-    }
-
-    function resetWaitingState(){
-      waitingBox.classList.add("hidden");
-      confirmedBox.classList.add("hidden");
-      expiredBox.classList.add("hidden");
-      iTransferredBtn.disabled = false;
-      iTransferredBtn.textContent = "I Made a Transfer";
-    }
-
-    function startPaymentCountdown(expiresAt){
-      stopPaymentCountdown();
-      const tick = () => {
-        const left = Number(expiresAt || 0) - Date.now();
-        if(left <= 0){
-          paymentTimer.textContent = "⛔ Payment request expired";
-          stopPaymentCountdown();
-          expiredBox.classList.remove("hidden");
-          waitingBox.classList.add("hidden");
-          return;
-        }
-        const h = Math.floor(left / 3600000);
-        const m = Math.floor((left % 3600000) / 60000);
-        const s = Math.floor((left % 60000) / 1000);
-        paymentTimer.textContent = `⏱ Payment request expires in ${h}h ${m}m ${s}s`;
-      };
-      tick();
-      paymentCountdown = setInterval(tick, 1000);
-    }
-
-    function setWaitingMode(enabled){
-      waitingBox.classList.toggle("hidden", !enabled);
-      confirmedBox.classList.add("hidden");
-      expiredBox.classList.add("hidden");
-      iTransferredBtn.disabled = enabled;
-      iTransferredBtn.textContent = enabled ? "Waiting for Confirmation..." : "I Made a Transfer";
-    }
-
-    function setConfirmedMode(){
-      waitingBox.classList.add("hidden");
-      expiredBox.classList.add("hidden");
-      confirmedBox.classList.remove("hidden");
-      iTransferredBtn.disabled = true;
-      iTransferredBtn.textContent = "Payment Confirmed";
-    }
-
-    function setExpiredMode(){
-      waitingBox.classList.add("hidden");
-      confirmedBox.classList.add("hidden");
-      expiredBox.classList.remove("hidden");
-      iTransferredBtn.disabled = true;
-      iTransferredBtn.textContent = "Unavailable";
-    }
-
-    function normalizePayment(payment){
-      return {
-        ...payment,
-        id: payment.id || payment.paymentId || payment.payment_id || "-",
-        billingCycle: payment.billingCycle || payment.billing_cycle || payment.planCode || payment.plan_code || "-",
-        amountUsd: Number(payment.amountUsd || payment.amount_usd || 0),
-        cryptoCode: payment.cryptoCode || payment.crypto_code || payment.asset || payment.crypto || "-",
-        networkCode: payment.networkCode || payment.network_code || payment.network || "-",
-        createdAt: Number(payment.createdAt || payment.created_at || 0),
-        expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
-        verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
-        qrImageUrl: payment.qrImageUrl || payment.qr_image_url || payment.qr || "",
-        qrText: payment.qrText || payment.qr_text || payment.qrPayload || payment.qr_payload || "",
-        routeUsed: payment.routeUsed || payment.route_used || localStorage.getItem(LAST_PAYMENT_ROUTE_KEY) || "-"
-      };
-    }
-
-    function openPayment(rawPayment){
-      const payment = normalizePayment(rawPayment);
-      latestPayment = payment;
-
-      if(payment.id && payment.id !== "-") localStorage.setItem(LAST_PAYMENT_KEY, payment.id);
-      if(payment.routeUsed) localStorage.setItem(LAST_PAYMENT_ROUTE_KEY, payment.routeUsed);
-
-      emptyPaymentState.classList.add("hidden");
-      paymentState.classList.remove("hidden");
-
-      if(payment.qrImageUrl){
-        paymentQr.src = payment.qrImageUrl;
-        paymentQr.style.display = "block";
-      } else {
-        paymentQr.removeAttribute("src");
-        paymentQr.style.display = "none";
-      }
-
-      paymentId.textContent = payment.id || "-";
-      paymentPlan.textContent = payment.billingCycle || "-";
-      paymentAmount.textContent = `$${payment.amountUsd}`;
-      paymentAsset.textContent = payment.cryptoCode || "-";
-      paymentNetwork.textContent = payment.networkCode || "-";
-      paymentStatus.innerHTML = paymentStatusBadge(payment.status);
-      paymentAddress.textContent = payment.address || "-";
-      paymentQrText.textContent = payment.qrText || "-";
-      paymentCreated.textContent = formatDate(payment.createdAt);
-      paymentExpires.textContent = formatDate(payment.expiresAt);
-      paymentRouteUsed.textContent = payment.routeUsed || "-";
-
-      if(payment.expiresAt) startPaymentCountdown(payment.expiresAt);
-      else paymentTimer.textContent = "";
-
-      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
-      const paymentStatusValue = String(payment.status || "").toLowerCase();
-
-      if(paymentStatusValue === "verified") return setConfirmedMode();
-      if(paymentStatusValue === "cancelled" || paymentStatusValue === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())) return setExpiredMode();
-
-      if(waitingPaymentId && waitingPaymentId === payment.id) {
-        setWaitingMode(true);
-        pollStatusText.textContent = `Checking payment ${payment.id}...`;
-        return;
-      }
-
-      if(paymentStatusValue === "awaiting_confirmation") {
-        setWaitingMode(true);
-        pollStatusText.textContent = "Waiting for admin confirmation...";
-        return;
-      }
-
-      resetWaitingState();
-    }
-
-    function renderPaymentsTable(list){
-      if(!list.length){
-        paymentsTable.innerHTML = `<tr><td colspan="6" class="muted">No payments yet</td></tr>`;
-        return;
-      }
-
-      paymentsTable.innerHTML = list.map(p => `
-        <tr data-id="${p.id}">
-          <td>${p.id}</td>
-          <td>${p.billingCycle || "-"}</td>
-          <td>$${Number(p.amountUsd || 0)}</td>
-          <td>${p.cryptoCode || "-"} / ${p.networkCode || "-"}</td>
-          <td>${paymentStatusBadge(p.status)}</td>
-          <td>${formatDate(p.createdAt)}</td>
-        </tr>
-      `).join("");
-
-      paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
-        row.addEventListener("click", () => {
-          const item = (window.__payments || []).find(x => x.id === row.dataset.id);
-          if(item) openPayment(item);
-        });
-      });
-    }
-
-    async function loadPlans(){
-      const res = await callMatched("plans", "GET");
-      setRouteBadge(routePlansBadge, `Plans route: ${res.matchedPath || "-"}`);
-
-      if(!res.ok){
-        if(res.status === 401){
-          logout();
-          return;
-        }
-        showMsg(res.data?.message || "Failed to load plans", "error");
-        return;
-      }
-
-      const extracted = extractPlansAndCrypto(res.data || {});
-      plansData = extracted.plans;
-      cryptoData = extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
-
-      if(!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
-      if(!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
-
+  };
+}
+
+function normalizeCrypto(item, index = 0) {
+  const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || `CRYPTO_${index + 1}`;
+  const asset = item.asset || item.symbol || code;
+  const network = item.network || item.networkCode || item.network_code || "";
+  return {
+    ...item,
+    code,
+    asset,
+    network,
+    label: item.label || `${asset}${network ? ` (${network})` : ""}`
+  };
+}
+
+function extractPlansAndCrypto(data) {
+  let plans = [];
+  let cryptos = [];
+
+  if (Array.isArray(data?.plans)) plans = data.plans;
+  else if (data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
+  else if (Array.isArray(data?.data?.plans)) plans = data.data.plans;
+  else if (Array.isArray(data?.subscriptions)) plans = data.subscriptions;
+  else if (Array.isArray(data)) plans = data;
+
+  if (Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
+  else if (data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
+  else if (Array.isArray(data?.crypto)) cryptos = data.crypto;
+  else if (data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
+  else if (Array.isArray(data?.cryptos)) cryptos = data.cryptos;
+  else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
+  else if (Array.isArray(data?.coins)) cryptos = data.coins;
+  else if (Array.isArray(data?.assets)) cryptos = data.assets;
+  else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
+
+  return {
+    plans: plans.map(normalizePlan).filter(x => x.code),
+    cryptos: cryptos.map(normalizeCrypto).filter(x => x.code)
+  };
+}
+
+function renderMe() {
+  if (!meData) return;
+
+  const limits = getPlanLimits(meData);
+  const usage = getUsage(meData);
+  const remaining = meData.remaining || {
+    activeShortLinks: Math.max(0, Number(limits.activeShortLinks || 0) - Number(usage.activeShortLinks || 0)),
+    activeLandingPages: Math.max(0, Number(limits.activeLandingPages || 0) - Number(usage.activeLandingPages || 0))
+  };
+
+  meUser.textContent = meData.username || meData.email || "-";
+  meStatusWrap.innerHTML = statusBadge(meData.subscriptionStatus || meData.subscription_status || "trial");
+  meLinksRemaining.textContent = Number(remaining.activeShortLinks || 0);
+  mePlan.textContent = meData.subscriptionPlan || meData.subscription_plan || (meData.accessSource === "trial" ? "free_trial" : "-");
+  meExpires.textContent = (meData.subscriptionExpiresAt || meData.subscription_expires_at) ? formatDate(meData.subscriptionExpiresAt || meData.subscription_expires_at) : "No active paid plan";
+  meCanGenerate.innerHTML = boolLabel(!!(meData.canGenerateLinks ?? true));
+  meCanLandings.innerHTML = boolLabel(!!(meData.canGenerateLandingPages ?? true));
+  meEmailVerified.innerHTML = (meData.emailVerified || meData.email_verified) ? `<span class="success">Verified ✅</span>` : `<span class="warn">Not verified</span>`;
+  mePrimaryDomain.textContent = meData.primaryDomain || meData.primary_domain || "-";
+  meUsage.textContent = `${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links • ${Number(usage.activeLandingPages || 0)}/${Number(limits.activeLandingPages || 0)} landing pages`;
+}
+
+function getSelectedQuantity() {
+  const q = Number(quantityInput.value || 1);
+  return Number.isFinite(q) && q > 0 ? Math.floor(q) : 1;
+}
+
+function renderPlans() {
+  if (!plansData.length) {
+    plansBox.innerHTML = `<div class="muted">No plans returned by backend.</div>`;
+    return;
+  }
+
+  plansBox.innerHTML = plansData.map(plan => `
+    <div class="plan ${selectedPlan === plan.code ? "active" : ""}" data-plan="${plan.code}">
+      <div class="muted">${plan.label || plan.code}</div>
+      <div class="price">$${Number(plan.amountUsd || 0)}</div>
+      <div class="muted">${plan.unit ? `Every ${plan.unit}` : (plan.code || "-")}</div>
+      <ul>
+        <li>${Number(plan.limits?.activeShortLinks || 0)} active short links</li>
+        <li>${Number(plan.limits?.activeLandingPages || 0)} active landing pages</li>
+        <li>${Number(plan.durationDaysPerUnit || 0)} day access window per payment unit</li>
+      </ul>
+    </div>
+  `).join("");
+
+  plansBox.querySelectorAll(".plan").forEach(el => {
+    el.addEventListener("click", () => {
+      selectedPlan = el.dataset.plan;
       renderPlans();
+      updateSelection();
+    });
+  });
+}
+
+function renderCrypto() {
+  if (!cryptoData.length) {
+    cryptoBox.innerHTML = `<div class="muted">No crypto options are available.</div>`;
+    return;
+  }
+
+  cryptoBox.innerHTML = cryptoData.map(item => `
+    <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}" tabindex="0" role="button" aria-label="Select ${item.label}">
+      <div><b>${item.asset || item.code}</b></div>
+      <div class="muted">${item.network || "-"}</div>
+      <div style="margin-top:6px;">${item.label || item.code}</div>
+    </div>
+  `).join("");
+
+  cryptoBox.querySelectorAll(".crypto").forEach(el => {
+    const selectCrypto = () => {
+      selectedCrypto = el.dataset.code;
       renderCrypto();
       updateSelection();
-
-      if(!extracted.cryptos.length){
-        showMsg("Backend did not return crypto options, so built-in crypto choices were loaded.", "warn");
+    };
+    el.addEventListener("click", selectCrypto);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectCrypto();
       }
+    });
+  });
+}
+
+function updateSelection() {
+  const plan = plansData.find(x => x.code === selectedPlan);
+  const crypto = cryptoData.find(x => x.code === selectedCrypto);
+  const qty = getSelectedQuantity();
+  const amount = Number(plan?.amountUsd || 0);
+  const total = amount * qty;
+
+  selectedPlanText.textContent = plan ? `${plan.label || plan.code} (${plan.code})` : "None";
+  selectedCryptoText.textContent = crypto ? (crypto.label || crypto.code) : "None";
+  selectedAmountText.textContent = plan ? `$${amount}` : "$0";
+  selectedTotalText.textContent = `$${total}`;
+}
+
+function stopPaymentCountdown() {
+  if (paymentCountdown) {
+    clearInterval(paymentCountdown);
+    paymentCountdown = null;
+  }
+}
+
+function stopPaymentPolling() {
+  if (paymentPoller) {
+    clearInterval(paymentPoller);
+    paymentPoller = null;
+  }
+  if (redirectTimer) {
+    clearTimeout(redirectTimer);
+    redirectTimer = null;
+  }
+}
+
+function resetWaitingState() {
+  waitingBox.classList.add("hidden");
+  confirmedBox.classList.add("hidden");
+  expiredBox.classList.add("hidden");
+  iTransferredBtn.disabled = false;
+  iTransferredBtn.textContent = "I Made a Transfer";
+}
+
+function startPaymentCountdown(expiresAt) {
+  stopPaymentCountdown();
+  const tick = () => {
+    const left = Number(expiresAt || 0) - Date.now();
+    if (left <= 0) {
+      paymentTimer.textContent = "⛔ Payment request expired";
+      stopPaymentCountdown();
+      expiredBox.classList.remove("hidden");
+      waitingBox.classList.add("hidden");
+      return;
     }
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    paymentTimer.textContent = `⏱ Payment request expires in ${h}h ${m}m ${s}s`;
+  };
+  tick();
+  paymentCountdown = setInterval(tick, 1000);
+}
 
-    async function loadMe(){
-      const res = await callMatched("me", "GET");
-      setRouteBadge(routeMeBadge, `Profile route: ${res.matchedPath || "-"}`);
+function setWaitingMode(enabled) {
+  waitingBox.classList.toggle("hidden", !enabled);
+  confirmedBox.classList.add("hidden");
+  expiredBox.classList.add("hidden");
+  iTransferredBtn.disabled = enabled;
+  iTransferredBtn.textContent = enabled ? "Waiting for Confirmation..." : "I Made a Transfer";
+}
 
-      if(!res.ok){
-        if(res.status === 401){
-          logout();
-          return;
-        }
-        showMsg(res.data?.message || "Failed to load account", "error");
-        return;
-      }
+function setConfirmedMode() {
+  waitingBox.classList.add("hidden");
+  expiredBox.classList.add("hidden");
+  confirmedBox.classList.remove("hidden");
+  iTransferredBtn.disabled = true;
+  iTransferredBtn.textContent = "Payment Confirmed";
+}
 
-      meData = res.data || {};
-      renderMe();
+function setExpiredMode() {
+  waitingBox.classList.add("hidden");
+  confirmedBox.classList.add("hidden");
+  expiredBox.classList.remove("hidden");
+  iTransferredBtn.disabled = true;
+  iTransferredBtn.textContent = "Unavailable";
+}
+
+function normalizePayment(payment) {
+  return {
+    ...payment,
+    id: payment.id || payment.paymentId || payment.payment_id || "-",
+    billingCycle: payment.billingCycle || payment.billing_cycle || payment.planCode || payment.plan_code || "-",
+    amountUsd: Number(payment.amountUsd || payment.amount_usd || 0),
+    cryptoCode: payment.cryptoCode || payment.crypto_code || payment.asset || payment.crypto || "-",
+    networkCode: payment.networkCode || payment.network_code || payment.network || "-",
+    createdAt: Number(payment.createdAt || payment.created_at || 0),
+    expiresAt: Number(payment.expiresAt || payment.expires_at || 0),
+    verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
+    qrImageUrl: payment.qrImageUrl || payment.qr_image_url || payment.qr || "",
+    qrText: payment.qrText || payment.qr_text || payment.qrPayload || payment.qr_payload || "",
+    routeUsed: payment.routeUsed || payment.route_used || localStorage.getItem(LAST_PAYMENT_ROUTE_KEY) || "-"
+  };
+}
+
+function openPayment(rawPayment) {
+  const payment = normalizePayment(rawPayment);
+  latestPayment = payment;
+
+  if (payment.id && payment.id !== "-") localStorage.setItem(LAST_PAYMENT_KEY, payment.id);
+  if (payment.routeUsed) localStorage.setItem(LAST_PAYMENT_ROUTE_KEY, payment.routeUsed);
+
+  emptyPaymentState.classList.add("hidden");
+  paymentState.classList.remove("hidden");
+
+  if (payment.qrImageUrl) {
+    paymentQr.src = payment.qrImageUrl;
+    paymentQr.style.display = "block";
+  } else {
+    paymentQr.removeAttribute("src");
+    paymentQr.style.display = "none";
+  }
+
+  paymentId.textContent = payment.id || "-";
+  paymentPlan.textContent = payment.billingCycle || "-";
+  paymentAmount.textContent = `$${payment.amountUsd}`;
+  paymentAsset.textContent = payment.cryptoCode || "-";
+  paymentNetwork.textContent = payment.networkCode || "-";
+  paymentStatus.innerHTML = paymentStatusBadge(payment.status);
+  paymentAddress.textContent = payment.address || "-";
+  paymentQrText.textContent = payment.qrText || "-";
+  paymentCreated.textContent = formatDate(payment.createdAt);
+  paymentExpires.textContent = formatDate(payment.expiresAt);
+  paymentRouteUsed.textContent = payment.routeUsed || "-";
+
+  if (payment.expiresAt) startPaymentCountdown(payment.expiresAt);
+  else paymentTimer.textContent = "";
+
+  const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
+  const paymentStatusValue = String(payment.status || "").toLowerCase();
+
+  if (paymentStatusValue === "verified") return setConfirmedMode();
+  if (paymentStatusValue === "cancelled" || paymentStatusValue === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())) return setExpiredMode();
+
+  if (waitingPaymentId && waitingPaymentId === payment.id) {
+    setWaitingMode(true);
+    pollStatusText.textContent = `Checking payment ${payment.id}...`;
+    return;
+  }
+
+  if (paymentStatusValue === "awaiting_confirmation") {
+    setWaitingMode(true);
+    pollStatusText.textContent = "Waiting for admin confirmation...";
+    return;
+  }
+
+  resetWaitingState();
+}
+
+function renderPaymentsTable(list) {
+  if (!list.length) {
+    paymentsTable.innerHTML = `<tr><td colspan="6" class="muted">No payments yet</td></tr>`;
+    return;
+  }
+
+  paymentsTable.innerHTML = list.map(p => `
+    <tr data-id="${p.id}">
+      <td>${p.id}</td>
+      <td>${p.billingCycle || "-"}</td>
+      <td>$${Number(p.amountUsd || 0)}</td>
+      <td>${p.cryptoCode || "-"} / ${p.networkCode || "-"}</td>
+      <td>${paymentStatusBadge(p.status)}</td>
+      <td>${formatDate(p.createdAt)}</td>
+    </tr>
+  `).join("");
+
+  paymentsTable.querySelectorAll("tr[data-id]").forEach(row => {
+    row.addEventListener("click", () => {
+      const item = (window.__payments || []).find(x => x.id === row.dataset.id);
+      if (item) openPayment(item);
+    });
+  });
+}
+
+async function loadPlans() {
+  const res = await callMatched("plans", "GET");
+  setRouteBadge(routePlansBadge, `Plans route: ${res.matchedPath || "-"}`);
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      logout();
+      return;
     }
+    showMsg(res.data?.message || "Failed to load plans", "error");
+    return;
+  }
 
-    function prioritizePayments(payments){
-      return [...payments].map(normalizePayment).sort((a, b) => {
-        const rank = (s) => {
-          s = String(s || "").toLowerCase();
-          if (s === "awaiting_confirmation") return 0;
-          if (s === "pending") return 1;
-          if (s === "verified") return 2;
-          if (s === "cancelled") return 3;
-          if (s === "expired") return 4;
-          return 5;
-        };
-        const diff = rank(a.status) - rank(b.status);
-        if(diff !== 0) return diff;
-        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-      });
+  const extracted = extractPlansAndCrypto(res.data || {});
+  plansData = extracted.plans;
+  cryptoData = extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
+
+  if (!selectedPlan && plansData[0]) selectedPlan = plansData[0].code;
+  if (!selectedCrypto && cryptoData[0]) selectedCrypto = cryptoData[0].code;
+
+  renderPlans();
+  renderCrypto();
+  updateSelection();
+
+  if (!extracted.cryptos.length) {
+    showMsg("Backend did not return crypto options, so built-in crypto choices were loaded.", "warn");
+  }
+}
+
+async function loadMe() {
+  const res = await callMatched("me", "GET");
+  setRouteBadge(routeMeBadge, `Profile route: ${res.matchedPath || "-"}`);
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      logout();
+      return;
     }
+    showMsg(res.data?.message || "Failed to load account", "error");
+    return;
+  }
 
-    async function loadPayments(openLatestPending = false){
-      const res = await callMatched("paymentsMe", "GET");
-      setRouteBadge(routePaymentsBadge, `Payments route: ${res.matchedPath || "-"}`);
+  meData = res.data || {};
+  renderMe();
+}
 
-      if(!res.ok){
-        if(res.status === 401){
-          logout();
-          return null;
-        }
-        showMsg(res.data?.message || "Failed to load payments", "error");
-        return null;
-      }
+function prioritizePayments(payments) {
+  return [...payments].map(normalizePayment).sort((a, b) => {
+    const rank = (s) => {
+      s = String(s || "").toLowerCase();
+      if (s === "awaiting_confirmation") return 0;
+      if (s === "pending") return 1;
+      if (s === "verified") return 2;
+      if (s === "cancelled") return 3;
+      if (s === "expired") return 4;
+      return 5;
+    };
+    const diff = rank(a.status) - rank(b.status);
+    if (diff !== 0) return diff;
+    return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+  });
+}
 
-      const rawPayments = Array.isArray(res.data?.payments)
-        ? res.data.payments
-        : Array.isArray(res.data?.items)
-        ? res.data.items
-        : Array.isArray(res.data)
-        ? res.data
-        : [];
+async function loadPayments(openLatestPending = false) {
+  const res = await callMatched("paymentsMe", "GET");
+  setRouteBadge(routePaymentsBadge, `Payments route: ${res.matchedPath || "-"}`);
 
-      const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
-      window.__payments = payments;
-      renderPaymentsTable(payments);
-
-      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
-      if(waitingPaymentId){
-        const waitingPayment = payments.find(x => x.id === waitingPaymentId);
-        if(waitingPayment){ openPayment(waitingPayment); return waitingPayment; }
-      }
-
-      const lastPaymentId = localStorage.getItem(LAST_PAYMENT_KEY);
-      if(lastPaymentId){
-        const lastPayment = payments.find(x => x.id === lastPaymentId);
-        if(lastPayment){ openPayment(lastPayment); return lastPayment; }
-      }
-
-      if(openLatestPending){
-        const pending = payments.find(x => {
-          const s = String(x.status || "").toLowerCase();
-          return s === "awaiting_confirmation" || s === "pending";
-        });
-        if(pending){ openPayment(pending); return pending; }
-      }
-
-      if(payments[0]){ openPayment(payments[0]); return payments[0]; }
-
-      latestPayment = null;
-      emptyPaymentState.classList.remove("hidden");
-      paymentState.classList.add("hidden");
-      resetWaitingState();
+  if (!res.ok) {
+    if (res.status === 401) {
+      logout();
       return null;
     }
+    showMsg(res.data?.message || "Failed to load payments", "error");
+    return null;
+  }
 
-    async function createPaymentRequest(){
-      if(!selectedPlan) return showMsg("Choose a plan first", "warn");
-      if(!selectedCrypto) return showMsg("Choose a crypto option first", "warn");
+  const rawPayments = Array.isArray(res.data?.payments)
+    ? res.data.payments
+    : Array.isArray(res.data?.items)
+    ? res.data.items
+    : Array.isArray(res.data)
+    ? res.data
+    : [];
 
-      const qty = getSelectedQuantity();
-      if(qty < 1) return showMsg("Quantity must be at least 1", "warn");
+  const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
+  window.__payments = payments;
+  renderPaymentsTable(payments);
 
-      const btn = document.getElementById("createPaymentBtn");
-      btn.disabled = true;
-      btn.textContent = "Creating...";
+  const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
+  if (waitingPaymentId) {
+    const waitingPayment = payments.find(x => x.id === waitingPaymentId);
+    if (waitingPayment) { openPayment(waitingPayment); return waitingPayment; }
+  }
 
-      const res = await callMatched("createPayment", "POST", {
-        planCode: selectedPlan,
-        plan: selectedPlan,
-        billingCycle: selectedPlan,
-        cryptoCode: selectedCrypto,
-        crypto: selectedCrypto,
-        quantity: qty
-      });
+  const lastPaymentId = localStorage.getItem(LAST_PAYMENT_KEY);
+  if (lastPaymentId) {
+    const lastPayment = payments.find(x => x.id === lastPaymentId);
+    if (lastPayment) { openPayment(lastPayment); return lastPayment; }
+  }
 
-      btn.disabled = false;
-      btn.textContent = "Create Payment Request";
-      setRouteBadge(routeCreatePaymentBadge, `Create payment route: ${res.matchedPath || "-"}`);
+  if (openLatestPending) {
+    const pending = payments.find(x => {
+      const s = String(x.status || "").toLowerCase();
+      return s === "awaiting_confirmation" || s === "pending";
+    });
+    if (pending) { openPayment(pending); return pending; }
+  }
 
-      if(!res.ok){
-        if(res.status === 401){
-          logout();
-          return;
-        }
-        showMsg(res.data?.message || "Could not create payment request", "error");
-        return;
-      }
+  if (payments[0]) { openPayment(payments[0]); return payments[0]; }
 
-      const payment = res.data?.payment || res.data?.data?.payment || res.data;
+  latestPayment = null;
+  emptyPaymentState.classList.remove("hidden");
+  paymentState.classList.add("hidden");
+  resetWaitingState();
+  return null;
+}
+
+async function createPaymentRequest() {
+  if (!selectedPlan) return showMsg("Choose a plan first", "warn");
+  if (!selectedCrypto) return showMsg("Choose a crypto option first", "warn");
+
+  const qty = getSelectedQuantity();
+  if (qty < 1) return showMsg("Quantity must be at least 1", "warn");
+
+  const btn = document.getElementById("createPaymentBtn");
+  btn.disabled = true;
+  btn.textContent = "Creating...";
+
+  const res = await callMatched("createPayment", "POST", {
+    planCode: selectedPlan,
+    plan: selectedPlan,
+    billingCycle: selectedPlan,
+    cryptoCode: selectedCrypto,
+    crypto: selectedCrypto,
+    quantity: qty
+  });
+
+  btn.disabled = false;
+  btn.textContent = "Create Payment Request";
+  setRouteBadge(routeCreatePaymentBadge, `Create payment route: ${res.matchedPath || "-"}`);
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      logout();
+      return;
+    }
+    showMsg(res.data?.message || "Could not create payment request", "error");
+    return;
+  }
+
+  const payment = res.data?.payment || res.data?.data?.payment || res.data;
+  localStorage.removeItem(WAITING_PAYMENT_KEY);
+  stopPaymentPolling();
+  resetWaitingState();
+
+  if (payment) {
+    openPayment({ ...payment, routeUsed: res.matchedPath });
+    showMsg(`Payment request created using ${res.matchedPath}. Send the payment, then click I Made a Transfer.`, "success");
+  } else {
+    showMsg("Payment request created", "success");
+  }
+
+  await loadPayments(false);
+  await loadMe();
+}
+
+async function loadLatestPending() {
+  const payment = await loadPayments(true);
+  if (payment) showMsg("Latest pending payment loaded", "success");
+  else showMsg("No pending payment found", "warn");
+}
+
+async function copyText(text, okMessage) {
+  try {
+    await navigator.clipboard.writeText(String(text || ""));
+    showMsg(okMessage, "success");
+  } catch {
+    showMsg("Copy failed", "error");
+  }
+}
+
+async function pollPaymentUntilVerified(paymentIdValue) {
+  stopPaymentPolling();
+  setWaitingMode(true);
+  pollStatusText.textContent = `Checking payment ${paymentIdValue}...`;
+
+  const check = async () => {
+    const res = await callMatched("paymentsMe", "GET");
+    if (!res.ok) {
+      pollStatusText.textContent = "Network issue while checking payment status...";
+      return;
+    }
+
+    const rawPayments = Array.isArray(res.data?.payments)
+      ? res.data.payments
+      : Array.isArray(res.data?.items)
+      ? res.data.items
+      : Array.isArray(res.data)
+      ? res.data
+      : [];
+
+    const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
+    window.__payments = payments;
+    renderPaymentsTable(payments);
+
+    const payment = payments.find(x => x.id === paymentIdValue);
+    if (!payment) {
+      pollStatusText.textContent = "Payment not found yet. Retrying...";
+      return;
+    }
+
+    openPayment(payment);
+    const status = String(payment.status || "").toLowerCase();
+
+    if (status === "verified") {
       localStorage.removeItem(WAITING_PAYMENT_KEY);
       stopPaymentPolling();
-      resetWaitingState();
+      setConfirmedMode();
+      await loadMe();
+      showMsg("Payment confirmed and successful. Redirecting to dashboard...", "success");
+      redirectTimer = setTimeout(() => {
+        window.location.href = "dashboard.html?payment=success";
+      }, 2500);
+      return;
+    }
 
-      if(payment){
-        openPayment({ ...payment, routeUsed: res.matchedPath });
-        showMsg(`Payment request created using ${res.matchedPath}. Send the payment, then click I Made a Transfer.`, "success");
+    if (status === "cancelled" || status === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())) {
+      localStorage.removeItem(WAITING_PAYMENT_KEY);
+      stopPaymentPolling();
+      setExpiredMode();
+      showMsg("Payment expired or cancelled. Create a new one.", "error");
+      return;
+    }
+
+    if (status === "awaiting_confirmation") {
+      pollStatusText.textContent = `Payment submitted. Waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+      return;
+    }
+
+    pollStatusText.textContent = `Still waiting... Last check: ${new Date().toLocaleTimeString()}`;
+  };
+
+  await check();
+  paymentPoller = setInterval(check, 5000);
+}
+
+async function userMadeTransfer() {
+  if (!latestPayment || !latestPayment.id || latestPayment.id === "-") return showMsg("Create or open a payment request first", "warn");
+
+  const currentStatus = String(latestPayment.status || "").toLowerCase();
+  if (currentStatus === "verified") {
+    showMsg("This payment is already verified", "success");
+    return setConfirmedMode();
+  }
+
+  if (currentStatus === "cancelled" || currentStatus === "expired" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())) {
+    showMsg("This payment is expired or cancelled. Create a new one.", "error");
+    return setExpiredMode();
+  }
+
+  if (currentStatus === "awaiting_confirmation") {
+    localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
+    showMsg("This payment is already waiting for admin confirmation", "success");
+    return pollPaymentUntilVerified(latestPayment.id);
+  }
+
+  iTransferredBtn.disabled = true;
+  iTransferredBtn.textContent = "Saving...";
+
+  const res = await callMatched("paymentIMade", "POST", {
+    paymentId: latestPayment.id,
+    id: latestPayment.id
+  });
+
+  iTransferredBtn.disabled = false;
+  iTransferredBtn.textContent = "I Made a Transfer";
+  setRouteBadge(routeTransferBadge, `Transfer route: ${res.matchedPath || "-"}`);
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      logout();
+      return;
+    }
+    showMsg(res.data?.message || "Could not mark payment as sent", "error");
+    return;
+  }
+
+  localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
+  showMsg(`Transfer marked using ${res.matchedPath}. Waiting for admin confirmation...`, "success");
+  await loadPayments(false);
+  pollPaymentUntilVerified(latestPayment.id);
+}
+
+document.getElementById("createPaymentBtn").onclick = createPaymentRequest;
+document.getElementById("loadPendingBtn").onclick = loadLatestPending;
+document.getElementById("refreshBtn").onclick = async () => {
+  localStorage.removeItem(ROUTE_CACHE_KEY);
+  ROUTE_CACHE = {};
+  await loadPlans();
+  await loadMe();
+  await loadPayments(false);
+  showMsg("Refreshed", "success");
+};
+document.getElementById("logoutBtn").onclick = logout;
+document.getElementById("copyAddressBtn").onclick = () => copyText(paymentAddress.textContent, "Address copied");
+document.getElementById("copyQrTextBtn").onclick = () => copyText(paymentQrText.textContent, "QR text copied");
+document.getElementById("openBillingBtn").onclick = () => { window.location.href = "billing.html"; };
+document.getElementById("checkMeBtn").onclick = async () => {
+  await loadMe();
+  await loadPayments(false);
+  showMsg("Subscription status checked", "success");
+};
+document.getElementById("iTransferredBtn").onclick = userMadeTransfer;
+quantityInput.addEventListener("input", updateSelection);
+
+(async function init() {
+  if (!ensureAuth()) return;
+  setBackendBadge();
+  await loadPlans();
+  await loadMe();
+  const payment = await loadPayments(true);
+
+  const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
+  if (waitingPaymentId) {
+    if (payment && payment.id === waitingPaymentId) {
+      pollPaymentUntilVerified(waitingPaymentId);
+    } else {
+      const existing = (window.__payments || []).find(x => x.id === waitingPaymentId);
+      if (existing) {
+        openPayment(existing);
+        pollPaymentUntilVerified(waitingPaymentId);
       } else {
-        showMsg("Payment request created", "success");
-      }
-
-      await loadPayments(false);
-      await loadMe();
-    }
-
-    async function loadLatestPending(){
-      const payment = await loadPayments(true);
-      if(payment) showMsg("Latest pending payment loaded", "success");
-      else showMsg("No pending payment found", "warn");
-    }
-
-    async function copyText(text, okMessage){
-      try{
-        await navigator.clipboard.writeText(String(text || ""));
-        showMsg(okMessage, "success");
-      }catch{
-        showMsg("Copy failed", "error");
+        localStorage.removeItem(WAITING_PAYMENT_KEY);
       }
     }
+  }
+})();
 
-    async function pollPaymentUntilVerified(paymentIdValue){
-      stopPaymentPolling();
-      setWaitingMode(true);
-      pollStatusText.textContent = `Checking payment ${paymentIdValue}...`;
-
-      const check = async () => {
-        const res = await callMatched("paymentsMe", "GET");
-        if(!res.ok){
-          pollStatusText.textContent = "Network issue while checking payment status...";
-          return;
-        }
-
-        const rawPayments = Array.isArray(res.data?.payments)
-          ? res.data.payments
-          : Array.isArray(res.data?.items)
-          ? res.data.items
-          : Array.isArray(res.data)
-          ? res.data
-          : [];
-
-        const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
-        window.__payments = payments;
-        renderPaymentsTable(payments);
-
-        const payment = payments.find(x => x.id === paymentIdValue);
-        if(!payment){
-          pollStatusText.textContent = "Payment not found yet. Retrying...";
-          return;
-        }
-
-        openPayment(payment);
-        const status = String(payment.status || "").toLowerCase();
-
-        if(status === "verified"){
-          localStorage.removeItem(WAITING_PAYMENT_KEY);
-          stopPaymentPolling();
-          setConfirmedMode();
-          await loadMe();
-          showMsg("Payment confirmed and successful. Redirecting to dashboard...", "success");
-          redirectTimer = setTimeout(() => {
-            window.location.href = "dashboard.html?payment=success";
-          }, 2500);
-          return;
-        }
-
-        if(status === "cancelled" || status === "expired" || (payment.expiresAt && payment.expiresAt <= Date.now())){
-          localStorage.removeItem(WAITING_PAYMENT_KEY);
-          stopPaymentPolling();
-          setExpiredMode();
-          showMsg("Payment expired or cancelled. Create a new one.", "error");
-          return;
-        }
-
-        if(status === "awaiting_confirmation"){
-          pollStatusText.textContent = `Payment submitted. Waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-          return;
-        }
-
-        pollStatusText.textContent = `Still waiting... Last check: ${new Date().toLocaleTimeString()}`;
-      };
-
-      await check();
-      paymentPoller = setInterval(check, 5000);
-    }
-
-    async function userMadeTransfer(){
-      if(!latestPayment || !latestPayment.id || latestPayment.id === "-") return showMsg("Create or open a payment request first", "warn");
-
-      const currentStatus = String(latestPayment.status || "").toLowerCase();
-      if(currentStatus === "verified"){
-        showMsg("This payment is already verified", "success");
-        return setConfirmedMode();
-      }
-
-      if(currentStatus === "cancelled" || currentStatus === "expired" || (latestPayment.expiresAt && latestPayment.expiresAt <= Date.now())){
-        showMsg("This payment is expired or cancelled. Create a new one.", "error");
-        return setExpiredMode();
-      }
-
-      if(currentStatus === "awaiting_confirmation"){
-        localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
-        showMsg("This payment is already waiting for admin confirmation", "success");
-        return pollPaymentUntilVerified(latestPayment.id);
-      }
-
-      iTransferredBtn.disabled = true;
-      iTransferredBtn.textContent = "Saving...";
-
-      const res = await callMatched("paymentIMade", "POST", {
-        paymentId: latestPayment.id,
-        id: latestPayment.id
-      });
-
-      iTransferredBtn.disabled = false;
-      iTransferredBtn.textContent = "I Made a Transfer";
-      setRouteBadge(routeTransferBadge, `Transfer route: ${res.matchedPath || "-"}`);
-
-      if(!res.ok){
-        if(res.status === 401){
-          logout();
-          return;
-        }
-        showMsg(res.data?.message || "Could not mark payment as sent", "error");
-        return;
-      }
-
-      localStorage.setItem(WAITING_PAYMENT_KEY, latestPayment.id);
-      showMsg(`Transfer marked using ${res.matchedPath}. Waiting for admin confirmation...`, "success");
-      await loadPayments(false);
-      pollPaymentUntilVerified(latestPayment.id);
-    }
-
-    document.getElementById("createPaymentBtn").onclick = createPaymentRequest;
-    document.getElementById("loadPendingBtn").onclick = loadLatestPending;
-    document.getElementById("refreshBtn").onclick = async () => {
-      await loadPlans();
-      await loadMe();
-      await loadPayments(false);
-      showMsg("Refreshed", "success");
-    };
-    document.getElementById("logoutBtn").onclick = logout;
-    document.getElementById("copyAddressBtn").onclick = () => copyText(paymentAddress.textContent, "Address copied");
-    document.getElementById("copyQrTextBtn").onclick = () => copyText(paymentQrText.textContent, "QR text copied");
-    document.getElementById("openBillingBtn").onclick = () => { window.location.href = "billing.html"; };
-    document.getElementById("checkMeBtn").onclick = async () => {
-      await loadMe();
-      await loadPayments(false);
-      showMsg("Subscription status checked", "success");
-    };
-    document.getElementById("iTransferredBtn").onclick = userMadeTransfer;
-    quantityInput.addEventListener("input", updateSelection);
-
-    (async function init(){
-      if(!ensureAuth()) return;
-      setBackendBadge();
-      await loadPlans();
-      await loadMe();
-      const payment = await loadPayments(true);
-
-      const waitingPaymentId = localStorage.getItem(WAITING_PAYMENT_KEY);
-      if(waitingPaymentId){
-        if(payment && payment.id === waitingPaymentId){
-          pollPaymentUntilVerified(waitingPaymentId);
-        } else {
-          const existing = (window.__payments || []).find(x => x.id === waitingPaymentId);
-          if(existing){
-            openPayment(existing);
-            pollPaymentUntilVerified(waitingPaymentId);
-          } else {
-            localStorage.removeItem(WAITING_PAYMENT_KEY);
-          }
-        }
-      }
-    })();
-
-    window.addEventListener("beforeunload", () => {
-      stopPaymentCountdown();
-      stopPaymentPolling();
-    });
-  </script>
+window.addEventListener("beforeunload", () => {
+  stopPaymentCountdown();
+  stopPaymentPolling();
+});
+</script>
 </body>
 </html>
