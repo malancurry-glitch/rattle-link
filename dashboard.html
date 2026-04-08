@@ -332,6 +332,7 @@
         <button id="exportCsvBtn" type="button">Export CSV</button>
         <button id="exportJsonBtn" type="button">Export JSON</button>
         <button id="landingCenterBtn" class="backend2-btn" type="button">Landing Pages</button>
+        <button onclick="goToVanityPage()">✨ Vanity Slugs</button>
         <button id="domainCenterBtn" class="backend2-btn" type="button">Custom Domains</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
         <button id="quickSettingsBtn" class="ghost-btn" type="button">Quick Settings</button>
@@ -1303,6 +1304,9 @@
         ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
       ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
     }
+    function goToVanityPage() {
+    window.location.href = "vanity.html";
+  }
 
     function sortPayments(payments = []) {
       return [...payments].sort((a, b) => {
@@ -2697,6 +2701,7 @@
     window.markPaymentSent = markPaymentSent;
     window.showToast = showToast;
     window.goToLandingPage = goToLandingPage;
+    window.goToVanityPage = goToVanityPage;
     window.goToDomainManager = goToDomainManager;
     window.showHistory = showHistory;
     window.showGeo = showGeo;
@@ -2706,6 +2711,7 @@
     window.startEmailOtpSetup = startEmailOtpSetup;
     window.enableEmailOtp = enableEmailOtp;
     window.disableTwoFactor = disableTwoFactor;
+    document.getElementById("openVanityPageBtn")?.addEventListener("click", goToVanityPage);
   </script>
 </body>
 </html>
