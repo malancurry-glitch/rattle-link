@@ -489,7 +489,7 @@
   <script>
     const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
-    const ROUTE_CACHE_KEY = "upgrade_route_cache_v2";
+    const ROUTE_CACHE_KEY = "upgrade_route_cache_v3";
     const WAITING_PAYMENT_KEY = "waitingPaymentId";
     const LAST_PAYMENT_KEY = "lastPaymentId";
     const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
@@ -498,12 +498,13 @@
     const ROUTE_CACHE = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || "{}");
 
     const FALLBACK_CRYPTO_OPTIONS = [
-      { code: "BTC", asset: "BTC", network: "Bitcoin", label: "Bitcoin" },
-      { code: "ETH", asset: "ETH", network: "Ethereum", label: "Ethereum" },
-      { code: "USDT_TRC20", asset: "USDT", network: "TRC20", label: "USDT (TRC20)" },
-      { code: "USDT_ERC20", asset: "USDT", network: "ERC20", label: "USDT (ERC20)" },
-      { code: "USDC_ERC20", asset: "USDC", network: "ERC20", label: "USDC (ERC20)" },
-      { code: "LTC", asset: "LTC", network: "Litecoin", label: "Litecoin" }
+      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
     ];
 
     const meUser = document.getElementById("meUser");
@@ -604,30 +605,30 @@
     function routeCandidates(kind){
       const map = {
         plans: [
+          "/auth/plans",
           "/plans",
           "/billing/plans",
-          "/auth/plans",
           "/auth/billing/plans",
           "/subscription/plans",
           "/auth/subscription/plans"
         ],
         me: [
-          "/me",
           "/auth/me",
+          "/me",
           "/profile",
           "/auth/profile"
         ],
         paymentsMe: [
-          "/payments/me",
           "/auth/payments/me",
+          "/payments/me",
           "/billing/payments/me",
           "/auth/billing/payments/me",
           "/payments",
           "/auth/payments"
         ],
         createPayment: [
-          "/payment-request",
           "/auth/payment-request",
+          "/payment-request",
           "/payments/request",
           "/auth/payments/request",
           "/billing/payment-request",
@@ -636,8 +637,8 @@
           "/auth/payments/create"
         ],
         paymentIMade: [
-          "/payment-i-made",
           "/auth/payment-i-made",
+          "/payment-i-made",
           "/payments/i-made",
           "/auth/payments/i-made",
           "/billing/payment-i-made",
@@ -663,10 +664,6 @@
           data = text ? JSON.parse(text) : {};
         }catch{
           data = { message: text };
-        }
-
-        if(res.status === 401){
-          return { ok:false, status:401, data, path };
         }
 
         return { ok: res.ok, status: res.status, data, path };
@@ -706,7 +703,9 @@
           return { ...res, matchedPath: path };
         }
 
-        if(!bestFailure) bestFailure = { ...res, matchedPath: path };
+        if(!bestFailure || (bestFailure.status === 404 && res.status !== 404)){
+          bestFailure = { ...res, matchedPath: path };
+        }
       }
 
       return bestFailure || { ok:false, status:0, data:{ message:"No matching route found" }, matchedPath:"-" };
@@ -806,12 +805,15 @@
       let cryptos = [];
 
       if(Array.isArray(data?.plans)) plans = data.plans;
+      else if(data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
       else if(Array.isArray(data?.data?.plans)) plans = data.data.plans;
       else if(Array.isArray(data?.subscriptions)) plans = data.subscriptions;
       else if(Array.isArray(data)) plans = data;
 
       if(Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
+      else if(data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
       else if(Array.isArray(data?.crypto)) cryptos = data.crypto;
+      else if(data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
       else if(Array.isArray(data?.cryptos)) cryptos = data.cryptos;
       else if(Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
       else if(Array.isArray(data?.coins)) cryptos = data.coins;
@@ -819,8 +821,8 @@
       else if(Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
 
       return {
-        plans: plans.map(normalizePlan),
-        cryptos: cryptos.map(normalizeCrypto)
+        plans: plans.map(normalizePlan).filter(x => x.code),
+        cryptos: cryptos.map(normalizeCrypto).filter(x => x.code)
       };
     }
 
@@ -881,7 +883,7 @@
 
     function renderCrypto(){
       if(!cryptoData.length){
-        cryptoBox.innerHTML = `<div class="muted">No crypto options returned by backend. Fallback options were also unavailable.</div>`;
+        cryptoBox.innerHTML = `<div class="muted">No crypto options are available.</div>`;
         return;
       }
 
@@ -1093,6 +1095,10 @@
       setRouteBadge(routePlansBadge, `Plans route: ${res.matchedPath || "-"}`);
 
       if(!res.ok){
+        if(res.status === 401){
+          logout();
+          return;
+        }
         showMsg(res.data?.message || "Failed to load plans", "error");
         return;
       }
@@ -1109,7 +1115,7 @@
       updateSelection();
 
       if(!extracted.cryptos.length){
-        showMsg("Backend did not return crypto options, so fallback crypto choices were loaded.", "warn");
+        showMsg("Backend did not return crypto options, so built-in crypto choices were loaded.", "warn");
       }
     }
 
@@ -1215,6 +1221,7 @@
       const res = await callMatched("createPayment", "POST", {
         planCode: selectedPlan,
         plan: selectedPlan,
+        billingCycle: selectedPlan,
         cryptoCode: selectedCrypto,
         crypto: selectedCrypto,
         quantity: qty
