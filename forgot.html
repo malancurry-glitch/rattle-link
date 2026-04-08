@@ -346,340 +346,201 @@
   </div>
 
   <script>
-    const PRIMARY_API = "https://rattleshortapi.it.com";
-    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+const PRIMARY_API = "https://rattleshortapi.it.com";
+const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    let cooldown = 0;
-    let cooldownTimer = null;
-    let lastEmail = "";
-    let lastBackend = null;
+let cooldown = 0;
+let cooldownTimer = null;
+let lastEmail = "";
+let lastBackend = null;
 
-    const username = document.getElementById("username");
-    const msgBox = document.getElementById("msg");
-    const btn = document.getElementById("btn");
-    const spinner = document.getElementById("spinner");
-    const btnText = document.getElementById("btnText");
-    const card = document.getElementById("card");
-    const formBox = document.getElementById("formBox");
-    const successBox = document.getElementById("successBox");
-    const backendBadge = document.getElementById("backendBadge");
-    const successBackendBadge = document.getElementById("successBackendBadge");
-    const successText = document.getElementById("successText");
-    const backToIndexBtn = document.getElementById("backToIndexBtn");
+const username = document.getElementById("username");
+const msgBox = document.getElementById("msg");
+const btn = document.getElementById("btn");
+const spinner = document.getElementById("spinner");
+const btnText = document.getElementById("btnText");
+const card = document.getElementById("card");
+const formBox = document.getElementById("formBox");
+const successBox = document.getElementById("successBox");
+const backendBadge = document.getElementById("backendBadge");
+const successBackendBadge = document.getElementById("successBackendBadge");
+const successText = document.getElementById("successText");
+const backToIndexBtn = document.getElementById("backToIndexBtn");
 
-    function toggleTheme(){
-      document.body.classList.toggle("light");
-      localStorage.setItem(
-        "theme",
-        document.body.classList.contains("light") ? "light" : "dark"
-      );
-    }
+/* ========================= BASIC ========================= */
 
-    function loadTheme(){
-      const saved = localStorage.getItem("theme");
-      if(saved === "light"){
-        document.body.classList.add("light");
-      }
-    }
+function toggleTheme(){
+  document.body.classList.toggle("light");
+  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+}
 
-    function show(msg, type = "error"){
-      msgBox.innerText = msg;
-      msgBox.className = "msg";
+function loadTheme(){
+  if(localStorage.getItem("theme") === "light"){
+    document.body.classList.add("light");
+  }
+}
 
-      if(type === "success") msgBox.classList.add("successText");
-      else if(type === "warn") msgBox.classList.add("warnText");
-      else msgBox.classList.add("error");
-    }
+function show(msg, type="error"){
+  msgBox.innerText = msg;
+  msgBox.className = "msg";
+  if(type==="success") msgBox.classList.add("successText");
+  else if(type==="warn") msgBox.classList.add("warnText");
+  else msgBox.classList.add("error");
+}
 
-    function setLoading(state){
-      btn.disabled = state;
-      spinner.style.display = state ? "inline-block" : "none";
-      btnText.style.display = state ? "none" : "inline";
-    }
+function setLoading(state){
+  btn.disabled = state;
+  spinner.style.display = state ? "inline-block" : "none";
+  btnText.style.display = state ? "none" : "inline";
+}
 
-    function isEmail(val){
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-    }
+function isEmail(val){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+}
 
-    function backendLabel(name){
-      return name === "primary" ? "Backend 2" : "Legacy AWS";
-    }
+function backendLabel(b){
+  return b==="primary" ? "Backend 2" : "Legacy AWS";
+}
 
-    function showBackendBadge(target, backend){
-      if(!backend){
-        target.classList.add("hidden");
-        target.textContent = "";
-        return;
-      }
-      target.classList.remove("hidden");
-      target.textContent = `Using ${backendLabel(backend)}`;
-    }
+function showBackendBadge(el, backend){
+  if(!backend){ el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.textContent = `Using ${backendLabel(backend)}`;
+}
 
-    function normalizeApiUrl(url){
-      return String(url || "").replace(/\/+$/, "");
-    }
+/* ========================= NETWORK ========================= */
 
-    function isUsableApiUrl(url){
-      const clean = normalizeApiUrl(url);
-      if(!clean) return false;
-      if(clean.includes("your-backend2-domain.com")) return false;
-      return /^https?:\/\//i.test(clean);
-    }
+function clean(url){
+  return String(url||"").replace(/\/+$/,"");
+}
 
-    function buildIndexHref(email = "", backend = ""){
-      const query = [];
-      if(email) query.push(`email=${encodeURIComponent(email)}`);
-      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
-      return `index.html${query.length ? `?${query.join("&")}` : ""}`;
-    }
+async function callApi(base, path, options={}){
+  try{
+    const res = await fetch(clean(base)+path, options);
+    const txt = await res.text();
+    let data={};
+    try{ data = txt ? JSON.parse(txt) : {}; }catch{ data={message:txt}; }
+    return {ok:res.ok,status:res.status,data};
+  }catch(e){
+    return {ok:false,status:0,data:{message:e.message}};
+  }
+}
 
-    function updateBackLinks(email = "", backend = ""){
-      const href = buildIndexHref(email, backend);
-      backToIndexBtn.href = href;
-    }
+/* ========================= 🔥 SMART ROUTE FIX ========================= */
 
-    async function safeBody(res){
-      const text = await res.text();
-      if(!text) return {};
-      try{
-        return JSON.parse(text);
-      }catch{
-        return { message: text };
-      }
-    }
+async function callForgotRoutes(payload){
+  const routes = [
+    "/auth/forgot",
+    "/forgot",
+    "/forgot-password",
+    "/auth/forgot-password"
+  ];
 
-    async function callApi(baseUrl, path, options = {}){
-      const url = normalizeApiUrl(baseUrl);
+  const backends = [
+    {name:"primary", url:PRIMARY_API},
+    {name:"legacy", url:LEGACY_API}
+  ];
 
-      if(!isUsableApiUrl(url)){
-        return {
-          ok: false,
-          status: 0,
-          data: { message: "Backend URL not configured" },
-          networkError: true
-        };
+  for(const backend of backends){
+    for(const path of routes){
+      const res = await callApi(backend.url, path, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if(res.ok){
+        console.log("✅ WORKING ROUTE:", backend.name, path);
+        return { ...res, backend:backend.name, matchedPath:path };
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-
-      try{
-        const res = await fetch(url + path, {
-          ...options,
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
-
-        const data = await safeBody(res);
-        return { ok: res.ok, status: res.status, data, networkError: false };
-      }catch(error){
-        clearTimeout(timeout);
-        return {
-          ok: false,
-          status: 0,
-          data: { message: error?.message || "Network request failed" },
-          networkError: true
-        };
-      }
+      // stop if not route issue
+      if(res.status !== 404) return { ...res, backend:backend.name };
     }
+  }
 
-    function shouldFallbackToLegacy(path, result){
-      const status = Number(result?.status || 0);
-      const networkError = !!result?.networkError;
-      const msg = String(result?.data?.message || "").toLowerCase();
+  return { ok:false, status:404, data:{message:"Forgot route not found on any backend"} };
+}
 
-      if(path === "/forgot"){
-        if(networkError) return true;
-        if(status === 404 || status >= 500) return true;
+/* ========================= UI ========================= */
 
-        if(
-          msg.includes("backend url not configured") ||
-          msg.includes("network request failed") ||
-          msg.includes("failed to fetch") ||
-          msg.includes("account not found in backend2")
-        ){
-          return true;
-        }
-      }
+function startCooldown(sec=30){
+  cooldown = sec;
+  clearInterval(cooldownTimer);
 
-      return false;
-    }
+  btn.disabled = true;
+  btnText.textContent = `Wait ${cooldown}s`;
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy"){
-      const primary = normalizeApiUrl(PRIMARY_API);
-      const legacy = normalizeApiUrl(LEGACY_API);
-
-      if(behavior === "primaryOnly"){
-        const first = await callApi(primary, path, options);
-        return { ...first, backend: "primary" };
-      }
-
-      if(behavior === "legacyOnly"){
-        const only = await callApi(legacy, path, options);
-        return { ...only, backend: "legacy" };
-      }
-
-      const first = await callApi(primary, path, options);
-
-      if(first.ok){
-        return { ...first, backend: "primary" };
-      }
-
-      if(!shouldFallbackToLegacy(path, first)){
-        return { ...first, backend: "primary" };
-      }
-
-      const second = await callApi(legacy, path, options);
-      return { ...second, backend: "legacy", firstAttempt: first };
-    }
-
-    function friendlyError(result){
-      const msg = String(result?.data?.message || "").trim();
-      if(msg) return msg;
-      if(result?.networkError) return "Network error";
-      return "Failed";
-    }
-
-    function startCooldown(seconds = 30){
-      cooldown = seconds;
+  cooldownTimer = setInterval(()=>{
+    cooldown--;
+    if(cooldown<=0){
       clearInterval(cooldownTimer);
-
-      btn.disabled = true;
-      btnText.style.display = "inline";
-      spinner.style.display = "none";
+      btn.disabled = false;
+      btnText.textContent = "Send Reset Link";
+    }else{
       btnText.textContent = `Wait ${cooldown}s`;
-
-      cooldownTimer = setInterval(() => {
-        cooldown--;
-        if(cooldown <= 0){
-          clearInterval(cooldownTimer);
-          cooldown = 0;
-          btn.disabled = false;
-          btnText.textContent = "Send Reset Link";
-        } else {
-          btnText.textContent = `Wait ${cooldown}s`;
-        }
-      }, 1000);
     }
+  },1000);
+}
 
-    async function sendReset(){
-      if(btn.disabled && cooldown > 0) return;
+/* ========================= MAIN ========================= */
 
-      const user = username.value.trim().toLowerCase();
+async function sendReset(){
+  if(btn.disabled && cooldown>0) return;
 
-      if(!user){
-        show("Enter email ❌");
-        return;
-      }
+  const user = username.value.trim().toLowerCase();
 
-      if(!isEmail(user)){
-        show("Invalid email ❌");
-        return;
-      }
+  if(!user) return show("Enter email ❌");
+  if(!isEmail(user)) return show("Invalid email ❌");
+  if(cooldown>0) return show(`Wait ${cooldown}s ⏳`,"warn");
 
-      if(cooldown > 0){
-        show(`Wait ${cooldown}s before sending again ⏳`, "warn");
-        return;
-      }
+  setLoading(true);
+  show("");
+  showBackendBadge(backendBadge,null);
 
-      setLoading(true);
-      show("");
-      showBackendBadge(backendBadge, null);
+  const result = await callForgotRoutes({ username:user });
 
-      try{
-        const result = await apiHybrid(
-          "/forgot",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: user })
-          },
-          "primaryThenLegacy"
-        );
+  if(!result.ok){
+    show(result.data?.message || "Failed ❌");
+    setLoading(false);
+    return;
+  }
 
-        if(!result.ok){
-          show(friendlyError(result) + " ❌");
-          setLoading(false);
-          return;
-        }
+  lastEmail = user;
+  lastBackend = result.backend;
 
-        lastEmail = user;
-        lastBackend = result.backend || "primary";
-        localStorage.setItem("lastUser", lastEmail);
+  formBox.classList.add("hidden");
+  successBox.classList.remove("hidden");
+  card.classList.add("success");
 
-        formBox.classList.add("hidden");
-        successBox.classList.remove("hidden");
-        card.classList.add("success");
+  showBackendBadge(successBackendBadge,lastBackend);
+  successText.textContent = `Reset sent via ${backendLabel(lastBackend)}`;
 
-        showBackendBadge(successBackendBadge, lastBackend);
-        successText.textContent = `Your reset request was accepted by ${backendLabel(lastBackend)}. Check your inbox and spam folder.`;
-        updateBackLinks(lastEmail, lastBackend);
+  setLoading(false);
+  startCooldown(30);
+}
 
-        show(`Reset link requested successfully via ${backendLabel(lastBackend)} ✅`, "success");
-        setLoading(false);
-        startCooldown(30);
-      }catch(e){
-        console.error("ERROR:", e);
-        show("Network error ❌");
-        setLoading(false);
-      }
-    }
+/* ========================= NAV ========================= */
 
-    async function sendAgain(){
-      if(!lastEmail){
-        formBox.classList.remove("hidden");
-        successBox.classList.add("hidden");
-        card.classList.remove("success");
-        return;
-      }
+function goBack(){
+  window.location.href = "index.html";
+}
 
-      username.value = lastEmail;
-      formBox.classList.remove("hidden");
-      successBox.classList.add("hidden");
-      card.classList.remove("success");
-      updateBackLinks(lastEmail, lastBackend || "");
+function autoFillEmail(){
+  const saved = localStorage.getItem("lastUser");
+  if(saved){
+    username.value = saved;
+    lastEmail = saved;
+  }
+}
 
-      if(cooldown > 0){
-        show(`Wait ${cooldown}s before sending again ⏳`, "warn");
-        return;
-      }
+username.addEventListener("keydown", e=>{
+  if(e.key==="Enter") sendReset();
+});
 
-      await sendReset();
-    }
-
-    function goBack(){
-      const email = username.value.trim().toLowerCase() || lastEmail || "";
-      const backend = lastBackend || "";
-      window.location.href = buildIndexHref(email, backend);
-    }
-
-    function autoFillEmail(){
-      const params = new URLSearchParams(window.location.search);
-      const email = (params.get("email") || localStorage.getItem("rememberUser") || localStorage.getItem("lastUser") || "").trim().toLowerCase();
-      const backend = (params.get("backend") || "").trim().toLowerCase();
-
-      if(email){
-        username.value = email;
-        lastEmail = email;
-      }
-
-      if(backend === "primary" || backend === "legacy"){
-        lastBackend = backend;
-        showBackendBadge(backendBadge, lastBackend);
-      }
-
-      updateBackLinks(email, backend);
-    }
-
-    username.addEventListener("keydown", (e) => {
-      if(e.key === "Enter"){
-        sendReset();
-      }
-    });
-
-    loadTheme();
-    autoFillEmail();
-  </script>
+loadTheme();
+autoFillEmail();
+</script>
 
 </body>
 </html>
