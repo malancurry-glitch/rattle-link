@@ -1457,41 +1457,41 @@
     }
 
     async function loadPayments(showMessage = false) {
-  const [primaryRes, legacyRes] = await Promise.all([
-    authorizedFetch("/payments/me", { method: "GET" }, "primary", false),
-    authorizedFetch("/payments/me", { method: "GET" }, "legacy", false)
-  ]);
+  // ✅ ONLY USE BACKEND2 (SOURCE OF TRUTH)
+  const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
 
-  function extractPayments(res, backend){
-    if(!res.ok) return [];
-
-    const d = res.data;
-
-    // ✅ handle ALL possible formats
-    if(Array.isArray(d)) return d.map(p => normalizePaymentItem(p, backend));
-
-    if(Array.isArray(d?.payments)) return d.payments.map(p => normalizePaymentItem(p, backend));
-
-    if(Array.isArray(d?.items)) return d.items.map(p => normalizePaymentItem(p, backend));
-
-    if(d?.payment) return [normalizePaymentItem(d.payment, backend)];
-
-    return [];
+  if (!res.ok) {
+    console.error("PAYMENTS ERROR:", res);
+    paymentsStore = [];
+    renderPaymentsTable();
+    return;
   }
 
-  const primaryPayments = extractPayments(primaryRes, "primary");
-  const legacyPayments = extractPayments(legacyRes, "legacy");
+  const d = res.data;
 
-  paymentsStore = sortPayments([...primaryPayments, ...legacyPayments]);
+  // ✅ normalize properly
+  let payments = [];
 
-  console.log("PAYMENTS DEBUG:", {
-    primary: primaryRes.data,
-    legacy: legacyRes.data,
-    final: paymentsStore
-  });
+  if (Array.isArray(d)) {
+    payments = d;
+  } else if (Array.isArray(d?.payments)) {
+    payments = d.payments;
+  } else if (Array.isArray(d?.items)) {
+    payments = d.items;
+  } else if (d?.payment) {
+    payments = [d.payment];
+  }
+
+  // ✅ force normalize
+  paymentsStore = sortPayments(
+    payments.map(p => normalizePaymentItem(p, "primary"))
+  );
+
+  console.log("✅ PAYMENTS LOADED:", paymentsStore);
 
   renderPaymentsTable();
 
+  // keep polling logic
   if (waitingPaymentId) {
     const p = paymentsStore.find(x => x.id === waitingPaymentId);
     if (p) handleWaitingPaymentState(p);
