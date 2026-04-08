@@ -714,6 +714,16 @@ const SUPPORT_CONFIG = {
   phone: "+1 954 787 8220"
 };
 
+const FALLBACK_CRYPTO_OPTIONS = [
+  { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+  { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+  { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+  { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+  { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+  { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+  { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
+];
+
 const ROUTE_CACHE = {
   primary: {},
   legacy: {}
@@ -729,7 +739,7 @@ let refreshTimer = null;
 let map = null;
 let loadingLinks = false;
 let meState = null;
-let plansState = null;
+let plansState = { plans: [], cryptoOptions: [] };
 let selectedPlan = "monthly";
 let selectedPlanQuantity = 1;
 let paymentPoller = null;
@@ -1035,6 +1045,7 @@ function formatPaymentStatus(status) {
   if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
   if (s === "pending") return `<span class="badge pending">Pending</span>`;
   if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
+  if (s === "expired") return `<span class="badge expired">Expired</span>`;
   return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
 }
 
@@ -1120,16 +1131,16 @@ function isRouteNotFoundResponse(status, data) {
 function buildRouteCandidates(path) {
   const clean = String(path || "").startsWith("/") ? String(path) : `/${path}`;
   const map = {
-    "/me": ["/auth/me", "/me", "/profile", "/auth/profile", "/app/me"],
+    "/me": ["/auth/me", "/me", "/auth/profile", "/profile", "/app/me"],
     "/list": ["/list", "/app/list", "/auth/list", "/links", "/auth/links", "/app/links"],
     "/create": ["/create", "/app/create", "/auth/create", "/links/create", "/auth/links/create"],
     "/delete": ["/delete", "/app/delete", "/auth/delete", "/links/delete", "/auth/links/delete"],
     "/landing/delete": ["/landing/delete", "/app/landing/delete", "/auth/landing/delete", "/landing-page/delete"],
     "/history": ["/history", "/app/history", "/auth/history", "/links/history", "/auth/links/history"],
-    "/plans": ["/plans", "/app/plans", "/auth/plans", "/billing/plans", "/subscription/plans"],
-    "/payment-request": ["/payment-request", "/app/payment-request", "/auth/payment-request", "/payments/request", "/billing/payment-request"],
-    "/payment-i-made": ["/payment-i-made", "/app/payment-i-made", "/auth/payment-i-made", "/payments/i-made", "/billing/payment-i-made"],
-    "/payments/me": ["/payments/me", "/auth/payments/me", "/app/payments/me", "/payment-history", "/auth/payment-history"],
+    "/plans": ["/auth/plans", "/plans", "/app/plans", "/billing/plans", "/subscription/plans"],
+    "/payment-request": ["/auth/payment-request", "/payment-request", "/app/payment-request", "/payments/request", "/billing/payment-request"],
+    "/payment-i-made": ["/auth/payment-i-made", "/payment-i-made", "/app/payment-i-made", "/payments/i-made", "/billing/payment-i-made"],
+    "/payments/me": ["/auth/payments/me", "/payments/me", "/app/payments/me", "/payment-history", "/auth/payment-history"],
     "/health": ["/health", "/app/health", "/auth/health"],
     "/auth/security/2fa/setup": ["/auth/security/2fa/setup", "/security/2fa/setup", "/auth/2fa/setup", "/2fa/setup"],
     "/auth/security/2fa/enable": ["/auth/security/2fa/enable", "/security/2fa/enable", "/auth/2fa/enable", "/2fa/enable"],
@@ -1189,6 +1200,7 @@ async function resolveRoute(backend, canonicalPath, options = {}) {
     }
 
     if (!isRouteNotFoundResponse(res.status, res.data) && res.status !== 405) {
+      ROUTE_CACHE[backend][cacheKey] = candidate;
       return { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
   }
@@ -1289,13 +1301,19 @@ function normalizePaymentItem(item, backend) {
   return {
     ...item,
     backend,
+    id: item.id || item.paymentId || item.payment_id || "",
     amountUsd: Number(item.amountUsd || item.amount_usd || 0),
     createdAt: Number(item.createdAt || item.created_at || 0),
     expiresAt: Number(item.expiresAt || item.expires_at || 0),
     verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
     quantity: Number(item.quantity || parseBillingCycleQuantity(item.billingCycle || item.billing_cycle || 1) || 1),
     planCode: item.planCode || item.plan_code || null,
-    billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-"
+    billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-",
+    cryptoCode: item.cryptoCode || item.crypto_code || item.asset || "",
+    networkCode: item.networkCode || item.network_code || item.network || "",
+    address: item.address || "",
+    qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
+    qrText: item.qrText || item.qr_text || ""
   };
 }
 
@@ -1314,7 +1332,8 @@ function sortPayments(payments = []) {
       if (s === "pending") return 1;
       if (s === "verified") return 2;
       if (s === "cancelled") return 3;
-      return 4;
+      if (s === "expired") return 4;
+      return 5;
     };
     const diff = rank(a.status) - rank(b.status);
     if (diff !== 0) return diff;
@@ -1325,6 +1344,35 @@ function sortPayments(payments = []) {
 function getPlanInfoByCode(code) {
   const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
   return plans.find(p => String(p.code) === String(code)) || null;
+}
+
+function normalizePlan(raw, index = 0) {
+  const code = raw.code || raw.planCode || raw.plan_code || raw.id || `plan_${index + 1}`;
+  return {
+    ...raw,
+    code,
+    label: raw.label || raw.name || normalizePlanLabel(code),
+    amountUsd: Number(raw.amountUsd || raw.amount_usd || raw.price || 0),
+    unit: raw.unit || raw.interval || (code === "weekly" ? "week" : "month"),
+    durationDaysPerUnit: Number(raw.durationDaysPerUnit || raw.duration_days_per_unit || raw.durationDays || (code === "weekly" ? 7 : 30)),
+    limits: raw.limits || {
+      activeShortLinks: Number(raw.activeShortLinks || raw.active_short_links || 0),
+      activeLandingPages: Number(raw.activeLandingPages || raw.active_landing_pages || 0)
+    }
+  };
+}
+
+function normalizeCryptoOption(raw, index = 0) {
+  const code = raw.code || raw.cryptoCode || raw.crypto_code || raw.assetCode || `crypto_${index + 1}`;
+  const asset = raw.asset || raw.symbol || code;
+  const network = raw.network || raw.networkCode || raw.network_code || "";
+  return {
+    ...raw,
+    code,
+    asset,
+    network,
+    label: raw.label || `${asset}${network ? ` (${network})` : ""}`
+  };
 }
 
 function updateBillingPreview() {
@@ -1344,26 +1392,41 @@ function updateBillingPreview() {
     : `${qty} month${qty === 1 ? "" : "s"}`;
   const limits = plan.limits || {};
 
-  billingPreview.innerHTML = `${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
+  billingPreview.innerHTML = `${escapeHtml(normalizePlanLabel(plan.code))} • ${escapeHtml(cycleLabel)}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
 }
 
 function renderMe() {
   if (!meState) return;
 
-  if (meEmail) meEmail.textContent = meState.username || getUsername() || "-";
-  if (mePlan) mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
-  if (meExpire) meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-  if (meRole) meRole.textContent = meState.role || getRole() || "-";
-  if (meEmailVerified) meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
-  if (mePrimaryDomain) mePrimaryDomain.textContent = meState.primaryDomain || "-";
-  if (meTwoFactor) meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
-  if (meTwoFactorMethod) meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
+  const subscriptionPlan = meState.subscriptionPlan || meState.subscription_plan || (meState.subscriptionStatus === "trial" ? "free_trial" : "");
+  const subscriptionExpiresAt = meState.subscriptionExpiresAt || meState.subscription_expires_at || 0;
+  const role = meState.role || getRole() || "-";
+  const email = meState.username || meState.email || getUsername() || "-";
+  const emailVerified = !!(meState.emailVerified ?? meState.email_verified);
+  const primaryDomain = meState.primaryDomain || meState.primary_domain || "-";
+  const twoFactorEnabled = !!(meState.twoFactorEnabled ?? meState.two_factor_enabled);
+  const twoFactorMethodValue = meState.twoFactorMethod || meState.two_factor_method || "-";
 
-  const status = String(meState.subscriptionStatus || "trial").toLowerCase();
-  const paused = !!meState.subscriptionPaused;
-  const planLimits = meState.planLimits || {};
-  const usage = meState.usage || {};
-  const remaining = meState.remaining || {};
+  if (meEmail) meEmail.textContent = email;
+  if (mePlan) mePlan.textContent = normalizePlanLabel(subscriptionPlan);
+  if (meExpire) meExpire.textContent = subscriptionExpiresAt ? fmtDate(subscriptionExpiresAt) : "-";
+  if (meRole) meRole.textContent = role;
+  if (meEmailVerified) meEmailVerified.innerHTML = emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
+  if (mePrimaryDomain) mePrimaryDomain.textContent = primaryDomain;
+  if (meTwoFactor) meTwoFactor.innerHTML = twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
+  if (meTwoFactorMethod) meTwoFactorMethod.textContent = twoFactorMethodValue;
+
+  const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
+  const paused = !!(meState.subscriptionPaused || meState.subscription_paused);
+  const planLimits = meState.planLimits || meState.limits || {};
+  const usage = meState.usage || {
+    activeShortLinks: Number(meState.trialLinksUsed || meState.trial_links_used || 0),
+    activeLandingPages: 0
+  };
+  const remaining = meState.remaining || {
+    activeShortLinks: Math.max(0, Number(planLimits.activeShortLinks || 0) - Number(usage.activeShortLinks || 0)),
+    activeLandingPages: Math.max(0, Number(planLimits.activeLandingPages || 0) - Number(usage.activeLandingPages || 0))
+  };
 
   const shortUsed = Number(usage.activeShortLinks || 0);
   const shortLimit = Math.max(0, Number(planLimits.activeShortLinks || 0));
@@ -1381,10 +1444,10 @@ function renderMe() {
   let badgeClass = "trial";
   let badgeText = "Trial";
 
-  if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+  if (status === "active" && !paused && Number(subscriptionExpiresAt || 0) > Date.now()) {
     badgeClass = "live";
     badgeText = "Active";
-    summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short link slots left and ${Math.max(0, Number(remaining.activeLandingPages || 0))} landing slots left.`;
+    summary = `Plan active until ${fmtDate(subscriptionExpiresAt)}. ${shortRemaining} short link slots left and ${Math.max(0, Number(remaining.activeLandingPages || 0))} landing slots left.`;
   } else if (paused) {
     badgeClass = "paused";
     badgeText = "Paused";
@@ -1399,9 +1462,9 @@ function renderMe() {
     summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
   }
 
-  if (meState.emailVerified === false) summary += " Email verification is still incomplete.";
-  if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
-  if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
+  if (!emailVerified) summary += " Email verification is still incomplete.";
+  if (twoFactorEnabled) summary += ` 2FA is enabled using ${twoFactorMethodValue || "configured method"}.`;
+  if (primaryDomain && primaryDomain !== "-") summary += ` Primary domain: ${primaryDomain}.`;
 
   if (subscriptionBadge) {
     subscriptionBadge.className = `badge ${badgeClass}`;
@@ -1426,14 +1489,37 @@ async function loadPlans(showMessage = false) {
     return;
   }
 
-  plansState = res.data || {};
-  const plans = Array.isArray(plansState?.plans)
-    ? plansState.plans
-    : Array.isArray(plansState)
-    ? plansState
-    : [];
+  const raw = res.data || {};
 
-  plansState = { ...plansState, plans };
+  let plans = [];
+  let cryptoOptions = [];
+
+  if (Array.isArray(raw?.plans)) plans = raw.plans;
+  else if (raw?.plans && typeof raw.plans === "object") plans = Object.values(raw.plans);
+  else if (Array.isArray(raw?.subscriptions)) plans = raw.subscriptions;
+  else if (Array.isArray(raw)) plans = raw;
+
+  if (Array.isArray(raw?.cryptoOptions)) cryptoOptions = raw.cryptoOptions;
+  else if (raw?.cryptoOptions && typeof raw.cryptoOptions === "object") cryptoOptions = Object.values(raw.cryptoOptions);
+  else if (Array.isArray(raw?.crypto)) cryptoOptions = raw.crypto;
+  else if (raw?.crypto && typeof raw.crypto === "object") cryptoOptions = Object.values(raw.crypto);
+  else if (Array.isArray(raw?.cryptos)) cryptoOptions = raw.cryptos;
+  else if (Array.isArray(raw?.coins)) cryptoOptions = raw.coins;
+  else if (Array.isArray(raw?.assets)) cryptoOptions = raw.assets;
+  else if (Array.isArray(raw?.paymentCoins)) cryptoOptions = raw.paymentCoins;
+
+  plans = plans.map(normalizePlan).filter(p => p.code);
+  cryptoOptions = cryptoOptions.map(normalizeCryptoOption).filter(c => c.code);
+
+  if (!cryptoOptions.length) {
+    cryptoOptions = FALLBACK_CRYPTO_OPTIONS.map(normalizeCryptoOption);
+  }
+
+  plansState = {
+    ...raw,
+    plans,
+    cryptoOptions
+  };
 
   if (plans.length && !plans.some(p => p.code === selectedPlan)) {
     selectedPlan = plans[0].code;
@@ -1449,9 +1535,15 @@ async function loadPlans(showMessage = false) {
 function renderPlans() {
   if (!planGrid) return;
   const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+
+  if (!plans.length) {
+    planGrid.innerHTML = `<div class="muted">No plans returned by backend.</div>`;
+    return;
+  }
+
   planGrid.innerHTML = plans.map(plan => `
     <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
-      <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
+      <h4>${escapeHtml(plan.label || normalizePlanLabel(plan.code))}</h4>
       <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
       <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
     </div>
@@ -1469,7 +1561,19 @@ function renderPlans() {
 function renderCryptoOptions() {
   if (!cryptoSelect) return;
   const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
-  cryptoSelect.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("");
+
+  if (!options.length) {
+    cryptoSelect.innerHTML = `<option value="">No crypto options available</option>`;
+    return;
+  }
+
+  cryptoSelect.innerHTML = options.map(opt => `
+    <option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label || opt.code)}</option>
+  `).join("");
+
+  if (!cryptoSelect.value && options[0]?.code) {
+    cryptoSelect.value = options[0].code;
+  }
 }
 
 function stopPaymentPolling() {
@@ -1565,12 +1669,16 @@ async function loadPayments(showMessage = false) {
 
   const primaryPayments = Array.isArray(primaryRes.data?.payments)
     ? primaryRes.data.payments.map(p => normalizePaymentItem(p, "primary"))
+    : Array.isArray(primaryRes.data?.items)
+    ? primaryRes.data.items.map(p => normalizePaymentItem(p, "primary"))
     : Array.isArray(primaryRes.data)
     ? primaryRes.data.map(p => normalizePaymentItem(p, "primary"))
     : [];
 
   const legacyPayments = Array.isArray(legacyRes.data?.payments)
     ? legacyRes.data.payments.map(p => normalizePaymentItem(p, "legacy"))
+    : Array.isArray(legacyRes.data?.items)
+    ? legacyRes.data.items.map(p => normalizePaymentItem(p, "legacy"))
     : Array.isArray(legacyRes.data)
     ? legacyRes.data.map(p => normalizePaymentItem(p, "legacy"))
     : [];
@@ -1630,7 +1738,7 @@ function renderPaymentRequestBox(payment, message = "") {
 }
 
 async function createPaymentRequest() {
-  const cryptoCode = cryptoSelect?.value;
+  const cryptoCode = cryptoSelect?.value?.trim();
   const quantity = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
   selectedPlanQuantity = quantity;
 
@@ -1641,14 +1749,28 @@ async function createPaymentRequest() {
 
   let res = await authorizedFetch("/payment-request", {
     method: "POST",
-    body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
+    body: JSON.stringify({
+      planCode: selectedPlan,
+      billingCycle: selectedPlan,
+      plan: selectedPlan,
+      quantity,
+      cryptoCode,
+      crypto: cryptoCode
+    })
   }, preferredBackend, false);
 
   if (res.status === 401) {
     await verifyMainSession(false);
     res = await authorizedFetch("/payment-request", {
       method: "POST",
-      body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode })
+      body: JSON.stringify({
+        planCode: selectedPlan,
+        billingCycle: selectedPlan,
+        plan: selectedPlan,
+        quantity,
+        cryptoCode,
+        crypto: cryptoCode
+      })
     }, preferredBackend, false);
   }
 
@@ -1661,6 +1783,8 @@ async function createPaymentRequest() {
 
   const payment = res.data?.payment
     ? normalizePaymentItem(res.data.payment, res.backend)
+    : res.data?.data?.payment
+    ? normalizePaymentItem(res.data.data.payment, res.backend)
     : res.data?.id
     ? normalizePaymentItem(res.data, res.backend)
     : null;
@@ -1695,7 +1819,7 @@ async function markPaymentSent(paymentId, backend) {
 
   const res = await authorizedFetch("/payment-i-made", {
     method: "POST",
-    body: JSON.stringify({ paymentId })
+    body: JSON.stringify({ paymentId, id: paymentId })
   }, backend, false);
 
   if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
@@ -1742,6 +1866,8 @@ function startPaymentPolling(paymentId, backend) {
 
     const incoming = Array.isArray(res.data?.payments)
       ? res.data.payments.map(p => normalizePaymentItem(p, backend))
+      : Array.isArray(res.data?.items)
+      ? res.data.items.map(p => normalizePaymentItem(p, backend))
       : Array.isArray(res.data)
       ? res.data.map(p => normalizePaymentItem(p, backend))
       : [];
@@ -2184,7 +2310,7 @@ async function enableTotp() {
       <b>✅ TOTP enabled</b>
       <div class="muted" style="margin-top:8px;">Resolved route: ${escapeHtml(res.resolvedPath || "-")}</div>
       <div class="muted" style="margin-top:8px;">Backup codes:</div>
-      <div class="code-box">${(res.data.backupCodes || []).map(escapeHtml).join("<br>")}</div>
+      <div class="code-box">${(res.data.backupCodes || res.data.recoveryCodes || []).map(escapeHtml).join("<br>")}</div>
     </div>
   `);
 
@@ -2247,8 +2373,8 @@ async function disableTwoFactor() {
 function renderSecurityModal() {
   if (!securityModalContent) return;
 
-  const twoFactorEnabled = !!meState?.twoFactorEnabled;
-  const twoFactorMethod = meState?.twoFactorMethod || "";
+  const twoFactorEnabled = !!(meState?.twoFactorEnabled ?? meState?.two_factor_enabled);
+  const twoFactorMethod = meState?.twoFactorMethod || meState?.two_factor_method || "";
 
   securityModalContent.innerHTML = `
     <div class="info-box">
