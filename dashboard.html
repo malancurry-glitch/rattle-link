@@ -256,11 +256,30 @@
     .backend-legacy{ color:#facc15; border-color:#facc15; }
     .backend-primary{ color:#22c55e; border-color:#22c55e; }
 
-    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; z-index:999; }
-    .upgrade-modal, .modal{
-      position:fixed; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:min(980px,94vw);
-      max-height:88vh; overflow:auto; background:#000; border:1px solid rgba(0,255,255,0.28);
-      border-radius:18px; padding:18px; display:none; z-index:1001; box-shadow:0 0 40px rgba(0,255,255,0.18);
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.65);
+      display:none;
+      z-index:999;
+      pointer-events:auto;
+    }
+
+   .modal,
+   .upgrade-modal{
+     position:fixed;
+     inset:50% auto auto 50%;
+     transform:translate(-50%,-50%);
+     width:min(980px,94vw);
+     max-height:88vh;
+     overflow:auto;
+     background:#000;
+     border:1px solid rgba(0,255,255,0.28);
+     border-radius:18px;
+     padding:18px;
+     display:none;
+     z-index:1001;
+     pointer-events:auto;
     }
 
     .notice, .info-box, .alert-box, .waiting-box, .confirm-box{
