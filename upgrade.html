@@ -6,318 +6,216 @@
   <title>Upgrade - Rattle Link</title>
   <meta name="description" content="Upgrade your Rattle Link plan, create crypto payment requests, and track subscription activation." />
   <style>
-    :root{
-      --bg:#020617;
-      --bg2:#000000;
-      --card:rgba(2,6,23,.88);
-      --card-2:#010816;
-      --text:#e2e8f0;
-      --muted:#94a3b8;
-      --cyan:#00ffff;
-      --green:#22c55e;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-      --blue:#3b82f6;
-      --purple:#8b5cf6;
-      --line:rgba(0,255,255,.18);
-      --line-strong:rgba(0,255,255,.34);
-      --shadow:0 0 18px rgba(0,255,255,.08);
-      --radius:16px;
-    }
+:root{
+  --bg:#020617;
+  --bg2:#000000;
+  --card:rgba(2,6,23,.88);
+  --card-2:#010816;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --cyan:#00ffff;
+  --green:#22c55e;
+  --red:#ef4444;
+  --yellow:#f59e0b;
+  --blue:#3b82f6;
+  --purple:#8b5cf6;
+  --line:rgba(0,255,255,.18);
+  --line-strong:rgba(0,255,255,.34);
+  --shadow:0 0 18px rgba(0,255,255,.08);
+  --radius:16px;
+}
 
-    *{box-sizing:border-box}
+*{box-sizing:border-box}
 
-    body{
-      margin:0;
-      font-family:Inter,Arial,sans-serif;
-      color:var(--text);
-      background:radial-gradient(circle at top,var(--bg),var(--bg2));
-      min-height:100vh;
-      padding:22px;
-    }
+body{
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+  color:var(--text);
+  background:radial-gradient(circle at top,var(--bg),var(--bg2));
+  min-height:100vh;
+  padding:22px;
+}
 
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background-image:
-        linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
-      background-size:40px 40px;
-    }
+/* GRID BACKGROUND */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
+  background-size:40px 40px;
+}
 
-    .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto}
-    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-    .topbar h1{margin:0;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,.35)}
-    .sub{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.6}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+/* 🔥 CRITICAL FIX — ENSURE UI ABOVE ANY OVERLAY */
+.wrap{
+  position:relative;
+  z-index:100;
+}
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(10px);
-      margin-bottom:16px;
-    }
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
 
-    .card h2,.card h3{margin-top:0;color:var(--cyan)}
-    .muted{color:var(--muted);font-size:12px;line-height:1.6}
-    .success{color:var(--green)}
-    .error{color:var(--red)}
-    .warn{color:var(--yellow)}
+.topbar h1{
+  margin:0;
+  color:var(--cyan);
+}
 
-    .badge{
-      display:inline-block;
-      padding:5px 9px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid rgba(255,255,255,.14);
-      margin-right:6px;
-      margin-bottom:6px;
-      background:#08111f;
-    }
+.sub{color:var(--muted);font-size:12px}
 
-    .status-trial{color:var(--yellow);background:#2b1a00}
-    .status-active{color:var(--green);background:#052e16}
-    .status-paused{color:var(--yellow);background:#2b1a00}
-    .status-expired{color:var(--red);background:#2b0000}
-    .status-pending{color:var(--yellow);background:#2b1a00}
-    .status-awaiting{color:#60a5fa;background:#172554}
-    .status-verified{color:var(--green);background:#052e16}
-    .status-cancelled{color:var(--red);background:#2b0000}
-    .status-unknown{color:#cbd5e1;background:#172033}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
 
-    button,a.btn{
-      background:#020617;
-      color:var(--cyan);
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px 13px;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-block;
-      transition:.2s ease;
-      font-size:13px;
-    }
+.grid-2{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:16px;
+}
 
-    button:hover,a.btn:hover{
-      box-shadow:0 0 14px rgba(0,255,255,.18);
-      transform:translateY(-1px);
-    }
+/* CARD */
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+  margin-bottom:16px;
+}
 
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
+.card h2,.card h3{color:var(--cyan)}
 
-    .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
-    .btn-green{color:var(--green);border-color:var(--green)}
-    .btn-red{color:var(--red);border-color:var(--red)}
-    .btn-purple{color:var(--purple);border-color:var(--purple)}
-    .btn-yellow{color:var(--yellow);border-color:var(--yellow)}
+.muted{color:var(--muted);font-size:12px}
 
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .field{margin-bottom:12px}
-    label{display:block;margin-bottom:6px;font-size:12px;color:var(--muted)}
+button,a.btn{
+  background:#020617;
+  color:var(--cyan);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 13px;
+  cursor:pointer;
+  transition:.2s;
+}
 
-    select,input{
-      width:100%;
-      background:#000;
-      color:var(--text);
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:11px 12px;
-      outline:none;
-    }
+button:hover{
+  box-shadow:0 0 14px rgba(0,255,255,.18);
+}
 
-    select:focus,input:focus{
-      border-color:var(--line-strong);
-      box-shadow:0 0 0 3px rgba(0,255,255,.08);
-    }
+/* INPUT */
+input,select{
+  width:100%;
+  background:#000;
+  color:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:11px;
+}
 
-    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-    .plan,.crypto{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      background:var(--card-2);
-      cursor:pointer;
-      transition:.2s ease;
-      user-select:none;
-    }
+/* PLANS */
+.plans{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
 
-    .plan:hover,.crypto:hover{
-      transform:translateY(-2px);
-      box-shadow:0 0 16px rgba(0,255,255,.14);
-    }
+.plan{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  background:var(--card-2);
+  cursor:pointer;
+  transition:.2s;
+}
 
-    .plan.active,.crypto.active{
-      border-color:var(--cyan);
-      box-shadow:0 0 18px rgba(0,255,255,.18);
-    }
+.plan.active{
+  border-color:var(--cyan);
+}
 
-    .plan .price{
-      font-size:28px;
-      color:var(--cyan);
-      font-weight:700;
-      margin:8px 0;
-    }
+/* 🔥 CRYPTO FIX STARTS HERE */
+.crypto-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
 
-    .plan ul{
-      margin:10px 0 0;
-      padding-left:18px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
+  position:relative;
+  z-index:200; /* above everything */
+}
 
-    .crypto-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-    }
+.crypto{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  background:var(--card-2);
+  cursor:pointer;
+  transition:.2s;
 
-    .summary,.mini{
-      background:var(--card-2);
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-    }
+  position:relative;
+  z-index:300; /* clickable */
+  pointer-events:auto;
+}
 
-    .kpi{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:12px;
-    }
+.crypto:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 16px rgba(0,255,255,.14);
+}
 
-    .mini .v{
-      font-size:24px;
-      font-weight:700;
-      color:var(--cyan);
-    }
+.crypto.active{
+  border-color:var(--cyan);
+  box-shadow:0 0 18px rgba(0,255,255,.18);
+}
+/* 🔥 CRYPTO FIX ENDS HERE */
 
-    .payment-box{
-      display:grid;
-      grid-template-columns:240px 1fr;
-      gap:16px;
-      align-items:start;
-    }
+/* SUMMARY */
+.summary{
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+}
 
-    .qr-box{
-      text-align:center;
-      background:#fff;
-      border-radius:14px;
-      padding:12px;
-      min-height:264px;
-    }
+/* PAYMENT */
+.payment-box{
+  display:grid;
+  grid-template-columns:240px 1fr;
+  gap:16px;
+}
 
-    .qr-box img{
-      width:100%;
-      max-width:220px;
-      display:block;
-      margin:0 auto;
-      border-radius:10px;
-    }
+.qr-box{
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+}
 
-    .address-box{
-      background:#000;
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px;
-      word-break:break-all;
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:13px;
-    }
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:760px;
-    }
+td,th{
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
 
-    th,td{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      text-align:left;
-      vertical-align:top;
-      font-size:13px;
-    }
+/* 🔥 IMPORTANT — FIX ANY OVERLAY BLOCKING */
+.overlay,
+.modal,
+.upgrade-modal{
+  pointer-events:none !important;
+  z-index:1 !important;
+}
 
-    tbody tr[data-id]{cursor:pointer}
-    tbody tr[data-id]:hover{background:rgba(15,23,42,.55)}
-    .table-wrap{overflow:auto;width:100%}
-
-    .message{
-      min-height:22px;
-      margin-top:12px;
-      font-size:13px;
-      line-height:1.5;
-      white-space:pre-wrap;
-    }
-
-    .hidden{display:none !important}
-
-    .copy-row{
-      display:flex;
-      gap:8px;
-      align-items:stretch;
-      margin-top:10px;
-    }
-
-    .copy-row .address-box{flex:1;margin:0}
-
-    .timer{
-      font-size:13px;
-      margin-top:10px;
-      color:var(--yellow);
-      font-weight:600;
-    }
-
-    .waiting-box,.confirm-box,.expired-box{
-      margin-top:14px;
-      padding:14px;
-      border-radius:14px;
-    }
-
-    .waiting-box{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35)}
-    .confirm-box{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
-    .expired-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
-
-    .spinner{
-      width:18px;
-      height:18px;
-      border:2px solid rgba(255,255,255,.2);
-      border-top:2px solid var(--cyan);
-      border-radius:50%;
-      display:inline-block;
-      animation:spin 1s linear infinite;
-      vertical-align:middle;
-      margin-right:8px;
-    }
-
-    .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .pill{
-      font-size:11px;
-      padding:6px 9px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#05111f;
-      color:var(--muted);
-    }
-
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    @media (max-width: 980px){
-      .grid-2{grid-template-columns:1fr}
-      .payment-box{grid-template-columns:1fr}
-    }
-  </style>
+/* RESPONSIVE */
+@media (max-width:980px){
+  .grid-2{grid-template-columns:1fr}
+  .payment-box{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
   <div class="wrap">
