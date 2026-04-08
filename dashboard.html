@@ -699,13 +699,14 @@
 
   <div class="toast" id="toast">Copied!</div>
 
-  <script>
+ <script>
 const PRIMARY_API = "https://api.rattleshortapi.it.com";
 const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
 const AUTH_STORAGE_KEY = "rattle_token";
 const ROLE_STORAGE_KEY = "rattle_role";
 const USER_STORAGE_KEY = "rattle_user";
+const ROUTE_CACHE_STORAGE_KEY = "dashboard_route_cache_v2";
 
 const SUPPORT_CONFIG = {
   telegram: "https://t.me/Rtslik",
@@ -724,10 +725,17 @@ const FALLBACK_CRYPTO_OPTIONS = [
   { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
 ];
 
-const ROUTE_CACHE = {
-  primary: {},
-  legacy: {}
-};
+const ROUTE_CACHE = (() => {
+  try {
+    const cached = JSON.parse(localStorage.getItem(ROUTE_CACHE_STORAGE_KEY) || "{}");
+    return {
+      primary: cached.primary || {},
+      legacy: cached.legacy || {}
+    };
+  } catch {
+    return { primary: {}, legacy: {} };
+  }
+})();
 
 let dataStore = [];
 let paymentsStore = [];
@@ -871,6 +879,10 @@ const backend2ExtraResult = $("backend2ExtraResult");
 const landingSummaryText = $("landingSummaryText");
 const domainSummaryText = $("domainSummaryText");
 
+function saveRouteCache() {
+  localStorage.setItem(ROUTE_CACHE_STORAGE_KEY, JSON.stringify(ROUTE_CACHE));
+}
+
 function normalizeApiUrl(url) {
   return String(url || "").replace(/\/+$/, "");
 }
@@ -969,7 +981,7 @@ function showToast(message = "Copied!") {
 }
 
 function pushNotification(message, type = "info") {
-  const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  const id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now() + Math.random());
   notificationsStore.unshift({ id, message, type, time: Date.now() });
   notificationsStore = notificationsStore.slice(0, 8);
   renderNotifications();
@@ -1034,8 +1046,8 @@ function fmtExpire(ts) {
   if (!n) return '<span class="muted">No expiry</span>';
   if (n <= Date.now()) return `<span class="expired">Expired</span>`;
   const diff = n - Date.now();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const days = Math.floor(diff / 86400000);
+  const hrs = Math.floor((diff % 86400000) / 3600000);
   return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
 }
 
@@ -1192,6 +1204,7 @@ async function resolveRoute(backend, canonicalPath, options = {}) {
 
     if (res.ok) {
       ROUTE_CACHE[backend][cacheKey] = candidate;
+      saveRouteCache();
       return { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
 
@@ -1201,6 +1214,7 @@ async function resolveRoute(backend, canonicalPath, options = {}) {
 
     if (!isRouteNotFoundResponse(res.status, res.data) && res.status !== 405) {
       ROUTE_CACHE[backend][cacheKey] = candidate;
+      saveRouteCache();
       return { ...res, backend, resolvedPath: candidate, canonicalPath };
     }
   }
@@ -1313,7 +1327,8 @@ function normalizePaymentItem(item, backend) {
     networkCode: item.networkCode || item.network_code || item.network || "",
     address: item.address || "",
     qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
-    qrText: item.qrText || item.qr_text || ""
+    qrText: item.qrText || item.qr_text || "",
+    status: item.status || "unknown"
   };
 }
 
@@ -1380,6 +1395,8 @@ function updateBillingPreview() {
   const plan = getPlanInfoByCode(selectedPlan);
   const qty = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
   selectedPlanQuantity = qty;
+  const cryptoCode = cryptoSelect?.value || "";
+  const crypto = (plansState.cryptoOptions || []).find(x => String(x.code) === String(cryptoCode));
 
   if (!plan) {
     billingPreview.textContent = "Choose a plan and quantity.";
@@ -1392,7 +1409,11 @@ function updateBillingPreview() {
     : `${qty} month${qty === 1 ? "" : "s"}`;
   const limits = plan.limits || {};
 
-  billingPreview.innerHTML = `${escapeHtml(normalizePlanLabel(plan.code))} • ${escapeHtml(cycleLabel)}<br>Total: <b>${fmtMoney(total)}</b><br>Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
+  billingPreview.innerHTML =
+    `${escapeHtml(normalizePlanLabel(plan.code))} • ${escapeHtml(cycleLabel)}<br>` +
+    `Total: <b>${fmtMoney(total)}</b><br>` +
+    `Crypto: <b>${escapeHtml(crypto?.label || "Not selected")}</b><br>` +
+    `Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages`;
 }
 
 function renderMe() {
@@ -1418,7 +1439,10 @@ function renderMe() {
 
   const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
   const paused = !!(meState.subscriptionPaused || meState.subscription_paused);
-  const planLimits = meState.planLimits || meState.limits || {};
+  const planLimits = meState.planLimits || meState.limits || {
+    activeShortLinks: Number(meState.trialLinksLimit || meState.trial_links_limit || 0),
+    activeLandingPages: 0
+  };
   const usage = meState.usage || {
     activeShortLinks: Number(meState.trialLinksUsed || meState.trial_links_used || 0),
     activeLandingPages: 0
@@ -1515,11 +1539,7 @@ async function loadPlans(showMessage = false) {
     cryptoOptions = FALLBACK_CRYPTO_OPTIONS.map(normalizeCryptoOption);
   }
 
-  plansState = {
-    ...raw,
-    plans,
-    cryptoOptions
-  };
+  plansState = { ...raw, plans, cryptoOptions };
 
   if (plans.length && !plans.some(p => p.code === selectedPlan)) {
     selectedPlan = plans[0].code;
@@ -1822,7 +1842,9 @@ async function markPaymentSent(paymentId, backend) {
     body: JSON.stringify({ paymentId, id: paymentId })
   }, backend, false);
 
-  if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+  if (!res.ok) {
+    return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
+  }
 
   waitingPaymentId = payment.id;
   localStorage.setItem("waitingPaymentId", payment.id);
@@ -2021,9 +2043,9 @@ function getFilteredData() {
     const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
 
     let dateMatch = true;
-    if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
-    if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
-    if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
+    if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 86400000;
+    if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 86400000;
+    if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 86400000;
 
     return queryMatch && backendMatch && typeMatch && statusMatch && dateMatch && riskMatch;
   });
@@ -2173,7 +2195,7 @@ function syncSelectAllState() {
 
 function drawChart() {
   const canvas = $("chart");
-  if (!canvas) return;
+  if (!canvas || typeof Chart === "undefined") return;
   if (chart) chart.destroy();
 
   const filtered = getFilteredData();
@@ -2467,7 +2489,7 @@ function getCreatePayload() {
       setResult("Expire must be a positive number", true);
       return null;
     }
-    body.expire = Date.now() + hours * 60 * 60 * 1000;
+    body.expire = Date.now() + hours * 3600000;
   }
 
   return body;
@@ -2747,7 +2769,7 @@ function goToDomainManager() {
 }
 
 async function showGeo(slug, backend) {
-  if (!panel || !panelContent) return;
+  if (!panel || !panelContent || typeof L === "undefined") return;
 
   panel.style.display = "block";
   panelContent.innerHTML = `<h3>🌍 Geo Map: ${escapeHtml(slug)}</h3><div class="muted">Backend: ${escapeHtml(backendLabel(backend))}</div><div class="muted">Loading location data...</div><div id="map" style="height:320px;margin-top:12px;border-radius:12px;overflow:hidden;"></div>`;
@@ -2830,7 +2852,7 @@ async function showHistory(slug, backend) {
   if (statsChartInstance) statsChartInstance.destroy();
 
   const statsCanvas = $("statsChart");
-  if (statsCanvas) {
+  if (statsCanvas && typeof Chart !== "undefined") {
     statsChartInstance = new Chart(statsCanvas, {
       type: "line",
       data: {
@@ -2868,6 +2890,7 @@ async function showHistory(slug, backend) {
 
   if (statsBody) statsBody.innerHTML = html;
 
+  if (typeof L === "undefined") return;
   const mapEl = $("map");
   if (!mapEl) return;
 
@@ -3074,6 +3097,7 @@ if (rebuildBoardBtn) rebuildBoardBtn.addEventListener("click", renderOperational
 if (openSecurityCenterBtn) openSecurityCenterBtn.addEventListener("click", openSecurityModal);
 if (planQuantityInput) planQuantityInput.addEventListener("input", updateBillingPreview);
 if (planQuantityInput) planQuantityInput.addEventListener("change", updateBillingPreview);
+if (cryptoSelect) cryptoSelect.addEventListener("change", updateBillingPreview);
 
 if (selectAllLinks) {
   selectAllLinks.addEventListener("change", () => {
