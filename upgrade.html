@@ -944,30 +944,50 @@ function renderPlans() {
 }
 
 function renderCrypto() {
-  if (!cryptoData.length) {
-    cryptoBox.innerHTML = `<div class="muted">No crypto options are available.</div>`;
-    return;
+  // fallback safety (CRITICAL FIX)
+  if (!Array.isArray(cryptoData) || !cryptoData.length) {
+    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
   }
 
-  cryptoBox.innerHTML = cryptoData.map(item => `
-    <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}" tabindex="0" role="button" aria-label="Select ${item.label}">
-      <div><b>${item.asset || item.code}</b></div>
-      <div class="muted">${item.network || "-"}</div>
-      <div style="margin-top:6px;">${item.label || item.code}</div>
-    </div>
-  `).join("");
+  cryptoBox.innerHTML = cryptoData.map((item, index) => {
+    const code = item.code || item.asset || `CRYPTO_${index}`;
+    const label = item.label || `${item.asset || code} (${item.network || ""})`;
 
+    return `
+      <div class="crypto ${selectedCrypto === code ? "active" : ""}" 
+           data-code="${code}" 
+           tabindex="0">
+        <div><b>${item.asset || code}</b></div>
+        <div class="muted">${item.network || "-"}</div>
+        <div style="margin-top:6px;">${label}</div>
+      </div>
+    `;
+  }).join("");
+
+  // attach click handlers
   cryptoBox.querySelectorAll(".crypto").forEach(el => {
-    const selectCrypto = () => {
-      selectedCrypto = el.dataset.code;
+    const select = () => {
+      const code = el.dataset.code;
+
+      if (!code) {
+        console.warn("Crypto missing code", el);
+        return;
+      }
+
+      selectedCrypto = code;
+
+      // force re-render UI
       renderCrypto();
       updateSelection();
+
+      console.log("✅ Selected crypto:", code);
     };
-    el.addEventListener("click", selectCrypto);
+
+    el.addEventListener("click", select);
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        selectCrypto();
+        select();
       }
     });
   });
