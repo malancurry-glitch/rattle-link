@@ -1457,7 +1457,7 @@
     }
 
     async function loadPayments(showMessage = false) {
-  // ✅ ONLY USE BACKEND2 (SOURCE OF TRUTH)
+  // ONLY Backend2 (SOURCE OF TRUTH)
   const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
 
   if (!res.ok) {
@@ -1467,31 +1467,25 @@
     return;
   }
 
-  const d = res.data;
-
-  // ✅ normalize properly
+  let raw = res.data;
   let payments = [];
 
-  if (Array.isArray(d)) {
-    payments = d;
-  } else if (Array.isArray(d?.payments)) {
-    payments = d.payments;
-  } else if (Array.isArray(d?.items)) {
-    payments = d.items;
-  } else if (d?.payment) {
-    payments = [d.payment];
-  }
+  // Handle all shapes safely
+  if (Array.isArray(raw)) payments = raw;
+  else if (Array.isArray(raw?.payments)) payments = raw.payments;
+  else if (Array.isArray(raw?.items)) payments = raw.items;
+  else if (raw?.payment) payments = [raw.payment];
 
-  // ✅ force normalize
+  // Normalize
   paymentsStore = sortPayments(
     payments.map(p => normalizePaymentItem(p, "primary"))
   );
 
-  console.log("✅ PAYMENTS LOADED:", paymentsStore);
+  console.log("✅ PAYMENTS FINAL:", paymentsStore);
 
   renderPaymentsTable();
 
-  // keep polling logic
+  // handle waiting state
   if (waitingPaymentId) {
     const p = paymentsStore.find(x => x.id === waitingPaymentId);
     if (p) handleWaitingPaymentState(p);
@@ -1616,36 +1610,67 @@
     }
 
     function startPaymentPolling(paymentId, backend) {
-      stopPaymentPolling();
-      const run = async () => {
-        const res = await authorizedFetch("/payments/me", { method: "GET" }, backend, false);
-        if (!res.ok) return;
-        const incoming = Array.isArray(res.data?.payments) ? res.data.payments.map(p => normalizePaymentItem(p, backend)) : [];
-        const current = incoming.find(p => p.id === paymentId);
-        if (!current) return;
-        const otherPayments = paymentsStore.filter(p => !(p.id === paymentId && p.backend === backend));
-        paymentsStore = sortPayments([...incoming, ...otherPayments]);
-        renderPaymentsTable();
+  stopPaymentPolling();
 
-        const status = String(current.status || "").toLowerCase();
-        const pollText = $("paymentPollText");
-        if (pollText) {
-          if (status === "awaiting_confirmation") pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-          else if (status === "pending") pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
-        }
+  const run = async () => {
+    const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
+    if (!res.ok) return;
 
-        if (status === "verified") {
-          waitingPaymentId = "";
-          localStorage.removeItem("waitingPaymentId");
-          stopPaymentPolling();
-          renderPaymentRequestBox(current, "Payment confirmed and successful.");
-          await loadMe(false);
-          showToast("Payment confirmed");
-        }
-      };
-      run();
-      paymentPoller = setInterval(run, 5000);
+    let raw = res.data;
+    let incoming = [];
+
+    // ✅ handle ALL formats safely
+    if (Array.isArray(raw)) {
+      incoming = raw;
+    } else if (Array.isArray(raw?.payments)) {
+      incoming = raw.payments;
+    } else if (Array.isArray(raw?.items)) {
+      incoming = raw.items;
+    } else if (raw?.payment) {
+      incoming = [raw.payment];
     }
+
+    // ✅ normalize
+    incoming = incoming.map(p => normalizePaymentItem(p, "primary"));
+
+    const current = incoming.find(p => p.id === paymentId);
+    if (!current) return;
+
+    // ✅ replace store cleanly (NO MIXING)
+    paymentsStore = sortPayments(incoming);
+
+    renderPaymentsTable();
+
+    const status = String(current.status || "").toLowerCase();
+    const pollText = $("paymentPollText");
+
+    if (pollText) {
+      if (status === "awaiting_confirmation") {
+        pollText.textContent =
+          `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+      } else if (status === "pending") {
+        pollText.textContent =
+          `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
+      }
+    }
+
+    // ✅ SUCCESS STATE
+    if (status === "verified") {
+      waitingPaymentId = "";
+      localStorage.removeItem("waitingPaymentId");
+
+      stopPaymentPolling();
+
+      renderPaymentRequestBox(current, "Payment confirmed and successful.");
+      await loadMe(false);
+
+      showToast("Payment confirmed");
+    }
+  };
+
+  run();
+  paymentPoller = setInterval(run, 5000);
+}
 
     function openUpgradeModal() {
       if (overlay) overlay.style.display = "block";
