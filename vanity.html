@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Vanity Slugs</title>
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#0f172a;
+      --card:rgba(2,6,23,.88);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#00ffff;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --border:rgba(0,255,255,.15);
+      --shadow:0 0 18px rgba(0,255,255,.10);
+      --radius:16px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, var(--bg2), #000);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+      background-size:40px 40px;
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width:1280px;
+      margin:0 auto;
+      padding:24px;
+      position:relative;
+      z-index:1;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .header h1{
+      margin:0;
+      color:var(--primary);
+      text-shadow:0 0 10px var(--primary);
+    }
+
+    .sub{
+      margin-top:6px;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:13px;
+    }
+
+    .actions,
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      margin-bottom:18px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:16px;
+    }
+
+    .stat .label{ color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .stat .value{ color:var(--primary); font-size:30px; font-weight:700; }
+
+    input, select, textarea, button{
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#020617;
+      color:var(--text);
+      padding:10px 12px;
+    }
+
+    input, select{ width:100%; }
+
+    button{
+      cursor:pointer;
+      transition:.2s;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 0 12px rgba(0,255,255,.18);
+    }
+
+    .btn-primary{ color:#fff; background:var(--blue); border-color:var(--blue); }
+    .btn-green{ color:var(--green); border-color:var(--green); }
+    .btn-red{ color:var(--red); border-color:var(--red); }
+    .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(255,255,255,.12);
+      white-space:nowrap;
+      margin-right:6px;
+      margin-bottom:4px;
+    }
+
+    .verified{ background:#052e16; color:#86efac; }
+    .pending{ background:#332701; color:#fde68a; }
+    .primary{ background:#062e1d; color:#86efac; }
+    .active{ background:#022c22; color:#22c55e; }
+    .paused{ background:#2b1a00; color:#f59e0b; }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1000px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    th{
+      background:#020617;
+      color:#a5f3fc;
+      position:sticky;
+      top:0;
+    }
+
+    .table-wrap{ overflow:auto; }
+
+    .muted{ color:var(--muted); }
+    .toast{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      background:var(--primary);
+      color:#000;
+      padding:12px 14px;
+      border-radius:12px;
+      display:none;
+      z-index:100;
+      font-weight:700;
+    }
+
+    .tips{
+      line-height:1.7;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .code{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      word-break:break-all;
+      font-size:12px;
+      background:#020617;
+      border:1px solid var(--border);
+      padding:8px 10px;
+      border-radius:10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>✨ Vanity Slugs</h1>
+        <div class="sub">
+          Create clean branded links like <b>marankorangulon.com/shop</b>,
+          action links like <b>/get-started</b>, and source links like <b>/fb26</b>.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+        <button class="btn-primary" id="refreshBtn">Refresh</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card stat">
+        <div class="label">Total Vanity Links</div>
+        <div class="value" id="statTotal">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Active</div>
+        <div class="value" id="statActive">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Total Clicks</div>
+        <div class="value" id="statClicks">0</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Verified Domains</div>
+        <div class="value" id="statDomains">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Create Vanity Link</h3>
+      <div class="grid">
+        <div>
+          <label class="muted">Domain</label>
+          <select id="domainSelect"></select>
+        </div>
+        <div>
+          <label class="muted">Slug</label>
+          <input id="slugInput" placeholder="shop or get-started or fb26" />
+        </div>
+        <div>
+          <label class="muted">Target URL</label>
+          <input id="urlInput" placeholder="https://www.example.com/..." />
+        </div>
+        <div>
+          <label class="muted">Expire (optional timestamp)</label>
+          <input id="expireInput" placeholder="Leave blank for permanent" />
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
+        <button class="btn-primary" id="createBtn">Create Vanity Link</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Recommended Patterns</h3>
+      <div class="tips">
+        <div><b>Brand Move:</b> <code>/shop</code> → clean permanent brand path</div>
+        <div><b>Action Slug:</b> <code>/get-started</code> → higher conversion CTA path</div>
+        <div><b>Partner Tracking:</b> <code>/fb26</code> → source-coded promo style path</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <input id="searchInput" placeholder="Search slug, domain, target..." />
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Slug</th>
+              <th>Vanity URL</th>
+              <th>Target</th>
+              <th>Clicks</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Done</div>
+
+  <script>
+    const API = "https://api.rattleshortapi.it.com";
+
+    let items = [];
+    let domains = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function authHeaders(method = "GET") {
+      const token = localStorage.getItem("token") || "";
+      const headers = { Authorization: token ? `Bearer ${token}` : "" };
+      if (method !== "GET") headers["Content-Type"] = "application/json";
+      return headers;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
+    }
+
+    async function api(path, method = "GET", body = null) {
+      const res = await fetch(API + path, {
+        method,
+        headers: authHeaders(method),
+        body: body ? JSON.stringify(body) : null
+      });
+
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; }
+      catch { data = { message: text }; }
+
+      if (res.status === 401) {
+        localStorage.clear();
+        window.location.href = "index.html";
+        return null;
+      }
+
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function buildPublicUrl(item) {
+      return `https://${item.domain}/${item.slug}`;
+    }
+
+    function renderDomainOptions() {
+      const verified = domains.filter(d => String(d.status || "").toLowerCase() === "verified");
+
+      $("domainSelect").innerHTML = verified.length
+        ? verified.map(d => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (primary)" : ""}</option>`).join("")
+        : `<option value="">No verified domains available</option>`;
+    }
+
+    function renderStats() {
+      const active = items.filter(i => !i.paused).length;
+      const clicks = items.reduce((sum, i) => sum + Number(i.clicks || 0), 0);
+      const verifiedDomains = domains.filter(d => String(d.status || "").toLowerCase() === "verified").length;
+
+      $("statTotal").textContent = items.length;
+      $("statActive").textContent = active;
+      $("statClicks").textContent = clicks;
+      $("statDomains").textContent = verifiedDomains;
+    }
+
+    function renderTable() {
+      const q = $("searchInput").value.trim().toLowerCase();
+
+      const filtered = items.filter(i => {
+        const blob = `${i.domain || ""} ${i.slug || ""} ${i.url || ""}`.toLowerCase();
+        return !q || blob.includes(q);
+      });
+
+      $("rows").innerHTML = filtered.length ? filtered.map(i => `
+        <tr>
+          <td>${escapeHtml(i.domain || "-")}</td>
+          <td><b>${escapeHtml(i.slug)}</b></td>
+          <td>
+            <div class="code">${escapeHtml(buildPublicUrl(i))}</div>
+          </td>
+          <td>
+            <div class="code">${escapeHtml(i.url || "-")}</div>
+          </td>
+          <td>${Number(i.clicks || 0)}</td>
+          <td>
+            ${i.paused ? `<span class="badge paused">PAUSED</span>` : `<span class="badge active">ACTIVE</span>`}
+            ${i.domain ? `<span class="badge verified">CUSTOM DOMAIN</span>` : ``}
+          </td>
+          <td>${fmtDate(i.createdAt)}</td>
+          <td>
+            <button onclick='copyText(${JSON.stringify(buildPublicUrl(i))})'>Copy</button>
+            <button onclick='openEdit(${JSON.stringify(i.id)}, ${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")}, ${JSON.stringify(i.url || "")}, ${JSON.stringify(i.expire || "")})'>Edit</button>
+            <button class="btn-red" onclick='deleteVanity(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")})'>Delete</button>
+          </td>
+        </tr>
+      `).join("") : `<tr><td colspan="8" class="muted">No vanity links found</td></tr>`;
+    }
+
+    async function loadAll() {
+      const [itemsRes, domainsRes] = await Promise.all([
+        api("/vanity/list"),
+        api("/vanity/domains")
+      ]);
+
+      if (!itemsRes || !domainsRes) return;
+
+      if (itemsRes.ok) {
+        items = (itemsRes.data.items || []).filter(i => String(i.domain || "").trim());
+      }
+
+      if (domainsRes.ok) {
+        domains = domainsRes.data.domains || [];
+      }
+
+      renderDomainOptions();
+      renderStats();
+      renderTable();
+    }
+
+    async function createVanity() {
+      const domain = $("domainSelect").value;
+      const slug = $("slugInput").value.trim();
+      const url = $("urlInput").value.trim();
+      const expire = $("expireInput").value.trim();
+
+      const res = await api("/vanity/create", "POST", {
+        domain,
+        slug,
+        url,
+        expire: expire || null
+      });
+
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Create failed");
+
+      $("slugInput").value = "";
+      $("urlInput").value = "";
+      $("expireInput").value = "";
+
+      showToast("Vanity link created");
+      await loadAll();
+    }
+
+    async function deleteVanity(slug, domain) {
+      if (!confirm(`Delete ${domain}/${slug}?`)) return;
+
+      const res = await api("/vanity/delete", "POST", { slug, domain });
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Delete failed");
+
+      showToast("Deleted");
+      await loadAll();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const input = document.createElement("input");
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+      showToast("Copied");
+    }
+
+    async function openEdit(_id, oldSlug, oldDomain, oldUrl, oldExpire) {
+      const slug = prompt("Edit slug:", oldSlug);
+      if (slug === null) return;
+
+      const url = prompt("Edit target URL:", oldUrl);
+      if (url === null) return;
+
+      const domain = prompt("Edit domain:", oldDomain);
+      if (domain === null) return;
+
+      const expire = prompt("Edit expire timestamp (blank for none):", oldExpire || "");
+      if (expire === null) return;
+
+      const res = await api("/vanity/update", "POST", {
+        oldSlug,
+        oldDomain,
+        slug,
+        domain,
+        url,
+        expire: expire || null
+      });
+
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Update failed");
+
+      showToast("Updated");
+      await loadAll();
+    }
+
+    $("createBtn").addEventListener("click", createVanity);
+    $("refreshBtn").addEventListener("click", loadAll);
+    $("searchInput").addEventListener("input", renderTable);
+
+    window.copyText = copyText;
+    window.deleteVanity = deleteVanity;
+    window.openEdit = openEdit;
+
+    loadAll();
+  </script>
+</body>
+</html>
