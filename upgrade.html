@@ -36,7 +36,6 @@ body{
   padding:22px;
 }
 
-/* GRID BACKGROUND */
 body::before{
   content:"";
   position:fixed;
@@ -48,7 +47,6 @@ body::before{
   background-size:40px 40px;
 }
 
-/* 🔥 CRITICAL FIX — ENSURE UI ABOVE ANY OVERLAY */
 .wrap{
   position:relative;
   z-index:100;
@@ -77,7 +75,6 @@ body::before{
   gap:16px;
 }
 
-/* CARD */
 .card{
   background:var(--card);
   border:1px solid var(--line);
@@ -88,9 +85,12 @@ body::before{
   margin-bottom:16px;
 }
 
-.card h2,.card h3{color:var(--cyan)}
+.card h2,.card h3{color:var(--cyan);margin-top:0}
 
 .muted{color:var(--muted);font-size:12px}
+.success{color:var(--green)}
+.error{color:var(--red)}
+.warn{color:var(--yellow)}
 
 button,a.btn{
   background:#020617;
@@ -100,13 +100,19 @@ button,a.btn{
   padding:10px 13px;
   cursor:pointer;
   transition:.2s;
+  text-decoration:none;
 }
 
-button:hover{
+button:hover,a.btn:hover{
   box-shadow:0 0 14px rgba(0,255,255,.18);
 }
 
-/* INPUT */
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
 input,select{
   width:100%;
   background:#000;
@@ -116,7 +122,15 @@ input,select{
   padding:11px;
 }
 
-/* PLANS */
+label{
+  display:block;
+  margin-bottom:6px;
+  font-size:13px;
+  color:var(--text);
+}
+
+.field{margin-bottom:14px}
+
 .plans{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -132,18 +146,36 @@ input,select{
   transition:.2s;
 }
 
-.plan.active{
-  border-color:var(--cyan);
+.plan:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 16px rgba(0,255,255,.14);
 }
 
-/* 🔥 CRYPTO FIX STARTS HERE */
+.plan.active{
+  border-color:var(--cyan);
+  box-shadow:0 0 18px rgba(0,255,255,.18);
+}
+
+.plan .price{
+  font-size:28px;
+  font-weight:700;
+  margin:8px 0;
+  color:#fff;
+}
+
+.plan ul{
+  margin:10px 0 0;
+  padding-left:18px;
+  color:var(--muted);
+  font-size:13px;
+}
+
 .crypto-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:10px;
-
   position:relative;
-  z-index:200; /* above everything */
+  z-index:5;
 }
 
 .crypto{
@@ -153,9 +185,8 @@ input,select{
   background:var(--card-2);
   cursor:pointer;
   transition:.2s;
-
   position:relative;
-  z-index:300; /* clickable */
+  z-index:6;
   pointer-events:auto;
 }
 
@@ -168,9 +199,7 @@ input,select{
   border-color:var(--cyan);
   box-shadow:0 0 18px rgba(0,255,255,.18);
 }
-/* 🔥 CRYPTO FIX ENDS HERE */
 
-/* SUMMARY */
 .summary{
   background:var(--card-2);
   border:1px solid var(--line);
@@ -178,7 +207,6 @@ input,select{
   padding:14px;
 }
 
-/* PAYMENT */
 .payment-box{
   display:grid;
   grid-template-columns:240px 1fr;
@@ -189,9 +217,103 @@ input,select{
   background:#fff;
   border-radius:14px;
   padding:12px;
+  min-height:140px;
 }
 
-/* TABLE */
+.qr-box img{
+  width:100%;
+  display:block;
+  border-radius:8px;
+}
+
+.copy-row,.row,.pill-row,.kpi{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.copy-row{
+  margin-top:12px;
+  align-items:stretch;
+}
+
+.copy-row .address-box{
+  flex:1 1 300px;
+}
+
+.kpi .mini{
+  flex:1 1 180px;
+  background:var(--card-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+}
+
+.v{
+  font-size:22px;
+  font-weight:700;
+  margin-top:6px;
+}
+
+.address-box{
+  word-break:break-all;
+  background:#000;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+  color:#fff;
+}
+
+.timer{
+  margin-top:12px;
+  font-weight:700;
+  color:var(--yellow);
+}
+
+.badge,.pill{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  border:1px solid currentColor;
+}
+
+.status-active{color:var(--green)}
+.status-paused{color:var(--yellow)}
+.status-expired{color:var(--red)}
+.status-trial{color:var(--cyan)}
+.status-verified{color:var(--green)}
+.status-awaiting{color:var(--blue)}
+.status-pending{color:var(--yellow)}
+.status-cancelled{color:var(--red)}
+.status-unknown{color:var(--muted)}
+
+.message{
+  margin-top:14px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(15,23,42,.45);
+  min-height:20px;
+}
+
+.message.success{color:var(--green);border-color:rgba(34,197,94,.35)}
+.message.error{color:var(--red);border-color:rgba(239,68,68,.35)}
+.message.warn{color:var(--yellow);border-color:rgba(245,158,11,.35)}
+
+.waiting-box,.confirm-box,.expired-box{
+  padding:12px;
+  border-radius:12px;
+  margin-top:12px;
+}
+
+.waiting-box{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35)}
+.confirm-box{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
+.expired-box{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
+
+.hidden{display:none !important}
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -200,17 +322,34 @@ table{
 td,th{
   padding:10px;
   border-bottom:1px solid rgba(255,255,255,.08);
+  text-align:left;
+  vertical-align:top;
 }
 
-/* 🔥 IMPORTANT — FIX ANY OVERLAY BLOCKING */
-.overlay,
-.modal,
-.upgrade-modal{
-  pointer-events:none !important;
-  z-index:1 !important;
+tr[data-id]{
+  cursor:pointer;
 }
 
-/* RESPONSIVE */
+tr[data-id]:hover{
+  background:rgba(255,255,255,.03);
+}
+
+.spinner{
+  width:18px;
+  height:18px;
+  border:2px solid rgba(255,255,255,.2);
+  border-top:2px solid var(--cyan);
+  border-radius:50%;
+  display:inline-block;
+  animation:spin 1s linear infinite;
+  vertical-align:middle;
+  margin-right:8px;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
 @media (max-width:980px){
   .grid-2{grid-template-columns:1fr}
   .payment-box{grid-template-columns:1fr}
@@ -226,16 +365,16 @@ td,th{
       </div>
       <div class="actions">
         <a class="btn" href="dashboard.html">← Back to Dashboard</a>
-        <a class="btn btn-purple" href="billing.html">Billing Center</a>
-        <button id="refreshBtn" class="btn-primary" type="button">Refresh</button>
-        <button id="logoutBtn" class="btn-red" type="button">Logout</button>
+        <a class="btn" href="billing.html">Billing Center</a>
+        <button id="refreshBtn" type="button">Refresh</button>
+        <button id="logoutBtn" type="button">Logout</button>
       </div>
     </div>
 
     <div class="card">
       <h3>🔌 Route Detection</h3>
       <div class="muted">This page auto-detects matching backend routes and remembers the ones that respond successfully.</div>
-      <div class="pill-row">
+      <div class="pill-row" style="margin-top:10px;">
         <span id="backendBadge" class="pill">Backend: detecting...</span>
         <span id="routePlansBadge" class="pill">Plans route: -</span>
         <span id="routeMeBadge" class="pill">Profile route: -</span>
@@ -250,8 +389,8 @@ td,th{
         <div class="card">
           <h2>👤 Subscription Status</h2>
           <div class="kpi">
-            <div class="mini"><div class="muted">Account</div><div class="v" id="meUser" style="font-size:18px;">-</div></div>
-            <div class="mini"><div class="muted">Status</div><div id="meStatusWrap"></div></div>
+            <div class="mini"><div class="muted">Account</div><div class="v" id="meUser">-</div></div>
+            <div class="mini"><div class="muted">Status</div><div id="meStatusWrap" style="margin-top:6px;">-</div></div>
             <div class="mini"><div class="muted">Short Links Remaining</div><div class="v" id="meLinksRemaining">0</div></div>
             <div class="mini"><div class="muted">Plan</div><div class="v" id="mePlan" style="font-size:18px;">-</div></div>
           </div>
@@ -289,8 +428,8 @@ td,th{
           </div>
 
           <div class="row" style="margin-top:14px;">
-            <button id="createPaymentBtn" class="btn-primary" type="button">Create Payment Request</button>
-            <button id="loadPendingBtn" class="btn-yellow" type="button">Load Latest Pending</button>
+            <button id="createPaymentBtn" type="button">Create Payment Request</button>
+            <button id="loadPendingBtn" type="button">Load Latest Pending</button>
           </div>
 
           <div id="upgradeMsg" class="message"></div>
@@ -326,19 +465,19 @@ td,th{
 
                 <div class="copy-row">
                   <div id="paymentAddress" class="address-box">-</div>
-                  <button id="copyAddressBtn" class="btn-green" type="button">Copy</button>
+                  <button id="copyAddressBtn" type="button">Copy</button>
                 </div>
 
                 <div class="copy-row">
                   <div id="paymentQrText" class="address-box">-</div>
-                  <button id="copyQrTextBtn" class="btn-green" type="button">Copy QR Text</button>
+                  <button id="copyQrTextBtn" type="button">Copy QR Text</button>
                 </div>
 
                 <div id="paymentTimer" class="timer"></div>
 
                 <div class="row" style="margin-top:12px;">
-                  <button id="iTransferredBtn" class="btn-primary" type="button">I Made a Transfer</button>
-                  <button id="openBillingBtn" class="btn-purple" type="button">Open Billing Center</button>
+                  <button id="iTransferredBtn" type="button">I Made a Transfer</button>
+                  <button id="openBillingBtn" type="button">Open Billing Center</button>
                   <button id="checkMeBtn" type="button">Check Subscription</button>
                 </div>
 
@@ -387,7 +526,7 @@ td,th{
   <script>
 const API = window.RATTLE_API_BASE || "https://api.rattleshortapi.it.com";
 
-const ROUTE_CACHE_KEY = "upgrade_route_cache_v4";
+const ROUTE_CACHE_KEY = "upgrade_route_cache_v5";
 const WAITING_PAYMENT_KEY = "waitingPaymentId";
 const LAST_PAYMENT_KEY = "lastPaymentId";
 const LAST_PAYMENT_ROUTE_KEY = "lastPaymentRoute";
@@ -581,13 +720,18 @@ async function fetchRaw(path, method = "GET", body = null) {
 }
 
 function looksLikePlansResponse(data) {
-  return Array.isArray(data?.plans)
-    || Array.isArray(data?.subscriptions)
-    || Array.isArray(data?.data?.plans)
-    || Array.isArray(data?.cryptoOptions)
-    || Array.isArray(data?.cryptos)
-    || Array.isArray(data?.coins)
-    || Array.isArray(data);
+  return !!(
+    Array.isArray(data?.plans) ||
+    Array.isArray(data?.subscriptions) ||
+    Array.isArray(data?.data?.plans) ||
+    Array.isArray(data?.cryptoOptions) ||
+    Array.isArray(data?.cryptos) ||
+    Array.isArray(data?.coins) ||
+    Array.isArray(data?.paymentCoins) ||
+    Array.isArray(data?.availableCryptos) ||
+    Array.isArray(data?.available_cryptos) ||
+    Array.isArray(data)
+  );
 }
 
 function looksLikeMeResponse(data) {
@@ -748,8 +892,8 @@ function normalizePlan(plan, index = 0) {
 }
 
 function normalizeCrypto(item, index = 0) {
-  const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || `CRYPTO_${index + 1}`;
-  const asset = item.asset || item.symbol || code;
+  const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || item.symbol || `CRYPTO_${index + 1}`;
+  const asset = item.asset || item.symbol || item.crypto || code;
   const network = item.network || item.networkCode || item.network_code || "";
   return {
     ...item,
@@ -778,7 +922,11 @@ function extractPlansAndCrypto(data) {
   else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
   else if (Array.isArray(data?.coins)) cryptos = data.coins;
   else if (Array.isArray(data?.assets)) cryptos = data.assets;
+  else if (Array.isArray(data?.availableCryptos)) cryptos = data.availableCryptos;
+  else if (Array.isArray(data?.available_cryptos)) cryptos = data.available_cryptos;
   else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
+  else if (Array.isArray(data?.data?.cryptos)) cryptos = data.data.cryptos;
+  else if (Array.isArray(data?.options)) cryptos = data.options;
 
   return {
     plans: plans.map(normalizePlan).filter(x => x.code),
@@ -855,7 +1003,7 @@ function renderCrypto() {
   cryptoBox.innerHTML = cryptoData.map(item => `
     <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
       <div><b>${item.asset}</b></div>
-      <div class="muted">${item.network}</div>
+      <div class="muted">${item.network || "-"}</div>
       <div>${item.label}</div>
     </div>
   `).join("");
@@ -965,6 +1113,7 @@ function normalizePayment(payment) {
     verifiedAt: Number(payment.verifiedAt || payment.verified_at || 0) || null,
     qrImageUrl: payment.qrImageUrl || payment.qr_image_url || payment.qr || "",
     qrText: payment.qrText || payment.qr_text || payment.qrPayload || payment.qr_payload || "",
+    address: payment.address || "-",
     routeUsed: payment.routeUsed || payment.route_used || localStorage.getItem(LAST_PAYMENT_ROUTE_KEY) || "-"
   };
 }
@@ -1057,7 +1206,13 @@ async function loadPlans() {
       logout();
       return;
     }
-    showMsg(res.data?.message || "Failed to load plans", "error");
+
+    plansData = [];
+    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
+    renderPlans();
+    renderCrypto();
+    updateSelection();
+    showMsg(res.data?.message || "Failed to load plans. Built-in crypto choices were loaded.", "warn");
     return;
   }
 
@@ -1074,6 +1229,8 @@ async function loadPlans() {
 
   if (!extracted.cryptos.length) {
     showMsg("Backend did not return crypto options, so built-in crypto choices were loaded.", "warn");
+  } else {
+    showMsg("Plans and crypto options loaded.", "success");
   }
 }
 
@@ -1130,6 +1287,8 @@ async function loadPayments(openLatestPending = false) {
     ? res.data.items
     : Array.isArray(res.data)
     ? res.data
+    : res.data?.payment
+    ? [res.data.payment]
     : [];
 
   const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
@@ -1247,6 +1406,8 @@ async function pollPaymentUntilVerified(paymentIdValue) {
       ? res.data.items
       : Array.isArray(res.data)
       ? res.data
+      : res.data?.payment
+      ? [res.data.payment]
       : [];
 
     const payments = prioritizePayments(rawPayments.map(p => ({ ...p, routeUsed: res.matchedPath })));
