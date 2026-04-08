@@ -943,54 +943,42 @@ function renderPlans() {
   });
 }
 
-function renderCrypto() {
-  // fallback safety (CRITICAL FIX)
-  if (!Array.isArray(cryptoData) || !cryptoData.length) {
-    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
+function renderCryptoOptions() {
+  if (!cryptoSelect) return;
+
+  let options = [];
+
+  // backend response
+  if (Array.isArray(plansState?.cryptoOptions)) {
+    options = plansState.cryptoOptions;
   }
 
-  cryptoBox.innerHTML = cryptoData.map((item, index) => {
-    const code = item.code || item.asset || `CRYPTO_${index}`;
-    const label = item.label || `${item.asset || code} (${item.network || ""})`;
+  // fallback if backend returns nothing
+  if (!options.length) {
+    options = [
+      { code: "USDT_BSC", label: "USDT (BSC)" },
+      { code: "USDT_TRX", label: "USDT (TRC20)" },
+      { code: "USDT_ETH", label: "USDT (ERC20)" },
+      { code: "USDT_SOL", label: "USDT (Solana)" },
+      { code: "USDC_ETH", label: "USDC (ERC20)" },
+      { code: "USDC_SOL", label: "USDC (Solana)" },
+      { code: "BTC_BTC", label: "Bitcoin" }
+    ];
+  }
 
-    return `
-      <div class="crypto ${selectedCrypto === code ? "active" : ""}" 
-           data-code="${code}" 
-           tabindex="0">
-        <div><b>${item.asset || code}</b></div>
-        <div class="muted">${item.network || "-"}</div>
-        <div style="margin-top:6px;">${label}</div>
-      </div>
-    `;
-  }).join("");
+  // render dropdown
+  cryptoSelect.innerHTML = options.map(opt => `
+    <option value="${opt.code}">
+      ${opt.label || opt.code}
+    </option>
+  `).join("");
 
-  // attach click handlers
-  cryptoBox.querySelectorAll(".crypto").forEach(el => {
-    const select = () => {
-      const code = el.dataset.code;
+  // ensure something is selected
+  if (options.length) {
+    cryptoSelect.value = options[0].code;
+  }
 
-      if (!code) {
-        console.warn("Crypto missing code", el);
-        return;
-      }
-
-      selectedCrypto = code;
-
-      // force re-render UI
-      renderCrypto();
-      updateSelection();
-
-      console.log("✅ Selected crypto:", code);
-    };
-
-    el.addEventListener("click", select);
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        select();
-      }
-    });
-  });
+  console.log("✅ Crypto options loaded:", options);
 }
 
 function updateSelection() {
