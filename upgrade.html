@@ -943,10 +943,33 @@ function renderPlans() {
   });
 }
 
-function renderCryptoOptions() {
-  if (!cryptoSelect) return;
+function renderCrypto() {
+  if (!cryptoBox) return;
 
-  let options = [];
+  // fallback if backend empty
+  if (!cryptoData.length) {
+    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
+  }
+
+  cryptoBox.innerHTML = cryptoData.map(item => `
+    <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
+      <div><b>${item.asset || item.code}</b></div>
+      <div class="muted">${item.network || "-"}</div>
+      <div style="margin-top:6px;">${item.label || item.code}</div>
+    </div>
+  `).join("");
+
+  // 🔥 THIS PART WAS MISSING / BROKEN
+  cryptoBox.querySelectorAll(".crypto").forEach(el => {
+    el.onclick = () => {
+      selectedCrypto = el.dataset.code;
+      renderCrypto();       // re-render active state
+      updateSelection();    // update UI
+    };
+  });
+
+  console.log("✅ Crypto rendered:", cryptoData);
+}
 
   // backend response
   if (Array.isArray(plansState?.cryptoOptions)) {
