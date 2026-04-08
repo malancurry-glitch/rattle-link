@@ -256,30 +256,11 @@
     .backend-legacy{ color:#facc15; border-color:#facc15; }
     .backend-primary{ color:#22c55e; border-color:#22c55e; }
 
-    .overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.65);
-      display:none;
-      z-index:999;
-      pointer-events:auto;
-    }
-
-   .modal,
-   .upgrade-modal{
-     position:fixed;
-     inset:50% auto auto 50%;
-     transform:translate(-50%,-50%);
-     width:min(980px,94vw);
-     max-height:88vh;
-     overflow:auto;
-     background:#000;
-     border:1px solid rgba(0,255,255,0.28);
-     border-radius:18px;
-     padding:18px;
-     display:none;
-     z-index:1001;
-     pointer-events:auto;
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; z-index:999; }
+    .upgrade-modal, .modal{
+      position:fixed; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:min(980px,94vw);
+      max-height:88vh; overflow:auto; background:#000; border:1px solid rgba(0,255,255,0.28);
+      border-radius:18px; padding:18px; display:none; z-index:1001; box-shadow:0 0 40px rgba(0,255,255,0.18);
     }
 
     .notice, .info-box, .alert-box, .waiting-box, .confirm-box{
@@ -732,6 +713,16 @@
       email: "support@rattleshort.online",
       phone: "+1 954 787 8220"
     };
+
+    const FALLBACK_CRYPTO_OPTIONS = [
+      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
+    ];
 
     let dataStore = [];
     let paymentsStore = [];
@@ -1228,17 +1219,81 @@
       };
     }
 
+        function normalizePlanItem(plan, index = 0) {
+      const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
+      return {
+        ...plan,
+        code,
+        label: plan.label || plan.name || code,
+        amountUsd: Number(plan.amountUsd || plan.amount_usd || plan.price || 0),
+        limits: plan.limits || {
+          activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
+          activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
+        }
+      };
+    }
+
+    function normalizeCryptoOption(item, index = 0) {
+      const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || item.symbol || `CRYPTO_${index + 1}`;
+      const asset = item.asset || item.symbol || item.crypto || code;
+      const network = item.network || item.networkCode || item.network_code || "";
+      return {
+        ...item,
+        code,
+        asset,
+        network,
+        label: item.label || `${asset}${network ? ` (${network})` : ""}`
+      };
+    }
+
+    function extractPlansAndCrypto(payload) {
+      const data = payload || {};
+      let plans = [];
+      let cryptos = [];
+
+      if (Array.isArray(data?.plans)) plans = data.plans;
+      else if (data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
+      else if (Array.isArray(data?.data?.plans)) plans = data.data.plans;
+      else if (Array.isArray(data?.subscriptions)) plans = data.subscriptions;
+      else if (Array.isArray(data)) plans = data;
+
+      if (Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
+      else if (data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
+      else if (Array.isArray(data?.cryptos)) cryptos = data.cryptos;
+      else if (Array.isArray(data?.crypto)) cryptos = data.crypto;
+      else if (data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
+      else if (Array.isArray(data?.coins)) cryptos = data.coins;
+      else if (Array.isArray(data?.assets)) cryptos = data.assets;
+      else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
+      else if (Array.isArray(data?.availableCryptos)) cryptos = data.availableCryptos;
+      else if (Array.isArray(data?.available_cryptos)) cryptos = data.available_cryptos;
+      else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
+      else if (Array.isArray(data?.data?.cryptos)) cryptos = data.data.cryptos;
+      else if (Array.isArray(data?.options)) cryptos = data.options;
+
+      return {
+        plans: plans.map(normalizePlanItem).filter(x => x.code),
+        cryptos: cryptos.map(normalizeCryptoOption).filter(x => x.code)
+      };
+    }
+
     function normalizePaymentItem(item, backend) {
       return {
         ...item,
         backend,
+        id: item.id || item.paymentId || item.payment_id || "-",
         amountUsd: Number(item.amountUsd || item.amount_usd || 0),
         createdAt: Number(item.createdAt || item.created_at || 0),
         expiresAt: Number(item.expiresAt || item.expires_at || 0),
         verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
         quantity: Number(item.quantity || parseBillingCycleQuantity(item.billingCycle || item.billing_cycle || 1) || 1),
-        planCode: item.planCode || item.plan_code || null,
-        billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-"
+        planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || null,
+        billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-",
+        cryptoCode: item.cryptoCode || item.crypto_code || item.asset || item.crypto || "-",
+        networkCode: item.networkCode || item.network_code || item.network || "-",
+        qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
+        qrText: item.qrText || item.qr_text || item.qrPayload || item.qr_payload || "",
+        address: item.address || "-"
       };
     }
 
@@ -1353,26 +1408,52 @@
       if (!ok && accessSummary) accessSummary.textContent = "Session expired";
     }
 
-    async function loadPlans(showMessage = false) {
+        async function loadPlans(showMessage = false) {
       const primary = await callBackend("primary", "/plans", { method: "GET" });
       const legacy = await callBackend("legacy", "/plans", { method: "GET" });
       const res = primary.ok ? primary : legacy;
+
       if (!res.ok) {
-        if (showMessage) setResult("Failed to load plans", true, upgradeResult);
+        plansState = {
+          plans: [
+            { code: "weekly", label: "Weekly", amountUsd: 25, limits: { activeShortLinks: 120, activeLandingPages: 5 } },
+            { code: "monthly", label: "Monthly", amountUsd: 85, limits: { activeShortLinks: 650, activeLandingPages: 15 } },
+            { code: "premium_monthly", label: "Premium Monthly", amountUsd: 250, limits: { activeShortLinks: 3000, activeLandingPages: 35 } }
+          ],
+          cryptoOptions: FALLBACK_CRYPTO_OPTIONS
+        };
+        if (!selectedPlan) selectedPlan = "monthly";
+        renderPlans();
+        renderCryptoOptions();
+        updateBillingPreview();
+        if (showMessage) setResult("Plans endpoint failed, fallback crypto options loaded.", true, upgradeResult);
         return;
       }
-      plansState = res.data || {};
+
+      const extracted = extractPlansAndCrypto(res.data || {});
+      plansState = {
+        ...(res.data || {}),
+        plans: extracted.plans,
+        cryptoOptions: extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS
+      };
+
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
       if (plans.length && !plans.some(p => p.code === selectedPlan)) selectedPlan = plans[0].code;
       renderPlans();
       renderCryptoOptions();
       updateBillingPreview();
-      if (showMessage) setResult("Plans loaded", false, upgradeResult);
+      if (showMessage) {
+        setResult(extracted.cryptos.length ? "Plans loaded" : "Plans loaded. Backend returned no crypto list, so fallback crypto options were used.", false, upgradeResult);
+      }
     }
 
-    function renderPlans() {
+        function renderPlans() {
       if (!planGrid) return;
       const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+      if (!plans.length) {
+        planGrid.innerHTML = `<div class="muted">No plans returned.</div>`;
+        return;
+      }
       planGrid.innerHTML = plans.map(plan => `
         <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
           <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
@@ -1389,10 +1470,20 @@
       });
     }
 
-    function renderCryptoOptions() {
+        function renderCryptoOptions() {
       if (!cryptoSelect) return;
-      const options = Array.isArray(plansState?.cryptoOptions) ? plansState.cryptoOptions : [];
-      cryptoSelect.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("");
+      const options = Array.isArray(plansState?.cryptoOptions) && plansState.cryptoOptions.length
+        ? plansState.cryptoOptions.map(opt => ({
+            ...opt,
+            code: opt.code || opt.cryptoCode || opt.crypto_code || opt.assetCode || opt.symbol,
+            label: opt.label || `${opt.asset || opt.symbol || opt.crypto || opt.code || "Crypto"}${(opt.network || opt.networkCode || opt.network_code) ? ` (${opt.network || opt.networkCode || opt.network_code})` : ""}`
+          }))
+        : FALLBACK_CRYPTO_OPTIONS;
+      cryptoSelect.innerHTML = `
+        <option value="">Choose a crypto option</option>
+        ${options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label)}</option>`).join("")}
+      `;
+      if (options.length) cryptoSelect.value = options[0].code;
     }
 
     function stopPaymentPolling() {
@@ -1475,48 +1566,38 @@
       renderLatestPayment(getLatestInterestingPayment());
     }
 
-    async function loadPayments(showMessage = false) {
-  // ONLY Backend2 (SOURCE OF TRUTH)
-  const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
+        async function loadPayments(showMessage = false) {
+      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
 
-  if (!res.ok) {
-    console.error("PAYMENTS ERROR:", res);
-    paymentsStore = [];
-    renderPaymentsTable();
-    return;
-  }
+      if (!res.ok) {
+        paymentsStore = [];
+        renderPaymentsTable();
+        if (showMessage) showToast("Failed to load payments");
+        return;
+      }
 
-  let raw = res.data;
-  let payments = [];
+      let raw = res.data;
+      let payments = [];
+      if (Array.isArray(raw)) payments = raw;
+      else if (Array.isArray(raw?.payments)) payments = raw.payments;
+      else if (Array.isArray(raw?.items)) payments = raw.items;
+      else if (raw?.payment) payments = [raw.payment];
 
-  // Handle all shapes safely
-  if (Array.isArray(raw)) payments = raw;
-  else if (Array.isArray(raw?.payments)) payments = raw.payments;
-  else if (Array.isArray(raw?.items)) payments = raw.items;
-  else if (raw?.payment) payments = [raw.payment];
+      paymentsStore = sortPayments(payments.map(p => normalizePaymentItem(p, "primary")));
+      renderPaymentsTable();
 
-  // Normalize
-  paymentsStore = sortPayments(
-    payments.map(p => normalizePaymentItem(p, "primary"))
-  );
+      if (waitingPaymentId) {
+        const p = paymentsStore.find(x => x.id === waitingPaymentId);
+        if (p) handleWaitingPaymentState(p);
+        else {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+        }
+      }
 
-  console.log("✅ PAYMENTS FINAL:", paymentsStore);
-
-  renderPaymentsTable();
-
-  // handle waiting state
-  if (waitingPaymentId) {
-    const p = paymentsStore.find(x => x.id === waitingPaymentId);
-    if (p) handleWaitingPaymentState(p);
-    else {
-      waitingPaymentId = "";
-      localStorage.removeItem("waitingPaymentId");
-      stopPaymentPolling();
+      if (showMessage) showToast("Payments refreshed");
     }
-  }
-
-  if (showMessage) showToast("Payments refreshed");
-}
 
     function renderPaymentRequestBox(payment, message = "") {
       if (!paymentRequestBox) return;
@@ -1554,7 +1635,7 @@
       `;
     }
 
-    async function createPaymentRequest() {
+        async function createPaymentRequest() {
       const cryptoCode = cryptoSelect?.value;
       const quantity = Math.max(1, Number(planQuantityInput?.value || selectedPlanQuantity || 1));
       selectedPlanQuantity = quantity;
@@ -1562,17 +1643,48 @@
       if (!cryptoCode) return setResult("Choose a crypto option", true, upgradeResult);
 
       setBusy(requestPaymentBtn, true, "Creating...");
-      let res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+      let res = await authorizedFetch(
+        "/payment-request",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            planCode: selectedPlan,
+            plan: selectedPlan,
+            billingCycle: selectedPlan,
+            quantity,
+            cryptoCode,
+            crypto: cryptoCode
+          })
+        },
+        preferredBackend,
+        false
+      );
       if (res.status === 401) {
         await verifyMainSession(false);
-        res = await authorizedFetch("/payment-request", { method: "POST", body: JSON.stringify({ planCode: selectedPlan, quantity, cryptoCode }) }, preferredBackend, false);
+        res = await authorizedFetch(
+          "/payment-request",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              planCode: selectedPlan,
+              plan: selectedPlan,
+              billingCycle: selectedPlan,
+              quantity,
+              cryptoCode,
+              crypto: cryptoCode
+            })
+          },
+          preferredBackend,
+          false
+        );
       }
       setBusy(requestPaymentBtn, false);
       if (!res.ok) {
         setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, upgradeResult);
         return;
       }
-      const payment = res.data?.payment ? normalizePaymentItem(res.data.payment, res.backend) : null;
+      const paymentRaw = res.data?.payment || res.data?.data?.payment || res.data;
+      const payment = paymentRaw ? normalizePaymentItem(paymentRaw, res.backend || preferredBackend) : null;
       if (!payment) {
         setResult("Payment request created, but response was empty", true, upgradeResult);
         return;
@@ -1585,7 +1697,7 @@
       await loadPayments(false);
     }
 
-    async function markPaymentSent(paymentId, backend) {
+        async function markPaymentSent(paymentId, backend) {
       const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
       if (!payment) return;
       const status = String(payment.status || "").toLowerCase();
@@ -1597,7 +1709,7 @@
         startPaymentPolling(payment.id, payment.backend);
         return showToast("Already waiting for confirmation");
       }
-      const res = await authorizedFetch("/payment-i-made", { method: "POST", body: JSON.stringify({ paymentId }) }, backend, false);
+      const res = await authorizedFetch("/payment-i-made", { method: "POST", body: JSON.stringify({ paymentId, id: paymentId }) }, backend, false);
       if (!res.ok) return setResult(res.data?.message || "Could not mark payment as sent", true, upgradeResult);
       waitingPaymentId = payment.id;
       localStorage.setItem("waitingPaymentId", payment.id);
@@ -1628,70 +1740,61 @@
       stopPaymentPolling();
     }
 
-    function startPaymentPolling(paymentId, backend) {
-  stopPaymentPolling();
-
-  const run = async () => {
-    const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
-    if (!res.ok) return;
-
-    let raw = res.data;
-    let incoming = [];
-
-    // ✅ handle ALL formats safely
-    if (Array.isArray(raw)) {
-      incoming = raw;
-    } else if (Array.isArray(raw?.payments)) {
-      incoming = raw.payments;
-    } else if (Array.isArray(raw?.items)) {
-      incoming = raw.items;
-    } else if (raw?.payment) {
-      incoming = [raw.payment];
-    }
-
-    // ✅ normalize
-    incoming = incoming.map(p => normalizePaymentItem(p, "primary"));
-
-    const current = incoming.find(p => p.id === paymentId);
-    if (!current) return;
-
-    // ✅ replace store cleanly (NO MIXING)
-    paymentsStore = sortPayments(incoming);
-
-    renderPaymentsTable();
-
-    const status = String(current.status || "").toLowerCase();
-    const pollText = $("paymentPollText");
-
-    if (pollText) {
-      if (status === "awaiting_confirmation") {
-        pollText.textContent =
-          `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-      } else if (status === "pending") {
-        pollText.textContent =
-          `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
-      }
-    }
-
-    // ✅ SUCCESS STATE
-    if (status === "verified") {
-      waitingPaymentId = "";
-      localStorage.removeItem("waitingPaymentId");
-
+        function startPaymentPolling(paymentId, backend) {
       stopPaymentPolling();
 
-      renderPaymentRequestBox(current, "Payment confirmed and successful.");
-      await loadMe(false);
+      const run = async () => {
+        const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
+        if (!res.ok) return;
 
-      showToast("Payment confirmed");
+        let raw = res.data;
+        let incoming = [];
+        if (Array.isArray(raw)) incoming = raw;
+        else if (Array.isArray(raw?.payments)) incoming = raw.payments;
+        else if (Array.isArray(raw?.items)) incoming = raw.items;
+        else if (raw?.payment) incoming = [raw.payment];
+
+        incoming = incoming.map(p => normalizePaymentItem(p, "primary"));
+
+        const current = incoming.find(p => p.id === paymentId);
+        if (!current) return;
+
+        paymentsStore = sortPayments(incoming);
+        renderPaymentsTable();
+
+        const status = String(current.status || "").toLowerCase();
+        const pollText = $("paymentPollText");
+
+        if (pollText) {
+          if (status === "awaiting_confirmation") {
+            pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
+          } else if (status === "pending") {
+            pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
+          }
+        }
+
+        if (status === "verified") {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          renderPaymentRequestBox(current, "Payment confirmed and successful.");
+          await loadMe(false);
+          showToast("Payment confirmed");
+        }
+
+        if (status === "cancelled" || status === "expired") {
+          waitingPaymentId = "";
+          localStorage.removeItem("waitingPaymentId");
+          stopPaymentPolling();
+          renderPaymentRequestBox(current, "Payment expired or cancelled.");
+        }
+      };
+
+      run();
+      paymentPoller = setInterval(run, 5000);
     }
-  };
 
-  run();
-  paymentPoller = setInterval(run, 5000);
-}
-
-    function openUpgradeModal() {
+        function openUpgradeModal() {
       if (overlay) overlay.style.display = "block";
       if (upgradeModal) upgradeModal.style.display = "block";
       updateBillingPreview();
@@ -1699,7 +1802,10 @@
       if (p) renderPaymentRequestBox(p);
     }
 
-    function closeUpgradeModal() { if (upgradeModal) upgradeModal.style.display = "none"; syncOverlay(); }
+    function closeUpgradeModal() {
+      if (upgradeModal) upgradeModal.style.display = "none";
+      syncOverlay();
+    }
 
     function openSettingsModal() {
       if (overlay) overlay.style.display = "block";
