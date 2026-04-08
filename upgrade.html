@@ -946,11 +946,25 @@ function renderPlans() {
 function renderCrypto() {
   if (!cryptoBox) return;
 
-  // fallback if backend empty
-  if (!cryptoData.length) {
-    cryptoData = FALLBACK_CRYPTO_OPTIONS.map(normalizeCrypto);
+  // ✅ Ensure crypto data exists
+  if (!cryptoData || !cryptoData.length) {
+    cryptoData = [
+      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
+    ];
   }
 
+  // ✅ Default selection (IMPORTANT)
+  if (!selectedCrypto && cryptoData.length) {
+    selectedCrypto = cryptoData[0].code;
+  }
+
+  // ✅ Render UI
   cryptoBox.innerHTML = cryptoData.map(item => `
     <div class="crypto ${selectedCrypto === item.code ? "active" : ""}" data-code="${item.code}">
       <div><b>${item.asset || item.code}</b></div>
@@ -959,49 +973,21 @@ function renderCrypto() {
     </div>
   `).join("");
 
-  // 🔥 THIS PART WAS MISSING / BROKEN
-  cryptoBox.querySelectorAll(".crypto").forEach(el => {
-    el.onclick = () => {
+  // ✅ Attach click handlers
+  const nodes = cryptoBox.querySelectorAll(".crypto");
+
+  nodes.forEach(el => {
+    el.addEventListener("click", () => {
       selectedCrypto = el.dataset.code;
-      renderCrypto();       // re-render active state
-      updateSelection();    // update UI
-    };
+
+      console.log("✅ Selected crypto:", selectedCrypto);
+
+      renderCrypto();     // refresh UI highlight
+      updateSelection();  // update summary
+    });
   });
 
-  console.log("✅ Crypto rendered:", cryptoData);
-}
-
-  // backend response
-  if (Array.isArray(plansState?.cryptoOptions)) {
-    options = plansState.cryptoOptions;
-  }
-
-  // fallback if backend returns nothing
-  if (!options.length) {
-    options = [
-      { code: "USDT_BSC", label: "USDT (BSC)" },
-      { code: "USDT_TRX", label: "USDT (TRC20)" },
-      { code: "USDT_ETH", label: "USDT (ERC20)" },
-      { code: "USDT_SOL", label: "USDT (Solana)" },
-      { code: "USDC_ETH", label: "USDC (ERC20)" },
-      { code: "USDC_SOL", label: "USDC (Solana)" },
-      { code: "BTC_BTC", label: "Bitcoin" }
-    ];
-  }
-
-  // render dropdown
-  cryptoSelect.innerHTML = options.map(opt => `
-    <option value="${opt.code}">
-      ${opt.label || opt.code}
-    </option>
-  `).join("");
-
-  // ensure something is selected
-  if (options.length) {
-    cryptoSelect.value = options[0].code;
-  }
-
-  console.log("✅ Crypto options loaded:", options);
+  console.log("🔥 Crypto UI ready:", cryptoData);
 }
 
 function updateSelection() {
