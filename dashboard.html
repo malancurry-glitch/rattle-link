@@ -737,6 +737,24 @@
     const PRIMARY_AUTH_CANDIDATES = ["/auth/me", "/me"];
     const LEGACY_AUTH_CANDIDATES = ["/me", "/auth/me"];
 
+    const LEGACY_ROUTE_MAP = {
+      "/me": ["/me", "/auth/me"],
+      "/auth/me": ["/me", "/auth/me"],
+      "/plans": ["/plans"],
+      "/payment-request": ["/payment-request"],
+      "/payments/me": ["/payments/me"],
+      "/payment-i-made": ["/payment-i-made"],
+      "/create": ["/create"],
+      "/list": ["/list"],
+      "/history": ["/history"],
+      "/delete": ["/delete"],
+      "/landing/create": ["/landing/create"],
+      "/landing/update": ["/landing/update"],
+      "/landing/delete": ["/landing/delete"],
+      "/health": ["/health", "/"],
+      "/": ["/", "/health"]
+    };
+
     const $ = id => document.getElementById(id);
 
     const totalLinks = $("totalLinks");
@@ -916,8 +934,12 @@
 
     function buildLegacyCandidates(path) {
       const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-      if (p === "/auth/me" || p === "/me") return LEGACY_AUTH_CANDIDATES.slice();
-      return Array.from(new Set([p, p.replace(/^\/app/, ""), p.replace(/^\/auth/, "")].filter(Boolean)));
+      if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
+      return Array.from(new Set([
+        p,
+        p.replace(/^\/app/, ""),
+        p.replace(/^\/auth/, "")
+      ].filter(Boolean)));
     }
 
     async function safeFetchRaw(base, path, options = {}) {
@@ -949,7 +971,12 @@
         return { ...res, backend, resolvedPath: candidate };
       }
 
-      return first401 || { ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }), backend, resolvedPath: last?.path || candidates[0] };
+      return first401 || {
+        ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }),
+        backend,
+        resolvedPath: last?.path || candidates[0],
+        triedPaths: candidates
+      };
     }
 
     async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
@@ -1648,7 +1675,7 @@
     async function checkBackendHealth() {
       const [p, l] = await Promise.all([checkOneBackendHealth("primary"), checkOneBackendHealth("legacy")]);
       if (primaryHealth) primaryHealth.innerHTML = p.ok ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>` : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-      if (legacyHealth) legacyHealth.innerHTML = l.ok ? `<span class="chip live">Online</span> <span class="muted">AWS responding</span>` : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+      if (legacyHealth) legacyHealth.innerHTML = l.ok ? `<span class="chip live">Online</span> <span class="muted">AWS responding on ${escapeHtml(l.path || '/health')}</span>` : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || 'Failed to fetch')} (${escapeHtml(l.path || '/health')})</span>`;
     }
 
     function getFilteredData() {
@@ -1720,8 +1747,12 @@
       renderBackend2Summary();
 
       if (showLoading) {
-        const legacyMsg = legacyRes.ok ? "AWS OK" : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
-        const primaryMsg = primaryRes.ok ? "Backend2 OK" : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
+        const legacyMsg = legacyRes.ok
+          ? `AWS OK (${legacyRes.resolvedPath || '/list'})`
+          : `AWS ${legacyRes.status || 'network'} on ${legacyRes.resolvedPath || '/list'}: ${legacyRes.data?.message || 'Failed to fetch'}`;
+        const primaryMsg = primaryRes.ok
+          ? `Backend2 OK (${primaryRes.resolvedPath || '/list'})`
+          : `Backend2 ${primaryRes.status || 'network'} on ${primaryRes.resolvedPath || '/list'}: ${primaryRes.data?.message || 'Failed to fetch'}`;
         setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
       }
     }
