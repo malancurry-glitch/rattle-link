@@ -172,7 +172,6 @@
     }
 
     .verified{ background:#052e16; color:#86efac; }
-    .pending{ background:#332701; color:#fde68a; }
     .primary{ background:#062e1d; color:#86efac; }
     .active{ background:#022c22; color:#22c55e; }
     .paused{ background:#2b1a00; color:#f59e0b; }
@@ -183,7 +182,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:2100px;
+      min-width:1900px;
     }
 
     th, td{
@@ -221,12 +220,6 @@
       font-weight:700;
       box-shadow:0 0 20px rgba(0,255,255,.35);
       max-width:80vw;
-    }
-
-    .tips{
-      line-height:1.8;
-      color:var(--muted);
-      font-size:13px;
     }
 
     .code{
@@ -393,12 +386,6 @@
       border:1px solid rgba(0,255,255,.12);
     }
 
-    .modal-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:16px;
-    }
-
     .stats-list{
       display:grid;
       grid-template-columns:repeat(3,1fr);
@@ -444,7 +431,7 @@
     }
 
     @media (max-width: 980px){
-      .grid-2, .grid-3, .two-col-note, .modal-grid, .stats-list{ grid-template-columns:1fr; }
+      .grid-2, .grid-3, .two-col-note, .stats-list{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -686,8 +673,7 @@
               <th>Mode</th>
               <th>Clicks</th>
               <th>Status</th>
-              <th>Approval</th>
-              <th>Sensitive Flags</th>
+              <th>Flags</th>
               <th>QR</th>
               <th>Created</th>
               <th>Actions</th>
@@ -865,27 +851,13 @@
       return `<span class="badge active">${escapeHtml(clean.toUpperCase())}</span>`;
     }
 
-    function getApprovalBits(item) {
-      const status = String(item.approvalStatus || "approved").toLowerCase();
-      const bits = [];
-
-      if (status === "pending") bits.push(`<span class="badge pending">PENDING</span>`);
-      if (status === "approved") bits.push(`<span class="badge verified">APPROVED</span>`);
-      if (status === "rejected") bits.push(`<span class="badge danger">REJECTED</span>`);
-      if (item.requireAdminReview) bits.push(`<span class="badge pending">REVIEW</span>`);
-      if (item.approvedBy) bits.push(`<div class="tiny muted">By: ${escapeHtml(item.approvedBy)}</div>`);
-      if (item.rejectionReason) bits.push(`<div class="tiny muted">Reason: ${escapeHtml(item.rejectionReason)}</div>`);
-
-      return bits.join("") || `<span class="muted tiny">-</span>`;
-    }
-
     function getSensitiveBits(item) {
       const bits = [];
       if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
       if (item.pixelPlatform) bits.push(`<span class="badge info">${escapeHtml(String(item.pixelPlatform).toUpperCase())}</span>`);
       if (item.pixelId) bits.push(`<div class="tiny muted">ID: ${escapeHtml(item.pixelId)}</div>`);
       if (item.cloakingEnabled) bits.push(`<span class="badge danger">WRAP</span>`);
-      if (item.cloakMode) bits.push(`<span class="badge pending">${escapeHtml(String(item.cloakMode).toUpperCase())}</span>`);
+      if (item.cloakMode) bits.push(`<span class="badge info">${escapeHtml(String(item.cloakMode).toUpperCase())}</span>`);
       if (item.disclosureText) bits.push(`<div class="tiny muted">${escapeHtml(item.disclosureText)}</div>`);
       return bits.join("") || `<span class="muted tiny">None</span>`;
     }
@@ -923,13 +895,7 @@
         pixelCode: String(i.pixelCode || i.pixel_code || ""),
         retargetingEnabled: !!(i.retargetingEnabled || i.retargeting_enabled),
         cloakingEnabled: !!(i.cloakingEnabled || i.cloaking_enabled),
-        disclosureText: String(i.disclosureText || i.disclosure_text || i.disclosure || ""),
-        requireAdminReview: !!(i.requireAdminReview || i.require_admin_review),
-        approvedByAdmin: !!(i.approvedByAdmin || i.approved_by_admin),
-        approvedAt: i.approvedAt ? Number(i.approvedAt) : (i.approved_at ? Number(i.approved_at) : null),
-        approvedBy: String(i.approvedBy || i.approved_by || ""),
-        approvalStatus: String(i.approvalStatus || i.approval_status || "approved").toLowerCase(),
-        rejectionReason: String(i.rejectionReason || i.rejection_reason || "")
+        disclosureText: String(i.disclosureText || i.disclosure_text || i.disclosure || "")
       };
     }
 
@@ -1116,10 +1082,7 @@
           i.pixelPlatform,
           i.pixelId,
           i.cloakMode,
-          i.disclosureText,
-          i.approvalStatus,
-          i.approvedBy,
-          i.rejectionReason
+          i.disclosureText
         ].join(" ").toLowerCase();
 
         const matchQ = !q || blob.includes(q);
@@ -1145,7 +1108,6 @@
           <td>${getModeBadge(i.vanityMode)}</td>
           <td>${i.clicks}</td>
           <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
-          <td>${getApprovalBits(i)}</td>
           <td>${getSensitiveBits(i)}</td>
           <td>
             <div class="row-actions">
@@ -1168,7 +1130,7 @@
             </div>
           </td>
         </tr>
-      `).join("") : `<tr><td colspan="12"><div class="empty">No vanity links found</div></td></tr>`;
+      `).join("") : `<tr><td colspan="11"><div class="empty">No vanity links found</div></td></tr>`;
     }
 
     function collectPayload() {
@@ -1493,7 +1455,6 @@
 
       const item = normalizeVanityItem(res.data?.item || {});
       const stats = res.data?.stats || {};
-
       const recent = Array.isArray(stats.recent) ? stats.recent : [];
 
       $("statsModalBody").innerHTML = `
