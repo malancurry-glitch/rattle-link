@@ -47,7 +47,7 @@
     }
 
     .wrap{
-      max-width:1380px;
+      max-width:1440px;
       margin:0 auto;
       padding:24px;
       position:relative;
@@ -74,7 +74,7 @@
       color:var(--muted);
       line-height:1.6;
       font-size:13px;
-      max-width:860px;
+      max-width:900px;
     }
 
     .actions,
@@ -183,7 +183,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1600px;
+      min-width:1800px;
     }
 
     th, td{
@@ -333,12 +333,33 @@
       line-height:1.5;
     }
 
-    .hidden{
-      display:none !important;
+    .hidden{ display:none !important; }
+
+    .progress{
+      width:100%;
+      height:10px;
+      background:#07111e;
+      border:1px solid var(--border);
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:10px;
+    }
+
+    .progress > div{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, var(--blue), var(--primary));
+      transition:width .2s;
+    }
+
+    .two-col-note{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
     }
 
     @media (max-width: 980px){
-      .grid-2, .grid-3{ grid-template-columns:1fr; }
+      .grid-2, .grid-3, .two-col-note{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -349,7 +370,7 @@
         <h1>✨ Vanity Slugs</h1>
         <div class="sub">
           Create clean branded links, action slugs, and advanced vanity modes such as
-          white-label wrappers and retarget-ready links instantly.
+          white-label wrappers and retarget-ready links instantly. Sensitive behavior should still be reviewed and enforced on the backend.
         </div>
       </div>
 
@@ -383,9 +404,28 @@
       </div>
     </div>
 
+    <div class="grid-2">
+      <div class="card">
+        <h3>Redirect Limit Usage</h3>
+        <div class="small muted" id="limitText">Loading usage...</div>
+        <div class="progress"><div id="limitBar"></div></div>
+        <div class="help-text" id="limitHelp">
+          Vanity links share the same redirect pool limit as your other short links.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Current Edit State</h3>
+        <div class="small muted" id="editStateText">Create mode</div>
+        <div class="actions" style="margin-top:12px;">
+          <button class="btn-ghost hidden" id="cancelEditBtn" type="button">Cancel Edit</button>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="section-title">
-        <h3>Create Vanity Link</h3>
+        <h3 id="formTitle">Create Vanity Link</h3>
       </div>
 
       <div class="grid-2">
@@ -490,23 +530,35 @@
       </div>
 
       <div class="help-text">
-        This page only sends configuration to your backend. Admin monitoring and abuse enforcement should happen server-side.
+        This page sends configuration to your backend. Review status, pending approvals, and abuse enforcement should be handled server-side.
       </div>
 
       <div class="actions" style="margin-top:12px;">
         <button class="btn-primary" id="createBtn" type="button">Create Vanity Link</button>
+        <button class="btn-purple hidden" id="updateBtn" type="button">Update Vanity Link</button>
         <button class="btn-ghost" id="clearBtn" type="button">Clear Form</button>
       </div>
 
       <div class="result" id="formResult"></div>
     </div>
 
-    <div class="card">
-      <div class="section-title">
-        <h3>Quick Pattern Buttons</h3>
-        <div class="muted small">Tap one to prefill the form fast.</div>
+    <div class="two-col-note">
+      <div class="card">
+        <div class="section-title">
+          <h3>Quick Pattern Buttons</h3>
+          <div class="muted small">Tap one to prefill the form fast.</div>
+        </div>
+        <div class="pill-select" id="quickPatterns"></div>
       </div>
-      <div class="pill-select" id="quickPatterns"></div>
+
+      <div class="card">
+        <h3>Feature Notes</h3>
+        <div class="note-box">
+          <b>White-label</b> can be used for wrapper-style branded flows.<br><br>
+          <b>Retargeting</b> fields store metadata for your backend logic.<br><br>
+          <b>Vanity links</b> should count toward the same redirect quota as your normal short links.
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -552,6 +604,7 @@
               <th>Mode</th>
               <th>Clicks</th>
               <th>Status</th>
+              <th>Approval</th>
               <th>Sensitive Flags</th>
               <th>Created</th>
               <th>Actions</th>
@@ -570,6 +623,8 @@
 
     let items = [];
     let domains = [];
+    let redirectUsage = { used: 0, limit: 0, remaining: 0 };
+    let editingItem = null;
 
     const PRESETS = {
       brand: {
@@ -708,6 +763,20 @@
       return `<span class="badge active">${escapeHtml(clean.toUpperCase())}</span>`;
     }
 
+    function getApprovalBits(item) {
+      const status = String(item.approvalStatus || "approved").toLowerCase();
+      const bits = [];
+
+      if (status === "pending") bits.push(`<span class="badge pending">PENDING</span>`);
+      if (status === "approved") bits.push(`<span class="badge verified">APPROVED</span>`);
+      if (status === "rejected") bits.push(`<span class="badge danger">REJECTED</span>`);
+      if (item.requireAdminReview) bits.push(`<span class="badge pending">REVIEW</span>`);
+      if (item.approvedBy) bits.push(`<div class="tiny muted">By: ${escapeHtml(item.approvedBy)}</div>`);
+      if (item.rejectionReason) bits.push(`<div class="tiny muted">Reason: ${escapeHtml(item.rejectionReason)}</div>`);
+
+      return bits.join("") || `<span class="muted tiny">-</span>`;
+    }
+
     function getSensitiveBits(item) {
       const bits = [];
       if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
@@ -750,8 +819,41 @@
         pixelCode: String(i.pixelCode || i.pixel_code || ""),
         retargetingEnabled: !!(i.retargetingEnabled || i.retargeting_enabled),
         cloakingEnabled: !!(i.cloakingEnabled || i.cloaking_enabled),
-        disclosureText: String(i.disclosureText || i.disclosure_text || i.disclosure || "")
+        disclosureText: String(i.disclosureText || i.disclosure_text || i.disclosure || ""),
+        requireAdminReview: !!(i.requireAdminReview || i.require_admin_review),
+        approvedByAdmin: !!(i.approvedByAdmin || i.approved_by_admin),
+        approvedAt: i.approvedAt ? Number(i.approvedAt) : (i.approved_at ? Number(i.approved_at) : null),
+        approvedBy: String(i.approvedBy || i.approved_by || ""),
+        approvalStatus: String(i.approvalStatus || i.approval_status || "approved").toLowerCase(),
+        rejectionReason: String(i.rejectionReason || i.rejection_reason || "")
       };
+    }
+
+    function updateUsageWidget() {
+      const used = Number(redirectUsage.used || 0);
+      const limit = Number(redirectUsage.limit || 0);
+      const remaining = Number(redirectUsage.remaining || Math.max(0, limit - used));
+
+      if (!limit) {
+        $("limitText").textContent = "Usage data unavailable";
+        $("limitBar").style.width = "0%";
+        return;
+      }
+
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+      $("limitText").textContent = `${used} / ${limit} redirects used • ${remaining} remaining`;
+      $("limitBar").style.width = `${pct}%`;
+    }
+
+    function setEditMode(item) {
+      editingItem = item || null;
+      $("formTitle").textContent = editingItem ? "Edit Vanity Link" : "Create Vanity Link";
+      $("createBtn").classList.toggle("hidden", !!editingItem);
+      $("updateBtn").classList.toggle("hidden", !editingItem);
+      $("cancelEditBtn").classList.toggle("hidden", !editingItem);
+      $("editStateText").textContent = editingItem
+        ? `Editing ${editingItem.domain}/${editingItem.slug}`
+        : "Create mode";
     }
 
     async function loadDomains() {
@@ -772,6 +874,37 @@
 
       renderDomainOptions();
       renderStats();
+    }
+
+    async function loadUsage() {
+      const res = await api("/me", "GET");
+      if (!res || !res.ok) {
+        updateUsageWidget();
+        return;
+      }
+
+      const planLimits = res.data?.planLimits || res.data?.plan_limits || {};
+      const usage = res.data?.usage || {};
+      const fallbackLimit = Number(res.data?.trialLinksLimit || 0);
+
+      redirectUsage = {
+        used: Number(
+          usage.activeShortLinks ??
+          usage.active_short_links ??
+          res.data?.activeShortLinks ??
+          0
+        ),
+        limit: Number(
+          planLimits.activeShortLinks ??
+          planLimits.active_short_links ??
+          fallbackLimit ??
+          0
+        ),
+        remaining: 0
+      };
+
+      redirectUsage.remaining = Math.max(0, redirectUsage.limit - redirectUsage.used);
+      updateUsageWidget();
     }
 
     function renderDomainOptions() {
@@ -831,6 +964,15 @@
 
       renderTable();
       renderStats();
+
+      if (res.data?.limits) {
+        redirectUsage = {
+          used: Number(res.data.limits.used || 0),
+          limit: Number(res.data.limits.limit || 0),
+          remaining: Number(res.data.limits.remaining || 0)
+        };
+        updateUsageWidget();
+      }
     }
 
     function renderStats() {
@@ -855,7 +997,10 @@
           i.pixelPlatform,
           i.pixelId,
           i.cloakMode,
-          i.disclosureText
+          i.disclosureText,
+          i.approvalStatus,
+          i.approvedBy,
+          i.rejectionReason
         ].join(" ").toLowerCase();
 
         const matchQ = !q || blob.includes(q);
@@ -881,12 +1026,13 @@
           <td>${getModeBadge(i.vanityMode)}</td>
           <td>${i.clicks}</td>
           <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
+          <td>${getApprovalBits(i)}</td>
           <td>${getSensitiveBits(i)}</td>
           <td class="tiny muted">${fmtDate(i.createdAt)}</td>
           <td>
             <div class="row-actions">
               <button class="btn-ghost tiny" type="button" onclick="copyLinkValue('${encodeURIComponent(buildPublicUrl(i))}')">Copy</button>
-              <button class="btn-ghost tiny" type="button" onclick="editLink('${encodeURIComponent(JSON.stringify(i))}')">Edit</button>
+              <button class="btn-ghost tiny" type="button" onclick="startEdit('${encodeURIComponent(JSON.stringify(i))}')">Edit</button>
               <button class="btn-yellow tiny" type="button" onclick="togglePause('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}',${i.paused ? 'false' : 'true'})">
                 ${i.paused ? 'Resume' : 'Pause'}
               </button>
@@ -894,7 +1040,7 @@
             </div>
           </td>
         </tr>
-      `).join("") : `<tr><td colspan="10"><div class="empty">No vanity links found</div></td></tr>`;
+      `).join("") : `<tr><td colspan="11"><div class="empty">No vanity links found</div></td></tr>`;
     }
 
     function collectPayload() {
@@ -962,9 +1108,53 @@
         return;
       }
 
-      setResult("Vanity link created", false);
+      if (res.data?.limits) {
+        redirectUsage = {
+          used: Number(res.data.limits.used || 0),
+          limit: Number(res.data.limits.limit || 0),
+          remaining: Number(res.data.limits.remaining || 0)
+        };
+        updateUsageWidget();
+      }
+
+      const msg = res.data?.message || "Vanity link created";
+      setResult(msg, false);
       showToast("Success!");
       clearForm(false);
+      await loadVanityItems();
+    }
+
+    async function updateLink() {
+      if (!editingItem) return;
+
+      const payload = collectPayload();
+      if (!payload) return;
+
+      const updateBtn = $("updateBtn");
+      updateBtn.disabled = true;
+      updateBtn.textContent = "Updating...";
+
+      const res = await api("/vanity/update", "POST", {
+        oldSlug: editingItem.slug,
+        oldDomain: editingItem.domain,
+        ...payload
+      });
+
+      updateBtn.disabled = false;
+      updateBtn.textContent = "Update Vanity Link";
+
+      if (!res) return;
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Update failed", true);
+        return;
+      }
+
+      const msg = res.data?.message || "Vanity link updated";
+      setResult(msg, false);
+      showToast("Updated");
+      clearForm(false);
+      setEditMode(null);
       await loadVanityItems();
     }
 
@@ -982,8 +1172,14 @@
         return;
       }
 
+      if (editingItem && editingItem.slug === slug && editingItem.domain === domain) {
+        clearForm(false);
+        setEditMode(null);
+      }
+
       showToast("Deleted");
       await loadVanityItems();
+      await loadUsage();
     }
 
     async function togglePause(slugEncoded, domainEncoded, shouldPause) {
@@ -997,6 +1193,10 @@
       if (!res.ok) {
         showToast(res.data?.message || "Update failed");
         return;
+      }
+
+      if (editingItem && editingItem.slug === slug && editingItem.domain === domain) {
+        $("pausedInput").checked = shouldPause;
       }
 
       showToast(shouldPause ? "Paused" : "Resumed");
@@ -1034,64 +1234,12 @@
       $("pausedInput").checked = !!item.paused;
     }
 
-    async function editLink(encodedItem) {
+    function startEdit(encodedItem) {
       const item = JSON.parse(decodeURIComponent(encodedItem));
       fillForm(item);
-
-      const slug = prompt("Edit slug:", item.slug || "");
-      if (slug === null) return;
-
-      const url = prompt("Edit target URL:", item.url || "");
-      if (url === null) return;
-
-      const domain = prompt("Edit domain:", item.domain || "");
-      if (domain === null) return;
-
-      const expire = prompt("Edit expire timestamp (blank for none):", item.expire ? String(item.expire) : "");
-      if (expire === null) return;
-
-      const vanityMode = prompt("Edit vanity mode:", item.vanityMode || "standard");
-      if (vanityMode === null) return;
-
-      const pixelPlatform = prompt("Edit pixel platform:", item.pixelPlatform || "");
-      if (pixelPlatform === null) return;
-
-      const pixelId = prompt("Edit pixel ID:", item.pixelId || "");
-      if (pixelId === null) return;
-
-      const cloakMode = prompt("Edit cloak mode:", item.cloakMode || "");
-      if (cloakMode === null) return;
-
-      const disclosureText = prompt("Edit disclosure text:", item.disclosureText || "");
-      if (disclosureText === null) return;
-
-      const res = await api("/vanity/update", "POST", {
-        oldSlug: item.slug,
-        oldDomain: item.domain,
-        slug: slug.trim(),
-        domain: normalizeDomain(domain),
-        url: url.trim(),
-        expire: expire || null,
-        vanityMode: String(vanityMode || "standard").trim().toLowerCase(),
-        pixelPlatform: pixelPlatform.trim().toLowerCase() || null,
-        pixelId: pixelId.trim() || null,
-        cloakMode: cloakMode.trim().toLowerCase() || null,
-        retargetingEnabled: !!item.retargetingEnabled,
-        cloakingEnabled: !!item.cloakingEnabled,
-        disclosureText: disclosureText.trim() || null,
-        pixelCode: item.pixelCode || null,
-        paused: !!item.paused
-      });
-
-      if (!res) return;
-
-      if (!res.ok) {
-        showToast(res.data?.message || "Update failed");
-        return;
-      }
-
-      showToast("Updated");
-      await loadVanityItems();
+      setEditMode(item);
+      setResult(`Loaded ${item.domain}/${item.slug} for editing`, false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function clearForm(resetResult = true) {
@@ -1124,6 +1272,7 @@
       $("pixelPlatformSelect").value = p.pixelPlatform || "";
       $("pixelIdInput").value = p.pixelId || "";
       setResult(`Preset loaded: ${key}`, false);
+      autoAdjustFlags();
     }
 
     function renderQuickPatterns() {
@@ -1148,38 +1297,51 @@
       }
       if (mode === "white_label" || mode === "affiliate" || mode === "iframe_wrapper") {
         $("cloakingEnabledInput").checked = true;
-        if (!$("cloakModeSelect").value) $("cloakModeSelect").value = mode === "white_label" ? "white_label" : mode;
+        if (!$("cloakModeSelect").value) {
+          $("cloakModeSelect").value = mode === "white_label" ? "white_label" : mode;
+        }
       }
     }
 
     $("createBtn").addEventListener("click", createLink);
+    $("updateBtn").addEventListener("click", updateLink);
+    $("cancelEditBtn").addEventListener("click", () => {
+      clearForm(false);
+      setEditMode(null);
+      setResult("Edit cancelled", false);
+    });
+
     $("refreshBtn").addEventListener("click", async () => {
-      await loadDomains();
-      await loadVanityItems();
+      await Promise.all([loadDomains(), loadVanityItems(), loadUsage()]);
       showToast("Refreshed");
     });
+
     $("reloadDomainsBtn").addEventListener("click", async () => {
       await loadDomains();
       showToast("Domains reloaded");
     });
+
     $("searchInput").addEventListener("input", renderTable);
     $("modeFilter").addEventListener("change", renderTable);
     $("domainFilter").addEventListener("change", renderTable);
     $("statusFilter").addEventListener("change", renderTable);
-    $("clearBtn").addEventListener("click", () => clearForm(true));
+    $("clearBtn").addEventListener("click", () => {
+      clearForm(true);
+      setEditMode(null);
+    });
     $("presetSelect").addEventListener("change", (e) => applyPreset(e.target.value));
     $("vanityModeSelect").addEventListener("change", autoAdjustFlags);
 
     window.copyLinkValue = copyLinkValue;
-    window.editLink = editLink;
+    window.startEdit = startEdit;
     window.deleteLink = deleteLink;
     window.togglePause = togglePause;
 
     renderQuickPatterns();
+    setEditMode(null);
 
     (async function init() {
-      await loadDomains();
-      await loadVanityItems();
+      await Promise.all([loadDomains(), loadVanityItems(), loadUsage()]);
     })();
   </script>
 </body>
