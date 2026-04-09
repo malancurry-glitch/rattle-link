@@ -208,6 +208,19 @@
     .small{ font-size:12px; }
     .tiny{ font-size:11px; }
 
+    /* Modals */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+    }
+    .modal {
+      background: var(--bg); border: 1px solid var(--primary); border-radius: 20px;
+      width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 30px; position: relative;
+      box-shadow: 0 0 30px rgba(0,255,255,0.2);
+    }
+    .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; color: var(--muted); }
+    .log-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: ui-monospace, monospace; font-size: 12px; }
+
     .toast{
       position:fixed;
       right:20px;
@@ -217,15 +230,9 @@
       padding:12px 14px;
       border-radius:12px;
       display:none;
-      z-index:100;
+      z-index:1100;
       font-weight:700;
       box-shadow:0 0 20px rgba(0,255,255,.35);
-    }
-
-    .tips{
-      line-height:1.8;
-      color:var(--muted);
-      font-size:13px;
     }
 
     .code{
@@ -238,79 +245,6 @@
       border-radius:10px;
     }
 
-    .note-box{
-      background:rgba(15,23,42,.56);
-      border:1px solid rgba(0,255,255,.12);
-      border-radius:12px;
-      padding:12px;
-      line-height:1.65;
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .section-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-
-    .field-block label{
-      display:block;
-      margin-bottom:6px;
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    .switch-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:14px;
-      align-items:center;
-      margin-top:6px;
-    }
-
-    .switch{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      font-size:13px;
-      color:var(--text);
-    }
-
-    .switch input{
-      width:auto;
-      accent-color:var(--primary);
-    }
-
-    .empty{
-      padding:16px;
-      border:1px dashed rgba(255,255,255,.12);
-      border-radius:12px;
-      color:var(--muted);
-      text-align:center;
-    }
-
-    .result{
-      margin-top:12px;
-      min-height:18px;
-      white-space:pre-wrap;
-      font-size:13px;
-      line-height:1.5;
-    }
-
-    .success{ color:var(--green); }
-    .error{ color:var(--red); }
-
-    .pill-select{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
     .pill-btn{
       padding:8px 10px;
       border-radius:999px;
@@ -318,13 +252,9 @@
       background:#081120;
       color:var(--text);
       font-size:12px;
+      cursor: pointer;
     }
-
-    .pill-btn.active{
-      border-color:var(--primary);
-      color:#fff;
-      box-shadow:0 0 10px rgba(0,255,255,.18);
-    }
+    .pill-btn:hover { border-color: var(--primary); }
 
     @media (max-width: 980px){
       .grid-2, .grid-3{ grid-template-columns:1fr; }
@@ -374,7 +304,7 @@
 
     <div class="card">
       <div class="section-title">
-        <h3>Create Vanity Link</h3>
+        <h3 id="formTitle">Create Vanity Link</h3>
       </div>
 
       <div class="grid-2">
@@ -478,8 +408,8 @@
       </div>
 
       <div class="actions" style="margin-top:12px;">
-        <button class="btn-primary" id="createBtn">Create Vanity Link</button>
-        <button class="btn-ghost" id="clearBtn">Clear Form</button>
+        <button class="btn-primary" id="createBtn">Save Vanity Link</button>
+        <button class="btn-ghost" id="clearBtn">Clear / Reset</button>
       </div>
 
       <div class="result" id="formResult"></div>
@@ -547,6 +477,14 @@
     </div>
   </div>
 
+  <div id="statsModal" class="modal-overlay">
+    <div class="modal">
+      <span class="close-modal" onclick="closeModals()">&times;</span>
+      <h2 id="statsTitle">Click Logs</h2>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast">Done</div>
 
   <script>
@@ -554,189 +492,70 @@
 
     let items = [];
     let domains = [];
+    let currentEditId = null;
 
     const PRESETS = {
-      brand: {
-        slug: "shop",
-        vanityMode: "brand",
-        disclosure: "Professional brand path"
-      },
-      action: {
-        slug: "get-started",
-        vanityMode: "action",
-        disclosure: "Action-first vanity link"
-      },
-      partner: {
-        slug: "fb26",
-        vanityMode: "partner",
-        disclosure: "Partner/source tracking style"
-      },
-      vip: {
-        slug: "private",
-        vanityMode: "vip",
-        disclosure: "Exclusive access style"
-      },
-      personal: {
-        slug: "for-you",
-        vanityMode: "personal",
-        disclosure: "Direct personal invite style"
-      },
-      scarcity: {
-        slug: "today",
-        vanityMode: "scarcity",
-        disclosure: "Urgency / time-sensitive style"
-      },
-      help: {
-        slug: "fix",
-        vanityMode: "help",
-        disclosure: "Support-oriented vanity link"
-      },
-      minimal: {
-        slug: "v",
-        vanityMode: "minimal",
-        disclosure: "Minimal branded path"
-      },
-      white_label: {
-        slug: "checkout",
-        vanityMode: "white_label",
-        cloakMode: "white_label",
-        cloakingEnabled: true,
-        disclosure: "White-label wrapper / embedded experience"
-      }
+      brand: { slug: "shop", vanityMode: "brand", disclosure: "Professional brand path" },
+      action: { slug: "get-started", vanityMode: "action", disclosure: "Action-first vanity link" },
+      partner: { slug: "fb26", vanityMode: "partner", disclosure: "Partner/source tracking style" },
+      vip: { slug: "private", vanityMode: "vip", disclosure: "Exclusive access style" },
+      personal: { slug: "for-you", vanityMode: "personal", disclosure: "Direct personal invite style" },
+      scarcity: { slug: "today", vanityMode: "scarcity", disclosure: "Urgency / time-sensitive style" },
+      help: { slug: "fix", vanityMode: "help", disclosure: "Support-oriented vanity link" },
+      minimal: { slug: "v", vanityMode: "minimal", disclosure: "Minimal branded path" },
+      white_label: { slug: "checkout", vanityMode: "white_label", cloakMode: "white_label", cloakingEnabled: true, disclosure: "White-label wrapper" }
     };
 
     const $ = (id) => document.getElementById(id);
 
     function authHeaders(method = "GET") {
       const token = localStorage.getItem("token") || "";
-      const headers = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+      const headers = { "Authorization": `Bearer ${token}` };
       if (method !== "GET") headers["Content-Type"] = "application/json";
       return headers;
     }
 
     function normalizeDomain(value) {
-      return String(value || "")
-        .trim()
-        .toLowerCase()
-        .replace(/^https?:\/\//i, "")
-        .replace(/\/+$/g, "");
+      return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
     }
 
     function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+      return String(str ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
     }
 
     function showToast(message) {
       const toast = $("toast");
       toast.textContent = message;
       toast.style.display = "block";
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => {
-        toast.style.display = "none";
-      }, 1800);
+      setTimeout(() => { toast.style.display = "none"; }, 2000);
     }
 
-    function setResult(message, isError = false) {
-      const el = $("formResult");
-      el.textContent = message;
-      el.className = "result " + (isError ? "error" : "success");
-    }
+    function closeModals() { $("statsModal").style.display = 'none'; }
 
     async function api(path, method = "GET", body = null) {
-      const res = await fetch(API + path, {
-        method,
-        headers: authHeaders(method),
-        body: body ? JSON.stringify(body) : null
-      });
-
+      const res = await fetch(API + path, { method, headers: authHeaders(method), body: body ? JSON.stringify(body) : null });
+      if (res.status === 401) { window.location.href = "index.html"; return null; }
       const text = await res.text();
-      let data = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { message: text };
-      }
-
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "index.html";
-        return null;
-      }
-
-      return { ok: res.ok, status: res.status, data };
-    }
-
-    function fmtDate(ts) {
-      const n = Number(ts || 0);
-      if (!n) return "-";
-      return new Date(n).toLocaleString();
-    }
-
-    function buildPublicUrl(item) {
-      return `https://${item.domain}/${item.slug}`;
-    }
-
-    function getModeBadge(mode) {
-      const clean = String(mode || "standard").toLowerCase();
-      if (clean === "white_label") return `<span class="badge info">WHITE-LABEL</span>`;
-      if (clean === "retargeting") return `<span class="badge purple">RETARGETING</span>`;
-      if (clean === "vip") return `<span class="badge purple">VIP</span>`;
-      return `<span class="badge active">${clean.toUpperCase()}</span>`;
-    }
-
-    function getSensitiveBits(item) {
-      const bits = [];
-      if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
-      if (item.pixelPlatform) bits.push(`<span class="badge info">${escapeHtml(item.pixelPlatform.toUpperCase())}</span>`);
-      if (item.pixelId) bits.push(`<div class="tiny muted">ID: ${escapeHtml(item.pixelId)}</div>`);
-      if (item.cloakingEnabled) bits.push(`<span class="badge danger">CLOAK</span>`);
-      if (item.disclosureText) bits.push(`<div class="tiny muted">${escapeHtml(item.disclosureText)}</div>`);
-      return bits.join("") || `<span class="muted tiny">None</span>`;
+      try { return { ok: res.ok, data: text ? JSON.parse(text) : {} }; } catch { return { ok: res.ok, data: { message: text } }; }
     }
 
     async function loadDomains() {
-      const res = await api("/vanity/domains", "GET");
-      if (!res || !res.ok) return;
-      domains = (res.data?.domains || []).map(d => ({
-        ...d,
-        domain: normalizeDomain(d.domain),
-        status: String(d.status).toLowerCase(),
-        isPrimary: !!(d.isPrimary || d.is_primary)
-      }));
+      const res = await api("/vanity/domains");
+      if (!res?.ok) return;
+      domains = res.data.domains.map(d => ({ ...d, domain: normalizeDomain(d.domain) }));
       renderDomainOptions();
-      renderStats();
     }
 
     function renderDomainOptions() {
       const verified = domains.filter(d => d.status === "verified");
-      $("domainSelect").innerHTML = verified.map(d => 
-        `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (primary)" : ""}</option>`
-      ).join("");
-      
-      $("domainFilter").innerHTML = `<option value="all">All domains</option>` + verified.map(d => 
-        `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
-      ).join("");
-
-      const primary = verified.find(d => d.isPrimary);
-      $("statPrimaryDomain").textContent = primary ? primary.domain : "-";
+      $("domainSelect").innerHTML = verified.map(d => `<option value="${d.domain}">${d.domain}</option>`).join("");
+      $("domainFilter").innerHTML = `<option value="all">All domains</option>` + verified.map(d => `<option value="${d.domain}">${d.domain}</option>`).join("");
     }
 
     async function loadVanityItems() {
-      const res = await api("/vanity/list", "GET");
-      if (!res || !res.ok) return;
-      items = (res.data?.items || []).map(i => ({
-        ...i,
-        domain: normalizeDomain(i.domain),
-        createdAt: Number(i.createdAt || i.created_at || 0),
-        clicks: Number(i.clicks || 0),
-        paused: !!i.paused
-      }));
+      const res = await api("/vanity/list");
+      if (!res?.ok) return;
+      items = res.data.items || [];
       renderTable();
       renderStats();
     }
@@ -744,70 +563,105 @@
     function renderStats() {
       $("statTotal").textContent = items.length;
       $("statActive").textContent = items.filter(i => !i.paused).length;
-      $("statClicks").textContent = items.reduce((s, i) => s + i.clicks, 0);
+      $("statClicks").textContent = items.reduce((s, i) => s + (i.clicks || 0), 0);
       $("statDomains").textContent = domains.filter(d => d.status === "verified").length;
     }
 
     function renderTable() {
-      const q = $("searchInput").value.trim().toLowerCase();
-      const modeOnly = $("modeFilter").value;
-      const domainOnly = $("domainFilter").value;
-      const statusOnly = $("statusFilter").value;
-
-      const filtered = items.filter(i => {
-        const matchQ = !q || `${i.domain} ${i.slug} ${i.url}`.toLowerCase().includes(q);
-        const matchMode = modeOnly === "all" || i.vanityMode === modeOnly;
-        const matchDomain = domainOnly === "all" || i.domain === domainOnly;
-        const matchStatus = statusOnly === "all" || (statusOnly === "active" ? !i.paused : i.paused);
-        return matchQ && matchMode && matchDomain && matchStatus;
-      });
+      const q = $("searchInput").value.toLowerCase();
+      const filtered = items.filter(i => (i.slug.toLowerCase().includes(q) || i.url.toLowerCase().includes(q)));
 
       $("rows").innerHTML = filtered.map(i => `
         <tr>
-          <td><b>${escapeHtml(i.domain)}</b></td>
-          <td><b>${escapeHtml(i.slug)}</b></td>
-          <td><div class="code">${escapeHtml(buildPublicUrl(i))}</div></td>
-          <td><div class="code">${escapeHtml(i.url)}</div></td>
-          <td>${getModeBadge(i.vanityMode)}</td>
-          <td>${i.clicks}</td>
+          <td><b>${i.domain}</b></td>
+          <td><b>${i.slug}</b></td>
+          <td><div class="code">https://${i.domain}/${i.slug}</div></td>
+          <td><div class="code">${i.url}</div></td>
+          <td><span class="badge active">${i.vanityMode.toUpperCase()}</span></td>
+          <td><b>${i.clicks || 0}</b></td>
           <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
-          <td>${getSensitiveBits(i)}</td>
-          <td class="tiny muted">${fmtDate(i.createdAt)}</td>
+          <td>${i.retargetingEnabled ? 'RETARGET' : 'None'}</td>
+          <td class="tiny muted">${new Date(i.createdAt).toLocaleDateString()}</td>
           <td>
-             <button class="btn-ghost tiny" onclick="deleteLink('${i.slug}','${i.domain}')">Del</button>
+            <div style="display:flex; gap:5px;">
+              <button class="btn-yellow tiny" onclick="editLink('${i.id}')">Edit</button>
+              <button class="btn-primary tiny" onclick="viewStats('${i.slug}', '${i.domain}')">IPs</button>
+              <button class="btn-red tiny" onclick="deleteLink('${i.slug}','${i.domain}')">Del</button>
+            </div>
           </td>
         </tr>
       `).join("");
     }
 
-    async function deleteLink(slug, domain) {
-      if(!confirm("Delete this link?")) return;
-      const res = await api("/vanity/delete", "POST", { slug, domain });
-      if(res.ok) { showToast("Deleted"); loadVanityItems(); }
+    async function viewStats(slug, domain) {
+      $("statsModal").style.display = 'flex';
+      $("statsContent").innerHTML = "Loading...";
+      const res = await api(`/vanity/stats?slug=${slug}&domain=${domain}`);
+      if(res.ok && res.data.clicks) {
+        $("statsContent").innerHTML = res.data.clicks.map(c => `
+          <div class="log-row">
+            <span>${c.ip}</span>
+            <span class="muted">${new Date(parseInt(c.time_ms)).toLocaleString()}</span>
+          </div>
+        `).join("");
+      } else {
+        $("statsContent").innerHTML = "No click data found.";
+      }
     }
 
+    window.editLink = (id) => {
+      const item = items.find(i => i.id == id);
+      if(!item) return;
+      currentEditId = id;
+      $("formTitle").innerText = "Edit Vanity Link";
+      $("domainSelect").value = item.domain;
+      $("slugInput").value = item.slug;
+      $("urlInput").value = item.url;
+      $("vanityModeSelect").value = item.vanityMode;
+      $("pixelIdInput").value = item.pixelId || "";
+      $("disclosureInput").value = item.disclosureText || "";
+      $("retargetingEnabledInput").checked = !!item.retargetingEnabled;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     $("createBtn").onclick = async () => {
-      setResult("Creating...");
       const body = {
         domain: $("domainSelect").value,
         slug: $("slugInput").value,
         url: $("urlInput").value,
         vanityMode: $("vanityModeSelect").value,
-        pixelPlatform: $("pixelPlatformSelect").value,
         pixelId: $("pixelIdInput").value,
-        cloakMode: $("cloakModeSelect").value,
         retargetingEnabled: $("retargetingEnabledInput").checked,
-        cloakingEnabled: $("cloakingEnabledInput").checked,
         disclosureText: $("disclosureInput").value
       };
-      const res = await api("/vanity/create", "POST", body);
-      if(res.ok) { showToast("Success!"); loadVanityItems(); } 
-      else { setResult(res.data?.message || "Error", true); }
+
+      const path = currentEditId ? "/vanity/update" : "/vanity/create";
+      if(currentEditId) body.id = currentEditId;
+
+      const res = await api(path, "POST", body);
+      if(res.ok) {
+        showToast("Saved!");
+        clearForm();
+        loadVanityItems();
+      }
     };
 
-    $("refreshBtn").onclick = () => { loadDomains(); loadVanityItems(); };
-    $("searchInput").oninput = renderTable;
-    
+    function clearForm() {
+      currentEditId = null;
+      $("formTitle").innerText = "Create Vanity Link";
+      $("slugInput").value = "";
+      $("urlInput").value = "";
+      $("pixelIdInput").value = "";
+      $("disclosureInput").value = "";
+      $("retargetingEnabledInput").checked = false;
+    }
+
+    async function deleteLink(slug, domain) {
+      if(!confirm("Delete?")) return;
+      const res = await api("/vanity/delete", "POST", { slug, domain });
+      if(res.ok) { showToast("Deleted"); loadVanityItems(); }
+    }
+
     // Quick patterns init
     $("quickPatterns").innerHTML = Object.keys(PRESETS).map(k => 
       `<button class="pill-btn" onclick="applyPreset('${k}')">${k.replace('_',' ')}</button>`
@@ -818,7 +672,6 @@
       $("slugInput").value = p.slug;
       $("vanityModeSelect").value = p.vanityMode;
       $("disclosureInput").value = p.disclosure || "";
-      if(p.cloakingEnabled) $("cloakingEnabledInput").checked = true;
     };
 
     loadDomains();
