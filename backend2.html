@@ -632,1117 +632,1220 @@
   <div id="toast" class="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://api.rattleshortapi.it.com";
-    const AUTH_STORAGE_KEY = "rattle_token";
+  const PRIMARY_API = "https://api.rattleshortapi.it.com";
+  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    let linksStore = [];
-    let selectedLinks = new Set();
-    let chart = null;
-    let statsChart = null;
-    let statsMap = null;
-    let geoMap = null;
-    let refreshTimer = null;
-    let notificationsStore = [];
-    let meState = null;
+  const AUTH_STORAGE_KEY = "rattle_token";
+  const ROLE_STORAGE_KEY = "rattle_role";
+  const USER_STORAGE_KEY = "rattle_user";
 
-    const $ = (id) => document.getElementById(id);
+  let linksStore = [];
+  let selectedLinks = new Set();
+  let chart = null;
+  let statsChart = null;
+  let statsMap = null;
+  let geoMap = null;
+  let refreshTimer = null;
+  let notificationsStore = [];
+  let meState = null;
 
-    const els = {
-      totalLinks: $("totalLinks"),
-      totalClicks: $("totalClicks"),
-      avgClicks: $("avgClicks"),
-      slotsLeft: $("slotsLeft"),
-      riskCount: $("riskCount"),
-      result: $("result"),
-      tableBody: $("tableBody"),
-      topLinks: $("topLinks"),
-      notifications: $("notifications"),
-      searchInput: $("searchInput"),
-      statusFilter: $("statusFilter"),
-      sortFilter: $("sortFilter"),
-      urlInput: $("urlInput"),
-      slugInput: $("slugInput"),
-      expireInput: $("expireInput"),
-      campaignInput: $("campaignInput"),
-      noteInput: $("noteInput"),
-      riskModeSelect: $("riskModeSelect"),
-      bulkCountInput: $("bulkCountInput"),
-      csvFileInput: $("csvFileInput"),
-      dropZone: $("dropZone"),
-      healthBox: $("healthBox"),
-      overlay: $("overlay"),
-      statsModal: $("statsModal"),
-      geoModal: $("geoModal"),
-      securityModal: $("securityModal"),
-      statsContent: $("statsContent"),
-      geoContent: $("geoContent"),
-      securityContent: $("securityContent"),
-      panel: $("panel"),
-      panelContent: $("panelContent"),
-      toast: $("toast"),
-      selectAllLinks: $("selectAllLinks"),
-      meEmail: $("meEmail"),
-      mePlan: $("mePlan"),
-      meExpire: $("meExpire"),
-      shortUsageText: $("shortUsageText"),
-      landingUsageText: $("landingUsageText"),
-      shortUsageBar: $("shortUsageBar"),
-      landingUsageBar: $("landingUsageBar"),
-      accessSummary: $("accessSummary"),
-      planBadge: $("planBadge")
+  const $ = (id) => document.getElementById(id);
+
+  const els = {
+    totalLinks: $("totalLinks"),
+    totalClicks: $("totalClicks"),
+    avgClicks: $("avgClicks"),
+    slotsLeft: $("slotsLeft"),
+    riskCount: $("riskCount"),
+    result: $("result"),
+    tableBody: $("tableBody"),
+    topLinks: $("topLinks"),
+    notifications: $("notifications"),
+    searchInput: $("searchInput"),
+    statusFilter: $("statusFilter"),
+    sortFilter: $("sortFilter"),
+    urlInput: $("urlInput"),
+    slugInput: $("slugInput"),
+    expireInput: $("expireInput"),
+    campaignInput: $("campaignInput"),
+    noteInput: $("noteInput"),
+    riskModeSelect: $("riskModeSelect"),
+    bulkCountInput: $("bulkCountInput"),
+    csvFileInput: $("csvFileInput"),
+    dropZone: $("dropZone"),
+    healthBox: $("healthBox"),
+    overlay: $("overlay"),
+    statsModal: $("statsModal"),
+    geoModal: $("geoModal"),
+    securityModal: $("securityModal"),
+    statsContent: $("statsContent"),
+    geoContent: $("geoContent"),
+    securityContent: $("securityContent"),
+    panel: $("panel"),
+    panelContent: $("panelContent"),
+    toast: $("toast"),
+    selectAllLinks: $("selectAllLinks"),
+    meEmail: $("meEmail"),
+    mePlan: $("mePlan"),
+    meExpire: $("meExpire"),
+    shortUsageText: $("shortUsageText"),
+    landingUsageText: $("landingUsageText"),
+    shortUsageBar: $("shortUsageBar"),
+    landingUsageBar: $("landingUsageBar"),
+    accessSummary: $("accessSummary"),
+    planBadge: $("planBadge")
+  };
+
+  function normalizeApiUrl(url) {
+    return String(url || "").replace(/\/+$/, "");
+  }
+
+  function getToken() {
+    return (
+      localStorage.getItem(AUTH_STORAGE_KEY) ||
+      localStorage.getItem("token") ||
+      ""
+    );
+  }
+
+  function getSessionBackend() {
+    const queryBackend = new URLSearchParams(window.location.search).get("backend");
+    const stored =
+      queryBackend ||
+      localStorage.getItem("sessionBackend") ||
+      localStorage.getItem("authBackend") ||
+      localStorage.getItem("magicBackend") ||
+      "primary";
+
+    return stored === "legacy" ? "legacy" : "primary";
+  }
+
+  function setSessionBackend(backend) {
+    const safe = backend === "legacy" ? "legacy" : "primary";
+    localStorage.setItem("sessionBackend", safe);
+    localStorage.setItem("authBackend", safe);
+  }
+
+  function authHeaders(extra = {}) {
+    const token = getToken();
+    return token
+      ? { Authorization: `Bearer ${token}`, ...extra }
+      : { ...extra };
+  }
+
+  function ensureAuth() {
+    if (!getToken()) {
+      window.location.href = "index.html";
+      return false;
+    }
+    return true;
+  }
+
+  function clearSessionAndRedirect() {
+    localStorage.removeItem("rattle_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("rattle_role");
+    localStorage.removeItem("role");
+    localStorage.removeItem("rattle_user");
+    localStorage.removeItem("lastUser");
+    localStorage.removeItem("sessionBackend");
+    localStorage.removeItem("authBackend");
+    localStorage.removeItem("magicBackend");
+    window.location.href = "index.html";
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function escapeForJs(str) {
+    return String(str ?? "")
+      .replaceAll("\\", "\\\\")
+      .replaceAll("'", "\\'")
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "");
+  }
+
+  function fmtDate(ts) {
+    const n = Number(ts || 0);
+    return n ? new Date(n).toLocaleString() : "-";
+  }
+
+  function getStatusKey(item) {
+    if (item.paused) return "paused";
+    if (item.expire && Number(item.expire) <= Date.now()) return "expired";
+    return "live";
+  }
+
+  function getStatusBadge(item) {
+    const key = getStatusKey(item);
+    if (key === "paused") return '<span class="pill paused">Paused</span>';
+    if (key === "expired") return '<span class="pill expired">Expired</span>';
+    return '<span class="pill live">Live</span>';
+  }
+
+  function fmtExpire(ts) {
+    const n = Number(ts || 0);
+    if (!n) return '<span class="muted">No expiry</span>';
+    if (n <= Date.now()) return '<span class="expired">Expired</span>';
+    const diff = n - Date.now();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    return `<div class="live">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
+  }
+
+  function scoreLink(item) {
+    let score = 0;
+    const clicks = Number(item.clicks || 0);
+    const maxRisk = Number(item.maxRisk || 0);
+    if (clicks > 20) score += 20;
+    if (clicks > 50) score += 25;
+    if (clicks > 100) score += 25;
+    if (!item.paused) score += 10;
+    if (!item.expire || Number(item.expire) > Date.now()) score += 10;
+    score += 5;
+    if (maxRisk > 60) score -= 15;
+    return Math.max(0, Math.min(score, 100));
+  }
+
+  function detectFraud(item) {
+    const clicks = Number(item.clicks || 0);
+    const risk = Number(item.maxRisk || 0);
+    if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
+    if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
+    return "✅ Normal";
+  }
+
+  function buildPublicLink(slug) {
+    return `${normalizeApiUrl(PRIMARY_API)}/${slug}`;
+  }
+
+  function normalizeLinkItem(item) {
+    return {
+      ...item,
+      clicks: Number(item.clicks || 0),
+      paused: !!item.paused,
+      expire: item.expire ? Number(item.expire) : null,
+      createdAt: Number(item.createdAt || item.created_at || 0),
+      maxRisk: Number(item.maxRisk || item.max_risk || 0),
+      campaign: item.campaign || "",
+      note: item.note || "",
+      publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug)
     };
+  }
 
-    function getToken() {
-      return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
+  async function parseResponse(res) {
+    const raw = await res.text();
+    let data = {};
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = { message: raw || "" };
     }
+    return { raw, data };
+  }
 
-    function authHeaders() {
-      const token = getToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    }
-
-    function ensureAuth() {
-      if (!getToken()) {
-        window.location.href = "index.html";
-        return false;
-      }
-      return true;
-    }
-
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-
-    function escapeForJs(str) {
-      return String(str ?? "")
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'")
-        .replaceAll("\n", "\\n")
-        .replaceAll("\r", "");
-    }
-
-    function fmtDate(ts) {
-      const n = Number(ts || 0);
-      return n ? new Date(n).toLocaleString() : "-";
-    }
-
-    function getStatusKey(item) {
-      if (item.paused) return "paused";
-      if (item.expire && Number(item.expire) <= Date.now()) return "expired";
-      return "live";
-    }
-
-    function getStatusBadge(item) {
-      const key = getStatusKey(item);
-      if (key === "paused") return '<span class="pill paused">Paused</span>';
-      if (key === "expired") return '<span class="pill expired">Expired</span>';
-      return '<span class="pill live">Live</span>';
-    }
-
-    function fmtExpire(ts) {
-      const n = Number(ts || 0);
-      if (!n) return '<span class="muted">No expiry</span>';
-      if (n <= Date.now()) return '<span class="expired">Expired</span>';
-      const diff = n - Date.now();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      return `<div class="live">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
-    }
-
-    function scoreLink(item) {
-      let score = 0;
-      const clicks = Number(item.clicks || 0);
-      const maxRisk = Number(item.maxRisk || 0);
-      if (clicks > 20) score += 20;
-      if (clicks > 50) score += 25;
-      if (clicks > 100) score += 25;
-      if (!item.paused) score += 10;
-      if (!item.expire || Number(item.expire) > Date.now()) score += 10;
-      score += 5;
-      if (maxRisk > 60) score -= 15;
-      return Math.max(0, Math.min(score, 100));
-    }
-
-    function detectFraud(item) {
-      const clicks = Number(item.clicks || 0);
-      const risk = Number(item.maxRisk || 0);
-      if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
-      if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
-      return "✅ Normal";
-    }
-
-    function buildPublicLink(slug) {
-      return `${PRIMARY_API.replace(/\/+$/, "")}/${slug}`;
-    }
-
-    function normalizeLinkItem(item) {
+  async function callApi(baseUrl, path, options = {}) {
+    try {
+      const res = await fetch(`${normalizeApiUrl(baseUrl)}${path}`, options);
+      const parsed = await parseResponse(res);
       return {
-        ...item,
-        clicks: Number(item.clicks || 0),
-        paused: !!item.paused,
-        expire: item.expire ? Number(item.expire) : null,
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        maxRisk: Number(item.maxRisk || item.max_risk || 0),
-        campaign: item.campaign || "",
-        note: item.note || "",
-        publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug)
+        ok: res.ok,
+        status: res.status,
+        data: parsed.data,
+        raw: parsed.raw
+      };
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: { message: e?.message || "Failed to fetch" },
+        raw: ""
       };
     }
+  }
 
-    async function safeFetch(path, options = {}) {
-      try {
-        const headers = {
-          ...authHeaders(),
-          ...(options.headers || {})
-        };
+  async function safeFetch(path, options = {}) {
+    const preferredBackend = getSessionBackend();
+    const order = preferredBackend === "legacy"
+      ? ["legacy", "primary"]
+      : ["primary", "legacy"];
 
-        const res = await fetch(`${PRIMARY_API}${path}`, {
-          ...options,
-          headers
-        });
+    let first401 = null;
+    let lastResult = null;
 
-        const raw = await res.text();
-        let data = {};
-        try {
-          data = raw ? JSON.parse(raw) : {};
-        } catch {
-          data = { message: raw };
-        }
-
-        if (res.status === 401) logout();
-
-        return { ok: res.ok, status: res.status, data };
-      } catch (e) {
-        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" } };
-      }
-    }
-
-    async function safeFetchNoAuth(url) {
-      try {
-        const res = await fetch(url);
-        return { ok: res.ok, status: res.status };
-      } catch {
-        return { ok: false, status: 0 };
-      }
-    }
-
-    function showToast(message = "Done") {
-      els.toast.textContent = message;
-      els.toast.style.display = "block";
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => {
-        els.toast.style.display = "none";
-      }, 1800);
-    }
-
-    function pushNotification(message) {
-      notificationsStore.unshift({
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        message,
-        time: Date.now()
-      });
-      notificationsStore = notificationsStore.slice(0, 6);
-      renderNotifications();
-    }
-
-    function setResult(message, isError = false) {
-      els.result.textContent = message || "";
-      els.result.className = `result ${isError ? "error" : "success"}`;
-      if (message) pushNotification(message);
-    }
-
-    function renderNotifications() {
-      if (!notificationsStore.length) {
-        els.notifications.innerHTML = `<div class="muted">No notifications yet.</div>`;
-        return;
-      }
-      els.notifications.innerHTML = notificationsStore.map(n => `
-        <div class="surface">
-          <div><b>${escapeHtml(n.message)}</b></div>
-          <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
-        </div>
-      `).join("");
-    }
-
-    function openModal(modal) {
-      els.overlay.style.display = "block";
-      modal.style.display = "block";
-    }
-
-    function closeModal(modal) {
-      modal.style.display = "none";
-      syncOverlay();
-    }
-
-    function syncOverlay() {
-      const anyOpen = [els.statsModal, els.geoModal, els.securityModal].some(m => m.style.display === "block");
-      els.overlay.style.display = anyOpen ? "block" : "none";
-    }
-
-    function closeStatsModal() {
-      closeModal(els.statsModal);
-      if (statsChart) { statsChart.destroy(); statsChart = null; }
-      if (statsMap) { statsMap.remove(); statsMap = null; }
-    }
-
-    function closeGeoModal() {
-      closeModal(els.geoModal);
-      if (geoMap) { geoMap.remove(); geoMap = null; }
-    }
-
-    function closeSecurityModal() {
-      closeModal(els.securityModal);
-    }
-
-    function openSupportPanel() {
-      els.panel.style.display = "block";
-      els.panelContent.innerHTML = `
-        <h3>🆘 Backend2 Support</h3>
-        <div class="surface">
-          <div><b>Email:</b> support@rattleshort.online</div>
-          <div><b>Telegram:</b> @Rtslik</div>
-          <div><b>Discord:</b> discord.gg/xwGvhtjb</div>
-          <div><b>Phone:</b> +1 954 787 8220</div>
-        </div>
-        <div class="surface" style="margin-top:12px;">
-          <div class="muted">From this page you can manage Backend2 short links only. Landing pages and custom domains open on their own pages.</div>
-        </div>
-      `;
-    }
-
-    function closePanel() {
-      els.panel.style.display = "none";
-      els.panelContent.innerHTML = "";
-    }
-
-    function logout() {
-      localStorage.removeItem("rattle_token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("rattle_role");
-      localStorage.removeItem("role");
-      localStorage.removeItem("rattle_user");
-      localStorage.removeItem("lastUser");
-      window.location.href = "index.html";
-    }
-
-    function normalizePlanLabel(planCode) {
-      const code = String(planCode || "").toLowerCase();
-      if (code === "premium_monthly") return "Premium Monthly";
-      if (code === "monthly") return "Monthly";
-      if (code === "weekly") return "Weekly";
-      if (code === "free_trial") return "Free Trial";
-      return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
-    }
-
-    async function loadMe(showMessage = false) {
-      const res = await safeFetch("/auth/me", { method: "GET" });
-      if (!res.ok) {
-        els.meEmail.textContent = "-";
-        els.mePlan.textContent = "-";
-        els.meExpire.textContent = "-";
-        els.shortUsageText.textContent = "0 / 0";
-        els.landingUsageText.textContent = "0 / 0";
-        els.shortUsageBar.style.width = "0%";
-        els.landingUsageBar.style.width = "0%";
-        els.slotsLeft.textContent = "0";
-        els.accessSummary.textContent = "Could not load account details.";
-        if (showMessage) showToast("Failed to load account");
-        return;
-      }
-
-      meState = res.data || {};
-
-      const planLimits = meState.planLimits || {};
-      const usage = meState.usage || {};
-      const remaining = meState.remaining || {};
-
-      const shortUsed = Number(usage.activeShortLinks || 0);
-      const shortLimit = Number(planLimits.activeShortLinks || 0);
-      const landingUsed = Number(usage.activeLandingPages || 0);
-      const landingLimit = Number(planLimits.activeLandingPages || 0);
-      const shortLeft = Math.max(0, Number(remaining.activeShortLinks || 0));
-
-      els.meEmail.textContent = meState.username || meState.email || "-";
-      els.mePlan.textContent = normalizePlanLabel(
-        meState.subscriptionPlan ||
-        meState.subscription_plan ||
-        (String(meState.subscriptionStatus || meState.subscription_status || "").toLowerCase() === "trial" ? "free_trial" : "")
+    for (const backend of order) {
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const headers = authHeaders(
+        backend === "legacy"
+          ? { ...(options.headers || {}), "x-rattle-fallback": "legacy" }
+          : { ...(options.headers || {}) }
       );
-      els.meExpire.textContent = meState.subscriptionExpiresAt
-        ? fmtDate(meState.subscriptionExpiresAt)
-        : (meState.subscription_expires_at ? fmtDate(meState.subscription_expires_at) : "-");
 
-      els.shortUsageText.textContent = `${shortUsed} / ${shortLimit}`;
-      els.landingUsageText.textContent = `${landingUsed} / ${landingLimit}`;
-      els.shortUsageBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
-      els.landingUsageBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
-      els.slotsLeft.textContent = shortLeft;
-
-      const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
-      const expiresAt = Number(meState.subscriptionExpiresAt || meState.subscription_expires_at || 0);
-
-      let summary = "Account loaded.";
-      if (shortLimit || landingLimit) {
-        summary = `Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
-      }
-
-      if (status === "active" && (!expiresAt || expiresAt > Date.now())) {
-        els.planBadge.className = "badge live";
-        els.planBadge.textContent = "Active";
-        summary = shortLimit || landingLimit
-          ? `Plan active until ${expiresAt ? fmtDate(expiresAt) : "-"}. ${shortLeft} short-link slots left.`
-          : `Plan active${expiresAt ? ` until ${fmtDate(expiresAt)}` : ""}.`;
-      } else if (status === "expired") {
-        els.planBadge.className = "badge expired";
-        els.planBadge.textContent = "Expired";
-        summary = "Subscription expired.";
-      } else {
-        els.planBadge.className = "badge trial";
-        els.planBadge.textContent = "Trial";
-        summary = shortLimit
-          ? `Free trial active. ${shortUsed}/${shortLimit} short links currently used.`
-          : "Free trial active.";
-      }
-
-      if (meState.emailVerified === false || meState.email_verified === false) {
-        summary += " Email verification is incomplete.";
-      }
-
-      if (meState.primaryDomain) {
-        summary += ` Primary domain: ${meState.primaryDomain}.`;
-      }
-
-      els.accessSummary.textContent = summary;
-      if (showMessage) showToast("Account refreshed");
-    }
-
-    async function verifySession() {
-      const res = await safeFetch("/auth/me", { method: "GET" });
-      showToast(res.ok ? "Session valid" : "Session check failed");
-    }
-
-    function getFilteredData() {
-      const q = (els.searchInput.value || "").trim().toLowerCase();
-      const statusFilter = els.statusFilter.value || "all";
-      const sort = els.sortFilter.value || "newest";
-
-      let filtered = linksStore.filter(item => {
-        const matchesSearch =
-          !q ||
-          String(item.slug || "").toLowerCase().includes(q) ||
-          String(item.url || "").toLowerCase().includes(q) ||
-          String(item.note || "").toLowerCase().includes(q) ||
-          String(item.campaign || "").toLowerCase().includes(q);
-
-        const matchesStatus = statusFilter === "all" ? true : getStatusKey(item) === statusFilter;
-        return matchesSearch && matchesStatus;
+      const result = await callApi(baseUrl, path, {
+        ...options,
+        headers
       });
 
-      filtered.sort((a, b) => {
-        if (sort === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
-        if (sort === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
-        if (sort === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
-        if (sort === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
-        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+      lastResult = { ...result, backend };
+
+      if (result.ok) {
+        setSessionBackend(backend);
+        return { ...result, backend };
+      }
+
+      if (result.status === 401 && !first401) {
+        first401 = { ...result, backend };
+        continue;
+      }
+
+      if (result.status === 404 || result.status === 405 || result.status >= 500 || result.status === 0) {
+        continue;
+      }
+
+      return { ...result, backend };
+    }
+
+    if (first401 && lastResult && lastResult.status === 401) {
+      clearSessionAndRedirect();
+      return first401;
+    }
+
+    return lastResult || { ok: false, status: 0, data: { message: "Request failed" }, backend: preferredBackend };
+  }
+
+  async function safeFetchNoAuth(url) {
+    try {
+      const res = await fetch(url);
+      return { ok: res.ok, status: res.status };
+    } catch {
+      return { ok: false, status: 0 };
+    }
+  }
+
+  function showToast(message = "Done") {
+    els.toast.textContent = message;
+    els.toast.style.display = "block";
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => {
+      els.toast.style.display = "none";
+    }, 1800);
+  }
+
+  function pushNotification(message) {
+    notificationsStore.unshift({
+      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now()),
+      message,
+      time: Date.now()
+    });
+    notificationsStore = notificationsStore.slice(0, 6);
+    renderNotifications();
+  }
+
+  function setResult(message, isError = false) {
+    els.result.textContent = message || "";
+    els.result.className = `result ${isError ? "error" : "success"}`;
+    if (message) pushNotification(message);
+  }
+
+  function renderNotifications() {
+    if (!notificationsStore.length) {
+      els.notifications.innerHTML = `<div class="muted">No notifications yet.</div>`;
+      return;
+    }
+
+    els.notifications.innerHTML = notificationsStore.map(n => `
+      <div class="surface">
+        <div><b>${escapeHtml(n.message)}</b></div>
+        <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
+      </div>
+    `).join("");
+  }
+
+  function openModal(modal) {
+    els.overlay.style.display = "block";
+    modal.style.display = "block";
+  }
+
+  function closeModal(modal) {
+    modal.style.display = "none";
+    syncOverlay();
+  }
+
+  function syncOverlay() {
+    const anyOpen = [els.statsModal, els.geoModal, els.securityModal].some(m => m.style.display === "block");
+    els.overlay.style.display = anyOpen ? "block" : "none";
+  }
+
+  function closeStatsModal() {
+    closeModal(els.statsModal);
+    if (statsChart) { statsChart.destroy(); statsChart = null; }
+    if (statsMap) { statsMap.remove(); statsMap = null; }
+  }
+
+  function closeGeoModal() {
+    closeModal(els.geoModal);
+    if (geoMap) { geoMap.remove(); geoMap = null; }
+  }
+
+  function closeSecurityModal() {
+    closeModal(els.securityModal);
+  }
+
+  function openSupportPanel() {
+    const activeBackend = getSessionBackend();
+    els.panel.style.display = "block";
+    els.panelContent.innerHTML = `
+      <h3>🆘 Backend2 Support</h3>
+      <div class="surface">
+        <div><b>Email:</b> support@rattleshort.online</div>
+        <div><b>Telegram:</b> @Rtslik</div>
+        <div><b>Discord:</b> discord.gg/xwGvhtjb</div>
+        <div><b>Phone:</b> +1 954 787 8220</div>
+      </div>
+      <div class="surface" style="margin-top:12px;">
+        <div><b>Current session backend:</b> ${activeBackend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}</div>
+        <div class="muted" style="margin-top:8px;">This page now follows your saved auth backend instead of forcing logout on the first primary 401.</div>
+      </div>
+    `;
+  }
+
+  function closePanel() {
+    els.panel.style.display = "none";
+    els.panelContent.innerHTML = "";
+  }
+
+  function logout() {
+    clearSessionAndRedirect();
+  }
+
+  function normalizePlanLabel(planCode) {
+    const code = String(planCode || "").toLowerCase();
+    if (code === "premium_monthly") return "Premium Monthly";
+    if (code === "monthly") return "Monthly";
+    if (code === "weekly") return "Weekly";
+    if (code === "free_trial") return "Free Trial";
+    return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
+  }
+
+  async function loadMe(showMessage = false) {
+    const res = await safeFetch("/auth/me", { method: "GET" });
+
+    if (!res.ok) {
+      els.meEmail.textContent = "-";
+      els.mePlan.textContent = "-";
+      els.meExpire.textContent = "-";
+      els.shortUsageText.textContent = "0 / 0";
+      els.landingUsageText.textContent = "0 / 0";
+      els.shortUsageBar.style.width = "0%";
+      els.landingUsageBar.style.width = "0%";
+      els.slotsLeft.textContent = "0";
+      els.accessSummary.textContent = "Could not load account details.";
+      if (showMessage) showToast("Failed to load account");
+      return;
+    }
+
+    meState = res.data || {};
+
+    const planLimits = meState.planLimits || {};
+    const usage = meState.usage || {};
+    const remaining = meState.remaining || {};
+
+    const shortUsed = Number(usage.activeShortLinks || 0);
+    const shortLimit = Number(planLimits.activeShortLinks || 0);
+    const landingUsed = Number(usage.activeLandingPages || 0);
+    const landingLimit = Number(planLimits.activeLandingPages || 0);
+    const shortLeft = Math.max(0, Number(remaining.activeShortLinks || 0));
+
+    els.meEmail.textContent = meState.username || meState.email || "-";
+    els.mePlan.textContent = normalizePlanLabel(
+      meState.subscriptionPlan ||
+      meState.subscription_plan ||
+      (String(meState.subscriptionStatus || meState.subscription_status || "").toLowerCase() === "trial" ? "free_trial" : "")
+    );
+    els.meExpire.textContent = meState.subscriptionExpiresAt
+      ? fmtDate(meState.subscriptionExpiresAt)
+      : (meState.subscription_expires_at ? fmtDate(meState.subscription_expires_at) : "-");
+
+    els.shortUsageText.textContent = `${shortUsed} / ${shortLimit}`;
+    els.landingUsageText.textContent = `${landingUsed} / ${landingLimit}`;
+    els.shortUsageBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
+    els.landingUsageBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
+    els.slotsLeft.textContent = shortLeft;
+
+    const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
+    const expiresAt = Number(meState.subscriptionExpiresAt || meState.subscription_expires_at || 0);
+    const activeBackend = res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
+
+    let summary = `Session backend: ${activeBackend}.`;
+    if (shortLimit || landingLimit) {
+      summary += ` Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
+    }
+
+    if (status === "active" && (!expiresAt || expiresAt > Date.now())) {
+      els.planBadge.className = "badge live";
+      els.planBadge.textContent = "Active";
+      summary += shortLimit || landingLimit
+        ? ` Plan active until ${expiresAt ? fmtDate(expiresAt) : "-"}. ${shortLeft} short-link slots left.`
+        : ` Plan active${expiresAt ? ` until ${fmtDate(expiresAt)}` : ""}.`;
+    } else if (status === "expired") {
+      els.planBadge.className = "badge expired";
+      els.planBadge.textContent = "Expired";
+      summary += " Subscription expired.";
+    } else {
+      els.planBadge.className = "badge trial";
+      els.planBadge.textContent = "Trial";
+      summary += shortLimit
+        ? ` Free trial active. ${shortUsed}/${shortLimit} short links currently used.`
+        : " Free trial active.";
+    }
+
+    if (meState.emailVerified === false || meState.email_verified === false) {
+      summary += " Email verification is incomplete.";
+    }
+
+    if (meState.primaryDomain) {
+      summary += ` Primary domain: ${meState.primaryDomain}.`;
+    }
+
+    els.accessSummary.textContent = summary.trim();
+    if (showMessage) showToast("Account refreshed");
+  }
+
+  async function verifySession() {
+    const res = await safeFetch("/auth/me", { method: "GET" });
+    showToast(res.ok ? `Session valid (${res.backend === "legacy" ? "legacy" : "primary"})` : "Session check failed");
+  }
+
+  function getFilteredData() {
+    const q = (els.searchInput.value || "").trim().toLowerCase();
+    const statusFilter = els.statusFilter.value || "all";
+    const sort = els.sortFilter.value || "newest";
+
+    let filtered = linksStore.filter(item => {
+      const matchesSearch =
+        !q ||
+        String(item.slug || "").toLowerCase().includes(q) ||
+        String(item.url || "").toLowerCase().includes(q) ||
+        String(item.note || "").toLowerCase().includes(q) ||
+        String(item.campaign || "").toLowerCase().includes(q);
+
+      const matchesStatus = statusFilter === "all" ? true : getStatusKey(item) === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      if (sort === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+      if (sort === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
+      if (sort === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
+      if (sort === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
+      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+    });
+
+    return filtered;
+  }
+
+  function renderTable() {
+    const rows = getFilteredData();
+
+    if (!rows.length) {
+      els.tableBody.innerHTML = `<tr><td colspan="10" class="muted">No Backend2 links found</td></tr>`;
+      return;
+    }
+
+    els.tableBody.innerHTML = rows.map(item => {
+      const key = item.slug;
+      const checked = selectedLinks.has(key) ? "checked" : "";
+      return `
+        <tr>
+          <td><input class="row-select" type="checkbox" data-key="${escapeHtml(key)}" ${checked} /></td>
+          <td>
+            <b>${escapeHtml(item.slug || "")}</b>
+            ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
+          </td>
+          <td><span class="badge primary">${Number(item.clicks || 0)}</span></td>
+          <td>${scoreLink(item)}/100</td>
+          <td>${detectFraud(item)}</td>
+          <td>
+            <a href="${escapeHtml(item.publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.publicLink)}</a>
+            <div class="muted">${escapeHtml(item.url || "")}</div>
+            ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
+          </td>
+          <td>${getStatusBadge(item)}</td>
+          <td>${fmtExpire(item.expire)}</td>
+          <td>${fmtDate(item.createdAt)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="copy action-btn" data-action="copy" data-link="${escapeHtml(item.publicLink)}">Copy</button>
+              <button class="open action-btn" data-action="open" data-link="${escapeHtml(item.publicLink)}">Open</button>
+              <button class="action-btn" data-action="stats" data-slug="${escapeHtml(item.slug)}">Stats</button>
+              <button class="action-btn" data-action="geo" data-slug="${escapeHtml(item.slug)}">Geo</button>
+              <button class="delete action-btn" data-action="delete" data-slug="${escapeHtml(item.slug)}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    document.querySelectorAll(".row-select").forEach(box => {
+      box.addEventListener("change", () => {
+        const key = box.dataset.key;
+        if (box.checked) selectedLinks.add(key);
+        else selectedLinks.delete(key);
+        syncSelectAllState();
       });
+    });
 
-      return filtered;
+    syncSelectAllState();
+  }
+
+  function syncSelectAllState() {
+    const visible = [...document.querySelectorAll(".row-select")];
+    if (!visible.length) {
+      els.selectAllLinks.checked = false;
+      els.selectAllLinks.indeterminate = false;
+      return;
     }
+    const checked = visible.filter(x => x.checked).length;
+    els.selectAllLinks.checked = checked === visible.length;
+    els.selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
+  }
 
-    function renderTable() {
-      const rows = getFilteredData();
-      if (!rows.length) {
-        els.tableBody.innerHTML = `<tr><td colspan="10" class="muted">No Backend2 links found</td></tr>`;
-        return;
-      }
+  function renderStats() {
+    els.totalLinks.textContent = linksStore.length;
+    const clicks = linksStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+    els.totalClicks.textContent = clicks;
+    els.avgClicks.textContent = linksStore.length ? (clicks / linksStore.length).toFixed(1) : "0";
+    els.riskCount.textContent = linksStore.filter(x => Number(x.maxRisk || 0) > 60).length;
+  }
 
-      els.tableBody.innerHTML = rows.map(item => {
-        const key = item.slug;
-        const checked = selectedLinks.has(key) ? "checked" : "";
-        return `
-          <tr>
-            <td><input class="row-select" type="checkbox" data-key="${escapeHtml(key)}" ${checked} /></td>
-            <td>
-              <b>${escapeHtml(item.slug || "")}</b>
-              ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
-            </td>
-            <td><span class="badge primary">${Number(item.clicks || 0)}</span></td>
-            <td>${scoreLink(item)}/100</td>
-            <td>${detectFraud(item)}</td>
-            <td>
-              <a href="${escapeHtml(item.publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.publicLink)}</a>
-              <div class="muted">${escapeHtml(item.url || "")}</div>
-              ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
-            </td>
-            <td>${getStatusBadge(item)}</td>
-            <td>${fmtExpire(item.expire)}</td>
-            <td>${fmtDate(item.createdAt)}</td>
-            <td>
-              <div class="row-actions">
-                <button class="copy action-btn" data-action="copy" data-link="${escapeHtml(item.publicLink)}">Copy</button>
-                <button class="open action-btn" data-action="open" data-link="${escapeHtml(item.publicLink)}">Open</button>
-                <button class="action-btn" data-action="stats" data-slug="${escapeHtml(item.slug)}">Stats</button>
-                <button class="action-btn" data-action="geo" data-slug="${escapeHtml(item.slug)}">Geo</button>
-                <button class="delete action-btn" data-action="delete" data-slug="${escapeHtml(item.slug)}">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-
-      document.querySelectorAll(".row-select").forEach(box => {
-        box.addEventListener("change", () => {
-          const key = box.dataset.key;
-          if (box.checked) selectedLinks.add(key);
-          else selectedLinks.delete(key);
-          syncSelectAllState();
-        });
-      });
-
-      syncSelectAllState();
+  function renderTopLinks() {
+    const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 5);
+    if (!top.length) {
+      els.topLinks.innerHTML = `<div class="muted">No Backend2 links yet.</div>`;
+      return;
     }
+    els.topLinks.innerHTML = top.map((item, i) => `
+      <div class="surface">
+        <div><b>#${i + 1} ${escapeHtml(item.slug)}</b></div>
+        <div class="muted">Clicks: ${Number(item.clicks || 0)} • Score: ${scoreLink(item)}/100</div>
+        <div class="muted">${detectFraud(item)}</div>
+      </div>
+    `).join("");
+  }
 
-    function syncSelectAllState() {
-      const visible = [...document.querySelectorAll(".row-select")];
-      if (!visible.length) {
-        els.selectAllLinks.checked = false;
-        els.selectAllLinks.indeterminate = false;
-        return;
-      }
-      const checked = visible.filter(x => x.checked).length;
-      els.selectAllLinks.checked = checked === visible.length;
-      els.selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
-    }
+  function drawMainChart() {
+    const canvas = $("chart");
+    if (!canvas) return;
+    if (chart) chart.destroy();
 
-    function renderStats() {
-      els.totalLinks.textContent = linksStore.length;
-      const clicks = linksStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-      els.totalClicks.textContent = clicks;
-      els.avgClicks.textContent = linksStore.length ? (clicks / linksStore.length).toFixed(1) : "0";
-      els.riskCount.textContent = linksStore.filter(x => Number(x.maxRisk || 0) > 60).length;
-    }
+    const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 10);
 
-    function renderTopLinks() {
-      const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 5);
-      if (!top.length) {
-        els.topLinks.innerHTML = `<div class="muted">No Backend2 links yet.</div>`;
-        return;
-      }
-      els.topLinks.innerHTML = top.map((item, i) => `
-        <div class="surface">
-          <div><b>#${i + 1} ${escapeHtml(item.slug)}</b></div>
-          <div class="muted">Clicks: ${Number(item.clicks || 0)} • Score: ${scoreLink(item)}/100</div>
-          <div class="muted">${detectFraud(item)}</div>
-        </div>
-      `).join("");
-    }
-
-    function drawMainChart() {
-      const canvas = $("chart");
-      if (!canvas) return;
-      if (chart) chart.destroy();
-
-      const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 10);
-
-      chart = new Chart(canvas, {
-        type: "line",
-        data: {
-          labels: top.map(x => x.slug),
-          datasets: [{
-            label: "Clicks",
-            data: top.map(x => Number(x.clicks || 0)),
-            tension: 0.35
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-          }
+    chart = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: top.map(x => x.slug),
+        datasets: [{
+          label: "Clicks",
+          data: top.map(x => Number(x.clicks || 0)),
+          tension: 0.35
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#e2e8f0" } } },
+        scales: {
+          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
         }
-      });
-    }
-
-    async function loadHealth() {
-      const res = await safeFetchNoAuth(`${PRIMARY_API}/health`);
-      els.healthBox.innerHTML = res.ok
-        ? `<span class="badge live">Online</span> <span class="muted">Backend2 responding</span>`
-        : `<span class="badge expired">Issue</span> <span class="muted">Health check failed</span>`;
-    }
-
-    async function loadLinks(showMessage = false) {
-      if (showMessage) setResult("Loading Backend2 links...", false);
-      const res = await safeFetch("/list", { method: "GET" });
-
-      if (!res.ok) {
-        linksStore = [];
-        renderStats();
-        renderTable();
-        renderTopLinks();
-        drawMainChart();
-        if (showMessage) setResult(res.data?.message || "Failed to load Backend2 links", true);
-        return;
       }
+    });
+  }
 
-      const items = Array.isArray(res.data?.items) ? res.data.items : [];
-      linksStore = items.map(normalizeLinkItem);
+  async function loadHealth() {
+    const res = await safeFetchNoAuth(`${normalizeApiUrl(PRIMARY_API)}/health`);
+    els.healthBox.innerHTML = res.ok
+      ? `<span class="badge live">Online</span> <span class="muted">Backend2 responding</span>`
+      : `<span class="badge expired">Issue</span> <span class="muted">Health check failed</span>`;
+  }
 
+  async function loadLinks(showMessage = false) {
+    if (showMessage) setResult("Loading Backend2 links...", false);
+
+    const res = await safeFetch("/list", { method: "GET" });
+
+    if (!res.ok) {
+      linksStore = [];
       renderStats();
       renderTable();
       renderTopLinks();
       drawMainChart();
-
-      if (showMessage) setResult("Backend2 links loaded", false);
+      if (showMessage) setResult(res.data?.message || "Failed to load Backend2 links", true);
+      return;
     }
 
-    function getCreatePayload() {
-      const url = els.urlInput.value.trim();
-      const slug = els.slugInput.value.trim();
-      const expireHours = els.expireInput.value.trim();
-      const campaign = els.campaignInput.value.trim();
-      const note = els.noteInput.value.trim();
-      const riskMode = els.riskModeSelect.value || "standard";
+    const items = Array.isArray(res.data?.items) ? res.data.items : [];
+    linksStore = items.map(normalizeLinkItem);
 
-      if (!url) {
-        setResult("Enter URL", true);
+    renderStats();
+    renderTable();
+    renderTopLinks();
+    drawMainChart();
+
+    if (showMessage) {
+      const backendName = res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
+      setResult(`Links loaded via ${backendName}`, false);
+    }
+  }
+
+  function getCreatePayload() {
+    const url = els.urlInput.value.trim();
+    const slug = els.slugInput.value.trim();
+    const expireHours = els.expireInput.value.trim();
+    const campaign = els.campaignInput.value.trim();
+    const note = els.noteInput.value.trim();
+    const riskMode = els.riskModeSelect.value || "standard";
+
+    if (!url) {
+      setResult("Enter URL", true);
+      return null;
+    }
+
+    const body = { url, riskMode };
+    if (slug) body.slug = slug;
+    if (campaign) body.campaign = campaign;
+    if (note) body.note = note;
+
+    if (expireHours) {
+      const hours = Number(expireHours);
+      if (!Number.isFinite(hours) || hours <= 0) {
+        setResult("Expire must be a positive number", true);
         return null;
       }
-
-      const body = { url, riskMode };
-      if (slug) body.slug = slug;
-      if (campaign) body.campaign = campaign;
-      if (note) body.note = note;
-
-      if (expireHours) {
-        const hours = Number(expireHours);
-        if (!Number.isFinite(hours) || hours <= 0) {
-          setResult("Expire must be a positive number", true);
-          return null;
-        }
-        body.expire = Date.now() + hours * 60 * 60 * 1000;
-      }
-
-      return body;
+      body.expire = Date.now() + hours * 60 * 60 * 1000;
     }
 
-    async function createLink() {
-      const body = getCreatePayload();
-      if (!body) return;
+    return body;
+  }
 
-      const btn = $("createBtn");
-      btn.disabled = true;
-      btn.textContent = "Creating...";
+  async function createLink() {
+    const body = getCreatePayload();
+    if (!body) return;
+
+    const btn = $("createBtn");
+    btn.disabled = true;
+    btn.textContent = "Creating...";
+
+    const res = await safeFetch("/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    btn.disabled = false;
+    btn.textContent = "Create Backend2 Link";
+
+    if (!res.ok) {
+      if (res.status === 402) {
+        setResult(res.data?.message || "Plan limit reached", true);
+        return;
+      }
+      setResult(res.data?.message || "Failed to create link", true);
+      return;
+    }
+
+    setResult(`Link created via ${res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}: ${res.data?.shortLink || res.data?.link || "Success"}`, false);
+    els.urlInput.value = "";
+    els.slugInput.value = "";
+    els.expireInput.value = "";
+    els.campaignInput.value = "";
+    els.noteInput.value = "";
+    await Promise.all([loadLinks(false), loadMe(false)]);
+  }
+
+  async function bulkCreate() {
+    const count = Number(els.bulkCountInput.value || 0);
+    const body = getCreatePayload();
+    if (!body) return;
+
+    if (!Number.isFinite(count) || count <= 0) {
+      setResult("Invalid bulk count", true);
+      return;
+    }
+
+    const btn = $("bulkCreateBtn");
+    btn.disabled = true;
+    btn.textContent = "Creating...";
+
+    let success = 0;
+
+    for (let i = 0; i < count; i++) {
+      const payload = { ...body };
+      if (!payload.slug) delete payload.slug;
 
       const res = await safeFetch("/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(payload)
       });
 
-      btn.disabled = false;
-      btn.textContent = "Create Backend2 Link";
-
       if (!res.ok) {
-        if (res.status === 402) {
-          setResult(res.data?.message || "Plan limit reached", true);
-          return;
-        }
-        setResult(res.data?.message || "Failed to create link", true);
-        return;
+        setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
+        break;
       }
 
-      setResult(`Backend2 link created: ${res.data?.shortLink || res.data?.link || "Success"}`, false);
-      els.urlInput.value = "";
-      els.slugInput.value = "";
-      els.expireInput.value = "";
-      els.campaignInput.value = "";
-      els.noteInput.value = "";
-      await Promise.all([loadLinks(false), loadMe(false)]);
+      success++;
+      setResult(`Bulk creating links... ${success}/${count}`, false);
     }
 
-    async function bulkCreate() {
-      const count = Number(els.bulkCountInput.value || 0);
-      const body = getCreatePayload();
-      if (!body) return;
+    btn.disabled = false;
+    btn.textContent = "Bulk Create";
+    await Promise.all([loadLinks(false), loadMe(false)]);
+  }
 
-      if (!Number.isFinite(count) || count <= 0) {
-        setResult("Invalid bulk count", true);
-        return;
-      }
+  async function deleteLink(slug) {
+    if (!confirm(`Delete ${slug}?`)) return;
 
-      const btn = $("bulkCreateBtn");
-      btn.disabled = true;
-      btn.textContent = "Creating...";
+    const res = await safeFetch("/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug })
+    });
 
-      let success = 0;
-      for (let i = 0; i < count; i++) {
-        const payload = { ...body };
-        if (!payload.slug) delete payload.slug;
-
-        const res = await safeFetch("/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
-          break;
-        }
-
-        success++;
-        setResult(`Bulk creating Backend2 links... ${success}/${count}`, false);
-      }
-
-      btn.disabled = false;
-      btn.textContent = "Bulk Create";
-      await Promise.all([loadLinks(false), loadMe(false)]);
+    if (!res.ok) {
+      showToast(res.data?.message || "Delete failed");
+      return;
     }
 
-    async function deleteLink(slug) {
-      if (!confirm(`Delete ${slug} from Backend2?`)) return;
+    selectedLinks.delete(slug);
+    showToast("Deleted");
+    await Promise.all([loadLinks(false), loadMe(false)]);
+  }
 
-      const res = await safeFetch("/delete", {
+  async function bulkDeleteSelected() {
+    const items = [...selectedLinks];
+    if (!items.length) return showToast("No selected items");
+    if (!confirm(`Delete ${items.length} selected links?`)) return;
+
+    for (const slug of items) {
+      await deleteLink(slug);
+    }
+
+    selectedLinks.clear();
+    renderTable();
+  }
+
+  async function copyLink(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied!");
+    } catch {
+      showToast("Copy failed");
+    }
+  }
+
+  async function bulkCopySelected() {
+    const items = [...selectedLinks].map(slug => {
+      const item = linksStore.find(x => x.slug === slug);
+      return item?.publicLink || buildPublicLink(slug);
+    });
+
+    if (!items.length) return showToast("No selected items");
+    await copyLink(items.join("\n"));
+  }
+
+  function openLink(link) {
+    window.open(link, "_blank", "noopener,noreferrer");
+  }
+
+  async function getGeo(ip) {
+    if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
+    try {
+      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+      const data = await res.json();
+      return {
+        country_name: data.country_name || "Unknown",
+        latitude: data.latitude || 20,
+        longitude: data.longitude || 0
+      };
+    } catch {
+      return { country_name: "Error", latitude: 20, longitude: 0 };
+    }
+  }
+
+  function buildStatsSummary(history) {
+    const total = history.length;
+    const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
+    const bots = history.filter(x => x.bot).length;
+    const vpns = history.filter(x => x.vpn).length;
+    const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
+
+    return `
+      <div class="stats-kpis">
+        <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value">${total}</div></div>
+        <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value">${uniqueIps}</div></div>
+        <div class="stats-kpi"><div class="k-label">Bots</div><div class="k-value">${bots}</div></div>
+        <div class="stats-kpi"><div class="k-label">VPNs</div><div class="k-value">${vpns}</div></div>
+        <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value">${maxRisk}</div></div>
+      </div>
+    `;
+  }
+
+  async function showHistory(slug) {
+    openModal(els.statsModal);
+    els.statsContent.innerHTML = `<div class="muted">Loading stats...</div>`;
+
+    const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
+    let history = Array.isArray(res.data?.history) ? res.data.history : [];
+    const link = linksStore.find(x => x.slug === slug);
+
+    if (!history.length && link && Number(link.clicks || 0) > 0) {
+      history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+        ip: "unknown",
+        time: Date.now() - (i * 30000),
+        risk: Number(link.maxRisk || 0),
+        vpn: false,
+        bot: false
+      }));
+    }
+
+    if (!history.length) {
+      els.statsContent.innerHTML = `<div class="muted">No clicks recorded for ${escapeHtml(slug)}.</div>`;
+      return;
+    }
+
+    history = history.map(h => ({
+      ip: h.ip || "unknown",
+      time: Number(h.time || Date.now()),
+      risk: Number(h.risk || 0),
+      vpn: !!h.vpn,
+      bot: !!h.bot
+    })).sort((a, b) => a.time - b.time);
+
+    els.statsContent.innerHTML = `
+      <div class="surface">
+        <b>${escapeHtml(slug)}</b>
+        <div class="muted" style="margin-top:6px;">${escapeHtml(link?.publicLink || buildPublicLink(slug))}</div>
+      </div>
+
+      ${buildStatsSummary(history)}
+
+      <div class="card" style="margin-bottom:14px;">
+        <h4>Clicks Timeline</h4>
+        <canvas id="statsChartCanvas" height="120"></canvas>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <h4>Geo Activity Map</h4>
+        <div id="statsMapBox" class="map-box"></div>
+      </div>
+    `;
+
+    const labels = history.map(x => new Date(x.time).toLocaleTimeString());
+    const clickData = history.map((_, i) => i + 1);
+    const riskData = history.map(x => Number(x.risk || 0));
+
+    if (statsChart) statsChart.destroy();
+    statsChart = new Chart($("statsChartCanvas"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Clicks Timeline", data: clickData, tension: 0.35 },
+          { label: "Risk", data: riskData, tension: 0.35 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#e2e8f0" } } },
+        scales: {
+          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+        }
+      }
+    });
+
+    if (statsMap) { statsMap.remove(); statsMap = null; }
+    statsMap = L.map($("statsMapBox")).setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(statsMap);
+
+    let offset = 0;
+    for (const h of history) {
+      const geo = await getGeo(h.ip);
+      let lat = Number(geo.latitude || (Math.random() * 140 - 70));
+      let lng = Number(geo.longitude || (Math.random() * 360 - 180));
+      lat += offset * 0.22;
+      lng += offset * 0.22;
+      offset++;
+      L.circle([lat, lng], {
+        radius: 42000,
+        color: h.risk > 70 ? "#ef4444" : "#22c55e"
+      }).addTo(statsMap).bindPopup(
+        `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
+      );
+    }
+  }
+
+  async function showGeo(slug) {
+    openModal(els.geoModal);
+    els.geoContent.innerHTML = `
+      <div class="surface">
+        <b>${escapeHtml(slug)}</b>
+      </div>
+      <div class="muted">Loading location data...</div>
+      <div id="geoMapBox" class="map-box"></div>
+    `;
+
+    const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
+    const history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+    if (geoMap) { geoMap.remove(); geoMap = null; }
+    geoMap = L.map($("geoMapBox")).setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(geoMap);
+
+    if (!history.length) {
+      L.marker([20, 0]).addTo(geoMap).bindPopup("No data").openPopup();
+      return;
+    }
+
+    let offset = 0;
+    for (const h of history) {
+      const geo = await getGeo(h.ip);
+      let lat = Number(geo.latitude || 20);
+      let lng = Number(geo.longitude || 0);
+      lat += offset * 0.24;
+      lng += offset * 0.24;
+      offset++;
+      L.circle([lat, lng], {
+        radius: 45000,
+        color: Number(h.risk || 0) > 70 ? "#ef4444" : "#22c55e"
+      }).addTo(geoMap).bindPopup(
+        `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
+      );
+    }
+  }
+
+  function renderSecurityCenter() {
+    const risky = [...linksStore]
+      .filter(x => Number(x.maxRisk || 0) > 60)
+      .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+
+    els.securityContent.innerHTML = `
+      <div class="surface">
+        <div><b>Security overview</b></div>
+        <div class="muted" style="margin-top:8px;">${risky.length} links currently show elevated risk markers.</div>
+      </div>
+      <div style="margin-top:12px;">
+        ${
+          risky.length
+            ? risky.slice(0, 10).map(item => `
+              <div class="surface" style="margin-bottom:10px;">
+                <div><b>${escapeHtml(item.slug)}</b></div>
+                <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+                <div class="row-actions" style="margin-top:8px;">
+                  <button type="button" onclick="showHistory('${escapeForJs(item.slug)}')">Open Stats</button>
+                  <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}')">Delete</button>
+                </div>
+              </div>
+            `).join("")
+            : `<div class="muted" style="margin-top:12px;">No elevated-risk links found.</div>`
+        }
+      </div>
+    `;
+  }
+
+  async function processFile(file) {
+    if (!file) return setResult("Choose a CSV file first", true);
+
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return setResult("CSV is empty", true);
+
+    let urls = [];
+    if (lines[0].toLowerCase().includes("url")) {
+      const header = lines[0].split(",").map(h => h.trim().toLowerCase());
+      const urlIndex = header.indexOf("url");
+      if (urlIndex >= 0) {
+        urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
+      }
+    } else {
+      urls = lines;
+    }
+
+    if (!urls.length) return setResult("No URLs found in file", true);
+
+    const btn = $("uploadCsvBtn");
+    btn.disabled = true;
+    btn.textContent = "Uploading...";
+
+    let okCount = 0;
+    for (const url of urls) {
+      const res = await safeFetch("/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug })
+        body: JSON.stringify({ url, riskMode: "standard" })
       });
 
       if (!res.ok) {
-        showToast(res.data?.message || "Delete failed");
-        return;
+        setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
+        break;
       }
 
-      selectedLinks.delete(slug);
-      showToast("Deleted");
-      await Promise.all([loadLinks(false), loadMe(false)]);
+      okCount++;
+      setResult(`Uploading links... ${okCount}/${urls.length}`, false);
     }
 
-    async function bulkDeleteSelected() {
-      const items = [...selectedLinks];
-      if (!items.length) return showToast("No selected items");
-      if (!confirm(`Delete ${items.length} selected Backend2 links?`)) return;
+    btn.disabled = false;
+    btn.textContent = "Upload CSV";
+    els.csvFileInput.value = "";
+    await Promise.all([loadLinks(false), loadMe(false)]);
+  }
 
-      for (const slug of items) {
-        await deleteLink(slug);
-      }
+  function wireDropZone() {
+    const zone = els.dropZone;
 
-      selectedLinks.clear();
+    ["dragenter", "dragover"].forEach(evt => {
+      zone.addEventListener(evt, e => {
+        e.preventDefault();
+        zone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "dragend", "drop"].forEach(evt => {
+      zone.addEventListener(evt, e => {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+      });
+    });
+
+    zone.addEventListener("drop", async e => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) await processFile(file);
+    });
+  }
+
+  function bindTableActions() {
+    els.tableBody.addEventListener("click", e => {
+      const btn = e.target.closest(".action-btn");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === "copy") return copyLink(btn.dataset.link || "");
+      if (action === "open") return openLink(btn.dataset.link || "");
+      if (action === "stats") return showHistory(btn.dataset.slug || "");
+      if (action === "geo") return showGeo(btn.dataset.slug || "");
+      if (action === "delete") return deleteLink(btn.dataset.slug || "");
+    });
+  }
+
+  function bindUI() {
+    $("refreshBtn").addEventListener("click", async () => {
+      await Promise.all([loadMe(true), loadLinks(true), loadHealth()]);
+    });
+
+    $("createBtn").addEventListener("click", createLink);
+    $("bulkCreateBtn").addEventListener("click", bulkCreate);
+    $("uploadCsvBtn").addEventListener("click", () => processFile(els.csvFileInput.files?.[0]));
+
+    $("bulkCopyBtn").addEventListener("click", bulkCopySelected);
+    $("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
+    $("refreshVisibleBtn").addEventListener("click", () => {
       renderTable();
-    }
+      drawMainChart();
+    });
 
-    async function copyLink(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("Copied!");
-      } catch {
-        showToast("Copy failed");
-      }
-    }
+    $("supportBtn").addEventListener("click", openSupportPanel);
+    $("closePanelBtn").addEventListener("click", closePanel);
 
-    async function bulkCopySelected() {
-      const items = [...selectedLinks].map(slug => {
-        const item = linksStore.find(x => x.slug === slug);
-        return item?.publicLink || buildPublicLink(slug);
+    $("openSecurityBtn").addEventListener("click", () => {
+      renderSecurityCenter();
+      openModal(els.securityModal);
+    });
+    $("closeSecurityModalBtn").addEventListener("click", closeSecurityModal);
+
+    $("closeStatsModalBtn").addEventListener("click", closeStatsModal);
+    $("closeGeoModalBtn").addEventListener("click", closeGeoModal);
+
+    els.overlay.addEventListener("click", () => {
+      closeStatsModal();
+      closeGeoModal();
+      closeSecurityModal();
+    });
+
+    $("verifySessionBtn").addEventListener("click", verifySession);
+
+    $("logoutBtn").addEventListener("click", logout);
+    $("backToDashboardBtn").addEventListener("click", () => {
+      window.location.href = "dashboard.html";
+    });
+    $("goLandingBtn").addEventListener("click", () => {
+      window.location.href = "landing.html";
+    });
+    $("goDomainsBtn").addEventListener("click", () => {
+      window.location.href = "domain-manager.html";
+    });
+
+    els.searchInput.addEventListener("input", () => {
+      renderTable();
+      drawMainChart();
+    });
+    els.statusFilter.addEventListener("change", () => {
+      renderTable();
+      drawMainChart();
+    });
+    els.sortFilter.addEventListener("change", () => {
+      renderTable();
+      drawMainChart();
+    });
+
+    els.selectAllLinks.addEventListener("change", () => {
+      document.querySelectorAll(".row-select").forEach(box => {
+        box.checked = els.selectAllLinks.checked;
+        const key = box.dataset.key;
+        if (box.checked) selectedLinks.add(key);
+        else selectedLinks.delete(key);
       });
+      syncSelectAllState();
+    });
+  }
 
-      if (!items.length) return showToast("No selected items");
-      await copyLink(items.join("\n"));
-    }
+  async function init() {
+    if (!ensureAuth()) return;
 
-    function openLink(link) {
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
+    renderNotifications();
+    wireDropZone();
+    bindTableActions();
+    bindUI();
 
-    async function getGeo(ip) {
-      if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
-      try {
-        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-        const data = await res.json();
-        return {
-          country_name: data.country_name || "Unknown",
-          latitude: data.latitude || 20,
-          longitude: data.longitude || 0
-        };
-      } catch {
-        return { country_name: "Error", latitude: 20, longitude: 0 };
-      }
-    }
+    await Promise.all([
+      loadMe(false),
+      loadLinks(true),
+      loadHealth()
+    ]);
 
-    function buildStatsSummary(history) {
-      const total = history.length;
-      const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
-      const bots = history.filter(x => x.bot).length;
-      const vpns = history.filter(x => x.vpn).length;
-      const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      if (document.hidden) return;
+      loadMe(false);
+      loadLinks(false);
+      loadHealth();
+    }, 15000);
+  }
 
-      return `
-        <div class="stats-kpis">
-          <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value">${total}</div></div>
-          <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value">${uniqueIps}</div></div>
-          <div class="stats-kpi"><div class="k-label">Bots</div><div class="k-value">${bots}</div></div>
-          <div class="stats-kpi"><div class="k-label">VPNs</div><div class="k-value">${vpns}</div></div>
-          <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value">${maxRisk}</div></div>
-        </div>
-      `;
-    }
+  window.copyLink = copyLink;
+  window.showHistory = showHistory;
+  window.showGeo = showGeo;
+  window.deleteLink = deleteLink;
 
-    async function showHistory(slug) {
-      openModal(els.statsModal);
-      els.statsContent.innerHTML = `<div class="muted">Loading stats...</div>`;
-
-      const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
-      let history = Array.isArray(res.data?.history) ? res.data.history : [];
-      const link = linksStore.find(x => x.slug === slug);
-
-      if (!history.length && link && Number(link.clicks || 0) > 0) {
-        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-          ip: "unknown",
-          time: Date.now() - (i * 30000),
-          risk: Number(link.maxRisk || 0),
-          vpn: false,
-          bot: false
-        }));
-      }
-
-      if (!history.length) {
-        els.statsContent.innerHTML = `<div class="muted">No clicks recorded for ${escapeHtml(slug)}.</div>`;
-        return;
-      }
-
-      history = history.map(h => ({
-        ip: h.ip || "unknown",
-        time: Number(h.time || Date.now()),
-        risk: Number(h.risk || 0),
-        vpn: !!h.vpn,
-        bot: !!h.bot
-      })).sort((a, b) => a.time - b.time);
-
-      els.statsContent.innerHTML = `
-        <div class="surface">
-          <b>${escapeHtml(slug)}</b>
-          <div class="muted" style="margin-top:6px;">${escapeHtml(link?.publicLink || buildPublicLink(slug))}</div>
-        </div>
-
-        ${buildStatsSummary(history)}
-
-        <div class="card" style="margin-bottom:14px;">
-          <h4>Clicks Timeline</h4>
-          <canvas id="statsChartCanvas" height="120"></canvas>
-        </div>
-
-        <div class="card" style="margin-bottom:0;">
-          <h4>Geo Activity Map</h4>
-          <div id="statsMapBox" class="map-box"></div>
-        </div>
-      `;
-
-      const labels = history.map(x => new Date(x.time).toLocaleTimeString());
-      const clickData = history.map((_, i) => i + 1);
-      const riskData = history.map(x => Number(x.risk || 0));
-
-      if (statsChart) statsChart.destroy();
-      statsChart = new Chart($("statsChartCanvas"), {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            { label: "Clicks Timeline", data: clickData, tension: 0.35 },
-            { label: "Risk", data: riskData, tension: 0.35 }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-          }
-        }
-      });
-
-      if (statsMap) { statsMap.remove(); statsMap = null; }
-      statsMap = L.map($("statsMapBox")).setView([20, 0], 2);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(statsMap);
-
-      let offset = 0;
-      for (const h of history) {
-        const geo = await getGeo(h.ip);
-        let lat = Number(geo.latitude || (Math.random() * 140 - 70));
-        let lng = Number(geo.longitude || (Math.random() * 360 - 180));
-        lat += offset * 0.22;
-        lng += offset * 0.22;
-        offset++;
-        L.circle([lat, lng], {
-          radius: 42000,
-          color: h.risk > 70 ? "#ef4444" : "#22c55e"
-        }).addTo(statsMap).bindPopup(
-          `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-        );
-      }
-    }
-
-    async function showGeo(slug) {
-      openModal(els.geoModal);
-      els.geoContent.innerHTML = `
-        <div class="surface">
-          <b>${escapeHtml(slug)}</b>
-        </div>
-        <div class="muted">Loading location data...</div>
-        <div id="geoMapBox" class="map-box"></div>
-      `;
-
-      const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
-      const history = Array.isArray(res.data?.history) ? res.data.history : [];
-
-      if (geoMap) { geoMap.remove(); geoMap = null; }
-      geoMap = L.map($("geoMapBox")).setView([20, 0], 2);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(geoMap);
-
-      if (!history.length) {
-        L.marker([20, 0]).addTo(geoMap).bindPopup("No data").openPopup();
-        return;
-      }
-
-      let offset = 0;
-      for (const h of history) {
-        const geo = await getGeo(h.ip);
-        let lat = Number(geo.latitude || 20);
-        let lng = Number(geo.longitude || 0);
-        lat += offset * 0.24;
-        lng += offset * 0.24;
-        offset++;
-        L.circle([lat, lng], {
-          radius: 45000,
-          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#22c55e"
-        }).addTo(geoMap).bindPopup(
-          `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-        );
-      }
-    }
-
-    function renderSecurityCenter() {
-      const risky = [...linksStore]
-        .filter(x => Number(x.maxRisk || 0) > 60)
-        .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-
-      els.securityContent.innerHTML = `
-        <div class="surface">
-          <div><b>Security overview</b></div>
-          <div class="muted" style="margin-top:8px;">${risky.length} Backend2 links currently show elevated risk markers.</div>
-        </div>
-        <div style="margin-top:12px;">
-          ${
-            risky.length
-              ? risky.slice(0, 10).map(item => `
-                <div class="surface" style="margin-bottom:10px;">
-                  <div><b>${escapeHtml(item.slug)}</b></div>
-                  <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-                  <div class="row-actions" style="margin-top:8px;">
-                    <button type="button" onclick="showHistory('${escapeForJs(item.slug)}')">Open Stats</button>
-                    <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}')">Delete</button>
-                  </div>
-                </div>
-              `).join("")
-              : `<div class="muted" style="margin-top:12px;">No elevated-risk links found.</div>`
-          }
-        </div>
-      `;
-    }
-
-    async function processFile(file) {
-      if (!file) return setResult("Choose a CSV file first", true);
-
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (!lines.length) return setResult("CSV is empty", true);
-
-      let urls = [];
-      if (lines[0].toLowerCase().includes("url")) {
-        const header = lines[0].split(",").map(h => h.trim().toLowerCase());
-        const urlIndex = header.indexOf("url");
-        if (urlIndex >= 0) {
-          urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
-        }
-      } else {
-        urls = lines;
-      }
-
-      if (!urls.length) return setResult("No URLs found in file", true);
-
-      const btn = $("uploadCsvBtn");
-      btn.disabled = true;
-      btn.textContent = "Uploading...";
-
-      let okCount = 0;
-      for (const url of urls) {
-        const res = await safeFetch("/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, riskMode: "standard" })
-        });
-
-        if (!res.ok) {
-          setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
-          break;
-        }
-
-        okCount++;
-        setResult(`Uploading Backend2 links... ${okCount}/${urls.length}`, false);
-      }
-
-      btn.disabled = false;
-      btn.textContent = "Upload CSV";
-      els.csvFileInput.value = "";
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    function wireDropZone() {
-      const zone = els.dropZone;
-
-      ["dragenter", "dragover"].forEach(evt => {
-        zone.addEventListener(evt, e => {
-          e.preventDefault();
-          zone.classList.add("dragover");
-        });
-      });
-
-      ["dragleave", "dragend", "drop"].forEach(evt => {
-        zone.addEventListener(evt, e => {
-          e.preventDefault();
-          zone.classList.remove("dragover");
-        });
-      });
-
-      zone.addEventListener("drop", async e => {
-        const file = e.dataTransfer?.files?.[0];
-        if (file) await processFile(file);
-      });
-    }
-
-    function bindTableActions() {
-      els.tableBody.addEventListener("click", e => {
-        const btn = e.target.closest(".action-btn");
-        if (!btn) return;
-        const action = btn.dataset.action;
-        if (action === "copy") return copyLink(btn.dataset.link || "");
-        if (action === "open") return openLink(btn.dataset.link || "");
-        if (action === "stats") return showHistory(btn.dataset.slug || "");
-        if (action === "geo") return showGeo(btn.dataset.slug || "");
-        if (action === "delete") return deleteLink(btn.dataset.slug || "");
-      });
-    }
-
-    function bindUI() {
-      $("refreshBtn").addEventListener("click", async () => {
-        await Promise.all([loadMe(true), loadLinks(true), loadHealth()]);
-      });
-
-      $("createBtn").addEventListener("click", createLink);
-      $("bulkCreateBtn").addEventListener("click", bulkCreate);
-      $("uploadCsvBtn").addEventListener("click", () => processFile(els.csvFileInput.files?.[0]));
-
-      $("bulkCopyBtn").addEventListener("click", bulkCopySelected);
-      $("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
-      $("refreshVisibleBtn").addEventListener("click", () => {
-        renderTable();
-        drawMainChart();
-      });
-
-      $("supportBtn").addEventListener("click", openSupportPanel);
-      $("closePanelBtn").addEventListener("click", closePanel);
-
-      $("openSecurityBtn").addEventListener("click", () => {
-        renderSecurityCenter();
-        openModal(els.securityModal);
-      });
-      $("closeSecurityModalBtn").addEventListener("click", closeSecurityModal);
-
-      $("closeStatsModalBtn").addEventListener("click", closeStatsModal);
-      $("closeGeoModalBtn").addEventListener("click", closeGeoModal);
-      els.overlay.addEventListener("click", () => {
-        closeStatsModal();
-        closeGeoModal();
-        closeSecurityModal();
-      });
-
-      $("verifySessionBtn").addEventListener("click", verifySession);
-
-      $("logoutBtn").addEventListener("click", logout);
-      $("backToDashboardBtn").addEventListener("click", () => {
-        window.location.href = "dashboard.html";
-      });
-      $("goLandingBtn").addEventListener("click", () => {
-        window.location.href = "landing.html";
-      });
-      $("goDomainsBtn").addEventListener("click", () => {
-        window.location.href = "domain-manager.html";
-      });
-
-      els.searchInput.addEventListener("input", () => {
-        renderTable();
-        drawMainChart();
-      });
-      els.statusFilter.addEventListener("change", () => {
-        renderTable();
-        drawMainChart();
-      });
-      els.sortFilter.addEventListener("change", () => {
-        renderTable();
-        drawMainChart();
-      });
-
-      els.selectAllLinks.addEventListener("change", () => {
-        document.querySelectorAll(".row-select").forEach(box => {
-          box.checked = els.selectAllLinks.checked;
-          const key = box.dataset.key;
-          if (box.checked) selectedLinks.add(key);
-          else selectedLinks.delete(key);
-        });
-        syncSelectAllState();
-      });
-    }
-
-    async function init() {
-      if (!ensureAuth()) return;
-
-      renderNotifications();
-      wireDropZone();
-      bindTableActions();
-      bindUI();
-
-      await Promise.all([
-        loadMe(false),
-        loadLinks(true),
-        loadHealth()
-      ]);
-
-      clearInterval(refreshTimer);
-      refreshTimer = setInterval(() => {
-        if (document.hidden) return;
-        loadMe(false);
-        loadLinks(false);
-        loadHealth();
-      }, 15000);
-    }
-
-    window.copyLink = copyLink;
-    window.showHistory = showHistory;
-    window.showGeo = showGeo;
-    window.deleteLink = deleteLink;
-
-    init();
-  </script>
+  init();
+</script>
 </body>
 </html>
