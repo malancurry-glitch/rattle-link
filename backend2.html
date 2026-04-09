@@ -795,32 +795,28 @@
     }
 
     async function safeFetch(path, options = {}) {
-  try {
-    const headers = {
-      ...authHeaders(),
-      ...(options.headers || {})
-    };
-
-    const res = await fetch(`${PRIMARY_API}${path}`, {
-      ...options,
-      headers
-    });
-
-    const raw = await res.text();
-    let data = {};
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch {
-      data = { message: raw };
+      try {
+        const headers = {
+          ...authHeaders(),
+          ...(options.headers || {})
+        };
+        const res = await fetch(`${PRIMARY_API}/app${path}`, {
+          ...options,
+          headers
+        });
+        const raw = await res.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw };
+        }
+        if (res.status === 401) logout();
+        return { ok: res.ok, status: res.status, data };
+      } catch (e) {
+        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" } };
+      }
     }
-
-    if (res.status === 401) logout();
-
-    return { ok: res.ok, status: res.status, data };
-  } catch (e) {
-    return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" } };
-  }
-}
 
     function showToast(message = "Done") {
       els.toast.textContent = message;
