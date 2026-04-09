@@ -6,8 +6,6 @@
   <title>Rattle Link Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
     :root{
@@ -24,6 +22,7 @@
       --yellow:#f59e0b;
       --purple:#a855f7;
       --pink:#ec4899;
+      --gold:#facc15;
       --border:rgba(0,255,255,0.18);
       --radius:18px;
       --shadow:0 0 14px rgba(0,255,255,.10), inset 0 0 18px rgba(0,255,255,.03);
@@ -54,7 +53,6 @@
     }
 
     body.compact .card{ padding:12px; }
-    body.compact th, body.compact td{ padding:8px; }
     body.compact .stat-card .num{ font-size:24px; }
 
     .container{
@@ -85,7 +83,7 @@
       color:var(--muted);
       font-size:12px;
       line-height:1.7;
-      max-width:900px;
+      max-width:940px;
     }
 
     .card{
@@ -111,7 +109,7 @@
 
     .two-col{
       display:grid;
-      grid-template-columns:1.25fr .75fr;
+      grid-template-columns:1.2fr .8fr;
       gap:16px;
     }
 
@@ -127,7 +125,8 @@
     .section-head,
     .section-subhead,
     .toggle-wrap,
-    .backend-switch{
+    .backend-switch,
+    .nav-actions{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
@@ -140,10 +139,7 @@
       margin-bottom:12px;
     }
 
-    .stat-card{
-      text-align:center;
-    }
-
+    .stat-card{ text-align:center; }
     .stat-card .num{
       font-size:30px;
       font-weight:800;
@@ -158,29 +154,36 @@
 
     .mini-stat,
     .health-item,
-    .plan-card,
-    .create-box,
     .info-surface,
     .ranking-item,
     .insight-card,
-    .domain-summary-card,
-    .landing-summary-card,
-    .auth-box{
+    .auth-box,
+    .nav-card,
+    .panel-card{
       border:1px solid rgba(0,255,255,.14);
       border-radius:14px;
       padding:14px;
       background:rgba(15,23,42,.42);
     }
 
-    .plan-card{
-      cursor:pointer;
-      transition:.18s ease;
+    .nav-card{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:180px;
+      justify-content:space-between;
     }
 
-    .plan-card.active{
-      border-color:var(--cyan);
-      box-shadow:0 0 16px rgba(0,255,255,.18);
-      background:rgba(0,255,255,.05);
+    .nav-card h4{
+      margin:0;
+      font-size:18px;
+    }
+
+    .nav-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
     }
 
     .form-row{
@@ -220,11 +223,6 @@
       accent-color:var(--cyan);
     }
 
-    textarea{
-      resize:vertical;
-      min-height:120px;
-    }
-
     button, .btn{
       padding:11px 14px;
       border-radius:12px;
@@ -258,15 +256,12 @@
     .success-btn{ background:var(--green); color:#000; border-color:var(--green); }
     .danger-btn{ background:var(--red); color:#fff; border-color:var(--red); }
     .purple-btn{ background:var(--purple); color:#fff; border-color:var(--purple); }
-    .legacy-btn{ color:#facc15; border-color:#facc15; background:#111827; }
+    .legacy-btn{ color:var(--gold); border-color:var(--gold); background:#111827; }
     .backend2-btn{ color:#22c55e; border-color:#22c55e; background:#111827; }
     .pink-btn{ color:#f472b6; border-color:#f472b6; background:#111827; }
     .ghost-btn{ color:#cbd5e1; border-color:#475569; }
     .warn-btn{ color:#f59e0b; border-color:#f59e0b; }
-    .copy{ color:#22c55e; border-color:#22c55e; }
-    .open{ color:#3b82f6; border-color:#3b82f6; }
-    .qr{ color:#06b6d4; border-color:#06b6d4; }
-    .delete{ color:#ef4444; border-color:#ef4444; }
+    .blue-btn{ color:#93c5fd; border-color:#3b82f6; background:#111827; }
 
     .backend-active{
       box-shadow:0 0 0 2px currentColor inset, 0 0 18px rgba(255,255,255,.06);
@@ -290,6 +285,7 @@
     .awaiting{ color:#60a5fa; }
     .backend-primary{ color:#22c55e; }
     .backend-legacy{ color:#facc15; }
+    .info{ color:#60a5fa; }
 
     .muted{
       color:var(--muted);
@@ -335,7 +331,7 @@
 
     table{
       width:100%;
-      min-width:1450px;
+      min-width:1100px;
       border-collapse:collapse;
     }
 
@@ -368,59 +364,6 @@
       text-decoration:underline;
     }
 
-    .drop-zone{
-      border:2px dashed rgba(0,255,255,.24);
-      border-radius:14px;
-      padding:14px;
-      text-align:center;
-      transition:.18s ease;
-      margin-top:10px;
-    }
-
-    .drop-zone.dragover{
-      border-color:var(--cyan);
-      background:#020617;
-      box-shadow:0 0 14px rgba(0,255,255,.18) inset;
-    }
-
-    .quick-links{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-    }
-
-    .payment-box{
-      display:grid;
-      grid-template-columns:220px 1fr;
-      gap:16px;
-      align-items:start;
-    }
-
-    .payment-qr{
-      background:#fff;
-      padding:10px;
-      border-radius:14px;
-      width:100%;
-      max-width:220px;
-    }
-
-    .payment-qr img{
-      width:100%;
-      display:block;
-      border-radius:10px;
-    }
-
-    .address-box, .code-box{
-      word-break:break-all;
-      background:#000;
-      border:1px solid rgba(0,255,255,.20);
-      border-radius:12px;
-      padding:12px;
-      margin:8px 0;
-      font-size:13px;
-      color:var(--cyan);
-    }
-
     .notice, .info-box, .alert-box, .waiting-box, .confirm-box{
       padding:12px;
       border-radius:12px;
@@ -434,13 +377,6 @@
     .alert-box{ background:rgba(236,72,153,.10); border:1px solid rgba(236,72,153,.28); color:#f9a8d4; }
     .waiting-box{ background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.32); }
     .confirm-box{ background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.30); }
-
-    .split-create{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      margin-top:10px;
-    }
 
     .health-list{
       display:grid;
@@ -562,57 +498,36 @@
       box-shadow:0 0 40px rgba(0,255,255,.18);
     }
 
-    .stats-kpis{
+    .payment-box{
       display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:12px;
-      margin-bottom:14px;
+      grid-template-columns:220px 1fr;
+      gap:16px;
+      align-items:start;
     }
 
-    .stats-kpi{
-      padding:14px;
-      border-radius:14px;
-      border:1px solid rgba(0,255,255,.14);
-      background:rgba(15,23,42,.40);
-    }
-
-    .stats-kpi .k-label{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:8px;
-    }
-
-    .stats-kpi .k-value{
-      font-size:24px;
-      color:var(--cyan);
-      font-weight:800;
-    }
-
-    .stats-layout{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:14px;
-    }
-
-    .stats-list{
-      max-height:420px;
-      overflow:auto;
-      padding-right:2px;
-    }
-
-    .stats-item{
+    .payment-qr{
+      background:#fff;
       padding:10px;
-      border-radius:12px;
-      border:1px solid rgba(0,255,255,.12);
-      background:rgba(15,23,42,.35);
-      margin-bottom:10px;
+      border-radius:14px;
+      width:100%;
+      max-width:220px;
     }
 
-    .map-box{
-      height:360px;
-      border-radius:14px;
-      overflow:hidden;
-      border:1px solid rgba(0,255,255,.14);
+    .payment-qr img{
+      width:100%;
+      display:block;
+      border-radius:10px;
+    }
+
+    .address-box{
+      word-break:break-all;
+      background:#000;
+      border:1px solid rgba(0,255,255,.20);
+      border-radius:12px;
+      padding:12px;
+      margin:8px 0;
+      font-size:13px;
+      color:var(--cyan);
     }
 
     .toast{
@@ -630,29 +545,17 @@
       max-width:80vw;
     }
 
-    .spinner{
-      width:18px;
-      height:18px;
-      border:2px solid rgba(255,255,255,.2);
-      border-top:2px solid var(--cyan);
-      border-radius:50%;
-      display:inline-block;
-      animation:spin 1s linear infinite;
-      vertical-align:middle;
-      margin-right:8px;
-    }
-
-    @keyframes spin{ to{ transform:rotate(360deg); } }
-
     @media (max-width: 1200px){
-      .grid-5, .grid-4, .grid-3, .kanban, .stats-kpis{ grid-template-columns:1fr 1fr; }
-      .two-col, .grid-2, .split-create, .payment-box, .health-list, .stats-layout{ grid-template-columns:1fr; }
+      .grid-5, .grid-4, .grid-3, .kanban{ grid-template-columns:1fr 1fr; }
+      .two-col, .grid-2, .health-list{ grid-template-columns:1fr; }
+      .stats-kpis{ grid-template-columns:1fr 1fr; }
+      .payment-box{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
       .grid-5, .grid-4, .grid-3, .kanban, .stats-kpis{ grid-template-columns:1fr; }
       .container{ padding:14px; }
-      table{ min-width:1250px; }
+      table{ min-width:900px; }
       .header{ align-items:stretch; }
       .top-actions{ width:100%; }
     }
@@ -664,7 +567,7 @@
       <div>
         <h1>📊 Rattle Link Dashboard</h1>
         <div class="sub">
-          Manage links, analytics, payments, landing pages, vanity slugs, and TXT-only custom domains for Cloudflare proxy mode.
+          Professional overview for account status, payments, backend health, analytics snapshots, and fast navigation to your dedicated AWS, Backend2, Analytics, Help, Landing Pages, Vanity, and Domain pages.
         </div>
       </div>
 
@@ -674,9 +577,6 @@
         <button id="refreshBtn" type="button">Refresh</button>
         <button id="exportCsvBtn" type="button">Export CSV</button>
         <button id="exportJsonBtn" type="button">Export JSON</button>
-        <button id="landingCenterBtn" class="backend2-btn" type="button">Landing Pages</button>
-        <button id="vanityCenterBtn" type="button">✨ Vanity Slugs</button>
-        <button id="domainCenterBtn" class="backend2-btn" type="button">Custom Domains</button>
         <button id="upgradeBtn" class="purple-btn" type="button">Upgrade</button>
         <button id="quickSettingsBtn" class="ghost-btn" type="button">Quick Settings</button>
         <button id="supportBtn" type="button">Support</button>
@@ -697,6 +597,95 @@
       <div class="card mini-stat"><div class="muted">AWS Links</div><div id="legacyLinksCount" style="font-size:24px;color:#facc15;">0</div></div>
       <div class="card mini-stat"><div class="muted">Backend2 Clicks</div><div id="primaryClicksCount" style="font-size:24px;color:#22c55e;">0</div></div>
       <div class="card mini-stat"><div class="muted">AWS Clicks</div><div id="legacyClicksCount" style="font-size:24px;color:#facc15;">0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>🧭 Workspace Navigation</h3>
+        <span class="muted">Dedicated pages for each area</span>
+      </div>
+
+      <div class="grid-4">
+        <div class="nav-card">
+          <div>
+            <h4>🟢 Backend2 Manager</h4>
+            <p>Manage Backend2 short links, slot usage, security review, and primary link operations in a dedicated page.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openBackend2Btn" class="backend2-btn" type="button">Open backend2.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>☁️ AWS Manager</h4>
+            <p>Manage legacy AWS short links separately with its own cleaner workflow and exports.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openAwsBtn" class="legacy-btn" type="button">Open aws.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>📈 Analytics Center</h4>
+            <p>Inspect click history, IP activity, geo locations, bots, VPNs, and raw event tables across both backends.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openAnalyticsBtn" class="blue-btn" type="button">Open analytics.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>🆘 Help Center</h4>
+            <p>Open FAQ, support contacts, setup guidance, policy notes, and message templates for support requests.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openHelpBtn" class="ghost-btn" type="button">Open help.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>🧱 Landing Pages</h4>
+            <p>Build and manage landing pages outside the main dashboard in their own page.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openLandingBtn" class="backend2-btn" type="button">Open landing.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>🌐 Custom Domains</h4>
+            <p>Manage TXT-only domain verification, refresh status, verify DNS, and set your primary branded domain.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openDomainBtn" class="backend2-btn" type="button">Open domain-manager.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>✨ Vanity Slugs</h4>
+            <p>Open your vanity slug manager and work on branded slugs in its dedicated page.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openVanityBtn" type="button">Open vanity.html</button>
+          </div>
+        </div>
+
+        <div class="nav-card">
+          <div>
+            <h4>💳 Upgrade Center</h4>
+            <p>Generate payment requests, choose plans, and review active subscription billing from one place.</p>
+          </div>
+          <div class="nav-actions">
+            <button id="openUpgradeCenterBtn" class="purple-btn" type="button">Open Upgrade Center</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="two-col">
@@ -752,7 +741,6 @@
           </div>
 
           <div class="row-actions" style="margin-top:14px;">
-            <button id="openUpgradeCenterBtn" class="purple-btn" type="button">Open Upgrade Center</button>
             <button id="refreshPaymentsBtn" type="button">Refresh Payments</button>
             <button id="openSecurityCenterBtn" class="pink-btn" type="button">Security Center</button>
           </div>
@@ -833,7 +821,7 @@
 
       <div class="card">
         <h3>🧠 Session Notes</h3>
-        <div class="muted">Preferred backend is manual only. Security and account state come from your active valid session.</div>
+        <div class="muted">This dashboard is now your main overview only. Use the buttons above to open the dedicated AWS, Backend2, Analytics, Help, Landing, Domain, and Vanity pages.</div>
         <div id="sessionNote" class="small" style="margin-top:10px;color:var(--cyan);"></div>
       </div>
     </div>
@@ -841,141 +829,40 @@
     <div class="card">
       <div class="section-head">
         <h3>⚡ Quick Actions</h3>
-        <span class="muted">One-click shortcuts for frequent tasks</span>
+        <span class="muted">Professional shortcuts to the right page</span>
       </div>
-      <div class="quick-links">
-        <button id="quickCreatePrimary" class="backend2-btn" type="button">Create on Backend2</button>
-        <button id="quickCreateLegacy" class="legacy-btn" type="button">Create on AWS</button>
+      <div class="grid-4">
+        <button id="quickBackend2Btn" class="backend2-btn" type="button">Open Backend2 Manager</button>
+        <button id="quickAwsBtn" class="legacy-btn" type="button">Open AWS Manager</button>
+        <button id="quickAnalyticsBtn" class="blue-btn" type="button">Open Analytics Center</button>
+        <button id="quickHelpBtn" class="ghost-btn" type="button">Open Help Center</button>
+        <button id="quickLandingBtn" class="backend2-btn" type="button">Open Landing Pages</button>
+        <button id="quickDomainBtn" class="backend2-btn" type="button">Open Domain Manager</button>
+        <button id="quickVanityBtn" type="button">Open Vanity Slugs</button>
         <button id="quickPaymentBtn" class="purple-btn" type="button">New Payment Request</button>
-        <button id="quickLandingBtn" class="backend2-btn" type="button">Landing Builder</button>
-        <button id="quickDomainBtn" class="backend2-btn" type="button">Domain Manager</button>
-        <button id="quickSecurityBtn" class="pink-btn" type="button">Security Review</button>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>🚀 Create Link</h3>
-
-      <div class="form-row">
-        <input id="url" placeholder="Paste URL (https://...)" />
-        <input id="customSlug" placeholder="Custom slug (optional)" />
-        <input id="expire" type="number" min="1" placeholder="Expire in hours" />
-      </div>
-
-      <div class="form-row">
-        <input id="campaignInput" placeholder="Campaign tag (optional)" />
-        <input id="noteInput" placeholder="Internal note (optional)" />
-        <select id="riskModeSelect">
-          <option value="standard">Standard traffic mode</option>
-          <option value="strict">Strict monitoring mode</option>
-        </select>
-      </div>
-
-      <div class="split-create">
-        <div class="create-box">
-          <h4>☁️ Create AWS Link</h4>
-          <div class="muted">Creates short links on the legacy AWS backend.</div>
-          <div class="form-row" style="margin-top:10px;">
-            <button id="createLegacyBtn" class="legacy-btn" type="button">Create AWS Link</button>
-          </div>
-          <div class="form-row">
-            <input id="bulkCountLegacy" type="number" min="1" placeholder="Bulk count" />
-            <button id="bulkLegacyBtn" class="legacy-btn" type="button">Bulk Create AWS</button>
-          </div>
-          <div class="drop-zone" id="dropZoneLegacy">
-            <p>📂 Upload CSV for <b>AWS links</b></p>
-            <input id="csvFileLegacy" type="file" accept=".csv,.txt" />
-            <button id="uploadLegacyBtn" class="legacy-btn" type="button">Upload CSV to AWS</button>
-          </div>
-        </div>
-
-        <div class="create-box">
-          <h4>🟢 Create Backend2 Link</h4>
-          <div class="muted">Creates short links on the Backend2 server with active-slot limits.</div>
-          <div class="form-row" style="margin-top:10px;">
-            <button id="createPrimaryBtn" class="backend2-btn" type="button">Create Backend2 Link</button>
-          </div>
-          <div class="form-row">
-            <input id="bulkCountPrimary" type="number" min="1" placeholder="Bulk count" />
-            <button id="bulkPrimaryBtn" class="backend2-btn" type="button">Bulk Create Backend2</button>
-          </div>
-          <div class="drop-zone" id="dropZonePrimary">
-            <p>📂 Upload CSV for <b>Backend2 links</b></p>
-            <input id="csvFilePrimary" type="file" accept=".csv,.txt" />
-            <button id="uploadPrimaryBtn" class="backend2-btn" type="button">Upload CSV to Backend2</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:14px;">
-        <div class="section-head">
-          <h3>🟢 Backend2 Tools</h3>
-          <span class="backend-badge backend-primary">Separate HTML Pages</span>
-        </div>
-
-        <div class="notice">
-          Landing pages, vanity slugs, and custom domains now open in their own dedicated pages instead of being managed inside this dashboard section.
-        </div>
-
-        <div class="quick-links">
-          <button id="goLandingPageBtn" class="backend2-btn" type="button">Open landing.html</button>
-          <button id="goVanityPageBtn" type="button">Open vanity.html</button>
-          <button id="goDomainPageBtn" class="backend2-btn" type="button">Open domain-manager.html</button>
-        </div>
-
-        <div class="grid-2" style="margin-top:12px;">
-          <div class="landing-summary-card">
-            <div class="muted">Landing pages</div>
-            <div id="landingSummaryText" style="margin-top:8px;">Open the dedicated landing page builder to create, edit, and manage landing pages.</div>
-          </div>
-          <div class="domain-summary-card">
-            <div class="muted">Domains and vanity</div>
-            <div id="domainSummaryText" style="margin-top:8px;">Use the separate vanity and domain pages to manage custom slugs and TXT-verified custom domains.</div>
-          </div>
-        </div>
-
-        <div id="backend2ExtraResult" class="result"></div>
-      </div>
-
-      <div id="result" class="result"></div>
     </div>
 
     <div class="card">
       <div class="section-head">
-        <h3>🔗 Your Links</h3>
+        <h3>📌 Live Item Snapshot</h3>
         <div class="toolbar-actions">
           <select id="backendFilter" style="max-width:180px;">
             <option value="all">All backends</option>
             <option value="primary">Backend2 only</option>
             <option value="legacy">AWS only</option>
           </select>
-          <select id="itemTypeFilter" style="max-width:180px;">
-            <option value="all">All item types</option>
-            <option value="redirect">Short links</option>
-            <option value="landing">Landing pages</option>
-          </select>
           <input id="search" placeholder="Search slug or URL..." style="max-width:280px;" />
         </div>
-      </div>
-
-      <div class="section-subhead">
-        <div class="toggle-wrap">
-          <label><input id="selectAllLinks" type="checkbox" /> Select visible</label>
-          <button id="bulkCopyBtn" class="copy" type="button">Copy Selected</button>
-          <button id="bulkDeleteBtn" class="delete" type="button">Delete Selected</button>
-          <button id="bulkRefreshStatsBtn" class="ghost-btn" type="button">Refresh Visible Stats</button>
-        </div>
-        <div id="visibleStatsText" class="muted">0 visible items</div>
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Select</th>
               <th>Backend</th>
-              <th>Type</th>
               <th>Slug</th>
+              <th>Type</th>
               <th>Clicks</th>
               <th>Score</th>
               <th>Fraud</th>
@@ -983,7 +870,7 @@
               <th>Status</th>
               <th>Expire</th>
               <th>Created</th>
-              <th>Actions</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="table"></tbody>
@@ -1071,28 +958,28 @@
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How many short links can I create on free trial?</button>
-          <div class="faq-a">Free trial allows 3 active short links on Backend2. Deleting a short link frees a slot.</div>
+          <button class="faq-q" type="button">Where do I manage Backend2 links now?</button>
+          <div class="faq-a">Use backend2.html from the new dashboard buttons. Backend2 management is no longer duplicated inside the main dashboard.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How do landing page limits work?</button>
-          <div class="faq-a">Landing pages use separate active-slot limits on Backend2 paid plans. Deleting a landing page frees a landing slot.</div>
+          <button class="faq-q" type="button">Where do I manage AWS links now?</button>
+          <div class="faq-a">Use aws.html from the new dashboard buttons. AWS link management is separated into its own page.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">How do payments get verified?</button>
-          <div class="faq-a">Payments are generated from the dashboard and manually verified by admin after transfer confirmation.</div>
+          <button class="faq-q" type="button">Where do I open analytics?</button>
+          <div class="faq-a">Use analytics.html from the navigation cards or quick actions to inspect history, IP activity, geo map traffic, bots, VPNs, and risk.</div>
         </div>
 
         <div class="faq-item">
-          <button class="faq-q" type="button">Can I buy multiple weeks or months?</button>
-          <div class="faq-a">Yes. Backend2 supports quantity-based requests like 2 weeks, 3 months, or 6 months.</div>
+          <button class="faq-q" type="button">Where do I get help or support?</button>
+          <div class="faq-a">Use help.html for FAQ, support contacts, policy notes, and support message templates.</div>
         </div>
 
         <div class="faq-item">
           <button class="faq-q" type="button">How do custom domains verify?</button>
-          <div class="faq-a">Backend2 custom domains verify using the TXT ownership record flow only.</div>
+          <div class="faq-a">Backend2 custom domains verify using TXT ownership verification only through the custom domain manager page.</div>
         </div>
       </div>
     </div>
@@ -1106,9 +993,10 @@
           <a href="https://discord.gg/xwGvhtjb" target="_blank" rel="noopener noreferrer">Discord: Join Discord Server</a>
           <a href="tel:+19547878220">Phone: +1 954 787 8220</a>
         </div>
-        <div class="muted" style="margin-top:10px;">Live support contacts for your dashboard.</div>
+        <div class="muted" style="margin-top:10px;">Open help.html for a cleaner support page, FAQ page, and copy-ready support templates.</div>
         <div style="margin-top:14px;">
           <button id="openSupportPanelBtn" type="button">Open Help Panel</button>
+          <button id="openHelpInlineBtn" class="ghost-btn" type="button">Open help.html</button>
         </div>
       </div>
 
@@ -1215,22 +1103,6 @@
     <div id="securityModalContent"></div>
   </div>
 
-  <div id="statsModal" class="modal">
-    <div class="section-head">
-      <h3>📊 Link Analytics</h3>
-      <button id="closeStatsModalBtn" type="button">Close</button>
-    </div>
-    <div id="statsModalContent"></div>
-  </div>
-
-  <div id="geoModal" class="modal">
-    <div class="section-head">
-      <h3>🌍 Geo Analytics</h3>
-      <button id="closeGeoModalBtn" type="button">Close</button>
-    </div>
-    <div id="geoModalContent"></div>
-  </div>
-
   <div id="toast" class="toast">Copied!</div>
 
   <script>
@@ -1266,13 +1138,8 @@
       "/payment-request": ["/payment-request"],
       "/payments/me": ["/payments/me"],
       "/payment-i-made": ["/payment-i-made"],
-      "/create": ["/create"],
       "/list": ["/list"],
       "/history": ["/history"],
-      "/delete": ["/delete"],
-      "/landing/create": ["/landing/create"],
-      "/landing/update": ["/landing/update"],
-      "/landing/delete": ["/landing/delete"],
       "/health": ["/health", "/"],
       "/": ["/", "/health"]
     };
@@ -1280,13 +1147,9 @@
     let dataStore = [];
     let paymentsStore = [];
     let notificationsStore = [];
-    let selectedLinks = new Set();
     let chart = null;
-    let statsChartInstance = null;
     let refreshTimer = null;
     let paymentPoller = null;
-    let statsMap = null;
-    let geoMap = null;
     let loadingLinks = false;
     let meState = null;
     let plansState = null;
@@ -1314,7 +1177,6 @@
       result: $("result"),
       paymentsTable: $("paymentsTable"),
       notificationsList: $("notificationsList"),
-      visibleStatsText: $("visibleStatsText"),
       securityInsights: $("securityInsights"),
       activityTimeline: $("activityTimeline"),
       liveSyncBadge: $("liveSyncBadge"),
@@ -1344,18 +1206,8 @@
       activeShortLinksText: $("activeShortLinksText"),
       activeLandingPagesText: $("activeLandingPagesText"),
 
-      urlInput: $("url"),
-      slugInput: $("customSlug"),
-      expireInput: $("expire"),
-      campaignInput: $("campaignInput"),
-      noteInput: $("noteInput"),
-      riskModeSelect: $("riskModeSelect"),
-
-      bulkCountLegacy: $("bulkCountLegacy"),
-      bulkCountPrimary: $("bulkCountPrimary"),
       searchInput: $("search"),
       backendFilter: $("backendFilter"),
-      itemTypeFilter: $("itemTypeFilter"),
       statusFilter: $("statusFilter"),
       dateRangeFilter: $("dateRangeFilter"),
       sortFilter: $("sortFilter"),
@@ -1364,29 +1216,14 @@
       compactModeToggle: $("compactModeToggle"),
       autoRefreshToggle: $("autoRefreshToggle"),
 
-      csvFileLegacy: $("csvFileLegacy"),
-      csvFilePrimary: $("csvFilePrimary"),
-      dropZoneLegacy: $("dropZoneLegacy"),
-      dropZonePrimary: $("dropZonePrimary"),
-
       refreshBtn: $("refreshBtn"),
       exportCsvBtn: $("exportCsvBtn"),
       exportJsonBtn: $("exportJsonBtn"),
       quickSettingsBtn: $("quickSettingsBtn"),
-      createLegacyBtn: $("createLegacyBtn"),
-      createPrimaryBtn: $("createPrimaryBtn"),
-      bulkLegacyBtn: $("bulkLegacyBtn"),
-      bulkPrimaryBtn: $("bulkPrimaryBtn"),
-      uploadLegacyBtn: $("uploadLegacyBtn"),
-      uploadPrimaryBtn: $("uploadPrimaryBtn"),
       preferPrimaryBtn: $("preferPrimaryBtn"),
       preferLegacyBtn: $("preferLegacyBtn"),
       verifySessionBtn: $("verifySessionBtn"),
       clearFiltersBtn: $("clearFiltersBtn"),
-      bulkCopyBtn: $("bulkCopyBtn"),
-      bulkDeleteBtn: $("bulkDeleteBtn"),
-      bulkRefreshStatsBtn: $("bulkRefreshStatsBtn"),
-      selectAllLinks: $("selectAllLinks"),
       clearNotificationsBtn: $("clearNotificationsBtn"),
       refreshActivityBtn: $("refreshActivityBtn"),
       rebuildBoardBtn: $("rebuildBoardBtn"),
@@ -1402,22 +1239,13 @@
       modalChartMetricSelect: $("modalChartMetricSelect"),
       settingsSearchSummary: $("settingsSearchSummary"),
 
-      statsModal: $("statsModal"),
-      statsModalContent: $("statsModalContent"),
-      geoModal: $("geoModal"),
-      geoModalContent: $("geoModalContent"),
-
       planGrid: $("planGrid"),
       cryptoSelect: $("cryptoSelect"),
       planQuantityInput: $("planQuantity"),
       billingPreview: $("billingPreview"),
       requestPaymentBtn: $("requestPaymentBtn"),
       upgradeResult: $("upgradeResult"),
-      paymentRequestBox: $("paymentRequestBox"),
-
-      landingSummaryText: $("landingSummaryText"),
-      domainSummaryText: $("domainSummaryText"),
-      backend2ExtraResult: $("backend2ExtraResult")
+      paymentRequestBox: $("paymentRequestBox")
     };
 
     function getToken() {
@@ -1430,21 +1258,6 @@
 
     function getUsername() {
       return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
-    }
-
-    function setSession(token, role = "", username = "") {
-      if (token) {
-        localStorage.setItem(AUTH_STORAGE_KEY, token);
-        localStorage.setItem("token", token);
-      }
-      if (role) {
-        localStorage.setItem(ROLE_STORAGE_KEY, role);
-        localStorage.setItem("role", role);
-      }
-      if (username) {
-        localStorage.setItem(USER_STORAGE_KEY, username);
-        localStorage.setItem("lastUser", username);
-      }
     }
 
     function clearSession() {
@@ -1603,10 +1416,6 @@
       target.textContent = message || "";
       target.className = `result ${isError ? "error" : "success"}`;
       if (message) pushNotification(message, isError ? "error" : "success");
-    }
-
-    function setExtraResult(message, isError = false) {
-      setResult(message, isError, els.backend2ExtraResult);
     }
 
     function setBusy(button, busy, text = "") {
@@ -2029,7 +1838,7 @@
       }
 
       els.planGrid.innerHTML = plans.map(plan => `
-        <div class="plan-card ${selectedPlan === plan.code ? "active" : ""}" data-plan="${escapeHtml(plan.code)}">
+        <div class="panel-card ${selectedPlan === plan.code ? "backend-active" : ""}" data-plan="${escapeHtml(plan.code)}" style="cursor:pointer;">
           <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
           <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
           <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
@@ -2123,12 +1932,12 @@
             <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
 
             <div class="row-actions" style="margin-top:10px;">
-              <button class="copy" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
               <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
               <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
             </div>
 
-            ${waiting ? `<div class="waiting-box"><span class="spinner"></span><b>Waiting for admin confirmation...</b></div>` : ""}
+            ${waiting ? `<div class="waiting-box"><b>Waiting for admin confirmation...</b></div>` : ""}
             ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed</b></div>` : ""}
           </div>
         </div>
@@ -2157,8 +1966,8 @@
           <td>${fmtDate(p.expiresAt)}</td>
           <td>
             <div class="row-actions">
-              <button class="copy" type="button" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
-              <button class="qr" type="button" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
+              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
+              <button type="button" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
               <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
             </div>
           </td>
@@ -2229,13 +2038,13 @@
               <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
 
               <div class="row-actions" style="margin-top:10px;">
-                <button class="copy" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+                <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
                 <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
                 <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
               </div>
 
               ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
-              ${waiting ? `<div class="waiting-box"><span class="spinner"></span><b>Waiting for payment confirmation...</b><div id="paymentPollText" class="muted" style="margin-top:8px;">Checking...</div></div>` : ""}
+              ${waiting ? `<div class="waiting-box"><b>Waiting for payment confirmation...</b></div>` : ""}
               ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed and successful</b></div>` : ""}
             </div>
           </div>
@@ -2325,7 +2134,6 @@
         waitingPaymentId = payment.id;
         localStorage.setItem("waitingPaymentId", payment.id);
         renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
-        startPaymentPolling(payment.id, payment.backend);
         return showToast("Already waiting for confirmation");
       }
 
@@ -2348,7 +2156,6 @@
 
       const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
       renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
-      startPaymentPolling(updated.id, updated.backend);
     }
 
     function handleWaitingPaymentState(payment) {
@@ -2364,62 +2171,12 @@
 
       if (status === "awaiting_confirmation" || status === "pending") {
         renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
-        startPaymentPolling(payment.id, payment.backend);
         return;
       }
 
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
-    }
-
-    function startPaymentPolling(paymentId, backend) {
-      stopPaymentPolling();
-
-      const run = async () => {
-        const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
-        if (!res.ok) return;
-
-        let raw = res.data;
-        let incoming = [];
-        if (Array.isArray(raw)) incoming = raw;
-        else if (Array.isArray(raw?.payments)) incoming = raw.payments;
-        else if (Array.isArray(raw?.items)) incoming = raw.items;
-        else if (raw?.payment) incoming = [raw.payment];
-
-        incoming = incoming.map(p => normalizePaymentItem(p, "primary"));
-        const current = incoming.find(p => p.id === paymentId);
-        if (!current) return;
-
-        paymentsStore = sortPayments(incoming);
-        renderPaymentsTable();
-
-        const status = String(current.status || "").toLowerCase();
-        const pollText = $("paymentPollText");
-        if (pollText) {
-          if (status === "awaiting_confirmation") pollText.textContent = `Still waiting for admin confirmation... Last check: ${new Date().toLocaleTimeString()}`;
-          if (status === "pending") pollText.textContent = `Payment still pending... Last check: ${new Date().toLocaleTimeString()}`;
-        }
-
-        if (status === "verified") {
-          waitingPaymentId = "";
-          localStorage.removeItem("waitingPaymentId");
-          stopPaymentPolling();
-          renderPaymentRequestBox(current, "Payment confirmed and successful.");
-          await loadMe(false);
-          showToast("Payment confirmed");
-        }
-
-        if (status === "cancelled" || status === "expired") {
-          waitingPaymentId = "";
-          localStorage.removeItem("waitingPaymentId");
-          stopPaymentPolling();
-          renderPaymentRequestBox(current, "Payment expired or cancelled.");
-        }
-      };
-
-      run();
-      paymentPoller = setInterval(run, 5000);
     }
 
     function openModal(modal) {
@@ -2435,7 +2192,7 @@
     }
 
     function syncOverlay() {
-      const anyOpen = [els.upgradeModal, els.settingsModal, els.securityModal, els.statsModal, els.geoModal]
+      const anyOpen = [els.upgradeModal, els.settingsModal, els.securityModal]
         .some(m => m && m.style.display === "block");
       els.overlay.style.display = anyOpen ? "block" : "none";
     }
@@ -2448,6 +2205,7 @@
     }
 
     function closeUpgradeModal() { closeModal(els.upgradeModal); }
+
     function openSettingsModal() {
       openModal(els.settingsModal);
       if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
@@ -2459,25 +2217,15 @@
           : "No active search";
       }
     }
+
     function closeSettingsModal() { closeModal(els.settingsModal); }
     function openSecurityModal() { openModal(els.securityModal); renderSecurityModal(); }
     function closeSecurityModal() { closeModal(els.securityModal); }
-    function closeStatsModal() {
-      closeModal(els.statsModal);
-      if (statsChartInstance) { statsChartInstance.destroy(); statsChartInstance = null; }
-      if (statsMap) { statsMap.remove(); statsMap = null; }
-    }
-    function closeGeoModal() {
-      closeModal(els.geoModal);
-      if (geoMap) { geoMap.remove(); geoMap = null; }
-    }
 
     function closeAllModals() {
       closeUpgradeModal();
       closeSettingsModal();
       closeSecurityModal();
-      closeStatsModal();
-      closeGeoModal();
     }
 
     function showPaymentDetails(paymentId, backend = "") {
@@ -2512,7 +2260,6 @@
     function getFilteredData() {
       const q = (els.searchInput?.value || "").trim().toLowerCase();
       const backendOnly = els.backendFilter?.value || "all";
-      const itemTypeOnly = els.itemTypeFilter?.value || "all";
       const statusOnly = els.statusFilter?.value || "all";
       const dateRange = els.dateRangeFilter?.value || "all";
       const onlyHighRisk = !!els.onlyHighRiskToggle?.checked;
@@ -2522,7 +2269,6 @@
         const slug = String(item.slug || "").toLowerCase();
         const url = String(item.url || "").toLowerCase();
         const backend = String(item.backend || "").toLowerCase();
-        const itemType = getItemType(item);
 
         const queryMatch = !q ||
           slug.includes(q) ||
@@ -2532,7 +2278,6 @@
           String(item.campaign || "").toLowerCase().includes(q);
 
         const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-        const typeMatch = itemTypeOnly === "all" ? true : itemType === itemTypeOnly;
         const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
         const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
 
@@ -2541,7 +2286,7 @@
         if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
         if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
 
-        return queryMatch && backendMatch && typeMatch && statusMatch && riskMatch && dateMatch;
+        return queryMatch && backendMatch && statusMatch && riskMatch && dateMatch;
       });
 
       const sortKey = els.sortFilter?.value || "newest";
@@ -2562,7 +2307,6 @@
 
       if (showLoading) {
         setBusy(els.refreshBtn, true, "Loading...");
-        setResult("Loading links...", false);
       }
 
       const [primaryRes, legacyRes] = await Promise.all([
@@ -2590,7 +2334,6 @@
       renderSecurityInsights();
       renderActivityTimeline();
       renderOperationalBoard();
-      renderBackend2Summary();
 
       if (showLoading) {
         const legacyMsg = legacyRes.ok
@@ -2601,87 +2344,48 @@
           ? `Backend2 OK (${primaryRes.resolvedPath || "/list"})`
           : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
 
-        setResult(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok));
+        pushNotification(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok) ? "error" : "success");
       }
     }
 
     function renderTable() {
       if (!els.table) return;
       const filtered = getFilteredData();
-      if (els.visibleStatsText) els.visibleStatsText.textContent = `${filtered.length} visible items`;
 
       if (!filtered.length) {
-        els.table.innerHTML = `<tr><td colspan="12" class="muted">No items found</td></tr>`;
+        els.table.innerHTML = `<tr><td colspan="11" class="muted">No items found</td></tr>`;
         return;
       }
 
-      els.table.innerHTML = filtered.map(item => {
+      els.table.innerHTML = filtered.slice(0, 50).map(item => {
         const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
-        const key = `${item.backend}:${item.slug}`;
-        const checked = selectedLinks.has(key) ? "checked" : "";
         const itemType = getItemType(item);
 
         return `
           <tr>
-            <td><input class="row-select" type="checkbox" data-key="${escapeHtml(key)}" ${checked} /></td>
             <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+            <td><b>${escapeHtml(item.slug)}</b></td>
             <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
-            <td>
-              <b>${escapeHtml(item.slug)}</b>
-              ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
-            </td>
             <td><span class="badge">${Number(item.clicks || 0)}</span></td>
             <td>${scoreLink(item)}/100</td>
             <td>${detectFraud(item)}</td>
             <td>
               <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
               <div class="muted">${escapeHtml(item.url || "")}</div>
-              ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
             </td>
             <td>${getStatus(item)}</td>
             <td>${fmtExpire(item.expire)}</td>
             <td>${fmtDate(item.createdAt)}</td>
             <td>
               <div class="row-actions">
-                <button class="copy action-btn" data-action="copy" data-link="${escapeHtml(publicLink)}">Copy</button>
-                <button class="open action-btn" data-action="open" data-link="${escapeHtml(publicLink)}">Open</button>
-                <button class="qr action-btn" data-action="qr" data-link="${escapeHtml(publicLink)}">QR</button>
-                ${itemType === "redirect"
-                  ? `<button class="action-btn" data-action="stats" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Stats</button>`
-                  : `<button class="ghost-btn action-btn" data-action="landing">Edit</button>`}
-                ${itemType === "redirect"
-                  ? `<button class="action-btn" data-action="geo" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}">Geo</button>`
-                  : `<button class="ghost-btn action-btn" data-action="landing">Builder</button>`}
-                <button class="delete action-btn" data-action="delete" data-slug="${escapeHtml(item.slug)}" data-backend="${escapeHtml(item.backend)}" data-type="${escapeHtml(itemType)}">Delete</button>
+                <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(publicLink)}')">Copy</button>
+                <button type="button" onclick="openLinkDirect('${escapeForJs(publicLink)}')">Open</button>
+                <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Analytics</button>
               </div>
             </td>
           </tr>
         `;
       }).join("");
-
-      document.querySelectorAll(".row-select").forEach(box => {
-        box.addEventListener("change", () => {
-          const key = box.dataset.key;
-          if (box.checked) selectedLinks.add(key);
-          else selectedLinks.delete(key);
-          syncSelectAllState();
-        });
-      });
-
-      syncSelectAllState();
-    }
-
-    function syncSelectAllState() {
-      if (!els.selectAllLinks) return;
-      const visible = [...document.querySelectorAll(".row-select")];
-      if (!visible.length) {
-        els.selectAllLinks.checked = false;
-        els.selectAllLinks.indeterminate = false;
-        return;
-      }
-      const checked = visible.filter(x => x.checked).length;
-      els.selectAllLinks.checked = checked === visible.length;
-      els.selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
     }
 
     function drawChart() {
@@ -2792,201 +2496,44 @@
       attention.innerHTML = makeCards(attentionItems);
     }
 
-    function renderBackend2Summary() {
-      const primaryItems = dataStore.filter(x => x.backend === "primary");
-      const landings = primaryItems.filter(x => getItemType(x) === "landing").length;
-      const redirects = primaryItems.filter(x => getItemType(x) === "redirect").length;
-
-      els.landingSummaryText && (els.landingSummaryText.textContent = `${landings} Backend2 landing pages currently loaded in this snapshot.`);
-      els.domainSummaryText && (els.domainSummaryText.textContent = `Backend2 custom domains use TXT verification only. Short links loaded on Backend2: ${redirects}.`);
+    function getRiskSummaryText() {
+      const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
+      return `${risky.length} items currently show elevated risk markers.`;
     }
 
-    function getCreatePayload() {
-      const url = els.urlInput?.value.trim();
-      const slug = els.slugInput?.value.trim();
-      const expireHours = els.expireInput?.value.trim();
-      const campaign = els.campaignInput?.value.trim();
-      const note = els.noteInput?.value.trim();
-      const riskMode = els.riskModeSelect?.value || "standard";
+    function renderRiskItemsHtml() {
+      const risky = [...dataStore]
+        .filter(x => Number(x.maxRisk || 0) > 60)
+        .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
 
-      if (!url) {
-        setResult("Enter URL", true);
-        return null;
-      }
+      if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
 
-      const body = { url, riskMode };
-      if (slug) body.slug = slug;
-      if (campaign) body.campaign = campaign;
-      if (note) body.note = note;
-
-      if (expireHours) {
-        const hours = Number(expireHours);
-        if (!Number.isFinite(hours) || hours <= 0) {
-          setResult("Expire must be a positive number", true);
-          return null;
-        }
-        body.expire = Date.now() + hours * 60 * 60 * 1000;
-      }
-
-      return body;
+      return risky.map(item => `
+        <div class="info-box">
+          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+          <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+          <div class="row-actions" style="margin-top:8px;">
+            <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Open Analytics</button>
+          </div>
+        </div>
+      `).join("");
     }
 
-    async function createLinkForBackend(backend) {
-      const button = backend === "legacy" ? els.createLegacyBtn : els.createPrimaryBtn;
-      const body = getCreatePayload();
-      if (!body) return;
+    function renderSecurityModal() {
+      if (!els.securityModalContent) return;
 
-      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-      setResult(`Creating ${backendLabel(backend)} link...`, false);
+      const twoFactorEnabled = !!meState?.twoFactorEnabled;
+      const twoFactorMethod = meState?.twoFactorMethod || "";
 
-      let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
-      if (res.status === 401) {
-        await verifyMainSession(false);
-        res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(body) }, backend, false);
-      }
+      els.securityModalContent.innerHTML = `
+        <div class="info-box">
+          <b>Two-Factor Authentication</b>
+          <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
+        </div>
 
-      setBusy(button, false);
-
-      if (!res.ok) {
-        if (res.status === 402) {
-          await loadMe(false);
-          openUpgradeModal();
-        }
-        setResult(`${backendLabel(backend)}: ${res.data?.message || "Failed to create link"}`, true);
-        return;
-      }
-
-      const link = res.data?.link || "Success";
-      const usage = res.data?.usage || null;
-      const limits = res.data?.limits || null;
-
-      let summary = `${backendLabel(backend)} created: ${link}`;
-      if (backend === "primary" && usage && limits) {
-        summary += ` • Slots: ${Number(usage.activeShortLinks || 0)}/${Number(limits.activeShortLinks || 0)} short links`;
-      }
-
-      setResult(summary, false);
-
-      if (els.urlInput) els.urlInput.value = "";
-      if (els.slugInput) els.slugInput.value = "";
-      if (els.expireInput) els.expireInput.value = "";
-      if (els.campaignInput) els.campaignInput.value = "";
-      if (els.noteInput) els.noteInput.value = "";
-
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    async function bulkCreateForBackend(backend) {
-      const countInput = backend === "legacy" ? els.bulkCountLegacy : els.bulkCountPrimary;
-      const button = backend === "legacy" ? els.bulkLegacyBtn : els.bulkPrimaryBtn;
-      const count = Number(countInput?.value || 0);
-      const body = getCreatePayload();
-      if (!body) return;
-
-      if (!Number.isFinite(count) || count <= 0) {
-        return setResult("Invalid bulk count", true);
-      }
-
-      setBusy(button, true, `Creating ${backendLabel(backend)}...`);
-      setResult(`Bulk creating ${count} ${backendLabel(backend)} links...`, false);
-
-      let success = 0;
-
-      for (let i = 0; i < count; i++) {
-        const requestBody = { ...body };
-        if (!requestBody.slug) delete requestBody.slug;
-
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
-        if (res.status === 401) {
-          await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify(requestBody) }, backend, false);
-        }
-
-        if (!res.ok) {
-          setResult(`Stopped at ${success}/${count}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
-          break;
-        }
-
-        success++;
-        setResult(`Bulk creating ${backendLabel(backend)}... ${success}/${count}`, false);
-      }
-
-      setBusy(button, false);
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    function getDeletePath(itemType) {
-      return itemType === "landing" ? "/landing/delete" : "/delete";
-    }
-
-    async function deleteLink(slug, backend, itemType = "redirect") {
-      const label = itemType === "landing" ? "landing page" : "short link";
-      if (!confirm(`Delete ${slug} ${label} from ${backendLabel(backend)}?`)) return;
-
-      let res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
-      if (res.status === 401) {
-        await verifyMainSession(false);
-        res = await authorizedFetch(getDeletePath(itemType), { method: "POST", body: JSON.stringify({ slug }) }, backend, false);
-      }
-
-      if (!res.ok) return showToast(`Delete failed on ${backendLabel(backend)}`);
-
-      selectedLinks.delete(`${backend}:${slug}`);
-      showToast(`Deleted from ${backendLabel(backend)}`);
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    async function bulkDeleteSelected() {
-      const items = [...selectedLinks];
-      if (!items.length) return showToast("No selected items");
-      if (!confirm(`Delete ${items.length} selected items?`)) return;
-
-      for (const key of items) {
-        const [backend, slug] = key.split(":");
-        const item = dataStore.find(x => x.backend === backend && x.slug === slug);
-        await deleteLink(slug, backend, item ? getItemType(item) : "redirect");
-      }
-
-      selectedLinks.clear();
-      renderTable();
-    }
-
-    async function bulkCopySelected() {
-      const items = [...selectedLinks].map(key => {
-        const [backend, slug] = key.split(":");
-        const item = dataStore.find(x => x.backend === backend && x.slug === slug);
-        return item?.publicLink || buildPublicLink(slug, backend);
-      });
-
-      if (!items.length) return showToast("No selected items");
-      await copyLink(items.join("\n"));
-    }
-
-    async function copyLink(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("Copied!");
-      } catch {
-        showToast("Copy failed");
-      }
-    }
-
-    function openLink(link) {
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
-
-    function showQR(link) {
-      window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`, "_blank", "noopener,noreferrer");
-    }
-
-    function downloadTextFile(filename, content, mime) {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+        <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
+        ${renderRiskItemsHtml()}
+      `;
     }
 
     function exportVisibleAsCsv() {
@@ -3014,436 +2561,14 @@
       downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
     }
 
-    async function getGeo(ip) {
-      if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
-      try {
-        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-        const data = await res.json();
-        return {
-          country_name: data.country_name || "Unknown",
-          latitude: data.latitude || 20,
-          longitude: data.longitude || 0
-        };
-      } catch {
-        return { country_name: "Error", latitude: 20, longitude: 0 };
-      }
-    }
-
-    function renderStatsSummary(history) {
-      const total = history.length;
-      const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
-      const bots = history.filter(x => x.bot).length;
-      const vpns = history.filter(x => x.vpn).length;
-      const highestRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
-      const lastClick = history.length ? Math.max(...history.map(x => Number(x.time || 0))) : 0;
-
-      return `
-        <div class="stats-kpis">
-          <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value">${total}</div></div>
-          <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value">${uniqueIps}</div></div>
-          <div class="stats-kpi"><div class="k-label">Bots</div><div class="k-value">${bots}</div></div>
-          <div class="stats-kpi"><div class="k-label">VPNs</div><div class="k-value">${vpns}</div></div>
-          <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value">${highestRisk}</div></div>
-        </div>
-        <div class="info-box"><b>Last Click:</b> ${lastClick ? fmtDate(lastClick) : "-"}</div>
-      `;
-    }
-
-    function buildRecentActivityList(history) {
-      const stats = {};
-      for (const h of history) {
-        const ip = h.ip || "unknown";
-        if (!stats[ip]) stats[ip] = { count: 0, risk: 0, vpn: false, bot: false, last: 0 };
-        stats[ip].count++;
-        stats[ip].risk = Math.max(stats[ip].risk, Number(h.risk || 0));
-        stats[ip].vpn = stats[ip].vpn || !!h.vpn;
-        stats[ip].bot = stats[ip].bot || !!h.bot;
-        stats[ip].last = Math.max(stats[ip].last, Number(h.time || 0));
-      }
-
-      const sorted = Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
-      if (!sorted.length) return `<div class="muted">No click activity.</div>`;
-
-      return sorted.slice(0, 20).map(([ip, data]) => `
-        <div class="stats-item">
-          <div><b>${escapeHtml(ip)}</b></div>
-          <div class="muted">Clicks: ${data.count} • Risk: ${data.risk} • Last: ${fmtDate(data.last)}</div>
-          <div class="muted">${data.vpn ? "VPN" : "No VPN"} • ${data.bot ? "Bot suspected" : "Human-like"}</div>
-        </div>
-      `).join("");
-    }
-
-    async function showHistory(slug, backend) {
-      openModal(els.statsModal);
-      els.statsModalContent.innerHTML = `<div class="muted">Loading stats...</div>`;
-
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
-      let history = Array.isArray(res.data?.history) ? res.data.history : [];
-      const link = dataStore.find(l => l.slug === slug && l.backend === backend);
-
-      if (!history.length && link && Number(link.clicks || 0) > 0) {
-        history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-          ip: "unknown",
-          time: Date.now() - (i * 30000),
-          risk: Number(link.maxRisk || 0),
-          vpn: false,
-          bot: false
-        }));
-      }
-
-      if (!history.length) {
-        els.statsModalContent.innerHTML = `<div class="muted">No clicks recorded for ${escapeHtml(slug)}.</div>`;
-        return;
-      }
-
-      history = history.map(h => ({
-        ip: h.ip || "unknown",
-        time: Number(h.time || Date.now()),
-        risk: Number(h.risk || 0),
-        vpn: !!h.vpn,
-        bot: !!h.bot
-      })).sort((a, b) => a.time - b.time);
-
-      els.statsModalContent.innerHTML = `
-        <div class="info-box">
-          <b>${escapeHtml(slug)}</b> • <span class="backend-badge ${backendClass(backend)}">${backendLabel(backend)}</span>
-          <div class="muted" style="margin-top:6px;">${escapeHtml(link?.publicLink || buildPublicLink(slug, backend))}</div>
-        </div>
-
-        ${renderStatsSummary(history)}
-
-        <div class="stats-layout">
-          <div class="card" style="margin:0;">
-            <h4>Clicks Timeline</h4>
-            <canvas id="statsChartCanvas" height="120"></canvas>
-          </div>
-
-          <div class="card" style="margin:0;">
-            <h4>Recent Activity</h4>
-            <div class="stats-list">${buildRecentActivityList(history)}</div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:14px;margin-bottom:0;">
-          <h4>Geo Activity Map</h4>
-          <div id="statsMapBox" class="map-box"></div>
-        </div>
-      `;
-
-      const labels = history.map(h => new Date(h.time).toLocaleTimeString());
-      const clickLine = history.map((_, i) => i + 1);
-      const riskLine = history.map(h => Number(h.risk || 0));
-
-      if (statsChartInstance) statsChartInstance.destroy();
-      const canvas = $("statsChartCanvas");
-      if (canvas) {
-        statsChartInstance = new Chart(canvas, {
-          type: "line",
-          data: {
-            labels,
-            datasets: [
-              { label: "Clicks Timeline", data: clickLine, tension: 0.35 },
-              { label: "Risk", data: riskLine, tension: 0.35 }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: "#e2e8f0" } } },
-            scales: {
-              x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-              y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-            }
-          }
-        });
-      }
-
-      if (statsMap) { statsMap.remove(); statsMap = null; }
-      const mapEl = $("statsMapBox");
-      if (!mapEl) return;
-
-      statsMap = L.map(mapEl).setView([20, 0], 2);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(statsMap);
-
-      let offset = 0;
-      for (const h of history) {
-        const geo = await getGeo(h.ip);
-        let lat = Number(geo.latitude || (Math.random() * 140 - 70));
-        let lng = Number(geo.longitude || (Math.random() * 360 - 180));
-        lat += offset * 0.22;
-        lng += offset * 0.22;
-        offset++;
-        L.circle([lat, lng], {
-          radius: 42000,
-          color: h.risk > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(statsMap).bindPopup(
-          `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-        );
-      }
-    }
-
-    async function showGeo(slug, backend) {
-      openModal(els.geoModal);
-      els.geoModalContent.innerHTML = `
-        <div class="info-box">
-          <b>${escapeHtml(slug)}</b> • <span class="backend-badge ${backendClass(backend)}">${backendLabel(backend)}</span>
-        </div>
-        <div class="muted">Loading location data...</div>
-        <div id="geoMapBox" class="map-box" style="margin-top:12px;"></div>
-      `;
-
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" }, backend, false);
-      const history = Array.isArray(res.data?.history) ? res.data.history : [];
-
-      if (geoMap) { geoMap.remove(); geoMap = null; }
-      const mapEl = $("geoMapBox");
-      if (!mapEl) return;
-
-      geoMap = L.map(mapEl).setView([20, 0], 2);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(geoMap);
-
-      if (!history.length) {
-        L.marker([20, 0]).addTo(geoMap).bindPopup("No data").openPopup();
-        return;
-      }
-
-      let offset = 0;
-      for (const h of history) {
-        const geo = await getGeo(h.ip);
-        let lat = Number(geo.latitude || 20);
-        let lng = Number(geo.longitude || 0);
-        lat += offset * 0.25;
-        lng += offset * 0.25;
-        offset++;
-        L.circle([lat, lng], {
-          radius: 45000,
-          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
-        }).addTo(geoMap).bindPopup(
-          `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-        );
-      }
-    }
-
-    function getRiskSummaryText() {
-      const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
-      return `${risky.length} items currently show elevated risk markers.`;
-    }
-
-    function renderRiskItemsHtml() {
-      const risky = [...dataStore]
-        .filter(x => Number(x.maxRisk || 0) > 60)
-        .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-
-      if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
-
-      return risky.map(item => `
-        <div class="info-box">
-          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-          <div class="row-actions" style="margin-top:8px;">
-            ${getItemType(item) === "redirect"
-              ? `<button class="ghost-btn" type="button" onclick="showHistory('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}')">Open Stats</button>`
-              : `<button class="ghost-btn" type="button" onclick="goToLandingPage()">Open Builder</button>`}
-            <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}','${escapeForJs(item.backend)}','${escapeForJs(getItemType(item))}')">Delete</button>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function showTwoFactorBox(html) {
-      const box = $("twoFactorSetupBox");
-      if (box) box.innerHTML = html;
-    }
-
-    async function startTotpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", {
-        method: "POST",
-        body: JSON.stringify({ method: "totp" })
-      }, "primary", true);
-
-      if (!res.ok) {
-        return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start TOTP setup")}</div>`);
-      }
-
-      showTwoFactorBox(`
-        <div class="info-box">
-          <div><b>TOTP Secret</b></div>
-          <div class="code-box">${escapeHtml(res.data.secret || "")}</div>
-          <div class="muted">Add this secret to Google Authenticator, Authy, or another TOTP app. Then enter the generated code below.</div>
-          <div style="margin-top:10px;">
-            <input id="totpEnableCode" placeholder="Enter 6-digit code from app" />
-            <button class="success-btn" type="button" style="margin-top:10px;" onclick="enableTotp()">Enable TOTP</button>
-          </div>
-          ${res.data.otpauthUrl ? `<div class="muted" style="margin-top:10px;">otpauth URL:</div><div class="code-box">${escapeHtml(res.data.otpauthUrl)}</div>` : ""}
-        </div>
-      `);
-    }
-
-    async function enableTotp() {
-      const code = $("totpEnableCode")?.value?.trim();
-      if (!code) return showToast("Enter the TOTP code");
-
-      const res = await authorizedFetch("/security/2fa/enable", {
-        method: "POST",
-        body: JSON.stringify({ method: "totp", code })
-      }, "primary", true);
-
-      if (!res.ok) {
-        return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable TOTP")}</div>`);
-      }
-
-      showTwoFactorBox(`
-        <div class="confirm-box">
-          <b>✅ TOTP enabled</b>
-          <div class="muted" style="margin-top:8px;">Backup codes:</div>
-          <div class="code-box">${(res.data.backupCodes || []).map(escapeHtml).join("<br>")}</div>
-        </div>
-      `);
-
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
-    async function startEmailOtpSetup() {
-      const res = await authorizedFetch("/security/2fa/setup", {
-        method: "POST",
-        body: JSON.stringify({ method: "email_otp" })
-      }, "primary", true);
-
-      if (!res.ok) {
-        return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not start email OTP setup")}</div>`);
-      }
-
-      showTwoFactorBox(`
-        <div class="info-box">
-          <div><b>Email OTP setup started</b></div>
-          <div class="muted">A code was sent to your email. Enter it below.</div>
-          <div style="margin-top:10px;">
-            <input id="emailOtpEnableCode" placeholder="Enter email code" />
-            <button class="success-btn" type="button" style="margin-top:10px;" onclick="enableEmailOtp()">Enable Email OTP</button>
-          </div>
-        </div>
-      `);
-    }
-
-    async function enableEmailOtp() {
-      const code = $("emailOtpEnableCode")?.value?.trim();
-      if (!code) return showToast("Enter the email OTP code");
-
-      const res = await authorizedFetch("/security/2fa/enable", {
-        method: "POST",
-        body: JSON.stringify({ method: "email_otp", code })
-      }, "primary", true);
-
-      if (!res.ok) {
-        return showTwoFactorBox(`<div class="error">Failed: ${escapeHtml(res.data?.message || "Could not enable email OTP")}</div>`);
-      }
-
-      showTwoFactorBox(`<div class="confirm-box"><b>✅ Email OTP enabled</b></div>`);
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
-    async function disableTwoFactor() {
-      if (!confirm("Disable two-factor authentication?")) return;
-
-      const res = await authorizedFetch("/security/2fa/disable", {
-        method: "POST"
-      }, "primary", true);
-
-      if (!res.ok) return showToast(res.data?.message || "Could not disable 2FA");
-
-      showToast("2FA disabled");
-      await loadMe(false);
-      renderSecurityModal();
-    }
-
-    function renderSecurityModal() {
-      if (!els.securityModalContent) return;
-
-      const twoFactorEnabled = !!meState?.twoFactorEnabled;
-      const twoFactorMethod = meState?.twoFactorMethod || "";
-
-      els.securityModalContent.innerHTML = `
-        <div class="info-box">
-          <b>Two-Factor Authentication</b>
-          <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
-
-          <div class="grid-2" style="margin-top:12px;">
-            <div class="auth-box">
-              <div class="muted">Setup TOTP</div>
-              <button class="pink-btn" type="button" onclick="startTotpSetup()">Start TOTP Setup</button>
-            </div>
-            <div class="auth-box">
-              <div class="muted">Setup Email OTP</div>
-              <button class="pink-btn" type="button" onclick="startEmailOtpSetup()">Start Email OTP Setup</button>
-            </div>
-          </div>
-
-          <div id="twoFactorSetupBox" style="margin-top:14px;"></div>
-
-          ${twoFactorEnabled ? `<div style="margin-top:14px;"><button class="danger-btn" type="button" onclick="disableTwoFactor()">Disable 2FA</button></div>` : ""}
-        </div>
-
-        <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-        ${renderRiskItemsHtml()}
-      `;
-    }
-
-    async function processFile(file, backend) {
-      if (!file) return setResult("Choose a CSV file first", true);
-
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (!lines.length) return setResult("CSV is empty", true);
-
-      let urls = [];
-      if (lines[0].toLowerCase().includes("url")) {
-        const header = lines[0].split(",").map(h => h.trim().toLowerCase());
-        const urlIndex = header.indexOf("url");
-        if (urlIndex >= 0) {
-          urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
-        }
-      } else {
-        urls = lines;
-      }
-
-      urls = urls.filter(Boolean);
-      if (!urls.length) return setResult("No URLs found in file", true);
-
-      const button = backend === "legacy" ? els.uploadLegacyBtn : els.uploadPrimaryBtn;
-      setBusy(button, true, `Uploading ${backendLabel(backend)}...`);
-      setResult(`Uploading ${urls.length} URLs to ${backendLabel(backend)}...`, false);
-
-      let okCount = 0;
-      for (const url of urls) {
-        let res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
-        if (res.status === 401) {
-          await verifyMainSession(false);
-          res = await authorizedFetch("/create", { method: "POST", body: JSON.stringify({ url }) }, backend, false);
-        }
-
-        if (!res.ok) {
-          setResult(`Stopped at ${okCount}/${urls.length}. ${backendLabel(backend)}: ${res.data?.message || "Create failed"}`, true);
-          break;
-        }
-
-        okCount++;
-        setResult(`Uploading to ${backendLabel(backend)}... ${okCount}/${urls.length}`, false);
-      }
-
-      setBusy(button, false);
-      if (backend === "legacy" && els.csvFileLegacy) els.csvFileLegacy.value = "";
-      if (backend === "primary" && els.csvFilePrimary) els.csvFilePrimary.value = "";
-      await Promise.all([loadLinks(false), loadMe(false)]);
-    }
-
-    async function uploadCSVForBackend(backend) {
-      const file = backend === "legacy" ? els.csvFileLegacy?.files?.[0] : els.csvFilePrimary?.files?.[0];
-      await processFile(file, backend);
+    function downloadTextFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     function refreshNow() {
@@ -3464,8 +2589,7 @@
             <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
           </div>
         </div>
-        <div class="info-box"><b>Common Help Topics</b><div class="muted" style="margin-top:8px;">• login/session problems<br>• payment verification delay<br>• paused or expired links<br>• analytics questions<br>• account verification help<br>• domain TXT verification</div></div>
-        <div class="info-box"><b>Before contacting support</b><div class="muted" style="margin-top:8px;">Include your email, payment ID if relevant, backend used, and a short explanation.</div></div>
+        <div class="info-box"><b>Main pages</b><div class="muted" style="margin-top:8px;">Use backend2.html, aws.html, analytics.html, help.html, landing.html, domain-manager.html, and vanity.html from the dashboard buttons.</div></div>
       `;
     }
 
@@ -3478,22 +2602,9 @@
       document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
     }
 
-    function goToLandingPage() {
-      window.location.href = "landing.html";
-    }
-
-    function goToDomainManager() {
-      window.location.href = "domain-manager.html";
-    }
-
-    function goToVanityPage() {
-      window.location.href = "vanity.html";
-    }
-
     function clearFilters() {
       if (els.searchInput) els.searchInput.value = "";
       if (els.backendFilter) els.backendFilter.value = "all";
-      if (els.itemTypeFilter) els.itemTypeFilter.value = "all";
       if (els.statusFilter) els.statusFilter.value = "all";
       if (els.dateRangeFilter) els.dateRangeFilter.value = "all";
       if (els.sortFilter) els.sortFilter.value = "newest";
@@ -3522,48 +2633,16 @@
     }
 
     function setupKeyboardShortcuts() {
-      [els.urlInput, els.slugInput, els.expireInput, els.campaignInput, els.noteInput].forEach(el => {
-        if (!el) return;
-        el.addEventListener("keydown", e => {
-          if (e.key === "Enter") createLinkForBackend(preferredBackend);
-        });
-      });
-
-      [els.searchInput, els.backendFilter, els.itemTypeFilter, els.statusFilter, els.dateRangeFilter, els.sortFilter, els.chartMetricSelect, els.onlyHighRiskToggle].forEach(el => {
+      [els.searchInput, els.backendFilter, els.statusFilter, els.dateRangeFilter, els.sortFilter, els.chartMetricSelect, els.onlyHighRiskToggle].forEach(el => {
         if (!el) return;
         el.addEventListener("input", () => { renderTable(); drawChart(); });
         el.addEventListener("change", () => { renderTable(); drawChart(); });
       });
     }
 
-    function wireDropZone(zone, backend) {
-      if (!zone) return;
-      ["dragenter", "dragover"].forEach(evt => {
-        zone.addEventListener(evt, e => {
-          e.preventDefault();
-          e.stopPropagation();
-          zone.classList.add("dragover");
-        });
-      });
-
-      ["dragleave", "dragend", "drop"].forEach(evt => {
-        zone.addEventListener(evt, e => {
-          e.preventDefault();
-          e.stopPropagation();
-          zone.classList.remove("dragover");
-        });
-      });
-
-      zone.addEventListener("drop", async e => {
-        const file = e.dataTransfer?.files?.[0];
-        if (!file) return;
-        await processFile(file, backend);
-      });
-    }
-
     function bindPlanGridClicks() {
       els.planGrid?.addEventListener("click", (e) => {
-        const card = e.target.closest(".plan-card");
+        const card = e.target.closest("[data-plan]");
         if (!card) return;
         selectedPlan = card.dataset.plan;
         renderPlans();
@@ -3571,21 +2650,27 @@
       });
     }
 
-    function bindTableActions() {
-      els.table?.addEventListener("click", (e) => {
-        const btn = e.target.closest(".action-btn");
-        if (!btn) return;
-
-        const action = btn.dataset.action;
-        if (action === "copy") return copyLink(btn.dataset.link || "");
-        if (action === "open") return openLink(btn.dataset.link || "");
-        if (action === "qr") return showQR(btn.dataset.link || "");
-        if (action === "stats") return showHistory(btn.dataset.slug, btn.dataset.backend);
-        if (action === "geo") return showGeo(btn.dataset.slug, btn.dataset.backend);
-        if (action === "delete") return deleteLink(btn.dataset.slug, btn.dataset.backend, btn.dataset.type);
-        if (action === "landing") return goToLandingPage();
-      });
+    function copyLink(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => showToast("Copied!"))
+        .catch(() => showToast("Copy failed"));
     }
+
+    function openLinkDirect(link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+
+    function goToPage(page) {
+      window.location.href = page;
+    }
+
+    function openBackend2Page() { goToPage("backend2.html"); }
+    function openAwsPage() { goToPage("aws.html"); }
+    function openAnalyticsPage() { goToPage("analytics.html"); }
+    function openHelpPage() { goToPage("help.html"); }
+    function openLandingPage() { goToPage("landing.html"); }
+    function openDomainPage() { goToPage("domain-manager.html"); }
+    function openVanityPage() { goToPage("vanity.html"); }
 
     function bindUI() {
       els.refreshBtn?.addEventListener("click", refreshNow);
@@ -3593,16 +2678,21 @@
       els.exportJsonBtn?.addEventListener("click", exportVisibleAsJson);
       els.quickSettingsBtn?.addEventListener("click", openSettingsModal);
 
-      $("vanityCenterBtn")?.addEventListener("click", goToVanityPage);
-      $("landingCenterBtn")?.addEventListener("click", goToLandingPage);
-      $("domainCenterBtn")?.addEventListener("click", goToDomainManager);
+      $("openBackend2Btn")?.addEventListener("click", openBackend2Page);
+      $("openAwsBtn")?.addEventListener("click", openAwsPage);
+      $("openAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
+      $("openHelpBtn")?.addEventListener("click", openHelpPage);
+      $("openLandingBtn")?.addEventListener("click", openLandingPage);
+      $("openDomainBtn")?.addEventListener("click", openDomainPage);
+      $("openVanityBtn")?.addEventListener("click", openVanityPage);
 
-      els.createLegacyBtn?.addEventListener("click", () => createLinkForBackend("legacy"));
-      els.createPrimaryBtn?.addEventListener("click", () => createLinkForBackend("primary"));
-      els.bulkLegacyBtn?.addEventListener("click", () => bulkCreateForBackend("legacy"));
-      els.bulkPrimaryBtn?.addEventListener("click", () => bulkCreateForBackend("primary"));
-      els.uploadLegacyBtn?.addEventListener("click", () => uploadCSVForBackend("legacy"));
-      els.uploadPrimaryBtn?.addEventListener("click", () => uploadCSVForBackend("primary"));
+      $("quickBackend2Btn")?.addEventListener("click", openBackend2Page);
+      $("quickAwsBtn")?.addEventListener("click", openAwsPage);
+      $("quickAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
+      $("quickHelpBtn")?.addEventListener("click", openHelpPage);
+      $("quickLandingBtn")?.addEventListener("click", openLandingPage);
+      $("quickDomainBtn")?.addEventListener("click", openDomainPage);
+      $("quickVanityBtn")?.addEventListener("click", openVanityPage);
 
       els.preferPrimaryBtn?.addEventListener("click", () => setPreferredBackend("primary"));
       els.preferLegacyBtn?.addEventListener("click", () => setPreferredBackend("legacy"));
@@ -3613,13 +2703,6 @@
       });
 
       els.clearFiltersBtn?.addEventListener("click", clearFilters);
-      els.bulkCopyBtn?.addEventListener("click", bulkCopySelected);
-      els.bulkDeleteBtn?.addEventListener("click", bulkDeleteSelected);
-      els.bulkRefreshStatsBtn?.addEventListener("click", () => {
-        renderTable();
-        drawChart();
-        renderSecurityInsights();
-      });
 
       els.clearNotificationsBtn?.addEventListener("click", () => {
         notificationsStore = [];
@@ -3634,16 +2717,6 @@
       els.planQuantityInput?.addEventListener("change", updateBillingPreview);
       els.requestPaymentBtn?.addEventListener("click", createPaymentRequest);
       $("reloadPlansBtn")?.addEventListener("click", () => loadPlans(true));
-
-      els.selectAllLinks?.addEventListener("change", () => {
-        document.querySelectorAll(".row-select").forEach(box => {
-          box.checked = els.selectAllLinks.checked;
-          const key = box.dataset.key;
-          if (box.checked) selectedLinks.add(key);
-          else selectedLinks.delete(key);
-        });
-        syncSelectAllState();
-      });
 
       els.compactModeToggle?.addEventListener("change", () => {
         compactModeEnabled = els.compactModeToggle.checked;
@@ -3680,24 +2753,13 @@
 
       $("supportBtn")?.addEventListener("click", openSupportPanel);
       $("openSupportPanelBtn")?.addEventListener("click", openSupportPanel);
+      $("openHelpInlineBtn")?.addEventListener("click", openHelpPage);
       $("logoutBtn")?.addEventListener("click", logout);
-
-      $("quickCreatePrimary")?.addEventListener("click", () => createLinkForBackend("primary"));
-      $("quickCreateLegacy")?.addEventListener("click", () => createLinkForBackend("legacy"));
-      $("quickLandingBtn")?.addEventListener("click", goToLandingPage);
-      $("quickDomainBtn")?.addEventListener("click", goToDomainManager);
-      $("quickSecurityBtn")?.addEventListener("click", openSecurityModal);
-
-      $("goLandingPageBtn")?.addEventListener("click", () => { setExtraResult("Opening landing.html ..."); goToLandingPage(); });
-      $("goVanityPageBtn")?.addEventListener("click", () => { setExtraResult("Opening vanity.html ..."); goToVanityPage(); });
-      $("goDomainPageBtn")?.addEventListener("click", () => { setExtraResult("Opening domain-manager.html ..."); goToDomainManager(); });
 
       $("closePanelBtn")?.addEventListener("click", closePanel);
       $("closeUpgradeModalBtn")?.addEventListener("click", closeUpgradeModal);
       $("closeSettingsModalBtn")?.addEventListener("click", closeSettingsModal);
       $("closeSecurityModalBtn")?.addEventListener("click", closeSecurityModal);
-      $("closeStatsModalBtn")?.addEventListener("click", closeStatsModal);
-      $("closeGeoModalBtn")?.addEventListener("click", closeGeoModal);
       els.overlay?.addEventListener("click", closeAllModals);
 
       $("openAllFaqBtn")?.addEventListener("click", () => toggleAllFaq(true));
@@ -3712,10 +2774,7 @@
       setupKeyboardShortcuts();
       setupFaq();
       renderNotifications();
-      wireDropZone(els.dropZoneLegacy, "legacy");
-      wireDropZone(els.dropZonePrimary, "primary");
       bindPlanGridClicks();
-      bindTableActions();
       bindUI();
 
       await Promise.all([
@@ -3725,11 +2784,6 @@
         loadPayments(false),
         checkBackendHealth()
       ]);
-
-      if (waitingPaymentId) {
-        const p = paymentsStore.find(x => x.id === waitingPaymentId);
-        if (p) startPaymentPolling(p.id, p.backend);
-      }
 
       clearInterval(refreshTimer);
       refreshTimer = setInterval(() => {
@@ -3745,28 +2799,8 @@
     window.showPaymentDetails = showPaymentDetails;
     window.markPaymentSent = markPaymentSent;
     window.openUpgradeModal = openUpgradeModal;
-    window.closeUpgradeModal = closeUpgradeModal;
-    window.closeSettingsModal = closeSettingsModal;
-    window.closeSecurityModal = closeSecurityModal;
-    window.closeAllModals = closeAllModals;
-    window.loadPayments = loadPayments;
-    window.loadPlans = loadPlans;
-    window.logout = logout;
-    window.showToast = showToast;
-    window.goToLandingPage = goToLandingPage;
-    window.goToVanityPage = goToVanityPage;
-    window.goToDomainManager = goToDomainManager;
-    window.showHistory = showHistory;
-    window.showGeo = showGeo;
-    window.deleteLink = deleteLink;
-    window.openSupportPanel = openSupportPanel;
-    window.closePanel = closePanel;
-    window.toggleAllFaq = toggleAllFaq;
-    window.startTotpSetup = startTotpSetup;
-    window.enableTotp = enableTotp;
-    window.startEmailOtpSetup = startEmailOtpSetup;
-    window.enableEmailOtp = enableEmailOtp;
-    window.disableTwoFactor = disableTwoFactor;
+    window.openAnalyticsPage = openAnalyticsPage;
+    window.openLinkDirect = openLinkDirect;
 
     init();
   </script>
