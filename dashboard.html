@@ -909,38 +909,28 @@
 
       <div class="card" style="margin-top:14px;">
         <div class="section-head">
-          <h3>🟢 Backend2 Extras</h3>
-          <span class="backend-badge backend-primary">Backend2 Only</span>
+          <h3>🟢 Backend2 Tools</h3>
+          <span class="backend-badge backend-primary">Separate HTML Pages</span>
         </div>
 
-        <div class="split-create">
-          <div class="create-box">
-            <h4>Landing Pages</h4>
-            <div class="muted">Manage landing pages with optional custom HTML/CSS/JS and plan-based active slots.</div>
-            <div class="form-row" style="margin-top:10px;">
-              <button id="openLandingPanelBtn" class="backend2-btn" type="button">Open Landing Builder</button>
-              <button id="viewLandingLinksBtn" class="ghost-btn" type="button">Open landing.html</button>
-            </div>
-          </div>
+        <div class="notice">
+          Landing pages, vanity slugs, and custom domains now open in their own dedicated pages instead of being managed inside this dashboard section.
+        </div>
 
-          <div class="create-box">
-            <h4>Custom Domains</h4>
-            <div class="muted">TXT verification only. Optimized for Cloudflare proxy mode.</div>
-            <div class="form-row" style="margin-top:10px;">
-              <button id="openDomainPanelBtn" class="backend2-btn" type="button">Open Domain Manager</button>
-              <button id="refreshDomainsBtn" class="ghost-btn" type="button">Open domain-manager.html</button>
-            </div>
-          </div>
+        <div class="quick-links">
+          <button id="goLandingPageBtn" class="backend2-btn" type="button">Open landing.html</button>
+          <button id="goVanityPageBtn" type="button">Open vanity.html</button>
+          <button id="goDomainPageBtn" class="backend2-btn" type="button">Open domain-manager.html</button>
         </div>
 
         <div class="grid-2" style="margin-top:12px;">
           <div class="landing-summary-card">
-            <div class="muted">Landing pages snapshot</div>
-            <div id="landingSummaryText" style="margin-top:8px;">No landing summary loaded yet.</div>
+            <div class="muted">Landing pages</div>
+            <div id="landingSummaryText" style="margin-top:8px;">Open the dedicated landing page builder to create, edit, and manage landing pages.</div>
           </div>
           <div class="domain-summary-card">
-            <div class="muted">Domains snapshot</div>
-            <div id="domainSummaryText" style="margin-top:8px;">No domain summary loaded yet.</div>
+            <div class="muted">Domains and vanity</div>
+            <div id="domainSummaryText" style="margin-top:8px;">Use the separate vanity and domain pages to manage custom slugs and TXT-verified custom domains.</div>
           </div>
         </div>
 
@@ -3698,10 +3688,9 @@
       $("quickDomainBtn")?.addEventListener("click", goToDomainManager);
       $("quickSecurityBtn")?.addEventListener("click", openSecurityModal);
 
-      $("openLandingPanelBtn")?.addEventListener("click", goToLandingPage);
-      $("viewLandingLinksBtn")?.addEventListener("click", () => { setExtraResult("Opening landing.html ..."); goToLandingPage(); });
-      $("openDomainPanelBtn")?.addEventListener("click", goToDomainManager);
-      $("refreshDomainsBtn")?.addEventListener("click", () => { setExtraResult("Opening domain-manager.html ..."); goToDomainManager(); });
+      $("goLandingPageBtn")?.addEventListener("click", () => { setExtraResult("Opening landing.html ..."); goToLandingPage(); });
+      $("goVanityPageBtn")?.addEventListener("click", () => { setExtraResult("Opening vanity.html ..."); goToVanityPage(); });
+      $("goDomainPageBtn")?.addEventListener("click", () => { setExtraResult("Opening domain-manager.html ..."); goToDomainManager(); });
 
       $("closePanelBtn")?.addEventListener("click", closePanel);
       $("closeUpgradeModalBtn")?.addEventListener("click", closeUpgradeModal);
