@@ -154,7 +154,7 @@
 
     .btn-primary{ color:#fff; background:var(--blue); border-color:var(--blue); }
     .btn-green{ color:var(--green); border-color:var(--green); }
-    .btn-red{ color:var(--red); border-color:var(--red); }
+    .btn-red{ color:#fff; background:var(--red); border-color:var(--red); }
     .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
     .btn-purple{ color:#fff; background:var(--purple); border-color:var(--purple); }
     .btn-pink{ color:#fff; background:var(--pink); border-color:var(--pink); }
@@ -208,19 +208,6 @@
     .small{ font-size:12px; }
     .tiny{ font-size:11px; }
 
-    /* Modals */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-      display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
-    }
-    .modal {
-      background: var(--bg); border: 1px solid var(--primary); border-radius: 20px;
-      width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 30px; position: relative;
-      box-shadow: 0 0 30px rgba(0,255,255,0.2);
-    }
-    .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; color: var(--muted); }
-    .log-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: ui-monospace, monospace; font-size: 12px; }
-
     .toast{
       position:fixed;
       right:20px;
@@ -230,9 +217,15 @@
       padding:12px 14px;
       border-radius:12px;
       display:none;
-      z-index:1100;
+      z-index:100;
       font-weight:700;
       box-shadow:0 0 20px rgba(0,255,255,.35);
+    }
+
+    .tips{
+      line-height:1.8;
+      color:var(--muted);
+      font-size:13px;
     }
 
     .code{
@@ -245,6 +238,79 @@
       border-radius:10px;
     }
 
+    .note-box{
+      background:rgba(15,23,42,.56);
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:12px;
+      padding:12px;
+      line-height:1.65;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .field-block label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .switch-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      align-items:center;
+      margin-top:6px;
+    }
+
+    .switch{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-size:13px;
+      color:var(--text);
+    }
+
+    .switch input{
+      width:auto;
+      accent-color:var(--primary);
+    }
+
+    .empty{
+      padding:16px;
+      border:1px dashed rgba(255,255,255,.12);
+      border-radius:12px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    .result{
+      margin-top:12px;
+      min-height:18px;
+      white-space:pre-wrap;
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+
+    .pill-select{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
     .pill-btn{
       padding:8px 10px;
       border-radius:999px;
@@ -252,9 +318,24 @@
       background:#081120;
       color:var(--text);
       font-size:12px;
-      cursor: pointer;
     }
-    .pill-btn:hover { border-color: var(--primary); }
+
+    .pill-btn.active{
+      border-color:var(--primary);
+      color:#fff;
+      box-shadow:0 0 10px rgba(0,255,255,.18);
+    }
+
+    .help-text{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.5;
+    }
+
+    .hidden{
+      display:none !important;
+    }
 
     @media (max-width: 980px){
       .grid-2, .grid-3{ grid-template-columns:1fr; }
@@ -274,8 +355,8 @@
 
       <div class="actions">
         <button onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
-        <button class="btn-ghost" id="reloadDomainsBtn">Reload Domains</button>
-        <button class="btn-primary" id="refreshBtn">Refresh</button>
+        <button class="btn-ghost" id="reloadDomainsBtn" type="button">Reload Domains</button>
+        <button class="btn-primary" id="refreshBtn" type="button">Refresh</button>
       </div>
     </div>
 
@@ -304,7 +385,7 @@
 
     <div class="card">
       <div class="section-title">
-        <h3 id="formTitle">Create Vanity Link</h3>
+        <h3>Create Vanity Link</h3>
       </div>
 
       <div class="grid-2">
@@ -405,11 +486,16 @@
       <div class="switch-row">
         <label class="switch"><input id="retargetingEnabledInput" type="checkbox" /> Retargeting enabled</label>
         <label class="switch"><input id="cloakingEnabledInput" type="checkbox" /> Cloaking / wrapper enabled</label>
+        <label class="switch"><input id="pausedInput" type="checkbox" /> Create paused</label>
+      </div>
+
+      <div class="help-text">
+        This page only sends configuration to your backend. Admin monitoring and abuse enforcement should happen server-side.
       </div>
 
       <div class="actions" style="margin-top:12px;">
-        <button class="btn-primary" id="createBtn">Save Vanity Link</button>
-        <button class="btn-ghost" id="clearBtn">Clear / Reset</button>
+        <button class="btn-primary" id="createBtn" type="button">Create Vanity Link</button>
+        <button class="btn-ghost" id="clearBtn" type="button">Clear Form</button>
       </div>
 
       <div class="result" id="formResult"></div>
@@ -477,14 +563,6 @@
     </div>
   </div>
 
-  <div id="statsModal" class="modal-overlay">
-    <div class="modal">
-      <span class="close-modal" onclick="closeModals()">&times;</span>
-      <h2 id="statsTitle">Click Logs</h2>
-      <div id="statsContent"></div>
-    </div>
-  </div>
-
   <div class="toast" id="toast">Done</div>
 
   <script>
@@ -492,70 +570,265 @@
 
     let items = [];
     let domains = [];
-    let currentEditId = null;
 
     const PRESETS = {
-      brand: { slug: "shop", vanityMode: "brand", disclosure: "Professional brand path" },
-      action: { slug: "get-started", vanityMode: "action", disclosure: "Action-first vanity link" },
-      partner: { slug: "fb26", vanityMode: "partner", disclosure: "Partner/source tracking style" },
-      vip: { slug: "private", vanityMode: "vip", disclosure: "Exclusive access style" },
-      personal: { slug: "for-you", vanityMode: "personal", disclosure: "Direct personal invite style" },
-      scarcity: { slug: "today", vanityMode: "scarcity", disclosure: "Urgency / time-sensitive style" },
-      help: { slug: "fix", vanityMode: "help", disclosure: "Support-oriented vanity link" },
-      minimal: { slug: "v", vanityMode: "minimal", disclosure: "Minimal branded path" },
-      white_label: { slug: "checkout", vanityMode: "white_label", cloakMode: "white_label", cloakingEnabled: true, disclosure: "White-label wrapper" }
+      brand: {
+        slug: "shop",
+        vanityMode: "brand",
+        disclosureText: "Professional brand path"
+      },
+      action: {
+        slug: "get-started",
+        vanityMode: "action",
+        disclosureText: "Action-first vanity link"
+      },
+      partner: {
+        slug: "fb26",
+        vanityMode: "partner",
+        disclosureText: "Partner/source tracking style"
+      },
+      vip: {
+        slug: "private",
+        vanityMode: "vip",
+        disclosureText: "Exclusive access style"
+      },
+      personal: {
+        slug: "for-you",
+        vanityMode: "personal",
+        disclosureText: "Direct personal invite style"
+      },
+      scarcity: {
+        slug: "today",
+        vanityMode: "scarcity",
+        disclosureText: "Urgency / time-sensitive style"
+      },
+      help: {
+        slug: "fix",
+        vanityMode: "help",
+        disclosureText: "Support-oriented vanity link"
+      },
+      minimal: {
+        slug: "v",
+        vanityMode: "minimal",
+        disclosureText: "Minimal branded path"
+      },
+      white_label: {
+        slug: "checkout",
+        vanityMode: "white_label",
+        cloakMode: "white_label",
+        cloakingEnabled: true,
+        disclosureText: "White-label wrapper / embedded experience"
+      }
     };
 
     const $ = (id) => document.getElementById(id);
 
     function authHeaders(method = "GET") {
       const token = localStorage.getItem("token") || "";
-      const headers = { "Authorization": `Bearer ${token}` };
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
       if (method !== "GET") headers["Content-Type"] = "application/json";
       return headers;
     }
 
     function normalizeDomain(value) {
-      return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/g, "");
     }
 
     function escapeHtml(str) {
-      return String(str ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
     function showToast(message) {
       const toast = $("toast");
       toast.textContent = message;
       toast.style.display = "block";
-      setTimeout(() => { toast.style.display = "none"; }, 2000);
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 1800);
     }
 
-    function closeModals() { $("statsModal").style.display = 'none'; }
+    function setResult(message, isError = false) {
+      const el = $("formResult");
+      el.textContent = message || "";
+      el.className = "result " + (isError ? "error" : "success");
+    }
 
     async function api(path, method = "GET", body = null) {
-      const res = await fetch(API + path, { method, headers: authHeaders(method), body: body ? JSON.stringify(body) : null });
-      if (res.status === 401) { window.location.href = "index.html"; return null; }
+      const res = await fetch(API + path, {
+        method,
+        headers: authHeaders(method),
+        body: body ? JSON.stringify(body) : null
+      });
+
       const text = await res.text();
-      try { return { ok: res.ok, data: text ? JSON.parse(text) : {} }; } catch { return { ok: res.ok, data: { message: text } }; }
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { message: text };
+      }
+
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "index.html";
+        return null;
+      }
+
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      if (!n) return "-";
+      return new Date(n).toLocaleString();
+    }
+
+    function buildPublicUrl(item) {
+      return `https://${item.domain}/${item.slug}`;
+    }
+
+    function getModeBadge(mode) {
+      const clean = String(mode || "standard").toLowerCase();
+      if (clean === "white_label") return `<span class="badge info">WHITE-LABEL</span>`;
+      if (clean === "retargeting") return `<span class="badge purple">RETARGETING</span>`;
+      if (clean === "vip") return `<span class="badge purple">VIP</span>`;
+      if (clean === "affiliate") return `<span class="badge info">AFFILIATE</span>`;
+      if (clean === "iframe_wrapper") return `<span class="badge info">IFRAME</span>`;
+      return `<span class="badge active">${escapeHtml(clean.toUpperCase())}</span>`;
+    }
+
+    function getSensitiveBits(item) {
+      const bits = [];
+      if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
+      if (item.pixelPlatform) bits.push(`<span class="badge info">${escapeHtml(String(item.pixelPlatform).toUpperCase())}</span>`);
+      if (item.pixelId) bits.push(`<div class="tiny muted">ID: ${escapeHtml(item.pixelId)}</div>`);
+      if (item.cloakingEnabled) bits.push(`<span class="badge danger">CLOAK</span>`);
+      if (item.cloakMode) bits.push(`<span class="badge pending">${escapeHtml(String(item.cloakMode).toUpperCase())}</span>`);
+      if (item.disclosureText) bits.push(`<div class="tiny muted">${escapeHtml(item.disclosureText)}</div>`);
+      return bits.join("") || `<span class="muted tiny">None</span>`;
+    }
+
+    function currentPrimaryDomain() {
+      const verified = domains.filter((d) => d.status === "verified");
+      return verified.find((d) => d.isPrimary) || null;
+    }
+
+    function normalizeDomainItem(d) {
+      return {
+        ...d,
+        domain: normalizeDomain(d.domain),
+        status: String(d.status || "").toLowerCase(),
+        isPrimary: !!(d.isPrimary || d.is_primary)
+      };
+    }
+
+    function normalizeVanityItem(i) {
+      return {
+        ...i,
+        domain: normalizeDomain(i.domain),
+        slug: String(i.slug || "").trim(),
+        url: String(i.url || "").trim(),
+        createdAt: Number(i.createdAt || i.created_at || 0),
+        clicks: Number(i.clicks || 0),
+        paused: !!i.paused,
+        expire: i.expire ? Number(i.expire) : null,
+        vanityMode: String(i.vanityMode || i.vanity_mode || i.mode || "standard").toLowerCase(),
+        pixelPlatform: String(i.pixelPlatform || i.pixel_platform || "").toLowerCase(),
+        pixelId: String(i.pixelId || i.pixel_id || ""),
+        cloakMode: String(i.cloakMode || i.cloak_mode || "").toLowerCase(),
+        pixelCode: String(i.pixelCode || i.pixel_code || ""),
+        retargetingEnabled: !!(i.retargetingEnabled || i.retargeting_enabled),
+        cloakingEnabled: !!(i.cloakingEnabled || i.cloaking_enabled),
+        disclosureText: String(i.disclosureText || i.disclosure_text || i.disclosure || "")
+      };
     }
 
     async function loadDomains() {
-      const res = await api("/vanity/domains");
-      if (!res?.ok) return;
-      domains = res.data.domains.map(d => ({ ...d, domain: normalizeDomain(d.domain) }));
+      const res = await api("/vanity/domains", "GET");
+      if (!res) return;
+
+      if (!res.ok) {
+        domains = [];
+        renderDomainOptions();
+        renderStats();
+        showToast(res.data?.message || "Failed to load domains");
+        return;
+      }
+
+      domains = Array.isArray(res.data?.domains)
+        ? res.data.domains.map(normalizeDomainItem)
+        : [];
+
       renderDomainOptions();
+      renderStats();
     }
 
     function renderDomainOptions() {
       const verified = domains.filter(d => d.status === "verified");
-      $("domainSelect").innerHTML = verified.map(d => `<option value="${d.domain}">${d.domain}</option>`).join("");
-      $("domainFilter").innerHTML = `<option value="all">All domains</option>` + verified.map(d => `<option value="${d.domain}">${d.domain}</option>`).join("");
+      const domainSelect = $("domainSelect");
+      const domainFilter = $("domainFilter");
+      const prevSelected = domainSelect.value;
+      const prevFilter = domainFilter.value;
+
+      if (!verified.length) {
+        domainSelect.innerHTML = `<option value="">No verified domains available</option>`;
+        domainFilter.innerHTML = `<option value="all">All domains</option>`;
+        $("statPrimaryDomain").textContent = "-";
+        return;
+      }
+
+      domainSelect.innerHTML = verified.map(d =>
+        `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (primary)" : ""}</option>`
+      ).join("");
+
+      domainFilter.innerHTML =
+        `<option value="all">All domains</option>` +
+        verified.map(d =>
+          `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
+        ).join("");
+
+      if ([...domainSelect.options].some(o => o.value === prevSelected)) {
+        domainSelect.value = prevSelected;
+      } else {
+        const primary = currentPrimaryDomain();
+        domainSelect.value = primary ? primary.domain : verified[0].domain;
+      }
+
+      if ([...domainFilter.options].some(o => o.value === prevFilter)) {
+        domainFilter.value = prevFilter;
+      }
+
+      const primary = currentPrimaryDomain();
+      $("statPrimaryDomain").textContent = primary ? primary.domain : "-";
     }
 
     async function loadVanityItems() {
-      const res = await api("/vanity/list");
-      if (!res?.ok) return;
-      items = res.data.items || [];
+      const res = await api("/vanity/list", "GET");
+      if (!res) return;
+
+      if (!res.ok) {
+        items = [];
+        renderTable();
+        renderStats();
+        showToast(res.data?.message || "Failed to load vanity links");
+        return;
+      }
+
+      items = Array.isArray(res.data?.items)
+        ? res.data.items.map(normalizeVanityItem)
+        : [];
+
       renderTable();
       renderStats();
     }
@@ -563,119 +836,351 @@
     function renderStats() {
       $("statTotal").textContent = items.length;
       $("statActive").textContent = items.filter(i => !i.paused).length;
-      $("statClicks").textContent = items.reduce((s, i) => s + (i.clicks || 0), 0);
+      $("statClicks").textContent = items.reduce((s, i) => s + Number(i.clicks || 0), 0);
       $("statDomains").textContent = domains.filter(d => d.status === "verified").length;
     }
 
     function renderTable() {
-      const q = $("searchInput").value.toLowerCase();
-      const filtered = items.filter(i => (i.slug.toLowerCase().includes(q) || i.url.toLowerCase().includes(q)));
+      const q = $("searchInput").value.trim().toLowerCase();
+      const modeOnly = $("modeFilter").value;
+      const domainOnly = $("domainFilter").value;
+      const statusOnly = $("statusFilter").value;
 
-      $("rows").innerHTML = filtered.map(i => `
+      const filtered = items.filter(i => {
+        const blob = [
+          i.domain,
+          i.slug,
+          i.url,
+          i.vanityMode,
+          i.pixelPlatform,
+          i.pixelId,
+          i.cloakMode,
+          i.disclosureText
+        ].join(" ").toLowerCase();
+
+        const matchQ = !q || blob.includes(q);
+        const matchMode = modeOnly === "all" || i.vanityMode === modeOnly;
+        const matchDomain = domainOnly === "all" || i.domain === domainOnly;
+        const matchStatus = statusOnly === "all" || (statusOnly === "active" ? !i.paused : i.paused);
+
+        return matchQ && matchMode && matchDomain && matchStatus;
+      });
+
+      $("rows").innerHTML = filtered.length ? filtered.map(i => `
         <tr>
-          <td><b>${i.domain}</b></td>
-          <td><b>${i.slug}</b></td>
-          <td><div class="code">https://${i.domain}/${i.slug}</div></td>
-          <td><div class="code">${i.url}</div></td>
-          <td><span class="badge active">${i.vanityMode.toUpperCase()}</span></td>
-          <td><b>${i.clicks || 0}</b></td>
-          <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
-          <td>${i.retargetingEnabled ? 'RETARGET' : 'None'}</td>
-          <td class="tiny muted">${new Date(i.createdAt).toLocaleDateString()}</td>
           <td>
-            <div style="display:flex; gap:5px;">
-              <button class="btn-yellow tiny" onclick="editLink('${i.id}')">Edit</button>
-              <button class="btn-primary tiny" onclick="viewStats('${i.slug}', '${i.domain}')">IPs</button>
-              <button class="btn-red tiny" onclick="deleteLink('${i.slug}','${i.domain}')">Del</button>
+            <b>${escapeHtml(i.domain)}</b>
+            ${domains.find(d => d.domain === i.domain && d.isPrimary) ? `<div><span class="badge primary">PRIMARY</span></div>` : ""}
+          </td>
+          <td>
+            <b>${escapeHtml(i.slug)}</b>
+            ${i.expire ? `<div class="tiny muted">Expire: ${escapeHtml(String(i.expire))}</div>` : `<div class="tiny muted">Permanent</div>`}
+          </td>
+          <td><div class="code">${escapeHtml(buildPublicUrl(i))}</div></td>
+          <td><div class="code">${escapeHtml(i.url)}</div></td>
+          <td>${getModeBadge(i.vanityMode)}</td>
+          <td>${i.clicks}</td>
+          <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
+          <td>${getSensitiveBits(i)}</td>
+          <td class="tiny muted">${fmtDate(i.createdAt)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-ghost tiny" type="button" onclick="copyLinkValue('${encodeURIComponent(buildPublicUrl(i))}')">Copy</button>
+              <button class="btn-ghost tiny" type="button" onclick="editLink('${encodeURIComponent(JSON.stringify(i))}')">Edit</button>
+              <button class="btn-yellow tiny" type="button" onclick="togglePause('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}',${i.paused ? 'false' : 'true'})">
+                ${i.paused ? 'Resume' : 'Pause'}
+              </button>
+              <button class="btn-red tiny" type="button" onclick="deleteLink('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}')">Del</button>
             </div>
           </td>
         </tr>
-      `).join("");
+      `).join("") : `<tr><td colspan="10"><div class="empty">No vanity links found</div></td></tr>`;
     }
 
-    async function viewStats(slug, domain) {
-      $("statsModal").style.display = 'flex';
-      $("statsContent").innerHTML = "Loading...";
-      const res = await api(`/vanity/stats?slug=${slug}&domain=${domain}`);
-      if(res.ok && res.data.clicks) {
-        $("statsContent").innerHTML = res.data.clicks.map(c => `
-          <div class="log-row">
-            <span>${c.ip}</span>
-            <span class="muted">${new Date(parseInt(c.time_ms)).toLocaleString()}</span>
-          </div>
-        `).join("");
-      } else {
-        $("statsContent").innerHTML = "No click data found.";
+    function collectPayload() {
+      const domain = normalizeDomain($("domainSelect").value);
+      const slug = $("slugInput").value.trim();
+      const url = $("urlInput").value.trim();
+      const expire = $("expireInput").value.trim();
+      const vanityMode = $("vanityModeSelect").value;
+      const pixelPlatform = $("pixelPlatformSelect").value;
+      const pixelId = $("pixelIdInput").value.trim();
+      const cloakMode = $("cloakModeSelect").value;
+      const retargetingEnabled = $("retargetingEnabledInput").checked;
+      const cloakingEnabled = $("cloakingEnabledInput").checked;
+      const paused = $("pausedInput").checked;
+      const disclosureText = $("disclosureInput").value.trim();
+      const pixelCode = $("pixelCodeInput").value;
+
+      if (!domain) {
+        setResult("Select a verified domain first", true);
+        return null;
       }
-    }
+      if (!slug) {
+        setResult("Slug is required", true);
+        return null;
+      }
+      if (!url) {
+        setResult("Target URL is required", true);
+        return null;
+      }
 
-    window.editLink = (id) => {
-      const item = items.find(i => i.id == id);
-      if(!item) return;
-      currentEditId = id;
-      $("formTitle").innerText = "Edit Vanity Link";
-      $("domainSelect").value = item.domain;
-      $("slugInput").value = item.slug;
-      $("urlInput").value = item.url;
-      $("vanityModeSelect").value = item.vanityMode;
-      $("pixelIdInput").value = item.pixelId || "";
-      $("disclosureInput").value = item.disclosureText || "";
-      $("retargetingEnabledInput").checked = !!item.retargetingEnabled;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    $("createBtn").onclick = async () => {
-      const body = {
-        domain: $("domainSelect").value,
-        slug: $("slugInput").value,
-        url: $("urlInput").value,
-        vanityMode: $("vanityModeSelect").value,
-        pixelId: $("pixelIdInput").value,
-        retargetingEnabled: $("retargetingEnabledInput").checked,
-        disclosureText: $("disclosureInput").value
+      return {
+        domain,
+        slug,
+        url,
+        expire: expire || null,
+        vanityMode,
+        pixelPlatform: pixelPlatform || null,
+        pixelId: pixelId || null,
+        cloakMode: cloakMode || null,
+        retargetingEnabled,
+        cloakingEnabled,
+        disclosureText: disclosureText || null,
+        pixelCode: pixelCode || null,
+        paused
       };
+    }
 
-      const path = currentEditId ? "/vanity/update" : "/vanity/create";
-      if(currentEditId) body.id = currentEditId;
+    async function createLink() {
+      const payload = collectPayload();
+      if (!payload) return;
 
-      const res = await api(path, "POST", body);
-      if(res.ok) {
-        showToast("Saved!");
-        clearForm();
-        loadVanityItems();
+      const createBtn = $("createBtn");
+      createBtn.disabled = true;
+      createBtn.textContent = "Creating...";
+
+      const res = await api("/vanity/create", "POST", payload);
+
+      createBtn.disabled = false;
+      createBtn.textContent = "Create Vanity Link";
+
+      if (!res) return;
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Create failed", true);
+        return;
       }
-    };
 
-    function clearForm() {
-      currentEditId = null;
-      $("formTitle").innerText = "Create Vanity Link";
+      setResult("Vanity link created", false);
+      showToast("Success!");
+      clearForm(false);
+      await loadVanityItems();
+    }
+
+    async function deleteLink(slugEncoded, domainEncoded) {
+      const slug = decodeURIComponent(slugEncoded);
+      const domain = decodeURIComponent(domainEncoded);
+
+      if (!confirm(`Delete ${domain}/${slug}?`)) return;
+
+      const res = await api("/vanity/delete", "POST", { slug, domain });
+      if (!res) return;
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Delete failed");
+        return;
+      }
+
+      showToast("Deleted");
+      await loadVanityItems();
+    }
+
+    async function togglePause(slugEncoded, domainEncoded, shouldPause) {
+      const slug = decodeURIComponent(slugEncoded);
+      const domain = decodeURIComponent(domainEncoded);
+      const path = shouldPause ? "/vanity/pause" : "/vanity/resume";
+
+      const res = await api(path, "POST", { slug, domain });
+      if (!res) return;
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Update failed");
+        return;
+      }
+
+      showToast(shouldPause ? "Paused" : "Resumed");
+      await loadVanityItems();
+    }
+
+    async function copyLinkValue(encodedText) {
+      const text = decodeURIComponent(encodedText);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const input = document.createElement("input");
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+      showToast("Copied");
+    }
+
+    function fillForm(item) {
+      $("domainSelect").value = item.domain || "";
+      $("slugInput").value = item.slug || "";
+      $("urlInput").value = item.url || "";
+      $("expireInput").value = item.expire ? String(item.expire) : "";
+      $("vanityModeSelect").value = item.vanityMode || "standard";
+      $("pixelPlatformSelect").value = item.pixelPlatform || "";
+      $("pixelIdInput").value = item.pixelId || "";
+      $("cloakModeSelect").value = item.cloakMode || "";
+      $("retargetingEnabledInput").checked = !!item.retargetingEnabled;
+      $("cloakingEnabledInput").checked = !!item.cloakingEnabled;
+      $("disclosureInput").value = item.disclosureText || "";
+      $("pixelCodeInput").value = item.pixelCode || "";
+      $("pausedInput").checked = !!item.paused;
+    }
+
+    async function editLink(encodedItem) {
+      const item = JSON.parse(decodeURIComponent(encodedItem));
+      fillForm(item);
+
+      const slug = prompt("Edit slug:", item.slug || "");
+      if (slug === null) return;
+
+      const url = prompt("Edit target URL:", item.url || "");
+      if (url === null) return;
+
+      const domain = prompt("Edit domain:", item.domain || "");
+      if (domain === null) return;
+
+      const expire = prompt("Edit expire timestamp (blank for none):", item.expire ? String(item.expire) : "");
+      if (expire === null) return;
+
+      const vanityMode = prompt("Edit vanity mode:", item.vanityMode || "standard");
+      if (vanityMode === null) return;
+
+      const pixelPlatform = prompt("Edit pixel platform:", item.pixelPlatform || "");
+      if (pixelPlatform === null) return;
+
+      const pixelId = prompt("Edit pixel ID:", item.pixelId || "");
+      if (pixelId === null) return;
+
+      const cloakMode = prompt("Edit cloak mode:", item.cloakMode || "");
+      if (cloakMode === null) return;
+
+      const disclosureText = prompt("Edit disclosure text:", item.disclosureText || "");
+      if (disclosureText === null) return;
+
+      const res = await api("/vanity/update", "POST", {
+        oldSlug: item.slug,
+        oldDomain: item.domain,
+        slug: slug.trim(),
+        domain: normalizeDomain(domain),
+        url: url.trim(),
+        expire: expire || null,
+        vanityMode: String(vanityMode || "standard").trim().toLowerCase(),
+        pixelPlatform: pixelPlatform.trim().toLowerCase() || null,
+        pixelId: pixelId.trim() || null,
+        cloakMode: cloakMode.trim().toLowerCase() || null,
+        retargetingEnabled: !!item.retargetingEnabled,
+        cloakingEnabled: !!item.cloakingEnabled,
+        disclosureText: disclosureText.trim() || null,
+        pixelCode: item.pixelCode || null,
+        paused: !!item.paused
+      });
+
+      if (!res) return;
+
+      if (!res.ok) {
+        showToast(res.data?.message || "Update failed");
+        return;
+      }
+
+      showToast("Updated");
+      await loadVanityItems();
+    }
+
+    function clearForm(resetResult = true) {
       $("slugInput").value = "";
       $("urlInput").value = "";
+      $("expireInput").value = "";
+      $("vanityModeSelect").value = "standard";
+      $("pixelPlatformSelect").value = "";
       $("pixelIdInput").value = "";
-      $("disclosureInput").value = "";
+      $("cloakModeSelect").value = "";
       $("retargetingEnabledInput").checked = false;
+      $("cloakingEnabledInput").checked = false;
+      $("pausedInput").checked = false;
+      $("disclosureInput").value = "";
+      $("pixelCodeInput").value = "";
+      $("presetSelect").value = "";
+      if (resetResult) setResult("", false);
     }
 
-    async function deleteLink(slug, domain) {
-      if(!confirm("Delete?")) return;
-      const res = await api("/vanity/delete", "POST", { slug, domain });
-      if(res.ok) { showToast("Deleted"); loadVanityItems(); }
-    }
-
-    // Quick patterns init
-    $("quickPatterns").innerHTML = Object.keys(PRESETS).map(k => 
-      `<button class="pill-btn" onclick="applyPreset('${k}')">${k.replace('_',' ')}</button>`
-    ).join("");
-
-    window.applyPreset = (key) => {
+    function applyPreset(key) {
       const p = PRESETS[key];
-      $("slugInput").value = p.slug;
-      $("vanityModeSelect").value = p.vanityMode;
-      $("disclosureInput").value = p.disclosure || "";
-    };
+      if (!p) return;
 
-    loadDomains();
-    loadVanityItems();
+      $("slugInput").value = p.slug || "";
+      $("vanityModeSelect").value = p.vanityMode || "standard";
+      $("disclosureInput").value = p.disclosureText || "";
+      $("cloakModeSelect").value = p.cloakMode || "";
+      $("cloakingEnabledInput").checked = !!p.cloakingEnabled;
+      $("retargetingEnabledInput").checked = !!p.retargetingEnabled;
+      $("pixelPlatformSelect").value = p.pixelPlatform || "";
+      $("pixelIdInput").value = p.pixelId || "";
+      setResult(`Preset loaded: ${key}`, false);
+    }
+
+    function renderQuickPatterns() {
+      $("quickPatterns").innerHTML = Object.keys(PRESETS).map(k =>
+        `<button class="pill-btn" type="button" data-preset="${escapeHtml(k)}">${escapeHtml(k.replaceAll("_"," "))}</button>`
+      ).join("");
+
+      [...$("quickPatterns").querySelectorAll(".pill-btn")].forEach(btn => {
+        btn.addEventListener("click", () => {
+          [...$("quickPatterns").querySelectorAll(".pill-btn")].forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          $("presetSelect").value = btn.dataset.preset;
+          applyPreset(btn.dataset.preset);
+        });
+      });
+    }
+
+    function autoAdjustFlags() {
+      const mode = $("vanityModeSelect").value;
+      if (mode === "retargeting") {
+        $("retargetingEnabledInput").checked = true;
+      }
+      if (mode === "white_label" || mode === "affiliate" || mode === "iframe_wrapper") {
+        $("cloakingEnabledInput").checked = true;
+        if (!$("cloakModeSelect").value) $("cloakModeSelect").value = mode === "white_label" ? "white_label" : mode;
+      }
+    }
+
+    $("createBtn").addEventListener("click", createLink);
+    $("refreshBtn").addEventListener("click", async () => {
+      await loadDomains();
+      await loadVanityItems();
+      showToast("Refreshed");
+    });
+    $("reloadDomainsBtn").addEventListener("click", async () => {
+      await loadDomains();
+      showToast("Domains reloaded");
+    });
+    $("searchInput").addEventListener("input", renderTable);
+    $("modeFilter").addEventListener("change", renderTable);
+    $("domainFilter").addEventListener("change", renderTable);
+    $("statusFilter").addEventListener("change", renderTable);
+    $("clearBtn").addEventListener("click", () => clearForm(true));
+    $("presetSelect").addEventListener("change", (e) => applyPreset(e.target.value));
+    $("vanityModeSelect").addEventListener("change", autoAdjustFlags);
+
+    window.copyLinkValue = copyLinkValue;
+    window.editLink = editLink;
+    window.deleteLink = deleteLink;
+    window.togglePause = togglePause;
+
+    renderQuickPatterns();
+
+    (async function init() {
+      await loadDomains();
+      await loadVanityItems();
+    })();
   </script>
 </body>
 </html>
