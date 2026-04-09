@@ -1106,844 +1106,1025 @@
   <div id="toast" class="toast">Copied!</div>
 
   <script>
-    const PRIMARY_API = "https://api.rattleshortapi.it.com";
-    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  const PRIMARY_API = "https://api.rattleshortapi.it.com";
+  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-    const AUTH_STORAGE_KEY = "rattle_token";
-    const ROLE_STORAGE_KEY = "rattle_role";
-    const USER_STORAGE_KEY = "rattle_user";
+  const AUTH_STORAGE_KEY = "rattle_token";
+  const ROLE_STORAGE_KEY = "rattle_role";
+  const USER_STORAGE_KEY = "rattle_user";
 
-    const SUPPORT_CONFIG = {
-      telegram: "https://t.me/Rtslik",
-      discord: "https://discord.gg/xwGvhtjb",
-      email: "support@rattleshort.online",
-      phone: "+1 954 787 8220"
-    };
+  const SUPPORT_CONFIG = {
+    telegram: "https://t.me/Rtslik",
+    discord: "https://discord.gg/xwGvhtjb",
+    email: "support@rattleshort.online",
+    phone: "+1 954 787 8220"
+  };
 
-    const FALLBACK_CRYPTO_OPTIONS = [
-      { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
-      { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
-      { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
-      { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
-      { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
-      { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
-      { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
-    ];
+  const FALLBACK_CRYPTO_OPTIONS = [
+    { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
+    { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
+    { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
+    { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
+    { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
+    { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
+    { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
+  ];
 
-    const PRIMARY_ROUTE_MAP = {
-  "/me": ["/auth/me", "/me"],
-  "/auth/me": ["/auth/me", "/me"],
+  const PRIMARY_ROUTE_MAP = {
+    "/": ["/", "/health"],
+    "/health": ["/health", "/"],
 
-  "/login": ["/auth/login"],
-  "/signup": ["/auth/signup"],
-  "/forgot": ["/auth/forgot"],
-  "/reset": ["/auth/reset"],
-  "/magic-request": ["/auth/magic-request"],
-  "/magic-login": ["/auth/magic-login"],
-  "/magic-status": ["/auth/magic-status"],
-  "/verify-email": ["/auth/verify-email"],
-  "/resend-verify": ["/auth/resend-verify"],
+    "/auth/me": ["/auth/me", "/me"],
+    "/me": ["/auth/me", "/me"],
 
-  "/plans": ["/auth/plans", "/plans"],
-  "/payment-request": ["/auth/payment-request", "/payment-request"],
-  "/payments/me": ["/auth/payments/me", "/payments/me"],
-  "/payment-i-made": ["/auth/payment-i-made", "/payment-i-made"],
+    "/login": ["/auth/login", "/login"],
+    "/signup": ["/auth/signup", "/signup"],
+    "/forgot": ["/auth/forgot", "/forgot"],
+    "/reset": ["/auth/reset", "/reset"],
+    "/magic-request": ["/auth/magic-request", "/magic-request"],
+    "/magic-login": ["/auth/magic-login", "/magic-login"],
+    "/magic-status": ["/auth/magic-status", "/magic-status"],
+    "/verify-email": ["/auth/verify-email", "/verify-email"],
+    "/resend-verify": ["/auth/resend-verify", "/resend-verify"],
 
-  "/list": ["/list"],
-  "/history": ["/history"],
-  "/create": ["/create"],
-  "/delete": ["/delete"],
+    "/plans": ["/auth/plans", "/plans"],
+    "/payment-request": ["/auth/payment-request", "/payment-request"],
+    "/payments/me": ["/auth/payments/me", "/payments/me"],
+    "/payment-i-made": ["/auth/payment-i-made", "/payment-i-made"],
 
-  "/domains/me": ["/domains/me", "/me"],
-  "/health": ["/health", "/"],
-  "/": ["/", "/health"]
-};
+    "/list": ["/list"],
+    "/history": ["/history"],
+    "/create": ["/create"],
+    "/delete": ["/delete"]
+  };
 
-const LEGACY_ROUTE_MAP = {
-  "/me": ["/me", "/auth/me"],
-  "/auth/me": ["/me", "/auth/me"],
-  "/plans": ["/plans"],
-  "/payment-request": ["/payment-request"],
-  "/payments/me": ["/payments/me"],
-  "/payment-i-made": ["/payment-i-made"],
-  "/list": ["/list"],
-  "/history": ["/history"],
-  "/health": ["/health", "/"],
-  "/": ["/", "/health"]
-};
+  const LEGACY_ROUTE_MAP = {
+    "/": ["/", "/health"],
+    "/health": ["/health", "/"],
+    "/auth/me": ["/me", "/auth/me"],
+    "/me": ["/me", "/auth/me"],
+    "/plans": ["/plans"],
+    "/payment-request": ["/payment-request"],
+    "/payments/me": ["/payments/me"],
+    "/payment-i-made": ["/payment-i-made"],
+    "/list": ["/list"],
+    "/history": ["/history"]
+  };
 
-    let dataStore = [];
-    let paymentsStore = [];
-    let notificationsStore = [];
-    let chart = null;
-    let refreshTimer = null;
-    let paymentPoller = null;
-    let loadingLinks = false;
-    let meState = null;
-    let plansState = null;
-    let selectedPlan = "monthly";
-    let selectedPlanQuantity = 1;
-    let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
-    let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
-    let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
-    let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
-    let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
+  const PLAN_LIMITS_FALLBACK = {
+    free_trial: { activeShortLinks: 3, activeLandingPages: 0 },
+    weekly: { activeShortLinks: 120, activeLandingPages: 5 },
+    monthly: { activeShortLinks: 650, activeLandingPages: 15 },
+    premium_monthly: { activeShortLinks: 3000, activeLandingPages: 35 }
+  };
 
-    const $ = (id) => document.getElementById(id);
+  let dataStore = [];
+  let paymentsStore = [];
+  let notificationsStore = [];
+  let chart = null;
+  let refreshTimer = null;
+  let paymentPoller = null;
+  let loadingLinks = false;
+  let meState = null;
+  let plansState = null;
+  let selectedPlan = "monthly";
+  let selectedPlanQuantity = 1;
+  let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
+  let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
+  let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
+  let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
+  let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
 
-    const els = {
-      totalLinks: $("totalLinks"),
-      totalClicks: $("totalClicks"),
-      avgClicks: $("avgClicks"),
-      activeShortLinksRemaining: $("activeShortLinksRemaining"),
-      liveThreatCount: $("liveThreatCount"),
-      table: $("table"),
-      ranking: $("ranking"),
-      panel: $("panel"),
-      panelContent: $("panelContent"),
-      toast: $("toast"),
-      result: $("result"),
-      paymentsTable: $("paymentsTable"),
-      notificationsList: $("notificationsList"),
-      securityInsights: $("securityInsights"),
-      activityTimeline: $("activityTimeline"),
-      liveSyncBadge: $("liveSyncBadge"),
-      shortLinksProgressBar: $("shortLinksProgressBar"),
-      landingPagesProgressBar: $("landingPagesProgressBar"),
+  const $ = (id) => document.getElementById(id);
 
-      primaryLinksCount: $("primaryLinksCount"),
-      legacyLinksCount: $("legacyLinksCount"),
-      primaryClicksCount: $("primaryClicksCount"),
-      legacyClicksCount: $("legacyClicksCount"),
-      primaryHealth: $("primaryHealth"),
-      legacyHealth: $("legacyHealth"),
-      sessionNote: $("sessionNote"),
+  const els = {
+    totalLinks: $("totalLinks"),
+    totalClicks: $("totalClicks"),
+    avgClicks: $("avgClicks"),
+    activeShortLinksRemaining: $("activeShortLinksRemaining"),
+    liveThreatCount: $("liveThreatCount"),
+    table: $("table"),
+    ranking: $("ranking"),
+    panel: $("panel"),
+    panelContent: $("panelContent"),
+    toast: $("toast"),
+    paymentsTable: $("paymentsTable"),
+    notificationsList: $("notificationsList"),
+    securityInsights: $("securityInsights"),
+    activityTimeline: $("activityTimeline"),
+    liveSyncBadge: $("liveSyncBadge"),
+    shortLinksProgressBar: $("shortLinksProgressBar"),
+    landingPagesProgressBar: $("landingPagesProgressBar"),
 
-      backendBadgeTop: $("backendBadgeTop"),
-      meEmail: $("meEmail"),
-      mePlan: $("mePlan"),
-      meExpire: $("meExpire"),
-      meRole: $("meRole"),
-      meEmailVerified: $("meEmailVerified"),
-      mePrimaryDomain: $("mePrimaryDomain"),
-      meTwoFactor: $("meTwoFactor"),
-      meTwoFactorMethod: $("meTwoFactorMethod"),
-      accessSummary: $("accessSummary"),
-      subscriptionBadge: $("subscriptionBadge"),
-      latestPaymentBox: $("latestPaymentBox"),
-      activeShortLinksText: $("activeShortLinksText"),
-      activeLandingPagesText: $("activeLandingPagesText"),
+    primaryLinksCount: $("primaryLinksCount"),
+    legacyLinksCount: $("legacyLinksCount"),
+    primaryClicksCount: $("primaryClicksCount"),
+    legacyClicksCount: $("legacyClicksCount"),
+    primaryHealth: $("primaryHealth"),
+    legacyHealth: $("legacyHealth"),
+    sessionNote: $("sessionNote"),
 
-      searchInput: $("search"),
-      backendFilter: $("backendFilter"),
-      statusFilter: $("statusFilter"),
-      dateRangeFilter: $("dateRangeFilter"),
-      sortFilter: $("sortFilter"),
-      chartMetricSelect: $("chartMetricSelect"),
-      onlyHighRiskToggle: $("onlyHighRiskToggle"),
-      compactModeToggle: $("compactModeToggle"),
-      autoRefreshToggle: $("autoRefreshToggle"),
+    backendBadgeTop: $("backendBadgeTop"),
+    meEmail: $("meEmail"),
+    mePlan: $("mePlan"),
+    meExpire: $("meExpire"),
+    meRole: $("meRole"),
+    meEmailVerified: $("meEmailVerified"),
+    mePrimaryDomain: $("mePrimaryDomain"),
+    meTwoFactor: $("meTwoFactor"),
+    meTwoFactorMethod: $("meTwoFactorMethod"),
+    accessSummary: $("accessSummary"),
+    subscriptionBadge: $("subscriptionBadge"),
+    latestPaymentBox: $("latestPaymentBox"),
+    activeShortLinksText: $("activeShortLinksText"),
+    activeLandingPagesText: $("activeLandingPagesText"),
 
-      refreshBtn: $("refreshBtn"),
-      exportCsvBtn: $("exportCsvBtn"),
-      exportJsonBtn: $("exportJsonBtn"),
-      quickSettingsBtn: $("quickSettingsBtn"),
-      preferPrimaryBtn: $("preferPrimaryBtn"),
-      preferLegacyBtn: $("preferLegacyBtn"),
-      verifySessionBtn: $("verifySessionBtn"),
-      clearFiltersBtn: $("clearFiltersBtn"),
-      clearNotificationsBtn: $("clearNotificationsBtn"),
-      refreshActivityBtn: $("refreshActivityBtn"),
-      rebuildBoardBtn: $("rebuildBoardBtn"),
-      openSecurityCenterBtn: $("openSecurityCenterBtn"),
+    searchInput: $("search"),
+    backendFilter: $("backendFilter"),
+    statusFilter: $("statusFilter"),
+    dateRangeFilter: $("dateRangeFilter"),
+    sortFilter: $("sortFilter"),
+    chartMetricSelect: $("chartMetricSelect"),
+    onlyHighRiskToggle: $("onlyHighRiskToggle"),
+    compactModeToggle: $("compactModeToggle"),
+    autoRefreshToggle: $("autoRefreshToggle"),
 
-      overlay: $("overlay"),
-      upgradeModal: $("upgradeModal"),
-      settingsModal: $("settingsModal"),
-      securityModal: $("securityModal"),
-      securityModalContent: $("securityModalContent"),
-      modalAutoRefreshToggle: $("modalAutoRefreshToggle"),
-      modalCompactModeToggle: $("modalCompactModeToggle"),
-      modalChartMetricSelect: $("modalChartMetricSelect"),
-      settingsSearchSummary: $("settingsSearchSummary"),
+    refreshBtn: $("refreshBtn"),
+    exportCsvBtn: $("exportCsvBtn"),
+    exportJsonBtn: $("exportJsonBtn"),
+    quickSettingsBtn: $("quickSettingsBtn"),
+    preferPrimaryBtn: $("preferPrimaryBtn"),
+    preferLegacyBtn: $("preferLegacyBtn"),
+    verifySessionBtn: $("verifySessionBtn"),
+    clearFiltersBtn: $("clearFiltersBtn"),
+    clearNotificationsBtn: $("clearNotificationsBtn"),
+    refreshActivityBtn: $("refreshActivityBtn"),
+    rebuildBoardBtn: $("rebuildBoardBtn"),
+    openSecurityCenterBtn: $("openSecurityCenterBtn"),
 
-      planGrid: $("planGrid"),
-      cryptoSelect: $("cryptoSelect"),
-      planQuantityInput: $("planQuantity"),
-      billingPreview: $("billingPreview"),
-      requestPaymentBtn: $("requestPaymentBtn"),
-      upgradeResult: $("upgradeResult"),
-      paymentRequestBox: $("paymentRequestBox")
-    };
+    overlay: $("overlay"),
+    upgradeModal: $("upgradeModal"),
+    settingsModal: $("settingsModal"),
+    securityModal: $("securityModal"),
+    securityModalContent: $("securityModalContent"),
+    modalAutoRefreshToggle: $("modalAutoRefreshToggle"),
+    modalCompactModeToggle: $("modalCompactModeToggle"),
+    modalChartMetricSelect: $("modalChartMetricSelect"),
+    settingsSearchSummary: $("settingsSearchSummary"),
 
-    function getToken() {
-      return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
-    }
+    planGrid: $("planGrid"),
+    cryptoSelect: $("cryptoSelect"),
+    planQuantityInput: $("planQuantity"),
+    billingPreview: $("billingPreview"),
+    requestPaymentBtn: $("requestPaymentBtn"),
+    upgradeResult: $("upgradeResult"),
+    paymentRequestBox: $("paymentRequestBox")
+  };
 
-    function getRole() {
-      return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || "";
-    }
-
-    function getUsername() {
-      return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
-    }
-
-    function clearSession() {
-      [
-        AUTH_STORAGE_KEY,
-        ROLE_STORAGE_KEY,
-        USER_STORAGE_KEY,
-        "token",
-        "role",
-        "lastUser",
-        "preferredBackend",
-        "sessionBackend",
-        "waitingPaymentId"
-      ].forEach(k => localStorage.removeItem(k));
-    }
-
-    function authHeaders() {
-      const token = getToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    }
-
-    function apiBaseForBackend(backend) {
-      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
-    }
-
-    function backendLabel(backend) {
-      return backend === "legacy" ? "AWS" : "Backend2";
-    }
-
-    function backendClass(backend) {
-      return backend === "legacy" ? "backend-legacy" : "backend-primary";
-    }
-
-    function primaryAppPath(path) {
-      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-      if (p.startsWith("/app/") || p === "/app") return p;
-      return `/app${p}`;
-    }
-
-    function buildPrimaryCandidates(path) {
-  const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  if (PRIMARY_ROUTE_MAP[p]) return PRIMARY_ROUTE_MAP[p].slice();
-
-  if (p.startsWith("/auth/")) {
-    return [p, p.replace(/^\/auth/, "")].filter(Boolean);
+  function getToken() {
+    return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
   }
 
-  return [p];
-}
+  function getRole() {
+    return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || "";
+  }
 
-    function buildLegacyCandidates(path) {
-      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-      if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
-      return Array.from(new Set([p, p.replace(/^\/app/, ""), p.replace(/^\/auth/, "")].filter(Boolean)));
+  function getUsername() {
+    return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
+  }
+
+  function clearSession() {
+    [
+      AUTH_STORAGE_KEY,
+      ROLE_STORAGE_KEY,
+      USER_STORAGE_KEY,
+      "token",
+      "role",
+      "lastUser",
+      "preferredBackend",
+      "sessionBackend",
+      "waitingPaymentId"
+    ].forEach((k) => localStorage.removeItem(k));
+  }
+
+  function authHeaders() {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function apiBaseForBackend(backend) {
+    return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+  }
+
+  function backendLabel(backend) {
+    return backend === "legacy" ? "AWS" : "Backend2";
+  }
+
+  function backendClass(backend) {
+    return backend === "legacy" ? "backend-legacy" : "backend-primary";
+  }
+
+  function buildPrimaryCandidates(path) {
+    const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+    if (PRIMARY_ROUTE_MAP[p]) return PRIMARY_ROUTE_MAP[p].slice();
+
+    if (p.startsWith("/auth/")) {
+      return Array.from(new Set([p, p.replace(/^\/auth/, "")].filter(Boolean)));
     }
 
-    async function safeFetchRaw(base, path, options = {}) {
+    return [p];
+  }
+
+  function buildLegacyCandidates(path) {
+    const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+    if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
+
+    return Array.from(new Set([p, p.replace(/^\/auth/, "")].filter(Boolean)));
+  }
+
+  async function safeFetchRaw(base, path, options = {}) {
+    try {
+      const res = await fetch(base.replace(/\/+$/, "") + path, options);
+      const raw = await res.text();
+      let data = {};
       try {
-        const res = await fetch(base.replace(/\/+$/, "") + path, options);
-        const raw = await res.text();
-        let data = {};
-        try {
-          data = raw ? JSON.parse(raw) : {};
-        } catch {
-          data = { message: raw };
-        }
-        return { ok: res.ok, status: res.status, data, raw, path };
-      } catch (e) {
-        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "", path };
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { message: raw };
       }
+      return { ok: res.ok, status: res.status, data, raw, path };
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: { message: e?.message || "Failed to fetch" },
+        raw: "",
+        path
+      };
     }
+  }
 
-    async function callBackend(backend, path, options = {}) {
-      const headers = { ...(options.headers || {}) };
-      if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
+  async function callBackend(backend, path, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
 
-      const candidates = backend === "legacy" ? buildLegacyCandidates(path) : buildPrimaryCandidates(path);
-      const base = apiBaseForBackend(backend);
-      let first401 = null;
-      let last = null;
+    const candidates = backend === "legacy"
+      ? buildLegacyCandidates(path)
+      : buildPrimaryCandidates(path);
 
-      for (const candidate of candidates) {
-        const res = await safeFetchRaw(base, candidate, { ...options, headers });
-        last = res;
-        if (res.ok) return { ...res, backend, resolvedPath: candidate };
-        if (res.status === 401 && !first401) first401 = { ...res, backend, resolvedPath: candidate };
-        if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) continue;
+    const base = apiBaseForBackend(backend);
+    let first401 = null;
+    let last = null;
+
+    for (const candidate of candidates) {
+      const res = await safeFetchRaw(base, candidate, { ...options, headers });
+      last = res;
+
+      if (res.ok) {
         return { ...res, backend, resolvedPath: candidate };
       }
 
-      return first401 || {
-        ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }),
-        backend,
-        resolvedPath: last?.path || candidates[0],
-        triedPaths: candidates
-      };
-    }
-
-    async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
-      const targetBackend = backend || sessionBackend;
-      const method = String(options.method || "GET").toUpperCase();
-      const headers = { ...authHeaders(), ...(options.headers || {}) };
-      if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-      const res = await callBackend(targetBackend, path, { ...options, headers });
-
-      if (res.status === 401 && autoLogout) {
-        clearSession();
-        window.location.href = "index.html";
+      if (res.status === 401 && !first401) {
+        first401 = { ...res, backend, resolvedPath: candidate };
       }
 
-      return { ...res, backend: targetBackend };
+      if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) {
+        continue;
+      }
+
+      return { ...res, backend, resolvedPath: candidate };
     }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+    return first401 || {
+      ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }),
+      backend,
+      resolvedPath: last?.path || candidates[0],
+      triedPaths: candidates
+    };
+  }
+
+  async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
+    const targetBackend = backend || sessionBackend;
+    const method = String(options.method || "GET").toUpperCase();
+    const headers = { ...authHeaders(), ...(options.headers || {}) };
+
+    if (method !== "GET" && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
     }
 
-    function escapeForJs(str) {
-      return String(str ?? "")
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'")
-        .replaceAll("\n", "\\n")
-        .replaceAll("\r", "");
+    const res = await callBackend(targetBackend, path, { ...options, headers });
+
+    if (res.status === 401 && autoLogout) {
+      clearSession();
+      window.location.href = "index.html";
     }
 
-    function fmtDate(ts) {
-      const n = Number(ts || 0);
-      if (!n) return "-";
-      return new Date(n).toLocaleString();
-    }
+    return { ...res, backend: targetBackend };
+  }
 
-    function fmtMoney(v) {
-      return `$${Number(v || 0).toFixed(2)}`;
-    }
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
 
-    function showToast(message = "Done") {
-      if (!els.toast) return;
-      els.toast.textContent = message;
-      els.toast.style.display = "block";
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => {
-        els.toast.style.display = "none";
-      }, 1800);
-    }
+  function escapeForJs(str) {
+    return String(str ?? "")
+      .replaceAll("\\", "\\\\")
+      .replaceAll("'", "\\'")
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "");
+  }
 
-    function pushNotification(message, type = "info") {
-      const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`;
-      notificationsStore.unshift({ id, message, type, time: Date.now() });
-      notificationsStore = notificationsStore.slice(0, 8);
-      renderNotifications();
-    }
+  function fmtDate(ts) {
+    const n = Number(ts || 0);
+    if (!n) return "-";
+    return new Date(n).toLocaleString();
+  }
 
-    function setResult(message, isError = false, target = els.result) {
-      if (!target) return;
-      target.textContent = message || "";
-      target.className = `result ${isError ? "error" : "success"}`;
-      if (message) pushNotification(message, isError ? "error" : "success");
-    }
+  function fmtMoney(v) {
+    return `$${Number(v || 0).toFixed(2)}`;
+  }
 
-    function setBusy(button, busy, text = "") {
-      if (!button) return;
-      if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
-      button.disabled = busy;
-      button.textContent = busy ? text : button.dataset.originalText;
-    }
+  function showToast(message = "Done") {
+    if (!els.toast) return;
+    els.toast.textContent = message;
+    els.toast.style.display = "block";
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => {
+      els.toast.style.display = "none";
+    }, 1800);
+  }
 
-    function buildPublicLink(itemOrSlug, backend) {
-      const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
-      return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
-    }
+  function pushNotification(message, type = "info") {
+    const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`;
+    notificationsStore.unshift({ id, message, type, time: Date.now() });
+    notificationsStore = notificationsStore.slice(0, 8);
+    renderNotifications();
+  }
 
-    function getItemType(item) {
-      return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing" ? "landing" : "redirect";
-    }
+  function setResult(message, isError = false, target = els.upgradeResult) {
+    if (!target) return;
+    target.textContent = message || "";
+    target.className = `result ${isError ? "error" : "success"}`;
+    if (message) pushNotification(message, isError ? "error" : "success");
+  }
 
-    function getStatusKey(item) {
-      if (item.paused) return "paused";
-      if (item.expire && Number(item.expire) <= Date.now()) return "expired";
-      return "live";
-    }
+  function setBusy(button, busy, text = "") {
+    if (!button) return;
+    if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+    button.disabled = busy;
+    button.textContent = busy ? text : button.dataset.originalText;
+  }
 
-    function getStatus(item) {
-      const key = getStatusKey(item);
-      if (key === "paused") return '<span class="pill paused">Paused</span>';
-      if (key === "expired") return '<span class="pill expired">Expired</span>';
-      return '<span class="pill live">Live</span>';
-    }
+  function buildPublicLink(itemOrSlug, backend) {
+    const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+    return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
+  }
 
-    function fmtExpire(ts) {
-      const n = Number(ts || 0);
-      if (!n) return '<span class="muted">No expiry</span>';
-      if (n <= Date.now()) return `<span class="expired">Expired</span>`;
-      const diff = n - Date.now();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
-    }
+  function getItemType(item) {
+    return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing"
+      ? "landing"
+      : "redirect";
+  }
 
-    function scoreLink(link) {
-      let score = 0;
-      const clicks = Number(link.clicks || 0);
-      const maxRisk = Number(link.maxRisk || 0);
+  function getStatusKey(item) {
+    if (item.paused) return "paused";
+    if (item.expire && Number(item.expire) <= Date.now()) return "expired";
+    return "live";
+  }
 
-      if (clicks > 20) score += 20;
-      if (clicks > 50) score += 25;
-      if (clicks > 100) score += 25;
-      if (!link.paused) score += 10;
-      if (!link.expire || Number(link.expire) > Date.now()) score += 10;
-      if (link.backend === "primary") score += 5;
-      if (maxRisk > 60) score -= 15;
+  function getStatus(item) {
+    const key = getStatusKey(item);
+    if (key === "paused") return '<span class="pill paused">Paused</span>';
+    if (key === "expired") return '<span class="pill expired">Expired</span>';
+    return '<span class="pill live">Live</span>';
+  }
 
-      return Math.max(0, Math.min(score, 100));
-    }
+  function fmtExpire(ts) {
+    const n = Number(ts || 0);
+    if (!n) return '<span class="muted">No expiry</span>';
+    if (n <= Date.now()) return '<span class="expired">Expired</span>';
 
-    function detectFraud(link) {
-      const clicks = Number(link.clicks || 0);
-      const risk = Number(link.maxRisk || 0);
-      if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
-      if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
-      return "✅ Normal";
-    }
+    const diff = n - Date.now();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
+  }
 
-    function normalizeLinkItem(item, backend) {
-      return {
-        ...item,
-        backend,
-        user: item.user || item.username || "",
-        clicks: Number(item.clicks || 0),
-        paused: !!item.paused,
-        expire: item.expire ? Number(item.expire) : null,
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        maxRisk: Number(item.maxRisk || item.max_risk || 0),
-        note: item.note || "",
-        campaign: item.campaign || "",
-        linkType: getItemType(item),
-        publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
+  function scoreLink(link) {
+    let score = 0;
+    const clicks = Number(link.clicks || 0);
+    const maxRisk = Number(link.maxRisk || 0);
+
+    if (clicks > 20) score += 20;
+    if (clicks > 50) score += 25;
+    if (clicks > 100) score += 25;
+    if (!link.paused) score += 10;
+    if (!link.expire || Number(link.expire) > Date.now()) score += 10;
+    if (link.backend === "primary") score += 5;
+    if (maxRisk > 60) score -= 15;
+
+    return Math.max(0, Math.min(score, 100));
+  }
+
+  function detectFraud(link) {
+    const clicks = Number(link.clicks || 0);
+    const risk = Number(link.maxRisk || 0);
+    if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
+    if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
+    return "✅ Normal";
+  }
+
+  function normalizeLinkItem(item, backend) {
+    return {
+      ...item,
+      backend,
+      user: item.user || item.username || "",
+      clicks: Number(item.clicks || 0),
+      paused: !!item.paused,
+      expire: item.expire ? Number(item.expire) : null,
+      createdAt: Number(item.createdAt || item.created_at || 0),
+      maxRisk: Number(item.maxRisk || item.max_risk || 0),
+      note: item.note || "",
+      campaign: item.campaign || "",
+      linkType: getItemType(item),
+      publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug, backend)
+    };
+  }
+
+  function normalizePlanItem(plan, index = 0) {
+    const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
+    return {
+      ...plan,
+      code,
+      label: plan.label || plan.name || code,
+      amountUsd: Number(plan.amountUsd || plan.amount_usd || plan.price || 0),
+      limits: plan.limits || {
+        activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
+        activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
+      }
+    };
+  }
+
+  function normalizeCryptoOption(item, index = 0) {
+    const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || item.symbol || `CRYPTO_${index + 1}`;
+    const asset = item.asset || item.symbol || item.crypto || code;
+    const network = item.network || item.networkCode || item.network_code || "";
+    return {
+      ...item,
+      code,
+      asset,
+      network,
+      label: item.label || `${asset}${network ? ` (${network})` : ""}`
+    };
+  }
+
+  function extractPlansAndCrypto(payload) {
+    const data = payload || {};
+    let plans = [];
+    let cryptos = [];
+
+    if (Array.isArray(data?.plans)) plans = data.plans;
+    else if (data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
+    else if (Array.isArray(data?.data?.plans)) plans = data.data.plans;
+    else if (Array.isArray(data?.subscriptions)) plans = data.subscriptions;
+    else if (Array.isArray(data)) plans = data;
+
+    if (Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
+    else if (data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
+    else if (Array.isArray(data?.cryptos)) cryptos = data.cryptos;
+    else if (Array.isArray(data?.crypto)) cryptos = data.crypto;
+    else if (data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
+    else if (Array.isArray(data?.coins)) cryptos = data.coins;
+    else if (Array.isArray(data?.assets)) cryptos = data.assets;
+    else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
+    else if (Array.isArray(data?.availableCryptos)) cryptos = data.availableCryptos;
+    else if (Array.isArray(data?.available_cryptos)) cryptos = data.available_cryptos;
+    else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
+    else if (Array.isArray(data?.data?.cryptos)) cryptos = data.data.cryptos;
+    else if (Array.isArray(data?.options)) cryptos = data.options;
+
+    return {
+      plans: plans.map(normalizePlanItem).filter((x) => x.code),
+      cryptos: cryptos.map(normalizeCryptoOption).filter((x) => x.code)
+    };
+  }
+
+  function normalizePaymentItem(item, backend) {
+    return {
+      ...item,
+      backend,
+      id: item.id || item.paymentId || item.payment_id || "-",
+      amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+      createdAt: Number(item.createdAt || item.created_at || 0),
+      expiresAt: Number(item.expiresAt || item.expires_at || 0),
+      verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
+      quantity: Number(item.quantity || 1),
+      planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || null,
+      billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-",
+      cryptoCode: item.cryptoCode || item.crypto_code || item.asset || item.crypto || "-",
+      networkCode: item.networkCode || item.network_code || item.network || "-",
+      qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
+      qrText: item.qrText || item.qr_text || "",
+      address: item.address || "-"
+    };
+  }
+
+  function normalizePlanLabel(planCode) {
+    const code = String(planCode || "").toLowerCase();
+    if (code === "premium_monthly") return "Premium Monthly";
+    if (code === "monthly") return "Monthly";
+    if (code === "weekly") return "Weekly";
+    if (code === "free_trial") return "Free Trial";
+    return code ? code.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase()) : "-";
+  }
+
+  function formatPaymentStatus(status) {
+    const s = String(status || "").toLowerCase();
+    if (s === "verified") return `<span class="badge live">Verified</span>`;
+    if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
+    if (s === "pending") return `<span class="badge pending">Pending</span>`;
+    if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
+    return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
+  }
+
+  function mergeLinks(primaryItems = [], legacyItems = []) {
+    return [
+      ...primaryItems.map((item) => normalizeLinkItem(item, "primary")),
+      ...legacyItems.map((item) => normalizeLinkItem(item, "legacy"))
+    ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  }
+
+  function sortPayments(payments = []) {
+    return [...payments].sort((a, b) => {
+      const rank = (s) => {
+        s = String(s || "").toLowerCase();
+        if (s === "awaiting_confirmation") return 0;
+        if (s === "pending") return 1;
+        if (s === "verified") return 2;
+        if (s === "cancelled") return 3;
+        return 4;
       };
+      const diff = rank(a.status) - rank(b.status);
+      if (diff !== 0) return diff;
+      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+    });
+  }
+
+  function ensureAuth() {
+    const token = getToken();
+    if (!token) {
+      window.location.href = "index.html";
+      return false;
+    }
+    return true;
+  }
+
+  function updatePreferredButtons() {
+    els.preferPrimaryBtn?.classList.toggle("backend-active", preferredBackend === "primary");
+    els.preferLegacyBtn?.classList.toggle("backend-active", preferredBackend === "legacy");
+  }
+
+  function setTopBackendBadge() {
+    if (!els.backendBadgeTop) return;
+    els.backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
+    els.backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
+    if (els.sessionNote) {
+      els.sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
+    }
+    updatePreferredButtons();
+  }
+
+  function applyAutoRefreshState() {
+    localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
+    if (els.autoRefreshToggle) els.autoRefreshToggle.checked = autoRefreshEnabled;
+    if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
+    if (els.liveSyncBadge) {
+      els.liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
+      els.liveSyncBadge.className = `badge ${autoRefreshEnabled ? "live" : "paused"}`;
+    }
+  }
+
+  function applyCompactModeState() {
+    localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
+    document.body.classList.toggle("compact", compactModeEnabled);
+    if (els.compactModeToggle) els.compactModeToggle.checked = compactModeEnabled;
+    if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
+  }
+
+  function getFallbackPlanLimits(me = {}) {
+    const planCode = String(
+      me.subscriptionPlan ||
+      (String(me.subscriptionStatus || "").toLowerCase() === "trial" ? "free_trial" : "")
+    ).toLowerCase();
+
+    return PLAN_LIMITS_FALLBACK[planCode] || { activeShortLinks: 0, activeLandingPages: 0 };
+  }
+
+  function getUserItemsForUsage() {
+    const username = String(meState?.username || getUsername() || "").toLowerCase();
+    if (!username) return dataStore;
+    return dataStore.filter((item) => String(item.user || "").toLowerCase() === username);
+  }
+
+  function deriveUsageFromData() {
+    const items = getUserItemsForUsage();
+    const activeShortLinks = items.filter((x) => getItemType(x) !== "landing" && getStatusKey(x) === "live").length;
+    const activeLandingPages = items.filter((x) => getItemType(x) === "landing" && getStatusKey(x) === "live").length;
+    return { activeShortLinks, activeLandingPages };
+  }
+
+  async function verifyMainSession(showToastMessage = false) {
+    const preferredRes = await authorizedFetch("/auth/me", { method: "GET" }, preferredBackend, false);
+    if (preferredRes.ok) {
+      sessionBackend = preferredBackend;
+      localStorage.setItem("sessionBackend", sessionBackend);
+      meState = preferredRes.data || null;
+      renderMe();
+      setTopBackendBadge();
+      if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
+      return true;
     }
 
-    function normalizePlanItem(plan, index = 0) {
-      const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
-      return {
-        ...plan,
-        code,
-        label: plan.label || plan.name || code,
-        amountUsd: Number(plan.amountUsd || plan.amount_usd || plan.price || 0),
-        limits: plan.limits || {
-          activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
-          activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
-        }
-      };
-    }
-
-    function normalizeCryptoOption(item, index = 0) {
-      const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || item.symbol || `CRYPTO_${index + 1}`;
-      const asset = item.asset || item.symbol || item.crypto || code;
-      const network = item.network || item.networkCode || item.network_code || "";
-      return {
-        ...item,
-        code,
-        asset,
-        network,
-        label: item.label || `${asset}${network ? ` (${network})` : ""}`
-      };
-    }
-
-    function extractPlansAndCrypto(payload) {
-      const data = payload || {};
-      let plans = [];
-      let cryptos = [];
-
-      if (Array.isArray(data?.plans)) plans = data.plans;
-      else if (data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
-      else if (Array.isArray(data?.data?.plans)) plans = data.data.plans;
-      else if (Array.isArray(data?.subscriptions)) plans = data.subscriptions;
-      else if (Array.isArray(data)) plans = data;
-
-      if (Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
-      else if (data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
-      else if (Array.isArray(data?.cryptos)) cryptos = data.cryptos;
-      else if (Array.isArray(data?.crypto)) cryptos = data.crypto;
-      else if (data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
-      else if (Array.isArray(data?.coins)) cryptos = data.coins;
-      else if (Array.isArray(data?.assets)) cryptos = data.assets;
-      else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
-      else if (Array.isArray(data?.availableCryptos)) cryptos = data.availableCryptos;
-      else if (Array.isArray(data?.available_cryptos)) cryptos = data.available_cryptos;
-      else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
-      else if (Array.isArray(data?.data?.cryptos)) cryptos = data.data.cryptos;
-      else if (Array.isArray(data?.options)) cryptos = data.options;
-
-      return {
-        plans: plans.map(normalizePlanItem).filter(x => x.code),
-        cryptos: cryptos.map(normalizeCryptoOption).filter(x => x.code)
-      };
-    }
-
-    function normalizePaymentItem(item, backend) {
-      return {
-        ...item,
-        backend,
-        id: item.id || item.paymentId || item.payment_id || "-",
-        amountUsd: Number(item.amountUsd || item.amount_usd || 0),
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        expiresAt: Number(item.expiresAt || item.expires_at || 0),
-        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
-        quantity: Number(item.quantity || 1),
-        planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || null,
-        billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-",
-        cryptoCode: item.cryptoCode || item.crypto_code || item.asset || item.crypto || "-",
-        networkCode: item.networkCode || item.network_code || item.network || "-",
-        qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
-        qrText: item.qrText || item.qr_text || "",
-        address: item.address || "-"
-      };
-    }
-
-    function normalizePlanLabel(planCode) {
-      const code = String(planCode || "").toLowerCase();
-      if (code === "premium_monthly") return "Premium Monthly";
-      if (code === "monthly") return "Monthly";
-      if (code === "weekly") return "Weekly";
-      if (code === "free_trial") return "Free Trial";
-      return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
-    }
-
-    function formatPaymentStatus(status) {
-      const s = String(status || "").toLowerCase();
-      if (s === "verified") return `<span class="badge live">Verified</span>`;
-      if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
-      if (s === "pending") return `<span class="badge pending">Pending</span>`;
-      if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
-      return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
-    }
-
-    function mergeLinks(primaryItems = [], legacyItems = []) {
-      return [
-        ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
-        ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
-      ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-    }
-
-    function sortPayments(payments = []) {
-      return [...payments].sort((a, b) => {
-        const rank = s => {
-          s = String(s || "").toLowerCase();
-          if (s === "awaiting_confirmation") return 0;
-          if (s === "pending") return 1;
-          if (s === "verified") return 2;
-          if (s === "cancelled") return 3;
-          return 4;
-        };
-        const diff = rank(a.status) - rank(b.status);
-        if (diff !== 0) return diff;
-        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-      });
-    }
-
-    function ensureAuth() {
-      const token = getToken();
-      if (!token) {
-        window.location.href = "index.html";
-        return false;
+    const other = preferredBackend === "primary" ? "legacy" : "primary";
+    const fallbackRes = await authorizedFetch("/auth/me", { method: "GET" }, other, false);
+    if (fallbackRes.ok) {
+      sessionBackend = other;
+      localStorage.setItem("sessionBackend", sessionBackend);
+      meState = fallbackRes.data || null;
+      renderMe();
+      setTopBackendBadge();
+      if (showToastMessage) {
+        showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
       }
       return true;
     }
 
-    function updatePreferredButtons() {
-      els.preferPrimaryBtn?.classList.toggle("backend-active", preferredBackend === "primary");
-      els.preferLegacyBtn?.classList.toggle("backend-active", preferredBackend === "legacy");
+    if (preferredRes.status === 401 && fallbackRes.status === 401) {
+      logout();
+      return false;
     }
 
-    function setTopBackendBadge() {
-      if (!els.backendBadgeTop) return;
-      els.backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
-      els.backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-      if (els.sessionNote) {
-        els.sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
-      }
-      updatePreferredButtons();
+    if (els.accessSummary) {
+      els.accessSummary.textContent = "Could not confirm session yet, but your saved login token is still present.";
+    }
+    if (showToastMessage) showToast("Session check could not be confirmed.");
+    return true;
+  }
+
+  function renderNotifications() {
+    if (!els.notificationsList) return;
+    if (!notificationsStore.length) {
+      els.notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
+      return;
     }
 
-    function applyAutoRefreshState() {
-      localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
-      if (els.autoRefreshToggle) els.autoRefreshToggle.checked = autoRefreshEnabled;
-      if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
-      if (els.liveSyncBadge) {
-        els.liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
-        els.liveSyncBadge.className = `badge ${autoRefreshEnabled ? "live" : "paused"}`;
-      }
+    els.notificationsList.innerHTML = notificationsStore.map((n) => `
+      <div class="info-box" style="margin:0;">
+        <div><b>${escapeHtml(n.message)}</b></div>
+        <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
+      </div>
+    `).join("");
+  }
+
+  function updateMiniStats() {
+    const primaryItems = dataStore.filter((x) => x.backend === "primary");
+    const legacyItems = dataStore.filter((x) => x.backend === "legacy");
+
+    if (els.primaryLinksCount) els.primaryLinksCount.textContent = primaryItems.length;
+    if (els.legacyLinksCount) els.legacyLinksCount.textContent = legacyItems.length;
+    if (els.primaryClicksCount) els.primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
+    if (els.legacyClicksCount) els.legacyClicksCount.textContent = legacyItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
+    if (els.liveThreatCount) els.liveThreatCount.textContent = dataStore.filter((x) => Number(x.maxRisk || 0) > 60).length;
+  }
+
+  function renderMe() {
+    if (!meState) return;
+
+    const fallbackLimits = getFallbackPlanLimits(meState);
+    const derivedUsage = deriveUsageFromData();
+
+    const planLimits = {
+      activeShortLinks: Number(meState?.planLimits?.activeShortLinks ?? fallbackLimits.activeShortLinks ?? 0),
+      activeLandingPages: Number(meState?.planLimits?.activeLandingPages ?? fallbackLimits.activeLandingPages ?? 0)
+    };
+
+    const usage = {
+      activeShortLinks: Number(meState?.usage?.activeShortLinks ?? derivedUsage.activeShortLinks ?? 0),
+      activeLandingPages: Number(meState?.usage?.activeLandingPages ?? derivedUsage.activeLandingPages ?? 0)
+    };
+
+    const remaining = {
+      activeShortLinks: Math.max(0, Number(meState?.remaining?.activeShortLinks ?? (planLimits.activeShortLinks - usage.activeShortLinks))),
+      activeLandingPages: Math.max(0, Number(meState?.remaining?.activeLandingPages ?? (planLimits.activeLandingPages - usage.activeLandingPages)))
+    };
+
+    if (els.meEmail) els.meEmail.textContent = meState.username || getUsername() || "-";
+    if (els.mePlan) els.mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
+    if (els.meExpire) els.meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+    if (els.meRole) els.meRole.textContent = meState.role || getRole() || "-";
+    if (els.meEmailVerified) els.meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
+    if (els.mePrimaryDomain) els.mePrimaryDomain.textContent = meState.primaryDomain || "-";
+    if (els.meTwoFactor) els.meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
+    if (els.meTwoFactorMethod) els.meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
+
+    const status = String(meState.subscriptionStatus || "trial").toLowerCase();
+    const paused = !!meState.subscriptionPaused;
+
+    const shortUsed = usage.activeShortLinks;
+    const shortLimit = Math.max(0, planLimits.activeShortLinks);
+    const landingUsed = usage.activeLandingPages;
+    const landingLimit = Math.max(0, planLimits.activeLandingPages);
+    const shortRemaining = remaining.activeShortLinks;
+    const landingRemaining = remaining.activeLandingPages;
+
+    if (els.activeShortLinksRemaining) els.activeShortLinksRemaining.textContent = shortRemaining;
+    if (els.activeShortLinksText) els.activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
+    if (els.activeLandingPagesText) els.activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
+    if (els.shortLinksProgressBar) els.shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
+    if (els.landingPagesProgressBar) els.landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
+
+    let summary = "";
+    let badgeClass = "trial";
+    let badgeText = "Trial";
+
+    if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+      badgeClass = "live";
+      badgeText = "Active";
+      summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short-link slots left and ${landingRemaining} landing-page slots left.`;
+    } else if (paused) {
+      badgeClass = "paused";
+      badgeText = "Paused";
+      summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
+    } else if (status === "expired") {
+      badgeClass = "expired";
+      badgeText = "Expired";
+      summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
+    } else {
+      badgeClass = "trial";
+      badgeText = "Trial";
+      summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
     }
 
-    function applyCompactModeState() {
-      localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
-      document.body.classList.toggle("compact", compactModeEnabled);
-      if (els.compactModeToggle) els.compactModeToggle.checked = compactModeEnabled;
-      if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
+    if (meState.emailVerified === false) summary += " Email verification is incomplete.";
+    if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
+    if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
+
+    if (els.subscriptionBadge) {
+      els.subscriptionBadge.className = `badge ${badgeClass}`;
+      els.subscriptionBadge.textContent = badgeText;
     }
+    if (els.accessSummary) els.accessSummary.textContent = summary;
+  }
 
-    async function verifyMainSession(showToastMessage = false) {
-      const preferredRes = await authorizedFetch("/auth/me", { method: "GET" }, preferredBackend, false);
-      if (preferredRes.ok) {
-        sessionBackend = preferredBackend;
-        localStorage.setItem("sessionBackend", sessionBackend);
-        meState = preferredRes.data || null;
-        renderMe();
-        setTopBackendBadge();
-        if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
-        return true;
-      }
+  async function loadMe(showLoading = false) {
+    if (showLoading && els.accessSummary) els.accessSummary.textContent = "Loading account...";
+    const ok = await verifyMainSession(false);
+    if (!ok && els.accessSummary) els.accessSummary.textContent = "Session expired";
+  }
 
-      const other = preferredBackend === "primary" ? "legacy" : "primary";
-      const fallbackRes = await authorizedFetch("/auth/me", { method: "GET" }, other, false);
-      if (fallbackRes.ok) {
-        sessionBackend = other;
-        localStorage.setItem("sessionBackend", sessionBackend);
-        meState = fallbackRes.data || null;
-        renderMe();
-        setTopBackendBadge();
-        if (showToastMessage) showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
-        return true;
-      }
+  async function loadPlans(showMessage = false) {
+    const primary = await callBackend("primary", "/plans", { method: "GET" });
+    const legacy = await callBackend("legacy", "/plans", { method: "GET" });
+    const res = primary.ok ? primary : legacy;
 
-      if (preferredRes.status === 401 && fallbackRes.status === 401) {
-        logout();
-        return false;
-      }
-
-      if (els.accessSummary) {
-        els.accessSummary.textContent = "Could not confirm session yet, but your saved login token is still present.";
-      }
-      if (showToastMessage) showToast("Session check could not be confirmed.");
-      return true;
-    }
-
-    function renderNotifications() {
-      if (!els.notificationsList) return;
-      if (!notificationsStore.length) {
-        els.notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
-        return;
-      }
-      els.notificationsList.innerHTML = notificationsStore.map(n => `
-        <div class="info-box" style="margin:0;">
-          <div><b>${escapeHtml(n.message)}</b></div>
-          <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
-        </div>
-      `).join("");
-    }
-
-    function updateMiniStats() {
-      const primaryItems = dataStore.filter(x => x.backend === "primary");
-      const legacyItems = dataStore.filter(x => x.backend === "legacy");
-
-      els.primaryLinksCount && (els.primaryLinksCount.textContent = primaryItems.length);
-      els.legacyLinksCount && (els.legacyLinksCount.textContent = legacyItems.length);
-      els.primaryClicksCount && (els.primaryClicksCount.textContent = primaryItems.reduce((a,b) => a + Number(b.clicks || 0), 0));
-      els.legacyClicksCount && (els.legacyClicksCount.textContent = legacyItems.reduce((a,b) => a + Number(b.clicks || 0), 0));
-      els.liveThreatCount && (els.liveThreatCount.textContent = dataStore.filter(x => Number(x.maxRisk || 0) > 60).length);
-    }
-
-    function renderMe() {
-      if (!meState) return;
-
-      els.meEmail && (els.meEmail.textContent = meState.username || getUsername() || "-");
-      els.mePlan && (els.mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : "")));
-      els.meExpire && (els.meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-");
-      els.meRole && (els.meRole.textContent = meState.role || getRole() || "-");
-      els.meEmailVerified && (els.meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>');
-      els.mePrimaryDomain && (els.mePrimaryDomain.textContent = meState.primaryDomain || "-");
-      els.meTwoFactor && (els.meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>');
-      els.meTwoFactorMethod && (els.meTwoFactorMethod.textContent = meState.twoFactorMethod || "-");
-
-      const status = String(meState.subscriptionStatus || "trial").toLowerCase();
-      const paused = !!meState.subscriptionPaused;
-      const planLimits = meState.planLimits || {};
-      const usage = meState.usage || {};
-      const remaining = meState.remaining || {};
-
-      const shortUsed = Number(usage.activeShortLinks || 0);
-      const shortLimit = Math.max(0, Number(planLimits.activeShortLinks || 0));
-      const landingUsed = Number(usage.activeLandingPages || 0);
-      const landingLimit = Math.max(0, Number(planLimits.activeLandingPages || 0));
-      const shortRemaining = Math.max(0, Number(remaining.activeShortLinks || 0));
-      const landingRemaining = Math.max(0, Number(remaining.activeLandingPages || 0));
-
-      els.activeShortLinksRemaining && (els.activeShortLinksRemaining.textContent = shortRemaining);
-      els.activeShortLinksText && (els.activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`);
-      els.activeLandingPagesText && (els.activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`);
-      if (els.shortLinksProgressBar) els.shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
-      if (els.landingPagesProgressBar) els.landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
-
-      let summary = "";
-      let badgeClass = "trial";
-      let badgeText = "Trial";
-
-      if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
-        badgeClass = "live";
-        badgeText = "Active";
-        summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short-link slots left and ${landingRemaining} landing-page slots left.`;
-      } else if (paused) {
-        badgeClass = "paused";
-        badgeText = "Paused";
-        summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
-      } else if (status === "expired") {
-        badgeClass = "expired";
-        badgeText = "Expired";
-        summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
-      } else {
-        badgeClass = "trial";
-        badgeText = "Trial";
-        summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
-      }
-
-      if (meState.emailVerified === false) summary += " Email verification is incomplete.";
-      if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
-      if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
-
-      if (els.subscriptionBadge) {
-        els.subscriptionBadge.className = `badge ${badgeClass}`;
-        els.subscriptionBadge.textContent = badgeText;
-      }
-      els.accessSummary && (els.accessSummary.textContent = summary);
-    }
-
-    async function loadMe(showLoading = false) {
-      if (showLoading && els.accessSummary) els.accessSummary.textContent = "Loading account...";
-      const ok = await verifyMainSession(false);
-      if (!ok && els.accessSummary) els.accessSummary.textContent = "Session expired";
-    }
-
-    async function loadPlans(showMessage = false) {
-      const primary = await callBackend("primary", "/plans", { method: "GET" });
-      const legacy = await callBackend("legacy", "/plans", { method: "GET" });
-      const res = primary.ok ? primary : legacy;
-
-      if (!res.ok) {
-        plansState = {
-          plans: [
-            { code: "weekly", label: "Weekly", amountUsd: 10, limits: { activeShortLinks: 120, activeLandingPages: 5 } },
-            { code: "monthly", label: "Monthly", amountUsd: 35, limits: { activeShortLinks: 650, activeLandingPages: 15 } },
-            { code: "premium_monthly", label: "Premium Monthly", amountUsd: 135, limits: { activeShortLinks: 3000, activeLandingPages: 35 } }
-          ],
-          cryptoOptions: FALLBACK_CRYPTO_OPTIONS
-        };
-        renderPlans();
-        renderCryptoOptions();
-        updateBillingPreview();
-        if (showMessage) setResult("Plans endpoint failed, fallback crypto options loaded.", true, els.upgradeResult);
-        return;
-      }
-
-      const extracted = extractPlansAndCrypto(res.data || {});
+    if (!res.ok) {
       plansState = {
-        ...(res.data || {}),
-        plans: extracted.plans,
-        cryptoOptions: extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS
+        plans: [
+          { code: "weekly", label: "Weekly", amountUsd: 10, limits: { activeShortLinks: 120, activeLandingPages: 5 } },
+          { code: "monthly", label: "Monthly", amountUsd: 35, limits: { activeShortLinks: 650, activeLandingPages: 15 } },
+          { code: "premium_monthly", label: "Premium Monthly", amountUsd: 135, limits: { activeShortLinks: 3000, activeLandingPages: 35 } }
+        ],
+        cryptoOptions: FALLBACK_CRYPTO_OPTIONS
       };
-
-      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-      if (plans.length && !plans.some(p => p.code === selectedPlan)) selectedPlan = plans[0].code;
-
       renderPlans();
       renderCryptoOptions();
       updateBillingPreview();
-
-      if (showMessage) {
-        setResult(extracted.cryptos.length ? "Plans loaded" : "Plans loaded. Fallback crypto options were used.", false, els.upgradeResult);
-      }
+      if (showMessage) setResult("Plans endpoint failed, fallback crypto options loaded.", true, els.upgradeResult);
+      return;
     }
 
-    function renderPlans() {
-      if (!els.planGrid) return;
-      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-      if (!plans.length) {
-        els.planGrid.innerHTML = `<div class="muted">No plans returned.</div>`;
-        return;
-      }
+    const extracted = extractPlansAndCrypto(res.data || {});
+    plansState = {
+      ...(res.data || {}),
+      plans: extracted.plans,
+      cryptoOptions: extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS
+    };
 
-      els.planGrid.innerHTML = plans.map(plan => `
-        <div class="panel-card ${selectedPlan === plan.code ? "backend-active" : ""}" data-plan="${escapeHtml(plan.code)}" style="cursor:pointer;">
-          <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
-          <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
-          <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
+    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+    if (plans.length && !plans.some((p) => p.code === selectedPlan)) {
+      selectedPlan = plans[0].code;
+    }
+
+    renderPlans();
+    renderCryptoOptions();
+    updateBillingPreview();
+
+    if (showMessage) {
+      setResult(
+        extracted.cryptos.length
+          ? "Plans loaded"
+          : "Plans loaded. Fallback crypto options were used.",
+        false,
+        els.upgradeResult
+      );
+    }
+  }
+
+  function renderPlans() {
+    if (!els.planGrid) return;
+    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+    if (!plans.length) {
+      els.planGrid.innerHTML = `<div class="muted">No plans returned.</div>`;
+      return;
+    }
+
+    els.planGrid.innerHTML = plans.map((plan) => `
+      <div class="panel-card ${selectedPlan === plan.code ? "backend-active" : ""}" data-plan="${escapeHtml(plan.code)}" style="cursor:pointer;">
+        <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
+        <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
+        <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
+      </div>
+    `).join("");
+  }
+
+  function renderCryptoOptions() {
+    if (!els.cryptoSelect) return;
+    const options = Array.isArray(plansState?.cryptoOptions) && plansState.cryptoOptions.length
+      ? plansState.cryptoOptions
+      : FALLBACK_CRYPTO_OPTIONS;
+
+    els.cryptoSelect.innerHTML = `
+      <option value="">Choose a crypto option</option>
+      ${options.map((opt) => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label || opt.code)}</option>`).join("")}
+    `;
+    if (options.length) els.cryptoSelect.value = options[0].code;
+  }
+
+  function getPlanInfoByCode(code) {
+    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
+    return plans.find((p) => String(p.code) === String(code)) || null;
+  }
+
+  function updateBillingPreview() {
+    if (!els.billingPreview) return;
+    const plan = getPlanInfoByCode(selectedPlan);
+    const qty = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
+    selectedPlanQuantity = qty;
+
+    if (!plan) {
+      els.billingPreview.textContent = "Choose a plan and quantity.";
+      return;
+    }
+
+    const total = Number(plan.amountUsd || 0) * qty;
+    const cycleLabel = plan.code === "weekly"
+      ? `${qty} week${qty === 1 ? "" : "s"}`
+      : `${qty} month${qty === 1 ? "" : "s"}`;
+
+    const limits = plan.limits || {};
+    els.billingPreview.innerHTML = `
+      ${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>
+      Total: <b>${fmtMoney(total)}</b><br>
+      Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages
+    `;
+  }
+
+  function stopPaymentPolling() {
+    if (paymentPoller) {
+      clearInterval(paymentPoller);
+      paymentPoller = null;
+    }
+  }
+
+  function getLatestInterestingPayment() {
+    if (!paymentsStore.length) return null;
+    return paymentsStore.find((p) => ["awaiting_confirmation", "pending"].includes(String(p.status || "").toLowerCase())) || paymentsStore[0];
+  }
+
+  function renderLatestPayment(payment) {
+    if (!els.latestPaymentBox) return;
+
+    if (!payment) {
+      els.latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
+      return;
+    }
+
+    const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
+    const verified = String(payment.status || "").toLowerCase() === "verified";
+
+    els.latestPaymentBox.innerHTML = `
+      <div class="payment-box">
+        <div class="payment-qr">
+          <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
         </div>
-      `).join("");
+        <div>
+          <div>
+            <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+            <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
+            <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
+            ${formatPaymentStatus(payment.status)}
+          </div>
+
+          <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
+          <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+          <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+          <div class="address-box">${escapeHtml(payment.address)}</div>
+          <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
+          <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+
+          <div class="row-actions" style="margin-top:10px;">
+            <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
+            <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+            <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
+          </div>
+
+          ${waiting ? `<div class="waiting-box"><b>Waiting for admin confirmation...</b></div>` : ""}
+          ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed</b></div>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPaymentsTable() {
+    if (!els.paymentsTable) return;
+
+    if (!paymentsStore.length) {
+      els.paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
+      renderLatestPayment(null);
+      return;
     }
 
-    function renderCryptoOptions() {
-      if (!els.cryptoSelect) return;
-      const options = Array.isArray(plansState?.cryptoOptions) && plansState.cryptoOptions.length
-        ? plansState.cryptoOptions
-        : FALLBACK_CRYPTO_OPTIONS;
+    els.paymentsTable.innerHTML = paymentsStore.map((p) => `
+      <tr>
+        <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
+        <td><code>${escapeHtml(p.id)}</code></td>
+        <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
+        <td>${Number(p.quantity || 1)}</td>
+        <td>${fmtMoney(p.amountUsd)}</td>
+        <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
+        <td>${formatPaymentStatus(p.status)}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${fmtDate(p.expiresAt)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
+            <button type="button" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
+            <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
 
-      els.cryptoSelect.innerHTML = `
-        <option value="">Choose a crypto option</option>
-        ${options.map(opt => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label || opt.code)}</option>`).join("")}
-      `;
-      if (options.length) els.cryptoSelect.value = options[0].code;
+    renderLatestPayment(getLatestInterestingPayment());
+  }
+
+  async function loadPayments(showMessage = false) {
+    const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
+
+    if (!res.ok) {
+      paymentsStore = [];
+      renderPaymentsTable();
+      if (showMessage) showToast("Failed to load payments");
+      return;
     }
 
-    function getPlanInfoByCode(code) {
-      const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-      return plans.find(p => String(p.code) === String(code)) || null;
-    }
+    let raw = res.data;
+    let payments = [];
+    if (Array.isArray(raw)) payments = raw;
+    else if (Array.isArray(raw?.payments)) payments = raw.payments;
+    else if (Array.isArray(raw?.items)) payments = raw.items;
+    else if (raw?.payment) payments = [raw.payment];
 
-    function updateBillingPreview() {
-      if (!els.billingPreview) return;
-      const plan = getPlanInfoByCode(selectedPlan);
-      const qty = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
-      selectedPlanQuantity = qty;
+    paymentsStore = sortPayments(payments.map((p) => normalizePaymentItem(p, "primary")));
+    renderPaymentsTable();
 
-      if (!plan) {
-        els.billingPreview.textContent = "Choose a plan and quantity.";
-        return;
+    if (waitingPaymentId) {
+      const found = paymentsStore.find((x) => x.id === waitingPaymentId);
+      if (found) {
+        handleWaitingPaymentState(found);
+      } else {
+        waitingPaymentId = "";
+        localStorage.removeItem("waitingPaymentId");
+        stopPaymentPolling();
       }
-
-      const total = Number(plan.amountUsd || 0) * qty;
-      const cycleLabel = plan.code === "weekly"
-        ? `${qty} week${qty === 1 ? "" : "s"}`
-        : `${qty} month${qty === 1 ? "" : "s"}`;
-
-      const limits = plan.limits || {};
-      els.billingPreview.innerHTML = `
-        ${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>
-        Total: <b>${fmtMoney(total)}</b><br>
-        Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages
-      `;
     }
 
-    function stopPaymentPolling() {
-      if (paymentPoller) {
-        clearInterval(paymentPoller);
-        paymentPoller = null;
-      }
-    }
+    if (showMessage) showToast("Payments refreshed");
+  }
 
-    function getLatestInterestingPayment() {
-      if (!paymentsStore.length) return null;
-      return paymentsStore.find(p => ["awaiting_confirmation", "pending"].includes(String(p.status || "").toLowerCase())) || paymentsStore[0];
-    }
+  function renderPaymentRequestBox(payment, message = "") {
+    if (!els.paymentRequestBox) return;
 
-    function renderLatestPayment(payment) {
-      if (!els.latestPaymentBox) return;
+    const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
+    const verified = String(payment.status || "").toLowerCase() === "verified";
 
-      if (!payment) {
-        els.latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
-        return;
-      }
-
-      const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
-      const verified = String(payment.status || "").toLowerCase() === "verified";
-
-      els.latestPaymentBox.innerHTML = `
+    els.paymentRequestBox.innerHTML = `
+      <div class="card" style="margin:0;">
         <div class="payment-box">
           <div class="payment-qr">
             <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
@@ -1951,150 +2132,63 @@ const LEGACY_ROUTE_MAP = {
           <div>
             <div>
               <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
+              ${formatPaymentStatus(payment.status)}
               <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
               <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-              ${formatPaymentStatus(payment.status)}
             </div>
 
             <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-            <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-            <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
+            <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
+            <div class="muted" style="margin-top:8px;">Send to:</div>
             <div class="address-box">${escapeHtml(payment.address)}</div>
-            <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
-            <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
+            <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
+            <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
 
             <div class="row-actions" style="margin-top:10px;">
               <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-              <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
+              <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
               <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
             </div>
 
-            ${waiting ? `<div class="waiting-box"><b>Waiting for admin confirmation...</b></div>` : ""}
-            ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed</b></div>` : ""}
+            ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
+            ${waiting ? `<div class="waiting-box"><b>Waiting for payment confirmation...</b></div>` : ""}
+            ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed and successful</b></div>` : ""}
           </div>
         </div>
-      `;
-    }
+      </div>
+    `;
+  }
 
-    function renderPaymentsTable() {
-      if (!els.paymentsTable) return;
+  async function createPaymentRequest() {
+    const cryptoCode = els.cryptoSelect?.value;
+    const quantity = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
+    selectedPlanQuantity = quantity;
 
-      if (!paymentsStore.length) {
-        els.paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
-        renderLatestPayment(null);
-        return;
-      }
+    if (!selectedPlan) return setResult("Choose a plan first", true, els.upgradeResult);
+    if (!cryptoCode) return setResult("Choose a crypto option", true, els.upgradeResult);
 
-      els.paymentsTable.innerHTML = paymentsStore.map(p => `
-        <tr>
-          <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
-          <td><code>${escapeHtml(p.id)}</code></td>
-          <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
-          <td>${Number(p.quantity || 1)}</td>
-          <td>${fmtMoney(p.amountUsd)}</td>
-          <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
-          <td>${formatPaymentStatus(p.status)}</td>
-          <td>${fmtDate(p.createdAt)}</td>
-          <td>${fmtDate(p.expiresAt)}</td>
-          <td>
-            <div class="row-actions">
-              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
-              <button type="button" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
-              <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
-            </div>
-          </td>
-        </tr>
-      `).join("");
+    setBusy(els.requestPaymentBtn, true, "Creating...");
 
-      renderLatestPayment(getLatestInterestingPayment());
-    }
+    let res = await authorizedFetch(
+      "/payment-request",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          planCode: selectedPlan,
+          plan: selectedPlan,
+          billingCycle: selectedPlan,
+          quantity,
+          cryptoCode,
+          crypto: cryptoCode
+        })
+      },
+      preferredBackend,
+      false
+    );
 
-    async function loadPayments(showMessage = false) {
-      const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
-
-      if (!res.ok) {
-        paymentsStore = [];
-        renderPaymentsTable();
-        if (showMessage) showToast("Failed to load payments");
-        return;
-      }
-
-      let raw = res.data;
-      let payments = [];
-      if (Array.isArray(raw)) payments = raw;
-      else if (Array.isArray(raw?.payments)) payments = raw.payments;
-      else if (Array.isArray(raw?.items)) payments = raw.items;
-      else if (raw?.payment) payments = [raw.payment];
-
-      paymentsStore = sortPayments(payments.map(p => normalizePaymentItem(p, "primary")));
-      renderPaymentsTable();
-
-      if (waitingPaymentId) {
-        const found = paymentsStore.find(x => x.id === waitingPaymentId);
-        if (found) handleWaitingPaymentState(found);
-        else {
-          waitingPaymentId = "";
-          localStorage.removeItem("waitingPaymentId");
-          stopPaymentPolling();
-        }
-      }
-
-      if (showMessage) showToast("Payments refreshed");
-    }
-
-    function renderPaymentRequestBox(payment, message = "") {
-      if (!els.paymentRequestBox) return;
-
-      const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
-      const verified = String(payment.status || "").toLowerCase() === "verified";
-
-      els.paymentRequestBox.innerHTML = `
-        <div class="card" style="margin:0;">
-          <div class="payment-box">
-            <div class="payment-qr">
-              <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
-            </div>
-            <div>
-              <div>
-                <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-                ${formatPaymentStatus(payment.status)}
-                <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
-                <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-              </div>
-
-              <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-              <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-              <div class="muted" style="margin-top:8px;">Send to:</div>
-              <div class="address-box">${escapeHtml(payment.address)}</div>
-              <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
-              <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
-
-              <div class="row-actions" style="margin-top:10px;">
-                <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-                <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
-                <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
-              </div>
-
-              ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
-              ${waiting ? `<div class="waiting-box"><b>Waiting for payment confirmation...</b></div>` : ""}
-              ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed and successful</b></div>` : ""}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    async function createPaymentRequest() {
-      const cryptoCode = els.cryptoSelect?.value;
-      const quantity = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
-      selectedPlanQuantity = quantity;
-
-      if (!selectedPlan) return setResult("Choose a plan first", true, els.upgradeResult);
-      if (!cryptoCode) return setResult("Choose a crypto option", true, els.upgradeResult);
-
-      setBusy(els.requestPaymentBtn, true, "Creating...");
-
-      let res = await authorizedFetch(
+    if (res.status === 401) {
+      await verifyMainSession(false);
+      res = await authorizedFetch(
         "/payment-request",
         {
           method: "POST",
@@ -2110,731 +2204,745 @@ const LEGACY_ROUTE_MAP = {
         preferredBackend,
         false
       );
-
-      if (res.status === 401) {
-        await verifyMainSession(false);
-        res = await authorizedFetch(
-          "/payment-request",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              planCode: selectedPlan,
-              plan: selectedPlan,
-              billingCycle: selectedPlan,
-              quantity,
-              cryptoCode,
-              crypto: cryptoCode
-            })
-          },
-          preferredBackend,
-          false
-        );
-      }
-
-      setBusy(els.requestPaymentBtn, false);
-
-      if (!res.ok) {
-        setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, els.upgradeResult);
-        return;
-      }
-
-      const paymentRaw = res.data?.payment || res.data?.data?.payment || res.data;
-      const payment = paymentRaw ? normalizePaymentItem(paymentRaw, res.backend || preferredBackend) : null;
-
-      if (!payment) {
-        setResult("Payment request created, but response was empty", true, els.upgradeResult);
-        return;
-      }
-
-      waitingPaymentId = "";
-      localStorage.removeItem("waitingPaymentId");
-      stopPaymentPolling();
-
-      setResult("Payment request generated.", false, els.upgradeResult);
-      renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
-      await loadPayments(false);
     }
 
-    async function markPaymentSent(paymentId, backend) {
-      const payment = paymentsStore.find(p => p.id === paymentId && p.backend === backend);
-      if (!payment) return;
+    setBusy(els.requestPaymentBtn, false);
 
-      const status = String(payment.status || "").toLowerCase();
-      if (status === "verified") return showToast("This payment is already verified");
+    if (!res.ok) {
+      setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, els.upgradeResult);
+      return;
+    }
 
-      if (status === "awaiting_confirmation") {
-        waitingPaymentId = payment.id;
-        localStorage.setItem("waitingPaymentId", payment.id);
-        renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
-        return showToast("Already waiting for confirmation");
-      }
+    const paymentRaw = res.data?.payment || res.data?.data?.payment || res.data;
+    const payment = paymentRaw ? normalizePaymentItem(paymentRaw, res.backend || preferredBackend) : null;
 
-      const res = await authorizedFetch(
-        "/payment-i-made",
-        { method: "POST", body: JSON.stringify({ paymentId, id: paymentId }) },
-        backend,
-        false
-      );
+    if (!payment) {
+      setResult("Payment request created, but response was empty", true, els.upgradeResult);
+      return;
+    }
 
-      if (!res.ok) {
-        return setResult(res.data?.message || "Could not mark payment as sent", true, els.upgradeResult);
-      }
+    waitingPaymentId = "";
+    localStorage.removeItem("waitingPaymentId");
+    stopPaymentPolling();
 
+    setResult("Payment request generated.", false, els.upgradeResult);
+    renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
+    await loadPayments(false);
+  }
+
+  async function markPaymentSent(paymentId, backend) {
+    const payment = paymentsStore.find((p) => p.id === paymentId && p.backend === backend);
+    if (!payment) return;
+
+    const status = String(payment.status || "").toLowerCase();
+    if (status === "verified") {
+      showToast("This payment is already verified");
+      return;
+    }
+
+    if (status === "awaiting_confirmation") {
       waitingPaymentId = payment.id;
       localStorage.setItem("waitingPaymentId", payment.id);
-      showToast("Transfer submitted");
-
-      await loadPayments(false);
-
-      const updated = paymentsStore.find(p => p.id === payment.id && p.backend === payment.backend) || payment;
-      renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
+      renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
+      showToast("Already waiting for confirmation");
+      return;
     }
 
-    function handleWaitingPaymentState(payment) {
-      const status = String(payment.status || "").toLowerCase();
-      if (status === "verified") {
-        waitingPaymentId = "";
-        localStorage.removeItem("waitingPaymentId");
-        stopPaymentPolling();
-        renderPaymentRequestBox(payment, "Payment confirmed.");
-        loadMe(false);
-        return;
-      }
+    const res = await authorizedFetch(
+      "/payment-i-made",
+      { method: "POST", body: JSON.stringify({ paymentId, id: paymentId }) },
+      backend,
+      false
+    );
 
-      if (status === "awaiting_confirmation" || status === "pending") {
-        renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
-        return;
-      }
+    if (!res.ok) {
+      setResult(res.data?.message || "Could not mark payment as sent", true, els.upgradeResult);
+      return;
+    }
 
+    waitingPaymentId = payment.id;
+    localStorage.setItem("waitingPaymentId", payment.id);
+    showToast("Transfer submitted");
+
+    await loadPayments(false);
+
+    const updated = paymentsStore.find((p) => p.id === payment.id && p.backend === payment.backend) || payment;
+    renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
+  }
+
+  function handleWaitingPaymentState(payment) {
+    const status = String(payment.status || "").toLowerCase();
+
+    if (status === "verified") {
       waitingPaymentId = "";
       localStorage.removeItem("waitingPaymentId");
       stopPaymentPolling();
+      renderPaymentRequestBox(payment, "Payment confirmed.");
+      loadMe(false);
+      return;
     }
 
-    function openModal(modal) {
-      if (!modal) return;
-      els.overlay.style.display = "block";
-      modal.style.display = "block";
+    if (status === "awaiting_confirmation" || status === "pending") {
+      renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
+      return;
     }
 
-    function closeModal(modal) {
-      if (!modal) return;
-      modal.style.display = "none";
-      syncOverlay();
+    waitingPaymentId = "";
+    localStorage.removeItem("waitingPaymentId");
+    stopPaymentPolling();
+  }
+
+  function openModal(modal) {
+    if (!modal) return;
+    if (els.overlay) els.overlay.style.display = "block";
+    modal.style.display = "block";
+  }
+
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.style.display = "none";
+    syncOverlay();
+  }
+
+  function syncOverlay() {
+    const anyOpen = [els.upgradeModal, els.settingsModal, els.securityModal]
+      .some((m) => m && m.style.display === "block");
+    if (els.overlay) els.overlay.style.display = anyOpen ? "block" : "none";
+  }
+
+  function openUpgradeModal() {
+    openModal(els.upgradeModal);
+    updateBillingPreview();
+    const p = waitingPaymentId
+      ? paymentsStore.find((x) => x.id === waitingPaymentId)
+      : getLatestInterestingPayment();
+    if (p) renderPaymentRequestBox(p);
+  }
+
+  function closeUpgradeModal() {
+    closeModal(els.upgradeModal);
+  }
+
+  function openSettingsModal() {
+    openModal(els.settingsModal);
+    if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
+    if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
+    if (els.modalChartMetricSelect) els.modalChartMetricSelect.value = els.chartMetricSelect?.value || "clicks";
+    if (els.settingsSearchSummary) {
+      els.settingsSearchSummary.textContent = els.searchInput?.value?.trim()
+        ? `Searching for: ${els.searchInput.value.trim()}`
+        : "No active search";
+    }
+  }
+
+  function closeSettingsModal() {
+    closeModal(els.settingsModal);
+  }
+
+  function openSecurityModal() {
+    openModal(els.securityModal);
+    renderSecurityModal();
+  }
+
+  function closeSecurityModal() {
+    closeModal(els.securityModal);
+  }
+
+  function closeAllModals() {
+    closeUpgradeModal();
+    closeSettingsModal();
+    closeSecurityModal();
+  }
+
+  function showPaymentDetails(paymentId, backend = "") {
+    const payment = paymentsStore.find((p) => p.id === paymentId && (!backend || p.backend === backend));
+    if (!payment) return;
+    openUpgradeModal();
+    renderPaymentRequestBox(payment);
+  }
+
+  async function checkOneBackendHealth(backend) {
+    const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
+    if (health.ok) return health;
+    return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
+  }
+
+  async function checkBackendHealth() {
+    const [p, l] = await Promise.all([
+      checkOneBackendHealth("primary"),
+      checkOneBackendHealth("legacy")
+    ]);
+
+    if (els.primaryHealth) {
+      els.primaryHealth.innerHTML = p.ok
+        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
     }
 
-    function syncOverlay() {
-      const anyOpen = [els.upgradeModal, els.settingsModal, els.securityModal]
-        .some(m => m && m.style.display === "block");
-      els.overlay.style.display = anyOpen ? "block" : "none";
+    if (els.legacyHealth) {
+      els.legacyHealth.innerHTML = l.ok
+        ? `<span class="chip live">Online</span> <span class="muted">AWS responding on ${escapeHtml(l.path || "/health")}</span>`
+        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
+    }
+  }
+
+  function getFilteredData() {
+    const q = (els.searchInput?.value || "").trim().toLowerCase();
+    const backendOnly = els.backendFilter?.value || "all";
+    const statusOnly = els.statusFilter?.value || "all";
+    const dateRange = els.dateRangeFilter?.value || "all";
+    const onlyHighRisk = !!els.onlyHighRiskToggle?.checked;
+    const nowTs = Date.now();
+
+    let filtered = dataStore.filter((item) => {
+      const slug = String(item.slug || "").toLowerCase();
+      const url = String(item.url || "").toLowerCase();
+      const backend = String(item.backend || "").toLowerCase();
+
+      const queryMatch =
+        !q ||
+        slug.includes(q) ||
+        url.includes(q) ||
+        backend.includes(q) ||
+        String(item.note || "").toLowerCase().includes(q) ||
+        String(item.campaign || "").toLowerCase().includes(q);
+
+      const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
+      const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
+      const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
+
+      let dateMatch = true;
+      if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= nowTs - 24 * 60 * 60 * 1000;
+      if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= nowTs - 7 * 24 * 60 * 60 * 1000;
+      if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= nowTs - 30 * 24 * 60 * 60 * 1000;
+
+      return queryMatch && backendMatch && statusMatch && riskMatch && dateMatch;
+    });
+
+    const sortKey = els.sortFilter?.value || "newest";
+    filtered.sort((a, b) => {
+      if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+      if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
+      if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
+      if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
+      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+    });
+
+    return filtered;
+  }
+
+  async function loadLinks(showLoading = false) {
+    if (loadingLinks) return;
+    loadingLinks = true;
+
+    if (showLoading) {
+      setBusy(els.refreshBtn, true, "Loading...");
     }
 
-    function openUpgradeModal() {
-      openModal(els.upgradeModal);
-      updateBillingPreview();
-      const p = waitingPaymentId ? paymentsStore.find(x => x.id === waitingPaymentId) : getLatestInterestingPayment();
-      if (p) renderPaymentRequestBox(p);
+    const [primaryRes, legacyRes] = await Promise.all([
+      authorizedFetch("/list", { method: "GET" }, "primary", false),
+      authorizedFetch("/list", { method: "GET" }, "legacy", false)
+    ]);
+
+    loadingLinks = false;
+    setBusy(els.refreshBtn, false);
+
+    const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+    const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+
+    dataStore = mergeLinks(primaryItems, legacyItems);
+    const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
+
+    if (els.totalLinks) els.totalLinks.textContent = dataStore.length;
+    if (els.totalClicks) els.totalClicks.textContent = total;
+    if (els.avgClicks) els.avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
+
+    updateMiniStats();
+    renderMe();
+    renderTable();
+    drawChart();
+    renderRanking();
+    renderSecurityInsights();
+    renderActivityTimeline();
+    renderOperationalBoard();
+
+    if (showLoading) {
+      const legacyMsg = legacyRes.ok
+        ? `AWS OK (${legacyRes.resolvedPath || "/list"})`
+        : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
+
+      const primaryMsg = primaryRes.ok
+        ? `Backend2 OK (${primaryRes.resolvedPath || "/list"})`
+        : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
+
+      pushNotification(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok) ? "error" : "success");
+    }
+  }
+
+  function renderTable() {
+    if (!els.table) return;
+    const filtered = getFilteredData();
+
+    if (!filtered.length) {
+      els.table.innerHTML = `<tr><td colspan="11" class="muted">No items found</td></tr>`;
+      return;
     }
 
-    function closeUpgradeModal() { closeModal(els.upgradeModal); }
+    els.table.innerHTML = filtered.slice(0, 50).map((item) => {
+      const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
+      const itemType = getItemType(item);
 
-    function openSettingsModal() {
-      openModal(els.settingsModal);
-      if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
-      if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
-      if (els.modalChartMetricSelect) els.modalChartMetricSelect.value = els.chartMetricSelect?.value || "clicks";
-      if (els.settingsSearchSummary) {
-        els.settingsSearchSummary.textContent = els.searchInput?.value?.trim()
-          ? `Searching for: ${els.searchInput.value.trim()}`
-          : "No active search";
-      }
-    }
+      return `
+        <tr>
+          <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
+          <td><b>${escapeHtml(item.slug)}</b></td>
+          <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
+          <td><span class="badge">${Number(item.clicks || 0)}</span></td>
+          <td>${scoreLink(item)}/100</td>
+          <td>${detectFraud(item)}</td>
+          <td>
+            <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+            <div class="muted">${escapeHtml(item.url || "")}</div>
+          </td>
+          <td>${getStatus(item)}</td>
+          <td>${fmtExpire(item.expire)}</td>
+          <td>${fmtDate(item.createdAt)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(publicLink)}')">Copy</button>
+              <button type="button" onclick="openLinkDirect('${escapeForJs(publicLink)}')">Open</button>
+              <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Analytics</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
 
-    function closeSettingsModal() { closeModal(els.settingsModal); }
-    function openSecurityModal() { openModal(els.securityModal); renderSecurityModal(); }
-    function closeSecurityModal() { closeModal(els.securityModal); }
+  function drawChart() {
+    const canvas = $("chart");
+    if (!canvas) return;
+    if (chart) chart.destroy();
 
-    function closeAllModals() {
-      closeUpgradeModal();
-      closeSettingsModal();
-      closeSecurityModal();
-    }
+    const filtered = getFilteredData();
+    const metric = els.chartMetricSelect?.value || "clicks";
+    const sorted = [...filtered]
+      .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+      .slice(0, 12);
 
-    function showPaymentDetails(paymentId, backend = "") {
-      const payment = paymentsStore.find(p => p.id === paymentId && (!backend || p.backend === backend));
-      if (!payment) return;
-      openUpgradeModal();
-      renderPaymentRequestBox(payment);
-    }
-
-    async function checkOneBackendHealth(backend) {
-      const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
-      if (health.ok) return health;
-      return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
-    }
-
-    async function checkBackendHealth() {
-      const [p, l] = await Promise.all([checkOneBackendHealth("primary"), checkOneBackendHealth("legacy")]);
-
-      if (els.primaryHealth) {
-        els.primaryHealth.innerHTML = p.ok
-          ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
-          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-      }
-
-      if (els.legacyHealth) {
-        els.legacyHealth.innerHTML = l.ok
-          ? `<span class="chip live">Online</span> <span class="muted">AWS responding on ${escapeHtml(l.path || "/health")}</span>`
-          : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
-      }
-    }
-
-    function getFilteredData() {
-      const q = (els.searchInput?.value || "").trim().toLowerCase();
-      const backendOnly = els.backendFilter?.value || "all";
-      const statusOnly = els.statusFilter?.value || "all";
-      const dateRange = els.dateRangeFilter?.value || "all";
-      const onlyHighRisk = !!els.onlyHighRiskToggle?.checked;
-      const now = Date.now();
-
-      let filtered = dataStore.filter(item => {
-        const slug = String(item.slug || "").toLowerCase();
-        const url = String(item.url || "").toLowerCase();
-        const backend = String(item.backend || "").toLowerCase();
-
-        const queryMatch = !q ||
-          slug.includes(q) ||
-          url.includes(q) ||
-          backend.includes(q) ||
-          String(item.note || "").toLowerCase().includes(q) ||
-          String(item.campaign || "").toLowerCase().includes(q);
-
-        const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-        const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
-        const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
-
-        let dateMatch = true;
-        if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= now - 24 * 60 * 60 * 1000;
-        if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= now - 7 * 24 * 60 * 60 * 1000;
-        if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= now - 30 * 24 * 60 * 60 * 1000;
-
-        return queryMatch && backendMatch && statusMatch && riskMatch && dateMatch;
-      });
-
-      const sortKey = els.sortFilter?.value || "newest";
-      filtered.sort((a, b) => {
-        if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
-        if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
-        if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
-        if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
-        return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-      });
-
-      return filtered;
-    }
-
-    async function loadLinks(showLoading = false) {
-      if (loadingLinks) return;
-      loadingLinks = true;
-
-      if (showLoading) {
-        setBusy(els.refreshBtn, true, "Loading...");
-      }
-
-      const [primaryRes, legacyRes] = await Promise.all([
-        authorizedFetch("/list", { method: "GET" }, "primary", false),
-        authorizedFetch("/list", { method: "GET" }, "legacy", false)
-      ]);
-
-      loadingLinks = false;
-      setBusy(els.refreshBtn, false);
-
-      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
-      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
-
-      dataStore = mergeLinks(primaryItems, legacyItems);
-      const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-
-      els.totalLinks && (els.totalLinks.textContent = dataStore.length);
-      els.totalClicks && (els.totalClicks.textContent = total);
-      els.avgClicks && (els.avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0");
-
-      updateMiniStats();
-      renderTable();
-      drawChart();
-      renderRanking();
-      renderSecurityInsights();
-      renderActivityTimeline();
-      renderOperationalBoard();
-
-      if (showLoading) {
-        const legacyMsg = legacyRes.ok
-          ? `AWS OK (${legacyRes.resolvedPath || "/list"})`
-          : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
-
-        const primaryMsg = primaryRes.ok
-          ? `Backend2 OK (${primaryRes.resolvedPath || "/list"})`
-          : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
-
-        pushNotification(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok) ? "error" : "success");
-      }
-    }
-
-    function renderTable() {
-      if (!els.table) return;
-      const filtered = getFilteredData();
-
-      if (!filtered.length) {
-        els.table.innerHTML = `<tr><td colspan="11" class="muted">No items found</td></tr>`;
-        return;
-      }
-
-      els.table.innerHTML = filtered.slice(0, 50).map(item => {
-        const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
-        const itemType = getItemType(item);
-
-        return `
-          <tr>
-            <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
-            <td><b>${escapeHtml(item.slug)}</b></td>
-            <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
-            <td><span class="badge">${Number(item.clicks || 0)}</span></td>
-            <td>${scoreLink(item)}/100</td>
-            <td>${detectFraud(item)}</td>
-            <td>
-              <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
-              <div class="muted">${escapeHtml(item.url || "")}</div>
-            </td>
-            <td>${getStatus(item)}</td>
-            <td>${fmtExpire(item.expire)}</td>
-            <td>${fmtDate(item.createdAt)}</td>
-            <td>
-              <div class="row-actions">
-                <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(publicLink)}')">Copy</button>
-                <button type="button" onclick="openLinkDirect('${escapeForJs(publicLink)}')">Open</button>
-                <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Analytics</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
-
-    function drawChart() {
-      const canvas = $("chart");
-      if (!canvas) return;
-      if (chart) chart.destroy();
-
-      const filtered = getFilteredData();
-      const metric = els.chartMetricSelect?.value || "clicks";
-      const sorted = [...filtered]
-        .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
-        .slice(0, 12);
-
-      chart = new Chart(canvas, {
-        type: "line",
-        data: {
-          labels: sorted.map(i => `${i.slug} (${backendLabel(i.backend)})`),
-          datasets: [{
-            label: metric === "score" ? "Performance Score" : "Clicks",
-            data: sorted.map(i => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
-            tension: 0.35
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "#e2e8f0" } } },
-          scales: {
-            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
-          }
+    chart = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: sorted.map((i) => `${i.slug} (${backendLabel(i.backend)})`),
+        datasets: [{
+          label: metric === "score" ? "Performance Score" : "Clicks",
+          data: sorted.map((i) => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
+          tension: 0.35
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: "#e2e8f0" } } },
+        scales: {
+          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
         }
-      });
-    }
-
-    function renderRanking() {
-      if (!els.ranking) return;
-      const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-
-      if (!sorted.length) {
-        els.ranking.innerHTML = `<div class="muted">No items yet</div>`;
-        return;
       }
+    });
+  }
 
-      els.ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
-        <div class="ranking-item">
-          <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-          <div>
-            <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span>
-            <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span>
+  function renderRanking() {
+    if (!els.ranking) return;
+    const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+
+    if (!sorted.length) {
+      els.ranking.innerHTML = `<div class="muted">No items yet</div>`;
+      return;
+    }
+
+    els.ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
+      <div class="ranking-item">
+        <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
+        <div>
+          <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span>
+          <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span>
+        </div>
+        <div>Clicks: ${Number(item.clicks || 0)}</div>
+        <div>Score: ${scoreLink(item)}/100</div>
+        <div>${detectFraud(item)}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderSecurityInsights() {
+    if (!els.securityInsights) return;
+    const risky = dataStore.filter((x) => Number(x.maxRisk || 0) > 60);
+    const paused = dataStore.filter((x) => x.paused).length;
+    const expired = dataStore.filter((x) => getStatusKey(x) === "expired").length;
+    const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+
+    els.securityInsights.innerHTML = `
+      <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
+      <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
+      <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
+      <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map((x) => `${x.slug} (${x.maxRisk || 0})`).join(", ") : "No risk data yet."}</div></div>
+    `;
+  }
+
+  function renderActivityTimeline() {
+    if (!els.activityTimeline) return;
+    const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
+
+    els.activityTimeline.innerHTML = recent.length
+      ? recent.map((item) => `
+          <div class="timeline-item">
+            <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+            <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
           </div>
-          <div>Clicks: ${Number(item.clicks || 0)}</div>
-          <div>Score: ${scoreLink(item)}/100</div>
-          <div>${detectFraud(item)}</div>
-        </div>
-      `).join("");
-    }
+        `).join("")
+      : `<div class="muted">No activity yet.</div>`;
+  }
 
-    function renderSecurityInsights() {
-      if (!els.securityInsights) return;
-      const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
-      const paused = dataStore.filter(x => x.paused).length;
-      const expired = dataStore.filter(x => getStatusKey(x) === "expired").length;
-      const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
+  function renderOperationalBoard() {
+    const review = $("boardReview");
+    const healthy = $("boardHealthy");
+    const attention = $("boardAttention");
+    if (!review || !healthy || !attention) return;
 
-      els.securityInsights.innerHTML = `
-        <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
-        <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
-        <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
-        <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map(x => `${x.slug} (${x.maxRisk || 0})`).join(", ") : "No risk data yet."}</div></div>
-      `;
-    }
+    const needsReview = dataStore.filter((x) => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
+    const healthyItems = dataStore.filter((x) => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
+    const attentionItems = dataStore.filter((x) => x.paused || getStatusKey(x) === "expired").slice(0, 4);
 
-    function renderActivityTimeline() {
-      if (!els.activityTimeline) return;
-      const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
-
-      els.activityTimeline.innerHTML = recent.length
-        ? recent.map(item => `
-            <div class="timeline-item">
-              <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-              <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
-            </div>
-          `).join("")
-        : `<div class="muted">No activity yet.</div>`;
-    }
-
-    function renderOperationalBoard() {
-      const review = $("boardReview");
-      const healthy = $("boardHealthy");
-      const attention = $("boardAttention");
-      if (!review || !healthy || !attention) return;
-
-      const needsReview = dataStore.filter(x => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
-      const healthyItems = dataStore.filter(x => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
-      const attentionItems = dataStore.filter(x => x.paused || getStatusKey(x) === "expired").slice(0, 4);
-
-      const makeCards = (arr) => arr.length
-        ? arr.map(item => `
-            <div class="kanban-card">
-              <div><b>${escapeHtml(item.slug)}</b></div>
-              <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
-            </div>
-          `).join("")
-        : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
-
-      review.innerHTML = makeCards(needsReview);
-      healthy.innerHTML = makeCards(healthyItems);
-      attention.innerHTML = makeCards(attentionItems);
-    }
-
-    function getRiskSummaryText() {
-      const risky = dataStore.filter(x => Number(x.maxRisk || 0) > 60);
-      return `${risky.length} items currently show elevated risk markers.`;
-    }
-
-    function renderRiskItemsHtml() {
-      const risky = [...dataStore]
-        .filter(x => Number(x.maxRisk || 0) > 60)
-        .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-
-      if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
-
-      return risky.map(item => `
-        <div class="info-box">
-          <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-          <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-          <div class="row-actions" style="margin-top:8px;">
-            <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Open Analytics</button>
+    const makeCards = (arr) => arr.length
+      ? arr.map((item) => `
+          <div class="kanban-card">
+            <div><b>${escapeHtml(item.slug)}</b></div>
+            <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
           </div>
+        `).join("")
+      : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
+
+    review.innerHTML = makeCards(needsReview);
+    healthy.innerHTML = makeCards(healthyItems);
+    attention.innerHTML = makeCards(attentionItems);
+  }
+
+  function getRiskSummaryText() {
+    const risky = dataStore.filter((x) => Number(x.maxRisk || 0) > 60);
+    return `${risky.length} items currently show elevated risk markers.`;
+  }
+
+  function renderRiskItemsHtml() {
+    const risky = [...dataStore]
+      .filter((x) => Number(x.maxRisk || 0) > 60)
+      .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+
+    if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
+
+    return risky.map((item) => `
+      <div class="info-box">
+        <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
+        <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+        <div class="row-actions" style="margin-top:8px;">
+          <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Open Analytics</button>
         </div>
-      `).join("");
-    }
+      </div>
+    `).join("");
+  }
 
-    function renderSecurityModal() {
-      if (!els.securityModalContent) return;
+  function renderSecurityModal() {
+    if (!els.securityModalContent) return;
 
-      const twoFactorEnabled = !!meState?.twoFactorEnabled;
-      const twoFactorMethod = meState?.twoFactorMethod || "";
+    const twoFactorEnabled = !!meState?.twoFactorEnabled;
+    const twoFactorMethod = meState?.twoFactorMethod || "";
 
-      els.securityModalContent.innerHTML = `
-        <div class="info-box">
-          <b>Two-Factor Authentication</b>
-          <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
+    els.securityModalContent.innerHTML = `
+      <div class="info-box">
+        <b>Two-Factor Authentication</b>
+        <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
+      </div>
+
+      <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
+      ${renderRiskItemsHtml()}
+    `;
+  }
+
+  function exportVisibleAsCsv() {
+    const rows = getFilteredData();
+    const header = ["backend", "type", "slug", "url", "clicks", "score", "fraud", "status", "expire", "createdAt"];
+    const lines = [header.join(",")].concat(rows.map((item) => {
+      const values = [
+        backendLabel(item.backend),
+        getItemType(item),
+        item.slug || "",
+        item.url || "",
+        Number(item.clicks || 0),
+        scoreLink(item),
+        detectFraud(item),
+        getStatusKey(item),
+        item.expire || "",
+        item.createdAt || ""
+      ];
+      return values.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",");
+    }));
+
+    downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
+  }
+
+  function exportVisibleAsJson() {
+    downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
+  }
+
+  function downloadTextFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function refreshNow() {
+    Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
+  }
+
+  function openSupportPanel() {
+    if (!els.panel || !els.panelContent) return;
+    els.panel.style.display = "block";
+    els.panelContent.innerHTML = `
+      <h3>🆘 Support Center</h3>
+      <div class="info-box">
+        <b>Contact Support</b>
+        <div class="support-list" style="margin-top:8px;">
+          <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
+          <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
+          <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
+          <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
         </div>
+      </div>
+      <div class="info-box"><b>Main pages</b><div class="muted" style="margin-top:8px;">Use backend2.html, aws.html, analytics.html, help.html, landing.html, domain-manager.html, and vanity.html from the dashboard buttons.</div></div>
+    `;
+  }
 
-        <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-        ${renderRiskItemsHtml()}
-      `;
-    }
+  function closePanel() {
+    if (els.panel) els.panel.style.display = "none";
+    if (els.panelContent) els.panelContent.innerHTML = "";
+  }
 
-    function exportVisibleAsCsv() {
-      const rows = getFilteredData();
-      const header = ["backend", "type", "slug", "url", "clicks", "score", "fraud", "status", "expire", "createdAt"];
-      const lines = [header.join(",")].concat(rows.map(item => {
-        const values = [
-          backendLabel(item.backend),
-          getItemType(item),
-          item.slug || "",
-          item.url || "",
-          Number(item.clicks || 0),
-          scoreLink(item),
-          detectFraud(item),
-          getStatusKey(item),
-          item.expire || "",
-          item.createdAt || ""
-        ];
-        return values.map(v => `"${String(v).replaceAll('"', '""')}"`).join(",");
-      }));
-      downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
-    }
+  function toggleAllFaq(open) {
+    document.querySelectorAll(".faq-item").forEach((item) => item.classList.toggle("open", !!open));
+  }
 
-    function exportVisibleAsJson() {
-      downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
-    }
+  function clearFilters() {
+    if (els.searchInput) els.searchInput.value = "";
+    if (els.backendFilter) els.backendFilter.value = "all";
+    if (els.statusFilter) els.statusFilter.value = "all";
+    if (els.dateRangeFilter) els.dateRangeFilter.value = "all";
+    if (els.sortFilter) els.sortFilter.value = "newest";
+    if (els.onlyHighRiskToggle) els.onlyHighRiskToggle.checked = false;
+    renderTable();
+    drawChart();
+  }
 
-    function downloadTextFile(filename, content, mime) {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+  function setPreferredBackend(next) {
+    preferredBackend = next === "legacy" ? "legacy" : "primary";
+    localStorage.setItem("preferredBackend", preferredBackend);
+    setTopBackendBadge();
+    showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
+  }
 
-    function refreshNow() {
-      Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
-    }
+  function logout() {
+    stopPaymentPolling();
+    clearSession();
+    window.location.href = "index.html";
+  }
 
-    function openSupportPanel() {
-      if (!els.panel || !els.panelContent) return;
-      els.panel.style.display = "block";
-      els.panelContent.innerHTML = `
-        <h3>🆘 Support Center</h3>
-        <div class="info-box">
-          <b>Contact Support</b>
-          <div class="support-list" style="margin-top:8px;">
-            <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
-            <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
-            <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
-            <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
-          </div>
-        </div>
-        <div class="info-box"><b>Main pages</b><div class="muted" style="margin-top:8px;">Use backend2.html, aws.html, analytics.html, help.html, landing.html, domain-manager.html, and vanity.html from the dashboard buttons.</div></div>
-      `;
-    }
+  function setupFaq() {
+    document.querySelectorAll(".faq-q").forEach((btn) => {
+      btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
+    });
+  }
 
-    function closePanel() {
-      if (els.panel) els.panel.style.display = "none";
-      if (els.panelContent) els.panelContent.innerHTML = "";
-    }
+  function setupKeyboardShortcuts() {
+    [
+      els.searchInput,
+      els.backendFilter,
+      els.statusFilter,
+      els.dateRangeFilter,
+      els.sortFilter,
+      els.chartMetricSelect,
+      els.onlyHighRiskToggle
+    ].forEach((el) => {
+      if (!el) return;
+      el.addEventListener("input", () => { renderTable(); drawChart(); });
+      el.addEventListener("change", () => { renderTable(); drawChart(); });
+    });
+  }
 
-    function toggleAllFaq(open) {
-      document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
-    }
+  function bindPlanGridClicks() {
+    els.planGrid?.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-plan]");
+      if (!card) return;
+      selectedPlan = card.dataset.plan;
+      renderPlans();
+      updateBillingPreview();
+    });
+  }
 
-    function clearFilters() {
-      if (els.searchInput) els.searchInput.value = "";
-      if (els.backendFilter) els.backendFilter.value = "all";
-      if (els.statusFilter) els.statusFilter.value = "all";
-      if (els.dateRangeFilter) els.dateRangeFilter.value = "all";
-      if (els.sortFilter) els.sortFilter.value = "newest";
-      if (els.onlyHighRiskToggle) els.onlyHighRiskToggle.checked = false;
-      renderTable();
-      drawChart();
-    }
+  function copyLink(text) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("Copied!"))
+      .catch(() => showToast("Copy failed"));
+  }
 
-    function setPreferredBackend(next) {
-      preferredBackend = next === "legacy" ? "legacy" : "primary";
-      localStorage.setItem("preferredBackend", preferredBackend);
-      setTopBackendBadge();
-      showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
-    }
+  function openLinkDirect(link) {
+    window.open(link, "_blank", "noopener,noreferrer");
+  }
 
-    function logout() {
-      stopPaymentPolling();
-      clearSession();
-      window.location.href = "index.html";
-    }
+  function goToPage(page) {
+    window.location.href = page;
+  }
 
-    function setupFaq() {
-      document.querySelectorAll(".faq-q").forEach(btn => {
-        btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
-      });
-    }
+  function openBackend2Page() { goToPage("backend2.html"); }
+  function openAwsPage() { goToPage("aws.html"); }
+  function openAnalyticsPage() { goToPage("analytics.html"); }
+  function openHelpPage() { goToPage("help.html"); }
+  function openLandingPage() { goToPage("landing.html"); }
+  function openDomainPage() { goToPage("domain-manager.html"); }
+  function openVanityPage() { goToPage("vanity.html"); }
 
-    function setupKeyboardShortcuts() {
-      [els.searchInput, els.backendFilter, els.statusFilter, els.dateRangeFilter, els.sortFilter, els.chartMetricSelect, els.onlyHighRiskToggle].forEach(el => {
-        if (!el) return;
-        el.addEventListener("input", () => { renderTable(); drawChart(); });
-        el.addEventListener("change", () => { renderTable(); drawChart(); });
-      });
-    }
+  function bindUI() {
+    els.refreshBtn?.addEventListener("click", refreshNow);
+    els.exportCsvBtn?.addEventListener("click", exportVisibleAsCsv);
+    els.exportJsonBtn?.addEventListener("click", exportVisibleAsJson);
+    els.quickSettingsBtn?.addEventListener("click", openSettingsModal);
 
-    function bindPlanGridClicks() {
-      els.planGrid?.addEventListener("click", (e) => {
-        const card = e.target.closest("[data-plan]");
-        if (!card) return;
-        selectedPlan = card.dataset.plan;
-        renderPlans();
-        updateBillingPreview();
-      });
-    }
+    $("openBackend2Btn")?.addEventListener("click", openBackend2Page);
+    $("openAwsBtn")?.addEventListener("click", openAwsPage);
+    $("openAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
+    $("openHelpBtn")?.addEventListener("click", openHelpPage);
+    $("openLandingBtn")?.addEventListener("click", openLandingPage);
+    $("openDomainBtn")?.addEventListener("click", openDomainPage);
+    $("openVanityBtn")?.addEventListener("click", openVanityPage);
 
-    function copyLink(text) {
-      navigator.clipboard.writeText(text)
-        .then(() => showToast("Copied!"))
-        .catch(() => showToast("Copy failed"));
-    }
+    $("quickBackend2Btn")?.addEventListener("click", openBackend2Page);
+    $("quickAwsBtn")?.addEventListener("click", openAwsPage);
+    $("quickAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
+    $("quickHelpBtn")?.addEventListener("click", openHelpPage);
+    $("quickLandingBtn")?.addEventListener("click", openLandingPage);
+    $("quickDomainBtn")?.addEventListener("click", openDomainPage);
+    $("quickVanityBtn")?.addEventListener("click", openVanityPage);
 
-    function openLinkDirect(link) {
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
+    els.preferPrimaryBtn?.addEventListener("click", () => setPreferredBackend("primary"));
+    els.preferLegacyBtn?.addEventListener("click", () => setPreferredBackend("legacy"));
+    els.verifySessionBtn?.addEventListener("click", async () => {
+      setBusy(els.verifySessionBtn, true, "Checking...");
+      await verifyMainSession(true);
+      setBusy(els.verifySessionBtn, false);
+    });
 
-    function goToPage(page) {
-      window.location.href = page;
-    }
+    els.clearFiltersBtn?.addEventListener("click", clearFilters);
 
-    function openBackend2Page() { goToPage("backend2.html"); }
-    function openAwsPage() { goToPage("aws.html"); }
-    function openAnalyticsPage() { goToPage("analytics.html"); }
-    function openHelpPage() { goToPage("help.html"); }
-    function openLandingPage() { goToPage("landing.html"); }
-    function openDomainPage() { goToPage("domain-manager.html"); }
-    function openVanityPage() { goToPage("vanity.html"); }
-
-    function bindUI() {
-      els.refreshBtn?.addEventListener("click", refreshNow);
-      els.exportCsvBtn?.addEventListener("click", exportVisibleAsCsv);
-      els.exportJsonBtn?.addEventListener("click", exportVisibleAsJson);
-      els.quickSettingsBtn?.addEventListener("click", openSettingsModal);
-
-      $("openBackend2Btn")?.addEventListener("click", openBackend2Page);
-      $("openAwsBtn")?.addEventListener("click", openAwsPage);
-      $("openAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
-      $("openHelpBtn")?.addEventListener("click", openHelpPage);
-      $("openLandingBtn")?.addEventListener("click", openLandingPage);
-      $("openDomainBtn")?.addEventListener("click", openDomainPage);
-      $("openVanityBtn")?.addEventListener("click", openVanityPage);
-
-      $("quickBackend2Btn")?.addEventListener("click", openBackend2Page);
-      $("quickAwsBtn")?.addEventListener("click", openAwsPage);
-      $("quickAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
-      $("quickHelpBtn")?.addEventListener("click", openHelpPage);
-      $("quickLandingBtn")?.addEventListener("click", openLandingPage);
-      $("quickDomainBtn")?.addEventListener("click", openDomainPage);
-      $("quickVanityBtn")?.addEventListener("click", openVanityPage);
-
-      els.preferPrimaryBtn?.addEventListener("click", () => setPreferredBackend("primary"));
-      els.preferLegacyBtn?.addEventListener("click", () => setPreferredBackend("legacy"));
-      els.verifySessionBtn?.addEventListener("click", async () => {
-        setBusy(els.verifySessionBtn, true, "Checking...");
-        await verifyMainSession(true);
-        setBusy(els.verifySessionBtn, false);
-      });
-
-      els.clearFiltersBtn?.addEventListener("click", clearFilters);
-
-      els.clearNotificationsBtn?.addEventListener("click", () => {
-        notificationsStore = [];
-        renderNotifications();
-      });
-
-      els.refreshActivityBtn?.addEventListener("click", renderActivityTimeline);
-      els.rebuildBoardBtn?.addEventListener("click", renderOperationalBoard);
-      els.openSecurityCenterBtn?.addEventListener("click", openSecurityModal);
-
-      els.planQuantityInput?.addEventListener("input", updateBillingPreview);
-      els.planQuantityInput?.addEventListener("change", updateBillingPreview);
-      els.requestPaymentBtn?.addEventListener("click", createPaymentRequest);
-      $("reloadPlansBtn")?.addEventListener("click", () => loadPlans(true));
-
-      els.compactModeToggle?.addEventListener("change", () => {
-        compactModeEnabled = els.compactModeToggle.checked;
-        applyCompactModeState();
-      });
-
-      els.autoRefreshToggle?.addEventListener("change", () => {
-        autoRefreshEnabled = els.autoRefreshToggle.checked;
-        applyAutoRefreshState();
-      });
-
-      els.modalCompactModeToggle?.addEventListener("change", () => {
-        compactModeEnabled = els.modalCompactModeToggle.checked;
-        applyCompactModeState();
-      });
-
-      els.modalAutoRefreshToggle?.addEventListener("change", () => {
-        autoRefreshEnabled = els.modalAutoRefreshToggle.checked;
-        applyAutoRefreshState();
-      });
-
-      els.modalChartMetricSelect?.addEventListener("change", () => {
-        if (els.chartMetricSelect) els.chartMetricSelect.value = els.modalChartMetricSelect.value;
-        drawChart();
-      });
-
-      $("openUpgradeCenterBtn")?.addEventListener("click", openUpgradeModal);
-      $("upgradeBtn")?.addEventListener("click", openUpgradeModal);
-      $("openUpgradeFromPaymentsBtn")?.addEventListener("click", openUpgradeModal);
-      $("quickPaymentBtn")?.addEventListener("click", openUpgradeModal);
-
-      $("refreshPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
-      $("reloadPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
-
-      $("supportBtn")?.addEventListener("click", openSupportPanel);
-      $("openSupportPanelBtn")?.addEventListener("click", openSupportPanel);
-      $("openHelpInlineBtn")?.addEventListener("click", openHelpPage);
-      $("logoutBtn")?.addEventListener("click", logout);
-
-      $("closePanelBtn")?.addEventListener("click", closePanel);
-      $("closeUpgradeModalBtn")?.addEventListener("click", closeUpgradeModal);
-      $("closeSettingsModalBtn")?.addEventListener("click", closeSettingsModal);
-      $("closeSecurityModalBtn")?.addEventListener("click", closeSecurityModal);
-      els.overlay?.addEventListener("click", closeAllModals);
-
-      $("openAllFaqBtn")?.addEventListener("click", () => toggleAllFaq(true));
-    }
-
-    async function init() {
-      if (!ensureAuth()) return;
-
-      setTopBackendBadge();
-      applyAutoRefreshState();
-      applyCompactModeState();
-      setupKeyboardShortcuts();
-      setupFaq();
+    els.clearNotificationsBtn?.addEventListener("click", () => {
+      notificationsStore = [];
       renderNotifications();
-      bindPlanGridClicks();
-      bindUI();
+    });
 
-      await Promise.all([
-        loadPlans(false),
-        loadMe(true),
-        loadLinks(true),
-        loadPayments(false),
-        checkBackendHealth()
-      ]);
+    els.refreshActivityBtn?.addEventListener("click", renderActivityTimeline);
+    els.rebuildBoardBtn?.addEventListener("click", renderOperationalBoard);
+    els.openSecurityCenterBtn?.addEventListener("click", openSecurityModal);
 
-      clearInterval(refreshTimer);
-      refreshTimer = setInterval(() => {
-        if (document.hidden || !autoRefreshEnabled) return;
-        loadMe(false);
-        loadLinks(false);
-        loadPayments(false);
-        checkBackendHealth();
-      }, 15000);
-    }
+    els.planQuantityInput?.addEventListener("input", updateBillingPreview);
+    els.planQuantityInput?.addEventListener("change", updateBillingPreview);
+    els.requestPaymentBtn?.addEventListener("click", createPaymentRequest);
+    $("reloadPlansBtn")?.addEventListener("click", () => loadPlans(true));
 
-    window.copyLink = copyLink;
-    window.showPaymentDetails = showPaymentDetails;
-    window.markPaymentSent = markPaymentSent;
-    window.openUpgradeModal = openUpgradeModal;
-    window.openAnalyticsPage = openAnalyticsPage;
-    window.openLinkDirect = openLinkDirect;
+    els.compactModeToggle?.addEventListener("change", () => {
+      compactModeEnabled = els.compactModeToggle.checked;
+      applyCompactModeState();
+    });
 
-    init();
-  </script>
+    els.autoRefreshToggle?.addEventListener("change", () => {
+      autoRefreshEnabled = els.autoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    els.modalCompactModeToggle?.addEventListener("change", () => {
+      compactModeEnabled = els.modalCompactModeToggle.checked;
+      applyCompactModeState();
+    });
+
+    els.modalAutoRefreshToggle?.addEventListener("change", () => {
+      autoRefreshEnabled = els.modalAutoRefreshToggle.checked;
+      applyAutoRefreshState();
+    });
+
+    els.modalChartMetricSelect?.addEventListener("change", () => {
+      if (els.chartMetricSelect) els.chartMetricSelect.value = els.modalChartMetricSelect.value;
+      drawChart();
+    });
+
+    $("openUpgradeCenterBtn")?.addEventListener("click", openUpgradeModal);
+    $("upgradeBtn")?.addEventListener("click", openUpgradeModal);
+    $("openUpgradeFromPaymentsBtn")?.addEventListener("click", openUpgradeModal);
+    $("quickPaymentBtn")?.addEventListener("click", openUpgradeModal);
+
+    $("refreshPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
+    $("reloadPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
+
+    $("supportBtn")?.addEventListener("click", openSupportPanel);
+    $("openSupportPanelBtn")?.addEventListener("click", openSupportPanel);
+    $("openHelpInlineBtn")?.addEventListener("click", openHelpPage);
+    $("logoutBtn")?.addEventListener("click", logout);
+
+    $("closePanelBtn")?.addEventListener("click", closePanel);
+    $("closeUpgradeModalBtn")?.addEventListener("click", closeUpgradeModal);
+    $("closeSettingsModalBtn")?.addEventListener("click", closeSettingsModal);
+    $("closeSecurityModalBtn")?.addEventListener("click", closeSecurityModal);
+    els.overlay?.addEventListener("click", closeAllModals);
+
+    $("openAllFaqBtn")?.addEventListener("click", () => toggleAllFaq(true));
+  }
+
+  async function init() {
+    if (!ensureAuth()) return;
+
+    setTopBackendBadge();
+    applyAutoRefreshState();
+    applyCompactModeState();
+    setupKeyboardShortcuts();
+    setupFaq();
+    renderNotifications();
+    bindPlanGridClicks();
+    bindUI();
+
+    await Promise.all([
+      loadPlans(false),
+      loadMe(true),
+      loadLinks(true),
+      loadPayments(false),
+      checkBackendHealth()
+    ]);
+
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      if (document.hidden || !autoRefreshEnabled) return;
+      loadMe(false);
+      loadLinks(false);
+      loadPayments(false);
+      checkBackendHealth();
+    }, 15000);
+  }
+
+  window.copyLink = copyLink;
+  window.showPaymentDetails = showPaymentDetails;
+  window.markPaymentSent = markPaymentSent;
+  window.openUpgradeModal = openUpgradeModal;
+  window.openAnalyticsPage = openAnalyticsPage;
+  window.openLinkDirect = openLinkDirect;
+
+  init();
+</script>
 </body>
 </html>
