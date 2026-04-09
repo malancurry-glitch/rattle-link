@@ -47,7 +47,7 @@
     }
 
     .wrap{
-      max-width:1440px;
+      max-width:1480px;
       margin:0 auto;
       padding:24px;
       position:relative;
@@ -74,7 +74,7 @@
       color:var(--muted);
       line-height:1.6;
       font-size:13px;
-      max-width:900px;
+      max-width:920px;
     }
 
     .actions,
@@ -183,7 +183,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1800px;
+      min-width:2100px;
     }
 
     th, td{
@@ -217,9 +217,10 @@
       padding:12px 14px;
       border-radius:12px;
       display:none;
-      z-index:100;
+      z-index:2000;
       font-weight:700;
       box-shadow:0 0 20px rgba(0,255,255,.35);
+      max-width:80vw;
     }
 
     .tips{
@@ -358,8 +359,92 @@
       gap:16px;
     }
 
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.65);
+      display:none;
+      z-index:1500;
+    }
+
+    .modal{
+      position:fixed;
+      inset:50% auto auto 50%;
+      transform:translate(-50%,-50%);
+      width:min(900px,94vw);
+      max-height:88vh;
+      overflow:auto;
+      background:#000;
+      border:1px solid rgba(0,255,255,.28);
+      border-radius:18px;
+      padding:18px;
+      display:none;
+      z-index:1600;
+      box-shadow:0 0 40px rgba(0,255,255,.18);
+    }
+
+    .info-box{
+      padding:12px;
+      border-radius:12px;
+      font-size:13px;
+      line-height:1.6;
+      margin-bottom:12px;
+      background:rgba(15,23,42,.45);
+      border:1px solid rgba(0,255,255,.12);
+    }
+
+    .modal-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    .stats-list{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .mini-card{
+      border:1px solid rgba(0,255,255,.14);
+      border-radius:12px;
+      padding:12px;
+      background:rgba(15,23,42,.45);
+    }
+
+    .mini-card .num{
+      font-size:22px;
+      color:var(--primary);
+      font-weight:700;
+      margin-top:6px;
+    }
+
+    .recent-click{
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:12px;
+      padding:10px;
+      margin-bottom:10px;
+      background:rgba(15,23,42,.35);
+    }
+
+    .qr-box{
+      display:flex;
+      align-items:flex-start;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .qr-box img{
+      width:240px;
+      max-width:100%;
+      background:#fff;
+      padding:10px;
+      border-radius:14px;
+    }
+
     @media (max-width: 980px){
-      .grid-2, .grid-3, .two-col-note{ grid-template-columns:1fr; }
+      .grid-2, .grid-3, .two-col-note, .modal-grid, .stats-list{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -369,14 +454,14 @@
       <div>
         <h1>✨ Vanity Slugs</h1>
         <div class="sub">
-          Create clean branded links, action slugs, and advanced vanity modes such as
-          white-label wrappers and retarget-ready links instantly. Sensitive behavior should still be reviewed and enforced on the backend.
+          Create clean branded vanity links, QR-ready public URLs, retarget metadata, and branded redirect modes. Vanity links share the same redirect pool usage as your normal short links.
         </div>
       </div>
 
       <div class="actions">
         <button onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
         <button class="btn-ghost" id="reloadDomainsBtn" type="button">Reload Domains</button>
+        <button class="btn-ghost" id="reloadUsageBtn" type="button">Reload Usage</button>
         <button class="btn-primary" id="refreshBtn" type="button">Refresh</button>
       </div>
     </div>
@@ -478,7 +563,6 @@
             <option value="white_label">White-Label</option>
             <option value="retargeting">Retargeting</option>
             <option value="affiliate">Affiliate</option>
-            <option value="iframe_wrapper">iFrame Wrapper</option>
           </select>
         </div>
       </div>
@@ -502,12 +586,11 @@
           <input id="pixelIdInput" placeholder="fb_pixel_123 or ga_tag_abc" />
         </div>
         <div class="field-block">
-          <label>Cloak / Wrapper Mode</label>
+          <label>Wrapper Mode</label>
           <select id="cloakModeSelect">
             <option value="">None</option>
             <option value="white_label">White-Label</option>
             <option value="affiliate">Affiliate</option>
-            <option value="iframe_wrapper">iFrame Wrapper</option>
           </select>
         </div>
       </div>
@@ -525,12 +608,12 @@
 
       <div class="switch-row">
         <label class="switch"><input id="retargetingEnabledInput" type="checkbox" /> Retargeting enabled</label>
-        <label class="switch"><input id="cloakingEnabledInput" type="checkbox" /> Cloaking / wrapper enabled</label>
+        <label class="switch"><input id="cloakingEnabledInput" type="checkbox" /> Wrapper / branded bridge enabled</label>
         <label class="switch"><input id="pausedInput" type="checkbox" /> Create paused</label>
       </div>
 
       <div class="help-text">
-        This page sends configuration to your backend. Review status, pending approvals, and abuse enforcement should be handled server-side.
+        QR codes and vanity stats are available from the action buttons below after creation.
       </div>
 
       <div class="actions" style="margin-top:12px;">
@@ -554,9 +637,9 @@
       <div class="card">
         <h3>Feature Notes</h3>
         <div class="note-box">
-          <b>White-label</b> can be used for wrapper-style branded flows.<br><br>
-          <b>Retargeting</b> fields store metadata for your backend logic.<br><br>
-          <b>Vanity links</b> should count toward the same redirect quota as your normal short links.
+          <b>White-label</b> stores wrapper-style branded config.<br><br>
+          <b>Retargeting</b> stores metadata for your backend logic and future integrations.<br><br>
+          <b>Stats + QR</b> are available directly from each vanity link row.
         </div>
       </div>
     </div>
@@ -582,7 +665,6 @@
             <option value="white_label">White-Label</option>
             <option value="retargeting">Retargeting</option>
             <option value="affiliate">Affiliate</option>
-            <option value="iframe_wrapper">iFrame Wrapper</option>
           </select>
           <select id="statusFilter" style="max-width:180px;">
             <option value="all">All statuses</option>
@@ -606,6 +688,7 @@
               <th>Status</th>
               <th>Approval</th>
               <th>Sensitive Flags</th>
+              <th>QR</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -614,6 +697,24 @@
         </table>
       </div>
     </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="modal" id="statsModal">
+    <div class="section-title">
+      <h3>Vanity Stats</h3>
+      <button class="btn-ghost" type="button" onclick="closeStatsModal()">Close</button>
+    </div>
+    <div id="statsModalBody"></div>
+  </div>
+
+  <div class="modal" id="qrModal">
+    <div class="section-title">
+      <h3>Vanity QR Code</h3>
+      <button class="btn-ghost" type="button" onclick="closeQrModal()">Close</button>
+    </div>
+    <div id="qrModalBody"></div>
   </div>
 
   <div class="toast" id="toast">Done</div>
@@ -679,7 +780,7 @@
     const $ = (id) => document.getElementById(id);
 
     function authHeaders(method = "GET") {
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("token") || localStorage.getItem("rattle_token") || "";
       const headers = {};
       if (token) headers.Authorization = `Bearer ${token}`;
       if (method !== "GET") headers["Content-Type"] = "application/json";
@@ -736,6 +837,7 @@
 
       if (res.status === 401) {
         localStorage.removeItem("token");
+        localStorage.removeItem("rattle_token");
         window.location.href = "index.html";
         return null;
       }
@@ -750,6 +852,7 @@
     }
 
     function buildPublicUrl(item) {
+      if (item.publicUrl) return item.publicUrl;
       return `https://${item.domain}/${item.slug}`;
     }
 
@@ -759,7 +862,6 @@
       if (clean === "retargeting") return `<span class="badge purple">RETARGETING</span>`;
       if (clean === "vip") return `<span class="badge purple">VIP</span>`;
       if (clean === "affiliate") return `<span class="badge info">AFFILIATE</span>`;
-      if (clean === "iframe_wrapper") return `<span class="badge info">IFRAME</span>`;
       return `<span class="badge active">${escapeHtml(clean.toUpperCase())}</span>`;
     }
 
@@ -782,7 +884,7 @@
       if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
       if (item.pixelPlatform) bits.push(`<span class="badge info">${escapeHtml(String(item.pixelPlatform).toUpperCase())}</span>`);
       if (item.pixelId) bits.push(`<div class="tiny muted">ID: ${escapeHtml(item.pixelId)}</div>`);
-      if (item.cloakingEnabled) bits.push(`<span class="badge danger">CLOAK</span>`);
+      if (item.cloakingEnabled) bits.push(`<span class="badge danger">WRAP</span>`);
       if (item.cloakMode) bits.push(`<span class="badge pending">${escapeHtml(String(item.cloakMode).toUpperCase())}</span>`);
       if (item.disclosureText) bits.push(`<div class="tiny muted">${escapeHtml(item.disclosureText)}</div>`);
       return bits.join("") || `<span class="muted tiny">None</span>`;
@@ -808,6 +910,8 @@
         domain: normalizeDomain(i.domain),
         slug: String(i.slug || "").trim(),
         url: String(i.url || "").trim(),
+        publicUrl: String(i.publicUrl || i.public_url || ""),
+        qrCodeUrl: String(i.qrCodeUrl || i.qr_code_url || ""),
         createdAt: Number(i.createdAt || i.created_at || 0),
         clicks: Number(i.clicks || 0),
         paused: !!i.paused,
@@ -855,6 +959,21 @@
         ? `Editing ${editingItem.domain}/${editingItem.slug}`
         : "Create mode";
     }
+
+    function openModal(modalId) {
+      $("overlay").style.display = "block";
+      $(modalId).style.display = "block";
+    }
+
+    function closeModal(modalId) {
+      $(modalId).style.display = "none";
+      if ($("statsModal").style.display !== "block" && $("qrModal").style.display !== "block") {
+        $("overlay").style.display = "none";
+      }
+    }
+
+    function closeStatsModal() { closeModal("statsModal"); }
+    function closeQrModal() { closeModal("qrModal"); }
 
     async function loadDomains() {
       const res = await api("/vanity/domains", "GET");
@@ -1028,11 +1147,20 @@
           <td><span class="badge ${i.paused ? 'paused' : 'active'}">${i.paused ? 'PAUSED' : 'ACTIVE'}</span></td>
           <td>${getApprovalBits(i)}</td>
           <td>${getSensitiveBits(i)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-ghost tiny" type="button" onclick="showQrForLink('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}')">QR</button>
+            </div>
+          </td>
           <td class="tiny muted">${fmtDate(i.createdAt)}</td>
           <td>
             <div class="row-actions">
               <button class="btn-ghost tiny" type="button" onclick="copyLinkValue('${encodeURIComponent(buildPublicUrl(i))}')">Copy</button>
+              <button class="btn-ghost tiny" type="button" onclick="copyLinkValue('${encodeURIComponent(i.url)}')">Copy Target</button>
+              <button class="btn-ghost tiny" type="button" onclick="openPublicLink('${encodeURIComponent(buildPublicUrl(i))}')">Open</button>
+              <button class="btn-ghost tiny" type="button" onclick="showStatsForLink('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}')">Stats</button>
               <button class="btn-ghost tiny" type="button" onclick="startEdit('${encodeURIComponent(JSON.stringify(i))}')">Edit</button>
+              <button class="btn-ghost tiny" type="button" onclick="cloneIntoForm('${encodeURIComponent(JSON.stringify(i))}')">Clone</button>
               <button class="btn-yellow tiny" type="button" onclick="togglePause('${encodeURIComponent(i.slug)}','${encodeURIComponent(i.domain)}',${i.paused ? 'false' : 'true'})">
                 ${i.paused ? 'Resume' : 'Pause'}
               </button>
@@ -1040,7 +1168,7 @@
             </div>
           </td>
         </tr>
-      `).join("") : `<tr><td colspan="11"><div class="empty">No vanity links found</div></td></tr>`;
+      `).join("") : `<tr><td colspan="12"><div class="empty">No vanity links found</div></td></tr>`;
     }
 
     function collectPayload() {
@@ -1218,6 +1346,11 @@
       showToast("Copied");
     }
 
+    function openPublicLink(encodedText) {
+      const text = decodeURIComponent(encodedText);
+      window.open(text, "_blank", "noopener,noreferrer");
+    }
+
     function fillForm(item) {
       $("domainSelect").value = item.domain || "";
       $("slugInput").value = item.slug || "";
@@ -1239,6 +1372,15 @@
       fillForm(item);
       setEditMode(item);
       setResult(`Loaded ${item.domain}/${item.slug} for editing`, false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function cloneIntoForm(encodedItem) {
+      const item = JSON.parse(decodeURIComponent(encodedItem));
+      fillForm(item);
+      $("slugInput").value = `${item.slug}-copy`;
+      setEditMode(null);
+      setResult(`Cloned ${item.domain}/${item.slug} into create form`, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -1295,16 +1437,127 @@
       if (mode === "retargeting") {
         $("retargetingEnabledInput").checked = true;
       }
-      if (mode === "white_label" || mode === "affiliate" || mode === "iframe_wrapper") {
+      if (mode === "white_label" || mode === "affiliate") {
         $("cloakingEnabledInput").checked = true;
         if (!$("cloakModeSelect").value) {
-          $("cloakModeSelect").value = mode === "white_label" ? "white_label" : mode;
+          $("cloakModeSelect").value = mode;
         }
       }
     }
 
+    async function showQrForLink(slugEncoded, domainEncoded) {
+      const slug = decodeURIComponent(slugEncoded);
+      const domain = decodeURIComponent(domainEncoded);
+
+      const res = await api(`/vanity/qr?slug=${encodeURIComponent(slug)}&domain=${encodeURIComponent(domain)}`, "GET");
+      if (!res) return;
+      if (!res.ok) {
+        showToast(res.data?.message || "Failed to load QR");
+        return;
+      }
+
+      const publicUrl = res.data?.publicUrl || `https://${domain}/${slug}`;
+      const qrCodeUrl = res.data?.qrCodeUrl || "";
+
+      $("qrModalBody").innerHTML = `
+        <div class="qr-box">
+          ${qrCodeUrl ? `<img src="${escapeHtml(qrCodeUrl)}" alt="QR Code" />` : ""}
+          <div style="flex:1;min-width:260px;">
+            <div class="info-box">
+              <b>Public URL</b>
+              <div class="code" style="margin-top:8px;">${escapeHtml(publicUrl)}</div>
+            </div>
+            <div class="actions">
+              <button class="btn-ghost" type="button" onclick="copyLinkValue('${encodeURIComponent(publicUrl)}')">Copy URL</button>
+              ${qrCodeUrl ? `<button class="btn-ghost" type="button" onclick="openPublicLink('${encodeURIComponent(qrCodeUrl)}')">Open QR Image</button>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+      openModal("qrModal");
+    }
+
+    async function showStatsForLink(slugEncoded, domainEncoded) {
+      const slug = decodeURIComponent(slugEncoded);
+      const domain = decodeURIComponent(domainEncoded);
+
+      $("statsModalBody").innerHTML = `<div class="muted">Loading stats...</div>`;
+      openModal("statsModal");
+
+      const res = await api(`/vanity/stats?slug=${encodeURIComponent(slug)}&domain=${encodeURIComponent(domain)}`, "GET");
+      if (!res) return;
+      if (!res.ok) {
+        $("statsModalBody").innerHTML = `<div class="error">${escapeHtml(res.data?.message || "Failed to load stats")}</div>`;
+        return;
+      }
+
+      const item = normalizeVanityItem(res.data?.item || {});
+      const stats = res.data?.stats || {};
+
+      const recent = Array.isArray(stats.recent) ? stats.recent : [];
+
+      $("statsModalBody").innerHTML = `
+        <div class="info-box">
+          <b>${escapeHtml(item.domain)}/${escapeHtml(item.slug)}</b>
+          <div class="code" style="margin-top:8px;">${escapeHtml(buildPublicUrl(item))}</div>
+        </div>
+
+        <div class="stats-list">
+          <div class="mini-card">
+            <div class="muted">Total Clicks</div>
+            <div class="num">${Number(stats.totalClicks || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Unique IPs</div>
+            <div class="num">${Number(stats.uniqueIps || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Last Click</div>
+            <div class="num" style="font-size:14px;">${stats.lastClickAt ? fmtDate(stats.lastClickAt) : "-"}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Last 24h</div>
+            <div class="num">${Number(stats.last24h || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Last 7d</div>
+            <div class="num">${Number(stats.last7d || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Max Risk</div>
+            <div class="num">${Number(stats.maxRisk || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">Bots</div>
+            <div class="num">${Number(stats.bots || 0)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="muted">VPNs</div>
+            <div class="num">${Number(stats.vpns || 0)}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <h4>Recent Click Activity</h4>
+          ${
+            recent.length
+              ? recent.map(r => `
+                <div class="recent-click">
+                  <div><b>${escapeHtml(r.ip || "unknown")}</b></div>
+                  <div class="tiny muted">Time: ${r.time ? fmtDate(r.time) : "-"}</div>
+                  <div class="tiny muted">Risk: ${Number(r.risk || 0)} • VPN: ${r.vpn ? "Yes" : "No"} • Bot: ${r.bot ? "Yes" : "No"}</div>
+                  <div class="tiny muted">${escapeHtml(r.ua || "")}</div>
+                </div>
+              `).join("")
+              : `<div class="muted">No recent click activity.</div>`
+          }
+        </div>
+      `;
+    }
+
     $("createBtn").addEventListener("click", createLink);
     $("updateBtn").addEventListener("click", updateLink);
+
     $("cancelEditBtn").addEventListener("click", () => {
       clearForm(false);
       setEditMode(null);
@@ -1321,21 +1574,39 @@
       showToast("Domains reloaded");
     });
 
+    $("reloadUsageBtn").addEventListener("click", async () => {
+      await loadUsage();
+      showToast("Usage reloaded");
+    });
+
     $("searchInput").addEventListener("input", renderTable);
     $("modeFilter").addEventListener("change", renderTable);
     $("domainFilter").addEventListener("change", renderTable);
     $("statusFilter").addEventListener("change", renderTable);
+
     $("clearBtn").addEventListener("click", () => {
       clearForm(true);
       setEditMode(null);
     });
+
     $("presetSelect").addEventListener("change", (e) => applyPreset(e.target.value));
     $("vanityModeSelect").addEventListener("change", autoAdjustFlags);
 
+    $("overlay").addEventListener("click", () => {
+      closeStatsModal();
+      closeQrModal();
+    });
+
     window.copyLinkValue = copyLinkValue;
     window.startEdit = startEdit;
+    window.cloneIntoForm = cloneIntoForm;
     window.deleteLink = deleteLink;
     window.togglePause = togglePause;
+    window.openPublicLink = openPublicLink;
+    window.showStatsForLink = showStatsForLink;
+    window.showQrForLink = showQrForLink;
+    window.closeStatsModal = closeStatsModal;
+    window.closeQrModal = closeQrModal;
 
     renderQuickPatterns();
     setEditMode(null);
