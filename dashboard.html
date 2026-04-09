@@ -1130,19 +1130,47 @@
       { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
     ];
 
-    const PRIMARY_AUTH_CANDIDATES = ["/auth/me", "/me"];
-    const LEGACY_ROUTE_MAP = {
-      "/me": ["/me", "/auth/me"],
-      "/auth/me": ["/me", "/auth/me"],
-      "/plans": ["/plans"],
-      "/payment-request": ["/payment-request"],
-      "/payments/me": ["/payments/me"],
-      "/payment-i-made": ["/payment-i-made"],
-      "/list": ["/list"],
-      "/history": ["/history"],
-      "/health": ["/health", "/"],
-      "/": ["/", "/health"]
-    };
+    const PRIMARY_ROUTE_MAP = {
+  "/me": ["/auth/me", "/me"],
+  "/auth/me": ["/auth/me", "/me"],
+
+  "/login": ["/auth/login"],
+  "/signup": ["/auth/signup"],
+  "/forgot": ["/auth/forgot"],
+  "/reset": ["/auth/reset"],
+  "/magic-request": ["/auth/magic-request"],
+  "/magic-login": ["/auth/magic-login"],
+  "/magic-status": ["/auth/magic-status"],
+  "/verify-email": ["/auth/verify-email"],
+  "/resend-verify": ["/auth/resend-verify"],
+
+  "/plans": ["/auth/plans", "/plans"],
+  "/payment-request": ["/auth/payment-request", "/payment-request"],
+  "/payments/me": ["/auth/payments/me", "/payments/me"],
+  "/payment-i-made": ["/auth/payment-i-made", "/payment-i-made"],
+
+  "/list": ["/list"],
+  "/history": ["/history"],
+  "/create": ["/create"],
+  "/delete": ["/delete"],
+
+  "/domains/me": ["/domains/me", "/me"],
+  "/health": ["/health", "/"],
+  "/": ["/", "/health"]
+};
+
+const LEGACY_ROUTE_MAP = {
+  "/me": ["/me", "/auth/me"],
+  "/auth/me": ["/me", "/auth/me"],
+  "/plans": ["/plans"],
+  "/payment-request": ["/payment-request"],
+  "/payments/me": ["/payments/me"],
+  "/payment-i-made": ["/payment-i-made"],
+  "/list": ["/list"],
+  "/history": ["/history"],
+  "/health": ["/health", "/"],
+  "/": ["/", "/health"]
+};
 
     let dataStore = [];
     let paymentsStore = [];
@@ -1298,11 +1326,15 @@
     }
 
     function buildPrimaryCandidates(path) {
-      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-      if (p === "/auth/me" || p === "/me") return PRIMARY_AUTH_CANDIDATES.slice();
-      if (p.startsWith("/auth/")) return [p, p.replace(/^\/auth/, "")].filter(Boolean);
-      return Array.from(new Set([primaryAppPath(p), p]));
-    }
+  const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+  if (PRIMARY_ROUTE_MAP[p]) return PRIMARY_ROUTE_MAP[p].slice();
+
+  if (p.startsWith("/auth/")) {
+    return [p, p.replace(/^\/auth/, "")].filter(Boolean);
+  }
+
+  return [p];
+}
 
     function buildLegacyCandidates(path) {
       const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
