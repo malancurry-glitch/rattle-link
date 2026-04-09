@@ -790,7 +790,7 @@
         maxRisk: Number(item.maxRisk || item.max_risk || 0),
         campaign: item.campaign || "",
         note: item.note || "",
-        publicLink: item.publicLink || item.link || buildPublicLink(item.slug)
+        publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug)
       };
     }
 
@@ -800,10 +800,12 @@
           ...authHeaders(),
           ...(options.headers || {})
         };
-        const res = await fetch(`${PRIMARY_API}/app${path}`, {
+
+        const res = await fetch(`${PRIMARY_API}${path}`, {
           ...options,
           headers
         });
+
         const raw = await res.text();
         let data = {};
         try {
@@ -811,10 +813,21 @@
         } catch {
           data = { message: raw };
         }
+
         if (res.status === 401) logout();
+
         return { ok: res.ok, status: res.status, data };
       } catch (e) {
         return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" } };
+      }
+    }
+
+    async function safeFetchNoAuth(url) {
+      try {
+        const res = await fetch(url);
+        return { ok: res.ok, status: res.status };
+      } catch {
+        return { ok: false, status: 0 };
       }
     }
 
@@ -929,11 +942,21 @@
     async function loadMe(showMessage = false) {
       const res = await safeFetch("/auth/me", { method: "GET" });
       if (!res.ok) {
+        els.meEmail.textContent = "-";
+        els.mePlan.textContent = "-";
+        els.meExpire.textContent = "-";
+        els.shortUsageText.textContent = "0 / 0";
+        els.landingUsageText.textContent = "0 / 0";
+        els.shortUsageBar.style.width = "0%";
+        els.landingUsageBar.style.width = "0%";
+        els.slotsLeft.textContent = "0";
+        els.accessSummary.textContent = "Could not load account details.";
         if (showMessage) showToast("Failed to load account");
         return;
       }
 
       meState = res.data || {};
+
       const planLimits = meState.planLimits || {};
       const usage = meState.usage || {};
       const remaining = meState.remaining || {};
@@ -944,34 +967,55 @@
       const landingLimit = Number(planLimits.activeLandingPages || 0);
       const shortLeft = Math.max(0, Number(remaining.activeShortLinks || 0));
 
-      els.meEmail.textContent = meState.username || "-";
-      els.mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
-      els.meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
+      els.meEmail.textContent = meState.username || meState.email || "-";
+      els.mePlan.textContent = normalizePlanLabel(
+        meState.subscriptionPlan ||
+        meState.subscription_plan ||
+        (String(meState.subscriptionStatus || meState.subscription_status || "").toLowerCase() === "trial" ? "free_trial" : "")
+      );
+      els.meExpire.textContent = meState.subscriptionExpiresAt
+        ? fmtDate(meState.subscriptionExpiresAt)
+        : (meState.subscription_expires_at ? fmtDate(meState.subscription_expires_at) : "-");
+
       els.shortUsageText.textContent = `${shortUsed} / ${shortLimit}`;
       els.landingUsageText.textContent = `${landingUsed} / ${landingLimit}`;
       els.shortUsageBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
       els.landingUsageBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
       els.slotsLeft.textContent = shortLeft;
 
-      const status = String(meState.subscriptionStatus || "trial").toLowerCase();
-      let summary = `Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
+      const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
+      const expiresAt = Number(meState.subscriptionExpiresAt || meState.subscription_expires_at || 0);
 
-      if (status === "active" && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
+      let summary = "Account loaded.";
+      if (shortLimit || landingLimit) {
+        summary = `Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
+      }
+
+      if (status === "active" && (!expiresAt || expiresAt > Date.now())) {
         els.planBadge.className = "badge live";
         els.planBadge.textContent = "Active";
-        summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortLeft} short-link slots left.`;
+        summary = shortLimit || landingLimit
+          ? `Plan active until ${expiresAt ? fmtDate(expiresAt) : "-"}. ${shortLeft} short-link slots left.`
+          : `Plan active${expiresAt ? ` until ${fmtDate(expiresAt)}` : ""}.`;
       } else if (status === "expired") {
         els.planBadge.className = "badge expired";
         els.planBadge.textContent = "Expired";
-        summary = `Subscription expired. Current usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
+        summary = "Subscription expired.";
       } else {
         els.planBadge.className = "badge trial";
         els.planBadge.textContent = "Trial";
-        summary = `Free trial active. ${shortUsed}/${shortLimit} short links currently used.`;
+        summary = shortLimit
+          ? `Free trial active. ${shortUsed}/${shortLimit} short links currently used.`
+          : "Free trial active.";
       }
 
-      if (meState.emailVerified === false) summary += " Email verification is incomplete.";
-      if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
+      if (meState.emailVerified === false || meState.email_verified === false) {
+        summary += " Email verification is incomplete.";
+      }
+
+      if (meState.primaryDomain) {
+        summary += ` Primary domain: ${meState.primaryDomain}.`;
+      }
 
       els.accessSummary.textContent = summary;
       if (showMessage) showToast("Account refreshed");
@@ -1127,7 +1171,7 @@
     }
 
     async function loadHealth() {
-      const res = await fetch(`${PRIMARY_API}/health`);
+      const res = await safeFetchNoAuth(`${PRIMARY_API}/health`);
       els.healthBox.innerHTML = res.ok
         ? `<span class="badge live">Online</span> <span class="muted">Backend2 responding</span>`
         : `<span class="badge expired">Issue</span> <span class="muted">Health check failed</span>`;
@@ -1136,6 +1180,7 @@
     async function loadLinks(showMessage = false) {
       if (showMessage) setResult("Loading Backend2 links...", false);
       const res = await safeFetch("/list", { method: "GET" });
+
       if (!res.ok) {
         linksStore = [];
         renderStats();
@@ -1213,7 +1258,7 @@
         return;
       }
 
-      setResult(`Backend2 link created: ${res.data?.link || "Success"}`, false);
+      setResult(`Backend2 link created: ${res.data?.shortLink || res.data?.link || "Success"}`, false);
       els.urlInput.value = "";
       els.slugInput.value = "";
       els.expireInput.value = "";
@@ -1226,6 +1271,7 @@
       const count = Number(els.bulkCountInput.value || 0);
       const body = getCreatePayload();
       if (!body) return;
+
       if (!Number.isFinite(count) || count <= 0) {
         setResult("Invalid bulk count", true);
         return;
@@ -1250,6 +1296,7 @@
           setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
           break;
         }
+
         success++;
         setResult(`Bulk creating Backend2 links... ${success}/${count}`, false);
       }
@@ -1261,15 +1308,18 @@
 
     async function deleteLink(slug) {
       if (!confirm(`Delete ${slug} from Backend2?`)) return;
+
       const res = await safeFetch("/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug })
       });
+
       if (!res.ok) {
-        showToast("Delete failed");
+        showToast(res.data?.message || "Delete failed");
         return;
       }
+
       selectedLinks.delete(slug);
       showToast("Deleted");
       await Promise.all([loadLinks(false), loadMe(false)]);
@@ -1302,6 +1352,7 @@
         const item = linksStore.find(x => x.slug === slug);
         return item?.publicLink || buildPublicLink(slug);
       });
+
       if (!items.length) return showToast("No selected items");
       await copyLink(items.join("\n"));
     }
@@ -1482,23 +1533,30 @@
     }
 
     function renderSecurityCenter() {
-      const risky = [...linksStore].filter(x => Number(x.maxRisk || 0) > 60).sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+      const risky = [...linksStore]
+        .filter(x => Number(x.maxRisk || 0) > 60)
+        .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+
       els.securityContent.innerHTML = `
         <div class="surface">
           <div><b>Security overview</b></div>
           <div class="muted" style="margin-top:8px;">${risky.length} Backend2 links currently show elevated risk markers.</div>
         </div>
         <div style="margin-top:12px;">
-          ${risky.length ? risky.slice(0, 10).map(item => `
-            <div class="surface" style="margin-bottom:10px;">
-              <div><b>${escapeHtml(item.slug)}</b></div>
-              <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-              <div class="row-actions" style="margin-top:8px;">
-                <button type="button" onclick="showHistory('${escapeForJs(item.slug)}')">Open Stats</button>
-                <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}')">Delete</button>
-              </div>
-            </div>
-          `).join("") : `<div class="muted" style="margin-top:12px;">No elevated-risk links found.</div>`}
+          ${
+            risky.length
+              ? risky.slice(0, 10).map(item => `
+                <div class="surface" style="margin-bottom:10px;">
+                  <div><b>${escapeHtml(item.slug)}</b></div>
+                  <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+                  <div class="row-actions" style="margin-top:8px;">
+                    <button type="button" onclick="showHistory('${escapeForJs(item.slug)}')">Open Stats</button>
+                    <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}')">Delete</button>
+                  </div>
+                </div>
+              `).join("")
+              : `<div class="muted" style="margin-top:12px;">No elevated-risk links found.</div>`
+          }
         </div>
       `;
     }
@@ -1534,10 +1592,12 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url, riskMode: "standard" })
         });
+
         if (!res.ok) {
           setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
           break;
         }
+
         okCount++;
         setResult(`Uploading Backend2 links... ${okCount}/${urls.length}`, false);
       }
@@ -1550,6 +1610,7 @@
 
     function wireDropZone() {
       const zone = els.dropZone;
+
       ["dragenter", "dragover"].forEach(evt => {
         zone.addEventListener(evt, e => {
           e.preventDefault();
@@ -1655,6 +1716,7 @@
 
     async function init() {
       if (!ensureAuth()) return;
+
       renderNotifications();
       wireDropZone();
       bindTableActions();
