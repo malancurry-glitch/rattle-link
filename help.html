@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Help Center</title>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:rgba(2,6,23,.86);
+      --card2:rgba(15,23,42,.50);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --blue:#3b82f6;
+      --purple:#a855f7;
+      --border:rgba(0,255,255,.18);
+      --radius:18px;
+      --shadow:0 0 14px rgba(0,255,255,.10), inset 0 0 18px rgba(0,255,255,.03);
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, #0f172a 0%, var(--bg) 35%, var(--bg2) 100%);
+      color:var(--text);
+      min-height:100vh;
+      position:relative;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
+      background-size:38px 38px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1300px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .header h1{
+      margin:0 0 8px;
+      font-size:30px;
+      color:var(--cyan);
+      text-shadow:0 0 12px rgba(0,255,255,.45);
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+      max-width:900px;
+    }
+
+    .top-actions,
+    .section-head,
+    .quick-links{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .section-head{
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      margin-bottom:16px;
+      backdrop-filter:blur(12px);
+      box-shadow:var(--shadow);
+    }
+
+    .card h2,.card h3,.card h4{
+      margin:0 0 12px;
+      color:var(--cyan);
+    }
+
+    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+
+    .info-box,
+    .support-box,
+    .step-box,
+    .topic-box{
+      border:1px solid rgba(0,255,255,.14);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,.42);
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    .small{ font-size:12px; }
+
+    input, textarea, select{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,.22);
+      background:#000;
+      color:var(--text);
+      outline:none;
+      font:inherit;
+    }
+
+    input:focus, textarea:focus, select:focus{
+      box-shadow:0 0 12px rgba(0,255,255,.30);
+      border-color:rgba(0,255,255,.45);
+    }
+
+    textarea{
+      min-height:140px;
+      resize:vertical;
+    }
+
+    button, .btn{
+      padding:11px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,.26);
+      background:#020617;
+      color:var(--cyan);
+      cursor:pointer;
+      font-size:12px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      transition:.18s ease;
+    }
+
+    button:hover, .btn:hover{
+      transform:translateY(-1px);
+      border-color:var(--cyan);
+      color:#fff;
+      box-shadow:0 0 12px rgba(0,255,255,.26);
+    }
+
+    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
+    .green-btn{ color:#86efac; border-color:#22c55e; }
+    .blue-btn{ color:#93c5fd; border-color:#3b82f6; }
+    .purple-btn{ color:#e9d5ff; border-color:#a855f7; }
+    .red-btn{ color:#fecaca; border-color:#ef4444; }
+    .yellow-btn{ color:#fde68a; border-color:#f59e0b; }
+
+    .badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+      white-space:nowrap;
+    }
+
+    .live{ color:var(--green); }
+    .warn{ color:var(--yellow); }
+    .danger{ color:var(--red); }
+    .info{ color:var(--blue); }
+
+    .faq-item{
+      border:1px solid rgba(0,255,255,.12);
+      border-radius:12px;
+      overflow:hidden;
+      margin-bottom:10px;
+      background:rgba(15,23,42,.45);
+    }
+
+    .faq-q{
+      width:100%;
+      text-align:left;
+      background:transparent;
+      border:none;
+      border-bottom:1px solid rgba(255,255,255,.05);
+      padding:14px;
+      color:var(--cyan);
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .faq-a{
+      display:none;
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .faq-item.open .faq-a{
+      display:block;
+    }
+
+    .support-list a{
+      display:block;
+      margin-bottom:8px;
+      color:#7dd3fc;
+      text-decoration:none;
+      word-break:break-word;
+    }
+
+    .support-list a:hover{
+      text-decoration:underline;
+    }
+
+    .result{
+      min-height:20px;
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.6;
+      white-space:pre-wrap;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
+      border-radius:12px;
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 16px rgba(0,255,255,.35);
+      max-width:80vw;
+    }
+
+    @media (max-width: 900px){
+      .grid-2, .grid-3{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 760px){
+      .container{ padding:14px; }
+      .top-actions{ width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🆘 Help Center</h1>
+        <div class="sub">
+          Quick support, setup steps, payment help, account guidance, and common fixes for Rattle Link.
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="ghost-btn" type="button" onclick="goDashboard()">← Dashboard</button>
+        <button id="openAllFaqBtn" type="button">Open All FAQ</button>
+        <button id="copySupportBtn" class="blue-btn" type="button">Copy Support Info</button>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card support-box">
+        <h3>📩 Email Support</h3>
+        <div class="muted">Best for billing, account changes, and verification issues.</div>
+        <div style="margin-top:12px;">
+          <a href="mailto:support@rattleshort.online">support@rattleshort.online</a>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="green-btn" type="button" onclick="copyText('support@rattleshort.online')">Copy Email</button>
+        </div>
+      </div>
+
+      <div class="card support-box">
+        <h3>💬 Telegram</h3>
+        <div class="muted">Best for faster chat support and dashboard questions.</div>
+        <div style="margin-top:12px;">
+          <a href="https://t.me/Rtslik" target="_blank" rel="noopener noreferrer">@Rtslik</a>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="blue-btn" type="button" onclick="window.open('https://t.me/Rtslik','_blank','noopener,noreferrer')">Open Telegram</button>
+        </div>
+      </div>
+
+      <div class="card support-box">
+        <h3>🎧 Discord / Phone</h3>
+        <div class="muted">Use Discord for community help or phone for urgent contact.</div>
+        <div class="support-list" style="margin-top:12px;">
+          <a href="https://discord.gg/xwGvhtjb" target="_blank" rel="noopener noreferrer">Join Discord Server</a>
+          <a href="tel:+19547878220">+1 954 787 8220</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>⚡ Quick Help Topics</h3>
+        <span class="badge info">Most used</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="topic-box">
+          <h4>Login not working</h4>
+          <div class="muted">Check token, email verification, and correct backend session.</div>
+        </div>
+        <div class="topic-box">
+          <h4>Payment pending</h4>
+          <div class="muted">Make sure you clicked “I Made a Transfer” after sending payment.</div>
+        </div>
+        <div class="topic-box">
+          <h4>Link not creating</h4>
+          <div class="muted">You may have reached active slot limits or your plan may be expired.</div>
+        </div>
+        <div class="topic-box">
+          <h4>Domain not verifying</h4>
+          <div class="muted">Use TXT verification only and allow time for DNS propagation.</div>
+        </div>
+        <div class="topic-box">
+          <h4>Stats look empty</h4>
+          <div class="muted">Some links may not have click history yet, even if they exist.</div>
+        </div>
+        <div class="topic-box">
+          <h4>Security warning</h4>
+          <div class="muted">High risk, bot, or VPN traffic may trigger alerts in analytics.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🧭 Getting Started</h3>
+
+        <div class="step-box">
+          <b>1. Log in and verify session</b>
+          <div class="muted">Use the dashboard verify session button to confirm your token is active on the correct backend.</div>
+        </div>
+
+        <div class="step-box" style="margin-top:10px;">
+          <b>2. Create a short link</b>
+          <div class="muted">Paste your URL, optionally add a custom slug, set expiry, then choose Backend2 or AWS.</div>
+        </div>
+
+        <div class="step-box" style="margin-top:10px;">
+          <b>3. Upgrade if needed</b>
+          <div class="muted">If Backend2 slot limits are reached, open upgrade.html and create a payment request.</div>
+        </div>
+
+        <div class="step-box" style="margin-top:10px;">
+          <b>4. Track analytics</b>
+          <div class="muted">Use analytics.html to monitor clicks, IP activity, risk score, and geo map traffic.</div>
+        </div>
+
+        <div class="step-box" style="margin-top:10px;">
+          <b>5. Manage extras</b>
+          <div class="muted">Landing pages and domains are handled separately in landing.html and domain.html.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🛠 Common Fixes</h3>
+
+        <div class="info-box">
+          <b>Session expired</b>
+          <div class="muted">Log in again. If the token is missing or invalid, the dashboard cannot load protected data.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Payment still pending</b>
+          <div class="muted">Wait for admin confirmation after submitting transfer. Keep your payment ID ready.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Backend2 creation blocked</b>
+          <div class="muted">Your plan may be paused, expired, or full on active short-link slots.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Domain verification failed</b>
+          <div class="muted">Check the TXT record value carefully and make sure proxy settings do not affect ownership verification flow.</div>
+        </div>
+
+        <div class="info-box">
+          <b>No analytics shown</b>
+          <div class="muted">The link may be live but may not have any recorded clicks yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>❓ Frequently Asked Questions</h3>
+        <span class="badge live">Help</span>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">How many short links can I create on free trial?</button>
+        <div class="faq-a">Free trial allows 3 active short links on Backend2. Deleting one frees a slot.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">How do I know if my payment was received?</button>
+        <div class="faq-a">After sending payment, click “I Made a Transfer.” The payment then waits for admin verification. Once confirmed, it changes to verified.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">Can I use AWS and Backend2 together?</button>
+        <div class="faq-a">Yes. They can both appear in your dashboard, but Backend2 and AWS may use separate endpoints and behaviors.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">Where do I manage landing pages?</button>
+        <div class="faq-a">Use landing.html for landing-page creation and updates.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">Where do I manage domains?</button>
+        <div class="faq-a">Use domain.html. Your custom domain flow should stay TXT-verification only.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" type="button">How do I open analytics?</button>
+        <div class="faq-a">Use analytics.html from the dashboard button or open it directly to inspect click history and geo activity.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>📝 Send Support Note</h3>
+        <div class="muted">This section helps you prepare a clean support message you can copy and send.</div>
+
+        <div style="margin-top:12px;">
+          <div class="muted">Subject</div>
+          <input id="supportSubject" placeholder="Example: Payment still pending" />
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="muted">Message</div>
+          <textarea id="supportMessage" placeholder="Write your issue here... include email, payment ID, backend, slug, and what happened."></textarea>
+        </div>
+
+        <div class="quick-links" style="margin-top:12px;">
+          <button id="generateTemplateBtn" class="purple-btn" type="button">Generate Template</button>
+          <button id="copyMessageBtn" class="green-btn" type="button">Copy Message</button>
+          <button id="openMailBtn" class="blue-btn" type="button">Open Email App</button>
+        </div>
+
+        <div id="formResult" class="result"></div>
+      </div>
+
+      <div class="card">
+        <h3>📜 Policy Summary</h3>
+
+        <div class="info-box">
+          <b>Acceptable Use</b>
+          <div class="muted">Do not use Rattle Link for phishing, spam, abuse, malware, illegal content, or harmful redirect activity.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Billing</b>
+          <div class="muted">Paid access begins after manual payment verification. Expired or paused plans may block new item creation.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Privacy</b>
+          <div class="muted">Account, click, IP, and device/session data may be used for fraud prevention, analytics, and service operations.</div>
+        </div>
+
+        <div class="info-box">
+          <b>Domains</b>
+          <div class="muted">Backend2 custom domains are expected to use TXT ownership verification only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <div id="toast" class="toast">Copied!</div>
+
+  <script>
+    const SUPPORT_EMAIL = "support@rattleshort.online";
+    const SUPPORT_TELEGRAM = "https://t.me/Rtslik";
+    const SUPPORT_DISCORD = "https://discord.gg/xwGvhtjb";
+    const SUPPORT_PHONE = "+1 954 787 8220";
+
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      toast: $("toast"),
+      result: $("result"),
+      formResult: $("formResult"),
+      supportSubject: $("supportSubject"),
+      supportMessage: $("supportMessage"),
+      generateTemplateBtn: $("generateTemplateBtn"),
+      copyMessageBtn: $("copyMessageBtn"),
+      openMailBtn: $("openMailBtn"),
+      openAllFaqBtn: $("openAllFaqBtn"),
+      copySupportBtn: $("copySupportBtn")
+    };
+
+    function showToast(message = "Done") {
+      if (!els.toast) return;
+      els.toast.textContent = message;
+      els.toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        els.toast.style.display = "none";
+      }, 1800);
+    }
+
+    function setResult(message, isError = false, target = els.result) {
+      if (!target) return;
+      target.textContent = message || "";
+      target.className = `result ${isError ? "error" : "success"}`;
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    function toggleAllFaq(open) {
+      document.querySelectorAll(".faq-item").forEach(item => item.classList.toggle("open", !!open));
+    }
+
+    function setupFaq() {
+      document.querySelectorAll(".faq-q").forEach(btn => {
+        btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
+      });
+    }
+
+    function generateSupportTemplate() {
+      const subject = els.supportSubject.value.trim() || "Rattle Link Support Request";
+      const template = [
+        `Hello Rattle Link Support,`,
+        ``,
+        `I need help with: ${subject}`,
+        ``,
+        `Account email: `,
+        `Backend used: `,
+        `Link slug / payment ID / domain: `,
+        `What happened: `,
+        `When it happened: `,
+        `What I already tried: `,
+        ``,
+        `Thank you.`
+      ].join("\n");
+
+      if (!els.supportMessage.value.trim()) {
+        els.supportMessage.value = template;
+      }
+      setResult("Support template generated.", false, els.formResult);
+    }
+
+    async function copySupportMessage() {
+      const subject = els.supportSubject.value.trim();
+      const message = els.supportMessage.value.trim();
+
+      if (!subject && !message) {
+        return setResult("Write a subject or message first.", true, els.formResult);
+      }
+
+      const finalText = `Subject: ${subject || "Rattle Link Support Request"}\n\n${message}`;
+      try {
+        await navigator.clipboard.writeText(finalText);
+        setResult("Support message copied.", false, els.formResult);
+        showToast("Copied!");
+      } catch {
+        setResult("Copy failed.", true, els.formResult);
+      }
+    }
+
+    function openMailApp() {
+      const subject = encodeURIComponent(els.supportSubject.value.trim() || "Rattle Link Support Request");
+      const body = encodeURIComponent(els.supportMessage.value.trim() || "");
+      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+    }
+
+    async function copySupportInfo() {
+      const text = [
+        `Email: ${SUPPORT_EMAIL}`,
+        `Telegram: ${SUPPORT_TELEGRAM}`,
+        `Discord: ${SUPPORT_DISCORD}`,
+        `Phone: ${SUPPORT_PHONE}`
+      ].join("\n");
+      await copyText(text);
+    }
+
+    function goDashboard() {
+      window.location.href = "dashboard.html";
+    }
+
+    function bindUI() {
+      els.generateTemplateBtn?.addEventListener("click", generateSupportTemplate);
+      els.copyMessageBtn?.addEventListener("click", copySupportMessage);
+      els.openMailBtn?.addEventListener("click", openMailApp);
+      els.openAllFaqBtn?.addEventListener("click", () => toggleAllFaq(true));
+      els.copySupportBtn?.addEventListener("click", copySupportInfo);
+    }
+
+    function init() {
+      setupFaq();
+      bindUI();
+    }
+
+    window.copyText = copyText;
+    window.goDashboard = goDashboard;
+    window.toggleAllFaq = toggleAllFaq;
+
+    init();
+  </script>
+</body>
+</html>

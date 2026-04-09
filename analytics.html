@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rattle Link Analytics</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#000000;
+      --card:rgba(2,6,23,.86);
+      --card2:rgba(15,23,42,.55);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --cyan:#00ffff;
+      --green:#22c55e;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+      --purple:#a855f7;
+      --border:rgba(0,255,255,.18);
+      --radius:18px;
+      --shadow:0 0 14px rgba(0,255,255,.10), inset 0 0 18px rgba(0,255,255,.03);
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:radial-gradient(circle at top, #0f172a 0%, var(--bg) 35%, var(--bg2) 100%);
+      color:var(--text);
+      min-height:100vh;
+      position:relative;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px);
+      background-size:38px 38px;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      position:relative;
+      z-index:1;
+      max-width:1500px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .header h1{
+      margin:0 0 8px;
+      font-size:30px;
+      color:var(--cyan);
+      text-shadow:0 0 12px rgba(0,255,255,.45);
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+      max-width:900px;
+    }
+
+    .top-actions,
+    .section-head,
+    .toolbar,
+    .row-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .section-head{
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      margin-bottom:16px;
+      backdrop-filter:blur(12px);
+      box-shadow:var(--shadow);
+    }
+
+    .card h2,.card h3,.card h4{
+      margin:0 0 12px;
+      color:var(--cyan);
+    }
+
+    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .stats-kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+    .stats-layout{ display:grid; grid-template-columns:1.15fr .85fr; gap:14px; }
+
+    .stat-card,
+    .mini-box,
+    .stats-kpi,
+    .surface,
+    .activity-item,
+    .risk-item{
+      border:1px solid rgba(0,255,255,.14);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(15,23,42,.42);
+    }
+
+    .stat-card .num,
+    .stats-kpi .k-value{
+      font-size:28px;
+      font-weight:800;
+      color:var(--cyan);
+      margin-bottom:6px;
+    }
+
+    .stat-card .label,
+    .stats-kpi .k-label,
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .surface{
+      background:rgba(15,23,42,.32);
+    }
+
+    input, select{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,.22);
+      background:#000;
+      color:var(--text);
+      outline:none;
+      font:inherit;
+    }
+
+    input:focus, select:focus{
+      box-shadow:0 0 12px rgba(0,255,255,.30);
+      border-color:rgba(0,255,255,.45);
+    }
+
+    button, .btn{
+      padding:11px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,255,255,.26);
+      background:#020617;
+      color:var(--cyan);
+      cursor:pointer;
+      font-size:12px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      transition:.18s ease;
+    }
+
+    button:hover, .btn:hover{
+      transform:translateY(-1px);
+      border-color:var(--cyan);
+      color:#fff;
+      box-shadow:0 0 12px rgba(0,255,255,.26);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
+    .blue-btn{ color:#93c5fd; border-color:#3b82f6; }
+    .green-btn{ color:#86efac; border-color:#22c55e; }
+    .yellow-btn{ color:#fde68a; border-color:#f59e0b; }
+    .purple-btn{ color:#e9d5ff; border-color:#a855f7; }
+    .danger-btn{ color:#fecaca; border-color:#ef4444; }
+
+    .badge, .pill{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid currentColor;
+      white-space:nowrap;
+    }
+
+    .live{ color:var(--green); }
+    .warn{ color:var(--yellow); }
+    .danger{ color:var(--red); }
+    .info{ color:var(--blue); }
+
+    .table-wrap{
+      width:100%;
+      overflow:auto;
+    }
+
+    table{
+      width:100%;
+      min-width:960px;
+      border-collapse:collapse;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid rgba(148,163,184,.20);
+      text-align:left;
+      vertical-align:top;
+      font-size:13px;
+    }
+
+    th{
+      position:sticky;
+      top:0;
+      background:#020617;
+      color:var(--cyan);
+      z-index:1;
+    }
+
+    tr:hover{
+      background:rgba(2,6,23,.65);
+    }
+
+    .map-box{
+      height:380px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(0,255,255,.14);
+    }
+
+    .list-box{
+      max-height:430px;
+      overflow:auto;
+      padding-right:2px;
+    }
+
+    .result{
+      min-height:20px;
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.6;
+      white-space:pre-wrap;
+    }
+
+    .success{ color:var(--green); }
+    .error{ color:var(--red); }
+
+    .toast{
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--cyan);
+      color:#000;
+      padding:12px 14px;
+      border-radius:12px;
+      display:none;
+      z-index:2000;
+      font-weight:700;
+      box-shadow:0 0 16px rgba(0,255,255,.35);
+      max-width:80vw;
+    }
+
+    @media (max-width: 1200px){
+      .grid-3, .grid-2, .stats-kpis, .stats-layout{ grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 760px){
+      .container{ padding:14px; }
+      table{ min-width:780px; }
+      .top-actions{ width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>📊 Analytics Center</h1>
+        <div class="sub">
+          View click history, risk activity, geo locations, top IPs, and link performance across Backend2 and AWS.
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="ghost-btn" type="button" onclick="goDashboard()">← Dashboard</button>
+        <button id="refreshBtn" type="button">Refresh</button>
+        <button id="openSelectedBtn" class="blue-btn" type="button">Open Link</button>
+        <button id="copySelectedBtn" class="green-btn" type="button">Copy Link</button>
+        <button id="exportCsvBtn" type="button">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>🔎 Select Link</h3>
+        <div class="toolbar">
+          <select id="backendFilter" style="max-width:180px;">
+            <option value="all">All backends</option>
+            <option value="primary">Backend2 only</option>
+            <option value="legacy">AWS only</option>
+          </select>
+          <input id="searchInput" placeholder="Search slug or URL..." style="max-width:320px;" />
+          <button id="reloadLinksBtn" class="ghost-btn" type="button">Reload Links</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <div class="muted">Choose link</div>
+          <select id="linkSelect"></select>
+        </div>
+        <div>
+          <div class="muted">Chart mode</div>
+          <select id="chartModeSelect">
+            <option value="clicks">Clicks timeline</option>
+            <option value="risk">Risk timeline</option>
+            <option value="both">Clicks + Risk</option>
+          </select>
+        </div>
+        <div>
+          <div class="muted">Quick action</div>
+          <div class="row-actions" style="margin-top:8px;">
+            <button id="loadAnalyticsBtn" class="purple-btn" type="button">Load Analytics</button>
+            <button id="loadGeoBtn" class="yellow-btn" type="button">Geo Only</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="selectedInfo" class="result"></div>
+    </div>
+
+    <div class="stats-kpis">
+      <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value" id="kpiTotalClicks">0</div></div>
+      <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value" id="kpiUniqueIps">0</div></div>
+      <div class="stats-kpi"><div class="k-label">Bots</div><div class="k-value" id="kpiBots">0</div></div>
+      <div class="stats-kpi"><div class="k-label">VPNs</div><div class="k-value" id="kpiVpns">0</div></div>
+      <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value" id="kpiMaxRisk">0</div></div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card stat-card">
+        <div class="num" id="kpiLast24h">0</div>
+        <div class="label">Clicks Last 24 Hours</div>
+      </div>
+      <div class="card stat-card">
+        <div class="num" id="kpiSuspicious">0</div>
+        <div class="label">Suspicious Events</div>
+      </div>
+      <div class="card stat-card">
+        <div class="num" id="kpiLastClick">-</div>
+        <div class="label">Last Click Time</div>
+      </div>
+    </div>
+
+    <div class="stats-layout">
+      <div>
+        <div class="card">
+          <div class="section-head">
+            <h3>📈 Timeline</h3>
+            <span class="muted" id="timelineSummary">No data loaded.</span>
+          </div>
+          <canvas id="historyChart" height="120"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <h3>🌍 Geo Map</h3>
+            <button id="resetMapBtn" class="ghost-btn" type="button">Reset Map</button>
+          </div>
+          <div id="mapBox" class="map-box"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>🧠 Link Summary</h3>
+          <div id="linkSummaryBox" class="surface">
+            <div class="muted">Select a link and load analytics.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🖥 Top IP Activity</h3>
+          <div id="topIpsList" class="list-box">
+            <div class="muted">No history loaded.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚠️ High Risk Events</h3>
+          <div id="riskEventsList" class="list-box">
+            <div class="muted">No risk events loaded.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h3>🧾 Raw Click History</h3>
+        <span class="muted" id="historyCountText">0 records</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Time</th>
+              <th>IP</th>
+              <th>Risk</th>
+              <th>Bot</th>
+              <th>VPN</th>
+              <th>Country</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <div id="toast" class="toast">Copied!</div>
+
+  <script>
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    const AUTH_STORAGE_KEY = "rattle_token";
+    const PRIMARY_AUTH_CANDIDATES = ["/auth/me", "/me"];
+    const LEGACY_ROUTE_MAP = {
+      "/me": ["/me", "/auth/me"],
+      "/auth/me": ["/me", "/auth/me"],
+      "/list": ["/list"],
+      "/history": ["/history"],
+      "/health": ["/health", "/"],
+      "/": ["/", "/health"]
+    };
+
+    let linksStore = [];
+    let currentHistory = [];
+    let currentLink = null;
+    let historyChart = null;
+    let geoMap = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      refreshBtn: $("refreshBtn"),
+      openSelectedBtn: $("openSelectedBtn"),
+      copySelectedBtn: $("copySelectedBtn"),
+      exportCsvBtn: $("exportCsvBtn"),
+      reloadLinksBtn: $("reloadLinksBtn"),
+      backendFilter: $("backendFilter"),
+      searchInput: $("searchInput"),
+      linkSelect: $("linkSelect"),
+      chartModeSelect: $("chartModeSelect"),
+      loadAnalyticsBtn: $("loadAnalyticsBtn"),
+      loadGeoBtn: $("loadGeoBtn"),
+      selectedInfo: $("selectedInfo"),
+      result: $("result"),
+      toast: $("toast"),
+      timelineSummary: $("timelineSummary"),
+      linkSummaryBox: $("linkSummaryBox"),
+      topIpsList: $("topIpsList"),
+      riskEventsList: $("riskEventsList"),
+      historyTable: $("historyTable"),
+      historyCountText: $("historyCountText"),
+      mapBox: $("mapBox"),
+      resetMapBtn: $("resetMapBtn"),
+      kpiTotalClicks: $("kpiTotalClicks"),
+      kpiUniqueIps: $("kpiUniqueIps"),
+      kpiBots: $("kpiBots"),
+      kpiVpns: $("kpiVpns"),
+      kpiMaxRisk: $("kpiMaxRisk"),
+      kpiLast24h: $("kpiLast24h"),
+      kpiSuspicious: $("kpiSuspicious"),
+      kpiLastClick: $("kpiLastClick")
+    };
+
+    function getToken() {
+      return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
+    }
+
+    function ensureAuth() {
+      if (!getToken()) {
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    }
+
+    function authHeaders() {
+      const token = getToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    function apiBaseForBackend(backend) {
+      return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    }
+
+    function backendLabel(backend) {
+      return backend === "legacy" ? "AWS" : "Backend2";
+    }
+
+    function primaryAppPath(path) {
+      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      if (p.startsWith("/app/") || p === "/app") return p;
+      return `/app${p}`;
+    }
+
+    function buildPrimaryCandidates(path) {
+      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      if (p === "/auth/me" || p === "/me") return PRIMARY_AUTH_CANDIDATES.slice();
+      if (p.startsWith("/auth/")) return [p, p.replace(/^\/auth/, "")].filter(Boolean);
+      return Array.from(new Set([primaryAppPath(p), p]));
+    }
+
+    function buildLegacyCandidates(path) {
+      const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
+      return Array.from(new Set([p, p.replace(/^\/app/, ""), p.replace(/^\/auth/, "")].filter(Boolean)));
+    }
+
+    async function safeFetchRaw(base, path, options = {}) {
+      try {
+        const res = await fetch(base.replace(/\/+$/, "") + path, options);
+        const raw = await res.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; }
+        catch { data = { message: raw }; }
+        return { ok: res.ok, status: res.status, data, path };
+      } catch (e) {
+        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, path };
+      }
+    }
+
+    async function callBackend(backend, path, options = {}) {
+      const headers = { ...(options.headers || {}) };
+      if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
+
+      const candidates = backend === "legacy" ? buildLegacyCandidates(path) : buildPrimaryCandidates(path);
+      const base = apiBaseForBackend(backend);
+      let first401 = null;
+      let last = null;
+
+      for (const candidate of candidates) {
+        const res = await safeFetchRaw(base, candidate, { ...options, headers });
+        last = res;
+        if (res.ok) return { ...res, backend, resolvedPath: candidate };
+        if (res.status === 401 && !first401) first401 = { ...res, backend, resolvedPath: candidate };
+        if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) continue;
+        return { ...res, backend, resolvedPath: candidate };
+      }
+
+      return first401 || { ...(last || { ok:false, status:0, data:{ message:"Failed to fetch" } }), backend };
+    }
+
+    async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
+      const headers = { ...authHeaders(), ...(options.headers || {}) };
+      const method = String(options.method || "GET").toUpperCase();
+      if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      const res = await callBackend(backend, path, { ...options, headers });
+
+      if (res.status === 401 && autoLogout) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem("token");
+        window.location.href = "index.html";
+      }
+      return res;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      return n ? new Date(n).toLocaleString() : "-";
+    }
+
+    function showToast(message = "Done") {
+      if (!els.toast) return;
+      els.toast.textContent = message;
+      els.toast.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => els.toast.style.display = "none", 1800);
+    }
+
+    function setResult(message, isError = false) {
+      if (!els.result) return;
+      els.result.textContent = message || "";
+      els.result.className = `result ${isError ? "error" : "success"}`;
+    }
+
+    function buildPublicLink(itemOrSlug, backend) {
+      const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+      return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
+    }
+
+    function normalizeLinkItem(item, backend) {
+      return {
+        ...item,
+        backend,
+        slug: item.slug || "",
+        url: item.url || "",
+        clicks: Number(item.clicks || 0),
+        paused: !!item.paused,
+        expire: item.expire ? Number(item.expire) : null,
+        createdAt: Number(item.createdAt || item.created_at || 0),
+        maxRisk: Number(item.maxRisk || item.max_risk || 0),
+        publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
+      };
+    }
+
+    function getFilteredLinks() {
+      const q = (els.searchInput.value || "").trim().toLowerCase();
+      const backend = els.backendFilter.value || "all";
+      return linksStore.filter(item => {
+        const matchQuery =
+          !q ||
+          String(item.slug || "").toLowerCase().includes(q) ||
+          String(item.url || "").toLowerCase().includes(q);
+
+        const matchBackend = backend === "all" ? true : item.backend === backend;
+        return matchQuery && matchBackend;
+      });
+    }
+
+    async function loadLinks(showMessage = false) {
+      const [primaryRes, legacyRes] = await Promise.all([
+        authorizedFetch("/list", { method:"GET" }, "primary", false),
+        authorizedFetch("/list", { method:"GET" }, "legacy", false)
+      ]);
+
+      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+
+      linksStore = [
+        ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
+        ...legacyItems.map(item => normalizeLinkItem(item, "legacy"))
+      ].sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+      renderLinkOptions();
+
+      if (showMessage) {
+        setResult(`Loaded ${linksStore.length} links for analytics.`);
+      }
+    }
+
+    function renderLinkOptions() {
+      const filtered = getFilteredLinks();
+      if (!filtered.length) {
+        els.linkSelect.innerHTML = `<option value="">No links found</option>`;
+        els.selectedInfo.textContent = "No matching links.";
+        currentLink = null;
+        return;
+      }
+
+      els.linkSelect.innerHTML = filtered.map(item => {
+        const value = `${item.backend}::${item.slug}`;
+        return `<option value="${escapeHtml(value)}">${escapeHtml(item.slug)} • ${backendLabel(item.backend)} • ${item.clicks} clicks</option>`;
+      }).join("");
+
+      const currentValue = els.linkSelect.value;
+      if (!currentValue && filtered[0]) {
+        els.linkSelect.value = `${filtered[0].backend}::${filtered[0].slug}`;
+      }
+
+      syncSelectedInfo();
+    }
+
+    function getSelectedLink() {
+      const value = els.linkSelect.value;
+      if (!value) return null;
+      const [backend, slug] = value.split("::");
+      return linksStore.find(item => item.backend === backend && item.slug === slug) || null;
+    }
+
+    function syncSelectedInfo() {
+      currentLink = getSelectedLink();
+      if (!currentLink) {
+        els.selectedInfo.textContent = "No link selected.";
+        return;
+      }
+      els.selectedInfo.innerHTML = `
+        <span class="pill info">${backendLabel(currentLink.backend)}</span>
+        <b>${escapeHtml(currentLink.slug)}</b>
+        • ${escapeHtml(currentLink.publicLink)}
+      `;
+    }
+
+    async function getGeo(ip) {
+      if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
+      try {
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+        const data = await res.json();
+        return {
+          country_name: data.country_name || "Unknown",
+          latitude: data.latitude || 20,
+          longitude: data.longitude || 0
+        };
+      } catch {
+        return { country_name: "Unknown", latitude: 20, longitude: 0 };
+      }
+    }
+
+    function buildHistoryFallback(link) {
+      return Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+        ip: "unknown",
+        time: Date.now() - (i * 30000),
+        risk: Number(link.maxRisk || 0),
+        vpn: false,
+        bot: false
+      }));
+    }
+
+    async function loadAnalytics(geoOnly = false) {
+      const link = getSelectedLink();
+      if (!link) return setResult("Select a link first.", true);
+
+      currentLink = link;
+      setResult(`Loading analytics for ${link.slug}...`);
+
+      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(link.slug)}`, { method:"GET" }, link.backend, false);
+      let history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+      if (!history.length && Number(link.clicks || 0) > 0) {
+        history = buildHistoryFallback(link);
+      }
+
+      currentHistory = history.map(h => ({
+        ip: h.ip || "unknown",
+        time: Number(h.time || Date.now()),
+        risk: Number(h.risk || 0),
+        vpn: !!h.vpn,
+        bot: !!h.bot
+      })).sort((a,b) => a.time - b.time);
+
+      renderSummary(link, currentHistory);
+      renderTopIps(currentHistory);
+      renderRiskEvents(currentHistory);
+      renderHistoryTable(currentHistory);
+      if (!geoOnly) drawHistoryChart(currentHistory);
+      await renderGeoMap(currentHistory);
+
+      setResult(currentHistory.length
+        ? `Loaded ${currentHistory.length} history records for ${link.slug}.`
+        : `No history found for ${link.slug}.`
+      );
+    }
+
+    function renderSummary(link, history) {
+      const total = history.length;
+      const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
+      const bots = history.filter(x => x.bot).length;
+      const vpns = history.filter(x => x.vpn).length;
+      const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
+      const lastClick = history.length ? Math.max(...history.map(x => Number(x.time || 0))) : 0;
+      const last24h = history.filter(x => Number(x.time || 0) >= Date.now() - 86400000).length;
+      const suspicious = history.filter(x => Number(x.risk || 0) > 60 || x.bot || x.vpn).length;
+
+      els.kpiTotalClicks.textContent = total;
+      els.kpiUniqueIps.textContent = uniqueIps;
+      els.kpiBots.textContent = bots;
+      els.kpiVpns.textContent = vpns;
+      els.kpiMaxRisk.textContent = maxRisk;
+      els.kpiLast24h.textContent = last24h;
+      els.kpiSuspicious.textContent = suspicious;
+      els.kpiLastClick.textContent = lastClick ? new Date(lastClick).toLocaleTimeString() : "-";
+      els.timelineSummary.textContent = `${backendLabel(link.backend)} • ${link.slug} • ${total} records`;
+
+      const publicLink = link.publicLink || buildPublicLink(link.slug, link.backend);
+      els.linkSummaryBox.innerHTML = `
+        <div><b>${escapeHtml(link.slug)}</b></div>
+        <div class="muted" style="margin-top:6px;">Backend: ${backendLabel(link.backend)}</div>
+        <div class="muted">Original URL: ${escapeHtml(link.url || "-")}</div>
+        <div class="muted">Public link: ${escapeHtml(publicLink)}</div>
+        <div class="muted">Created: ${fmtDate(link.createdAt)}</div>
+        <div class="muted">Current clicks: ${Number(link.clicks || 0)}</div>
+        <div class="muted">Current max risk: ${Number(link.maxRisk || 0)}</div>
+      `;
+    }
+
+    function drawHistoryChart(history) {
+      const canvas = $("historyChart");
+      if (!canvas) return;
+      if (historyChart) historyChart.destroy();
+
+      if (!history.length) {
+        historyChart = new Chart(canvas, {
+          type: "line",
+          data: { labels: [], datasets: [{ label: "No data", data: [] }] },
+          options: { responsive: true }
+        });
+        return;
+      }
+
+      const mode = els.chartModeSelect.value || "clicks";
+      const labels = history.map(h => new Date(h.time).toLocaleTimeString());
+      const clicksLine = history.map((_, i) => i + 1);
+      const riskLine = history.map(h => Number(h.risk || 0));
+
+      const datasets = [];
+      if (mode === "clicks" || mode === "both") {
+        datasets.push({ label: "Clicks Timeline", data: clicksLine, tension: .35 });
+      }
+      if (mode === "risk" || mode === "both") {
+        datasets.push({ label: "Risk", data: riskLine, tension: .35 });
+      }
+
+      historyChart = new Chart(canvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
+          scales: {
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+          }
+        }
+      });
+    }
+
+    function buildIpStats(history) {
+      const stats = {};
+      for (const h of history) {
+        const ip = h.ip || "unknown";
+        if (!stats[ip]) stats[ip] = { count:0, risk:0, vpn:false, bot:false, last:0 };
+        stats[ip].count++;
+        stats[ip].risk = Math.max(stats[ip].risk, Number(h.risk || 0));
+        stats[ip].vpn = stats[ip].vpn || !!h.vpn;
+        stats[ip].bot = stats[ip].bot || !!h.bot;
+        stats[ip].last = Math.max(stats[ip].last, Number(h.time || 0));
+      }
+      return Object.entries(stats).sort((a,b) => b[1].count - a[1].count);
+    }
+
+    function renderTopIps(history) {
+      const rows = buildIpStats(history);
+      if (!rows.length) {
+        els.topIpsList.innerHTML = `<div class="muted">No click activity.</div>`;
+        return;
+      }
+
+      els.topIpsList.innerHTML = rows.slice(0, 20).map(([ip, data]) => `
+        <div class="activity-item">
+          <div><b>${escapeHtml(ip)}</b></div>
+          <div class="muted">Clicks: ${data.count} • Risk: ${data.risk}</div>
+          <div class="muted">Last: ${fmtDate(data.last)}</div>
+          <div style="margin-top:6px;">
+            ${data.bot ? `<span class="pill danger">Bot</span>` : `<span class="pill live">Human-like</span>`}
+            ${data.vpn ? `<span class="pill warn">VPN</span>` : `<span class="pill info">No VPN</span>`}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRiskEvents(history) {
+      const risky = history
+        .filter(h => Number(h.risk || 0) > 60 || h.bot || h.vpn)
+        .sort((a,b) => Number(b.risk || 0) - Number(a.risk || 0));
+
+      if (!risky.length) {
+        els.riskEventsList.innerHTML = `<div class="muted">No elevated risk events.</div>`;
+        return;
+      }
+
+      els.riskEventsList.innerHTML = risky.slice(0, 30).map((h, i) => `
+        <div class="risk-item">
+          <div><b>#${i + 1}</b> • ${escapeHtml(h.ip || "unknown")}</div>
+          <div class="muted">Time: ${fmtDate(h.time)}</div>
+          <div class="muted">Risk: ${Number(h.risk || 0)}</div>
+          <div style="margin-top:6px;">
+            ${h.bot ? `<span class="pill danger">Bot</span>` : ``}
+            ${h.vpn ? `<span class="pill warn">VPN</span>` : ``}
+            ${Number(h.risk || 0) > 85 ? `<span class="pill danger">High Risk</span>` : `<span class="pill warn">Suspicious</span>`}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderHistoryTable(history) {
+      els.historyCountText.textContent = `${history.length} records`;
+
+      if (!history.length) {
+        els.historyTable.innerHTML = `<tr><td colspan="7" class="muted">No history loaded.</td></tr>`;
+        return;
+      }
+
+      els.historyTable.innerHTML = history.slice().reverse().map((h, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${fmtDate(h.time)}</td>
+          <td>${escapeHtml(h.ip || "unknown")}</td>
+          <td>${Number(h.risk || 0)}</td>
+          <td>${h.bot ? '<span class="pill danger">Yes</span>' : '<span class="pill live">No</span>'}</td>
+          <td>${h.vpn ? '<span class="pill warn">Yes</span>' : '<span class="pill live">No</span>'}</td>
+          <td id="country-${idx}">Loading...</td>
+        </tr>
+      `).join("");
+
+      history.slice().reverse().forEach(async (h, idx) => {
+        const cell = $(`country-${idx}`);
+        if (!cell) return;
+        const geo = await getGeo(h.ip);
+        cell.textContent = geo.country_name || "Unknown";
+      });
+    }
+
+    async function renderGeoMap(history) {
+      if (geoMap) {
+        geoMap.remove();
+        geoMap = null;
+      }
+
+      geoMap = L.map(els.mapBox).setView([20, 0], 2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(geoMap);
+
+      if (!history.length) {
+        L.marker([20,0]).addTo(geoMap).bindPopup("No data").openPopup();
+        return;
+      }
+
+      let offset = 0;
+      for (const h of history) {
+        const geo = await getGeo(h.ip);
+        let lat = Number(geo.latitude || 20);
+        let lng = Number(geo.longitude || 0);
+        lat += offset * 0.22;
+        lng += offset * 0.22;
+        offset++;
+
+        L.circle([lat, lng], {
+          radius: 42000,
+          color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
+        }).addTo(geoMap).bindPopup(
+          `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
+        );
+      }
+    }
+
+    function resetMapView() {
+      if (geoMap) geoMap.setView([20, 0], 2);
+    }
+
+    async function copySelectedLink() {
+      const link = getSelectedLink();
+      if (!link) return showToast("No link selected");
+      try {
+        await navigator.clipboard.writeText(link.publicLink || buildPublicLink(link.slug, link.backend));
+        showToast("Copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
+    function openSelectedLink() {
+      const link = getSelectedLink();
+      if (!link) return showToast("No link selected");
+      window.open(link.publicLink || buildPublicLink(link.slug, link.backend), "_blank", "noopener,noreferrer");
+    }
+
+    function exportHistoryCsv() {
+      if (!currentHistory.length) return showToast("No analytics loaded");
+      const lines = [
+        ["time","ip","risk","bot","vpn"].join(","),
+        ...currentHistory.map(h => [
+          `"${new Date(h.time).toISOString()}"`,
+          `"${String(h.ip || "").replaceAll('"','""')}"`,
+          `"${Number(h.risk || 0)}"`,
+          `"${h.bot ? "yes" : "no"}"`,
+          `"${h.vpn ? "yes" : "no"}"`
+        ].join(","))
+      ];
+      const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `analytics-${currentLink?.slug || "history"}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function goDashboard() {
+      window.location.href = "dashboard.html";
+    }
+
+    function bindUI() {
+      els.refreshBtn.addEventListener("click", async () => {
+        await loadLinks(true);
+        if (getSelectedLink()) await loadAnalytics(false);
+      });
+
+      els.reloadLinksBtn.addEventListener("click", () => loadLinks(true));
+      els.searchInput.addEventListener("input", renderLinkOptions);
+      els.backendFilter.addEventListener("change", renderLinkOptions);
+      els.linkSelect.addEventListener("change", syncSelectedInfo);
+      els.chartModeSelect.addEventListener("change", () => {
+        if (currentHistory.length) drawHistoryChart(currentHistory);
+      });
+
+      els.loadAnalyticsBtn.addEventListener("click", () => loadAnalytics(false));
+      els.loadGeoBtn.addEventListener("click", () => loadAnalytics(true));
+      els.copySelectedBtn.addEventListener("click", copySelectedLink);
+      els.openSelectedBtn.addEventListener("click", openSelectedLink);
+      els.exportCsvBtn.addEventListener("click", exportHistoryCsv);
+      els.resetMapBtn.addEventListener("click", resetMapView);
+    }
+
+    async function init() {
+      if (!ensureAuth()) return;
+      bindUI();
+      await loadLinks(true);
+      if (getSelectedLink()) {
+        await loadAnalytics(false);
+      } else {
+        setResult("Load links first.");
+      }
+    }
+
+    window.goDashboard = goDashboard;
+    window.copySelectedLink = copySelectedLink;
+    window.openSelectedLink = openSelectedLink;
+
+    init();
+  </script>
+</body>
+</html>
