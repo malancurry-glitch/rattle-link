@@ -183,7 +183,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1400px;
+      min-width:1600px;
     }
 
     th, td{
@@ -326,6 +326,14 @@
       box-shadow:0 0 10px rgba(0,255,255,.18);
     }
 
+    .admin-panel{
+      background:var(--card2);
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
     @media (max-width: 980px){
       .grid-2, .grid-3{ grid-template-columns:1fr; }
     }
@@ -339,7 +347,7 @@
         <div class="sub">
           Create clean branded links like <b>marankorangulon.com/shop</b>, action slugs like <b>/get-started</b>,
           source slugs like <b>/fb26</b>, VIP paths like <b>/private</b>, and advanced vanity modes such as
-          white-label wrappers, retarget-ready links, and admin-review cloaked pages.
+          white-label wrappers, retarget-ready links, and admin-review protected links.
         </div>
       </div>
 
@@ -376,7 +384,7 @@
     <div class="card">
       <div class="section-title">
         <h3>Create Vanity Link</h3>
-        <div class="small muted">Advanced modes are visible here, but sensitive behavior should stay under admin control on the backend.</div>
+        <div class="small muted">Sensitive behavior is still controlled by the backend admin approval flow.</div>
       </div>
 
       <div class="grid-2">
@@ -411,39 +419,72 @@
           <input id="urlInput" placeholder="https://www.example.com/..." />
         </div>
         <div class="field-block">
-          <label>Expire (optional timestamp)</label>
+          <label>Expire (optional future timestamp)</label>
           <input id="expireInput" placeholder="Leave blank for permanent" />
         </div>
         <div class="field-block">
-          <label>Mode</label>
-          <select id="modeSelect">
-            <option value="redirect">Standard redirect</option>
-            <option value="white_label">White-label wrapper</option>
-            <option value="retarget">Retarget-ready redirect</option>
-            <option value="cloak">Cloaked / admin-reviewed</option>
+          <label>Vanity Mode</label>
+          <select id="vanityModeSelect">
+            <option value="standard">Standard</option>
+            <option value="brand">Brand Move</option>
+            <option value="action">Action</option>
+            <option value="partner">Partner Tracking</option>
+            <option value="vip">VIP / Secret</option>
+            <option value="personal">Personal / Direct</option>
+            <option value="scarcity">Scarcity / Time</option>
+            <option value="help">Help / Solution</option>
+            <option value="minimal">Minimalist</option>
+            <option value="white_label">White-Label</option>
+            <option value="retargeting">Retargeting</option>
+            <option value="affiliate">Affiliate</option>
+            <option value="iframe_wrapper">iFrame Wrapper</option>
           </select>
         </div>
       </div>
 
       <div class="grid-3">
         <div class="field-block">
-          <label>Pixel / Retarget ID (optional)</label>
-          <input id="pixelInput" placeholder="fb_pixel_123 or google_tag_abc" />
+          <label>Pixel Platform</label>
+          <select id="pixelPlatformSelect">
+            <option value="">None</option>
+            <option value="facebook">Facebook / Meta</option>
+            <option value="google">Google</option>
+            <option value="tiktok">TikTok</option>
+            <option value="snapchat">Snapchat</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="twitter">Twitter / X</option>
+            <option value="custom">Custom</option>
+          </select>
         </div>
         <div class="field-block">
-          <label>Frame Title / Wrapper Title</label>
-          <input id="frameTitleInput" placeholder="Secure Checkout" />
+          <label>Pixel ID</label>
+          <input id="pixelIdInput" placeholder="fb_pixel_123 or ga_tag_abc" />
         </div>
+        <div class="field-block">
+          <label>Cloak / Wrapper Mode</label>
+          <select id="cloakModeSelect">
+            <option value="">None</option>
+            <option value="white_label">White-Label</option>
+            <option value="affiliate">Affiliate</option>
+            <option value="iframe_wrapper">iFrame Wrapper</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
         <div class="field-block">
           <label>Disclosure / Note</label>
           <input id="disclosureInput" placeholder="Affiliate disclosure or wrapper note" />
         </div>
+        <div class="field-block">
+          <label>Pixel Code (optional custom script / code)</label>
+          <textarea id="pixelCodeInput" placeholder="Optional custom pixel code. Sensitive modes should go through admin review."></textarea>
+        </div>
       </div>
 
       <div class="switch-row">
-        <label class="switch"><input id="openNewTabInput" type="checkbox" /> Open in new tab hint</label>
-        <label class="switch"><input id="adminReviewInput" type="checkbox" checked /> Require admin review for sensitive modes</label>
-        <label class="switch"><input id="pauseOnCreateInput" type="checkbox" /> Create paused</label>
+        <label class="switch"><input id="retargetingEnabledInput" type="checkbox" /> Retargeting enabled</label>
+        <label class="switch"><input id="cloakingEnabledInput" type="checkbox" /> Cloaking / wrapper enabled</label>
       </div>
 
       <div class="actions" style="margin-top:12px;">
@@ -473,9 +514,9 @@
       <div class="card">
         <h3>Advanced Mode Notes</h3>
         <div class="note-box">
-          <b>Retarget-ready links</b> are for analytics / campaign workflows and should follow your platform and policy requirements.<br><br>
+          <b>Retarget-ready links</b> are for analytics and campaign workflows.<br><br>
           <b>White-label wrapper</b> is the cleaner label for embedded external experiences such as checkout, booking, or affiliate portals.<br><br>
-          <b>Cloaked / wrapper-style pages</b> should stay admin protected and abuse-reviewable on the backend. This page only exposes the settings surface.
+          <b>Admin consent</b> is enforced by the backend when a link uses retargeting, cloaking, wrapper mode, pixel data, or similar sensitive behavior.
         </div>
       </div>
     </div>
@@ -495,12 +536,21 @@
           <select id="domainFilter" style="max-width:220px;">
             <option value="all">All domains</option>
           </select>
-          <select id="modeFilter" style="max-width:220px;">
+          <select id="modeFilter" style="max-width:240px;">
             <option value="all">All modes</option>
-            <option value="redirect">Standard redirect</option>
-            <option value="white_label">White-label</option>
-            <option value="retarget">Retarget</option>
-            <option value="cloak">Cloaked</option>
+            <option value="standard">Standard</option>
+            <option value="brand">Brand Move</option>
+            <option value="action">Action</option>
+            <option value="partner">Partner Tracking</option>
+            <option value="vip">VIP / Secret</option>
+            <option value="personal">Personal / Direct</option>
+            <option value="scarcity">Scarcity / Time</option>
+            <option value="help">Help / Solution</option>
+            <option value="minimal">Minimalist</option>
+            <option value="white_label">White-Label</option>
+            <option value="retargeting">Retargeting</option>
+            <option value="affiliate">Affiliate</option>
+            <option value="iframe_wrapper">iFrame Wrapper</option>
           </select>
           <select id="statusFilter" style="max-width:180px;">
             <option value="all">All statuses</option>
@@ -522,12 +572,42 @@
               <th>Mode</th>
               <th>Clicks</th>
               <th>Status</th>
-              <th>Admin</th>
+              <th>Approval</th>
+              <th>Sensitive Flags</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card admin-panel hidden" id="adminPanel">
+      <div class="section-title">
+        <h3>Admin Approval Queue</h3>
+        <div class="small muted">Visible only for admin users.</div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:12px;">
+        <button class="btn-ghost" id="refreshAdminBtn">Refresh Admin Queue</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Slug</th>
+              <th>Mode</th>
+              <th>User</th>
+              <th>Target</th>
+              <th>Request</th>
+              <th>Created</th>
+              <th>Admin Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminRows"></tbody>
         </table>
       </div>
     </div>
@@ -540,60 +620,55 @@
 
     let items = [];
     let domains = [];
+    let adminItems = [];
+    let meRole = (localStorage.getItem("role") || "").toLowerCase();
 
     const PRESETS = {
       brand: {
         slug: "shop",
-        mode: "redirect",
-        frameTitle: "Shop",
+        vanityMode: "brand",
         disclosure: "Professional brand path"
       },
       action: {
         slug: "get-started",
-        mode: "redirect",
-        frameTitle: "Get Started",
+        vanityMode: "action",
         disclosure: "Action-first vanity link"
       },
       partner: {
         slug: "fb26",
-        mode: "redirect",
-        frameTitle: "Campaign Link",
+        vanityMode: "partner",
         disclosure: "Partner/source tracking style"
       },
       vip: {
         slug: "private",
-        mode: "redirect",
-        frameTitle: "Private Access",
+        vanityMode: "vip",
         disclosure: "Exclusive access style"
       },
       personal: {
         slug: "for-you",
-        mode: "redirect",
-        frameTitle: "Personal Access",
+        vanityMode: "personal",
         disclosure: "Direct personal invite style"
       },
       scarcity: {
         slug: "today",
-        mode: "redirect",
-        frameTitle: "Today Only",
+        vanityMode: "scarcity",
         disclosure: "Urgency / time-sensitive style"
       },
       help: {
         slug: "fix",
-        mode: "redirect",
-        frameTitle: "Help Center",
+        vanityMode: "help",
         disclosure: "Support-oriented vanity link"
       },
       minimal: {
         slug: "v",
-        mode: "redirect",
-        frameTitle: "Quick Link",
+        vanityMode: "minimal",
         disclosure: "Minimal branded path"
       },
       white_label: {
         slug: "checkout",
-        mode: "white_label",
-        frameTitle: "Secure Checkout",
+        vanityMode: "white_label",
+        cloakMode: "white_label",
+        cloakingEnabled: true,
         disclosure: "White-label wrapper / embedded experience"
       }
     };
@@ -677,19 +752,59 @@
     }
 
     function getModeLabel(mode) {
-      const clean = String(mode || "redirect").toLowerCase();
-      if (clean === "white_label") return "WHITE-LABEL";
-      if (clean === "retarget") return "RETARGET";
-      if (clean === "cloak") return "CLOAKED";
-      return "REDIRECT";
+      const clean = String(mode || "standard").toLowerCase();
+      const map = {
+        standard: "STANDARD",
+        brand: "BRAND",
+        action: "ACTION",
+        partner: "PARTNER",
+        vip: "VIP",
+        personal: "PERSONAL",
+        scarcity: "SCARCITY",
+        help: "HELP",
+        minimal: "MINIMAL",
+        white_label: "WHITE-LABEL",
+        retargeting: "RETARGETING",
+        affiliate: "AFFILIATE",
+        iframe_wrapper: "IFRAME WRAPPER"
+      };
+      return map[clean] || clean.toUpperCase();
     }
 
     function getModeBadge(mode) {
-      const clean = String(mode || "redirect").toLowerCase();
+      const clean = String(mode || "standard").toLowerCase();
       if (clean === "white_label") return `<span class="badge info">WHITE-LABEL</span>`;
-      if (clean === "retarget") return `<span class="badge purple">RETARGET</span>`;
-      if (clean === "cloak") return `<span class="badge danger">CLOAKED</span>`;
-      return `<span class="badge active">REDIRECT</span>`;
+      if (clean === "retargeting") return `<span class="badge purple">RETARGETING</span>`;
+      if (clean === "affiliate") return `<span class="badge purple">AFFILIATE</span>`;
+      if (clean === "iframe_wrapper") return `<span class="badge info">IFRAME WRAPPER</span>`;
+      if (clean === "vip") return `<span class="badge purple">VIP</span>`;
+      if (clean === "scarcity") return `<span class="badge pending">SCARCITY</span>`;
+      return `<span class="badge active">${escapeHtml(getModeLabel(clean))}</span>`;
+    }
+
+    function getApprovalBadges(item) {
+      const bits = [];
+      const status = String(item.approvalStatus || "approved").toLowerCase();
+
+      if (item.requireAdminReview) bits.push(`<span class="badge pending">REVIEW</span>`);
+      if (status === "approved") bits.push(`<span class="badge verified">APPROVED</span>`);
+      if (status === "pending") bits.push(`<span class="badge pending">PENDING</span>`);
+      if (status === "rejected") bits.push(`<span class="badge danger">REJECTED</span>`);
+      if (item.rejectionReason) bits.push(`<div class="tiny muted">Reason: ${escapeHtml(item.rejectionReason)}</div>`);
+      if (item.approvedBy) bits.push(`<div class="tiny muted">By: ${escapeHtml(item.approvedBy)}</div>`);
+
+      return bits.join("");
+    }
+
+    function getSensitiveBits(item) {
+      const bits = [];
+      if (item.retargetingEnabled) bits.push(`<span class="badge purple">RETARGET</span>`);
+      if (item.pixelPlatform) bits.push(`<span class="badge info">${escapeHtml(String(item.pixelPlatform).toUpperCase())}</span>`);
+      if (item.pixelId) bits.push(`<div class="tiny muted">Pixel ID: ${escapeHtml(item.pixelId)}</div>`);
+      if (item.cloakingEnabled) bits.push(`<span class="badge danger">CLOAK</span>`);
+      if (item.cloakMode) bits.push(`<div class="tiny muted">Wrapper: ${escapeHtml(item.cloakMode)}</div>`);
+      if (item.disclosureText) bits.push(`<div class="tiny muted">Note: ${escapeHtml(item.disclosureText)}</div>`);
+      return bits.join("") || `<span class="muted tiny">None</span>`;
     }
 
     function currentPrimaryDomain() {
@@ -698,7 +813,7 @@
     }
 
     async function loadDomains() {
-      const res = await api("/domains/me", "GET");
+      const res = await api("/vanity/domains", "GET");
       if (!res) return;
 
       if (!res.ok) {
@@ -743,18 +858,52 @@
           clicks: Number(i.clicks || 0),
           paused: !!i.paused,
           expire: i.expire ? Number(i.expire) : null,
-          mode: String(i.mode || i.vanityMode || i.type || "redirect").toLowerCase(),
+          vanityMode: String(i.vanityMode || i.vanity_mode || "standard").toLowerCase(),
+          pixelPlatform: i.pixelPlatform || i.pixel_platform || "",
           pixelId: i.pixelId || i.pixel_id || "",
-          frameTitle: i.frameTitle || i.frame_title || "",
-          disclosure: i.disclosure || "",
+          pixelCode: i.pixelCode || i.pixel_code || "",
+          cloakingEnabled: !!(i.cloakingEnabled || i.cloaking_enabled),
+          retargetingEnabled: !!(i.retargetingEnabled || i.retargeting_enabled),
+          cloakMode: i.cloakMode || i.cloak_mode || "",
           requireAdminReview: !!(i.requireAdminReview || i.require_admin_review),
           approvedByAdmin: !!(i.approvedByAdmin || i.approved_by_admin),
-          openInNewTab: !!(i.openInNewTab || i.open_in_new_tab)
+          approvalStatus: i.approvalStatus || i.approval_status || "approved",
+          approvedBy: i.approvedBy || i.approved_by || "",
+          approvedAt: Number(i.approvedAt || i.approved_at || 0) || null,
+          rejectionReason: i.rejectionReason || i.rejection_reason || "",
+          disclosureText: i.disclosureText || i.disclosure_text || ""
         }))
         .filter((i) => i.domain);
 
       renderStats();
       renderTable();
+    }
+
+    async function loadAdminQueue() {
+      if (meRole !== "admin") return;
+      const res = await api("/admin/vanity/pending", "GET");
+      if (!res) return;
+
+      if (!res.ok) {
+        adminItems = [];
+        renderAdminTable();
+        return;
+      }
+
+      const rawItems = Array.isArray(res.data?.items) ? res.data.items : [];
+      adminItems = rawItems.map((i) => ({
+        ...i,
+        domain: normalizeDomain(i.domain || ""),
+        vanityMode: String(i.vanityMode || i.vanity_mode || "standard").toLowerCase(),
+        createdAt: Number(i.createdAt || i.created_at || 0),
+        retargetingEnabled: !!(i.retargetingEnabled || i.retargeting_enabled),
+        cloakingEnabled: !!(i.cloakingEnabled || i.cloaking_enabled),
+        cloakMode: i.cloakMode || i.cloak_mode || "",
+        pixelPlatform: i.pixelPlatform || i.pixel_platform || "",
+        pixelId: i.pixelId || i.pixel_id || "",
+        disclosureText: i.disclosureText || i.disclosure_text || ""
+      }));
+      renderAdminTable();
     }
 
     function renderDomainOptions() {
@@ -809,8 +958,8 @@
       const domainOnly = $("domainFilter").value || "all";
 
       const filtered = items.filter((i) => {
-        const blob = `${i.domain || ""} ${i.slug || ""} ${i.url || ""} ${i.pixelId || ""} ${i.frameTitle || ""} ${i.disclosure || ""}`.toLowerCase();
-        const modeMatch = modeOnly === "all" ? true : String(i.mode || "redirect") === modeOnly;
+        const blob = `${i.domain || ""} ${i.slug || ""} ${i.url || ""} ${i.pixelId || ""} ${i.disclosureText || ""} ${i.pixelPlatform || ""} ${i.cloakMode || ""}`.toLowerCase();
+        const modeMatch = modeOnly === "all" ? true : String(i.vanityMode || "standard") === modeOnly;
         const statusMatch = statusOnly === "all" ? true : statusOnly === "paused" ? !!i.paused : !i.paused;
         const domainMatch = domainOnly === "all" ? true : i.domain === domainOnly;
         return (!q || blob.includes(q)) && modeMatch && statusMatch && domainMatch;
@@ -824,56 +973,84 @@
           </td>
           <td>
             <div><b>${escapeHtml(i.slug)}</b></div>
-            ${i.pixelId ? `<div class="tiny muted">Pixel: ${escapeHtml(i.pixelId)}</div>` : ``}
+            ${i.expire ? `<div class="tiny muted">Expire: ${escapeHtml(String(i.expire))}</div>` : `<div class="tiny muted">Permanent</div>`}
           </td>
           <td><div class="code">${escapeHtml(buildPublicUrl(i))}</div></td>
           <td>
             <div class="code">${escapeHtml(i.url || "-")}</div>
-            ${i.frameTitle ? `<div class="tiny muted" style="margin-top:6px;">Wrapper title: ${escapeHtml(i.frameTitle)}</div>` : ``}
-            ${i.disclosure ? `<div class="tiny muted">Note: ${escapeHtml(i.disclosure)}</div>` : ``}
           </td>
-          <td>${getModeBadge(i.mode)}</td>
+          <td>${getModeBadge(i.vanityMode)}</td>
           <td>${Number(i.clicks || 0)}</td>
           <td>
             ${i.paused ? `<span class="badge paused">PAUSED</span>` : `<span class="badge active">ACTIVE</span>`}
             <span class="badge verified">CUSTOM DOMAIN</span>
           </td>
-          <td>
-            ${i.requireAdminReview ? `<span class="badge pending">ADMIN REVIEW</span>` : ``}
-            ${i.approvedByAdmin ? `<span class="badge verified">APPROVED</span>` : ``}
-          </td>
+          <td>${getApprovalBadges(i)}</td>
+          <td>${getSensitiveBits(i)}</td>
           <td>${fmtDate(i.createdAt)}</td>
           <td>
             <div class="row-actions">
               <button onclick='copyText(${JSON.stringify(buildPublicUrl(i))})'>Copy</button>
-              <button onclick='openEdit(${JSON.stringify(i)})'>Edit</button>
-              <button class="btn-yellow" onclick='togglePause(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")}, ${JSON.stringify(!i.paused)})'>${i.paused ? "Resume" : "Pause"}</button>
+              <button onclick='openEditByData(${JSON.stringify(i).replace(/'/g, "&apos;")})'>Edit</button>
+              ${meRole === "admin" ? `<button class="btn-yellow" onclick='adminTogglePause(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")}, ${JSON.stringify(i.paused)})'>${i.paused ? "Resume" : "Pause"}</button>` : ``}
               <button class="btn-red" onclick='deleteVanity(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")})'>Delete</button>
             </div>
           </td>
         </tr>
-      `).join("") : `<tr><td colspan="10" class="muted">No vanity links found</td></tr>`;
+      `).join("") : `<tr><td colspan="11" class="muted">No vanity links found</td></tr>`;
+    }
+
+    function renderAdminTable() {
+      if (meRole !== "admin") return;
+      $("adminPanel").classList.remove("hidden");
+
+      $("adminRows").innerHTML = adminItems.length ? adminItems.map((i) => `
+        <tr>
+          <td>${escapeHtml(i.domain || "-")}</td>
+          <td><b>${escapeHtml(i.slug || "")}</b></td>
+          <td>${getModeBadge(i.vanityMode)}</td>
+          <td>${escapeHtml(i.username || "-")}</td>
+          <td><div class="code">${escapeHtml(i.url || "-")}</div></td>
+          <td>
+            ${i.retargetingEnabled ? `<span class="badge purple">RETARGET</span>` : ``}
+            ${i.cloakingEnabled ? `<span class="badge danger">CLOAK</span>` : ``}
+            ${i.pixelPlatform ? `<span class="badge info">${escapeHtml(String(i.pixelPlatform).toUpperCase())}</span>` : ``}
+            ${i.pixelId ? `<div class="tiny muted">Pixel ID: ${escapeHtml(i.pixelId)}</div>` : ``}
+            ${i.cloakMode ? `<div class="tiny muted">Wrapper: ${escapeHtml(i.cloakMode)}</div>` : ``}
+            ${i.disclosureText ? `<div class="tiny muted">Note: ${escapeHtml(i.disclosureText)}</div>` : ``}
+          </td>
+          <td>${fmtDate(i.createdAt)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-green" onclick='adminApprove(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")})'>Approve</button>
+              <button class="btn-red" onclick='adminReject(${JSON.stringify(i.slug)}, ${JSON.stringify(i.domain || "")})'>Reject</button>
+            </div>
+          </td>
+        </tr>
+      `).join("") : `<tr><td colspan="8"><div class="empty">No pending vanity approvals</div></td></tr>`;
     }
 
     async function loadAll() {
       await Promise.all([
         loadDomains(),
-        loadVanityItems()
+        loadVanityItems(),
+        loadAdminQueue()
       ]);
     }
 
-    function collectPayload(oldData = null) {
+    function collectPayload() {
       const domain = normalizeDomain($("domainSelect").value);
       const slug = $("slugInput").value.trim();
       const url = $("urlInput").value.trim();
       const expire = $("expireInput").value.trim();
-      const mode = $("modeSelect").value || "redirect";
-      const pixelId = $("pixelInput").value.trim();
-      const frameTitle = $("frameTitleInput").value.trim();
-      const disclosure = $("disclosureInput").value.trim();
-      const openInNewTab = $("openNewTabInput").checked;
-      const requireAdminReview = $("adminReviewInput").checked;
-      const paused = $("pauseOnCreateInput").checked;
+      const vanityMode = $("vanityModeSelect").value || "standard";
+      const pixelPlatform = $("pixelPlatformSelect").value || "";
+      const pixelId = $("pixelIdInput").value.trim();
+      const pixelCode = $("pixelCodeInput").value.trim();
+      const cloakMode = $("cloakModeSelect").value || "";
+      const disclosureText = $("disclosureInput").value.trim();
+      const retargetingEnabled = $("retargetingEnabledInput").checked;
+      const cloakingEnabled = $("cloakingEnabledInput").checked;
 
       if (!domain) {
         setResult("Select a verified domain first", true);
@@ -889,18 +1066,18 @@
       }
 
       return {
-        ...(oldData || {}),
         domain,
         slug,
         url,
         expire: expire || null,
-        mode,
+        vanityMode,
+        pixelPlatform,
         pixelId,
-        frameTitle,
-        disclosure,
-        openInNewTab,
-        requireAdminReview,
-        paused
+        pixelCode,
+        cloakMode,
+        disclosureText,
+        retargetingEnabled,
+        cloakingEnabled
       };
     }
 
@@ -918,11 +1095,11 @@
       createBtn.textContent = "Create Vanity Link";
 
       if (!res) return;
-      if (!res.ok) return showToast(res.data?.message || "Create failed");
+      if (!res.ok) return setResult(res.data?.message || "Create failed", true);
 
       clearForm(false);
-      setResult("Vanity link created", false);
-      showToast("Vanity link created");
+      setResult(res.data?.message || "Vanity link created", false);
+      showToast(res.data?.message || "Vanity link created");
       await loadAll();
     }
 
@@ -934,15 +1111,6 @@
       if (!res.ok) return showToast(res.data?.message || "Delete failed");
 
       showToast("Deleted");
-      await loadAll();
-    }
-
-    async function togglePause(slug, domain, nextActive) {
-      const path = nextActive ? "/vanity/resume" : "/vanity/pause";
-      const res = await api(path, "POST", { slug, domain });
-      if (!res) return;
-      if (!res.ok) return showToast(res.data?.message || "Update failed");
-      showToast(nextActive ? "Resumed" : "Paused");
       await loadAll();
     }
 
@@ -965,16 +1133,17 @@
       $("slugInput").value = item.slug || "";
       $("urlInput").value = item.url || "";
       $("expireInput").value = item.expire || "";
-      $("modeSelect").value = item.mode || "redirect";
-      $("pixelInput").value = item.pixelId || "";
-      $("frameTitleInput").value = item.frameTitle || "";
-      $("disclosureInput").value = item.disclosure || "";
-      $("openNewTabInput").checked = !!item.openInNewTab;
-      $("adminReviewInput").checked = !!item.requireAdminReview;
-      $("pauseOnCreateInput").checked = !!item.paused;
+      $("vanityModeSelect").value = item.vanityMode || "standard";
+      $("pixelPlatformSelect").value = item.pixelPlatform || "";
+      $("pixelIdInput").value = item.pixelId || "";
+      $("pixelCodeInput").value = item.pixelCode || "";
+      $("cloakModeSelect").value = item.cloakMode || "";
+      $("disclosureInput").value = item.disclosureText || "";
+      $("retargetingEnabledInput").checked = !!item.retargetingEnabled;
+      $("cloakingEnabledInput").checked = !!item.cloakingEnabled;
     }
 
-    async function openEdit(itemJson) {
+    async function openEditByData(itemJson) {
       const item = typeof itemJson === "string" ? JSON.parse(itemJson) : itemJson;
       fillFormFromItem(item);
 
@@ -990,16 +1159,19 @@
       const newExpire = prompt("Edit expire timestamp (blank for none):", item.expire || "");
       if (newExpire === null) return;
 
-      const newMode = prompt("Edit mode (redirect, white_label, retarget, cloak):", item.mode || "redirect");
-      if (newMode === null) return;
+      const newVanityMode = prompt("Edit vanity mode:", item.vanityMode || "standard");
+      if (newVanityMode === null) return;
+
+      const newPixelPlatform = prompt("Edit pixel platform:", item.pixelPlatform || "");
+      if (newPixelPlatform === null) return;
 
       const newPixelId = prompt("Edit pixel ID:", item.pixelId || "");
       if (newPixelId === null) return;
 
-      const newFrameTitle = prompt("Edit frame title:", item.frameTitle || "");
-      if (newFrameTitle === null) return;
+      const newCloakMode = prompt("Edit cloak mode:", item.cloakMode || "");
+      if (newCloakMode === null) return;
 
-      const newDisclosure = prompt("Edit disclosure/note:", item.disclosure || "");
+      const newDisclosure = prompt("Edit disclosure/note:", item.disclosureText || "");
       if (newDisclosure === null) return;
 
       const res = await api("/vanity/update", "POST", {
@@ -1009,19 +1181,20 @@
         domain: normalizeDomain(newDomain),
         url: newUrl.trim(),
         expire: newExpire || null,
-        mode: String(newMode || "redirect").trim().toLowerCase(),
+        vanityMode: String(newVanityMode || "standard").trim().toLowerCase(),
+        pixelPlatform: String(newPixelPlatform || "").trim().toLowerCase(),
         pixelId: newPixelId.trim(),
-        frameTitle: newFrameTitle.trim(),
-        disclosure: newDisclosure.trim(),
-        openInNewTab: !!item.openInNewTab,
-        requireAdminReview: !!item.requireAdminReview,
-        paused: !!item.paused
+        pixelCode: item.pixelCode || "",
+        cloakMode: String(newCloakMode || "").trim().toLowerCase(),
+        disclosureText: newDisclosure.trim(),
+        retargetingEnabled: !!item.retargetingEnabled,
+        cloakingEnabled: !!item.cloakingEnabled
       });
 
       if (!res) return;
       if (!res.ok) return showToast(res.data?.message || "Update failed");
 
-      showToast("Updated");
+      showToast(res.data?.message || "Updated");
       await loadAll();
     }
 
@@ -1029,13 +1202,14 @@
       $("slugInput").value = "";
       $("urlInput").value = "";
       $("expireInput").value = "";
-      $("modeSelect").value = "redirect";
-      $("pixelInput").value = "";
-      $("frameTitleInput").value = "";
+      $("vanityModeSelect").value = "standard";
+      $("pixelPlatformSelect").value = "";
+      $("pixelIdInput").value = "";
+      $("pixelCodeInput").value = "";
+      $("cloakModeSelect").value = "";
       $("disclosureInput").value = "";
-      $("openNewTabInput").checked = false;
-      $("adminReviewInput").checked = true;
-      $("pauseOnCreateInput").checked = false;
+      $("retargetingEnabledInput").checked = false;
+      $("cloakingEnabledInput").checked = false;
       $("presetSelect").value = "";
       if (resetResult) setResult("", false);
     }
@@ -1043,12 +1217,16 @@
     function applyPreset(key) {
       const preset = PRESETS[key];
       if (!preset) return;
+
       $("slugInput").value = preset.slug || "";
-      $("modeSelect").value = preset.mode || "redirect";
-      $("frameTitleInput").value = preset.frameTitle || "";
+      $("vanityModeSelect").value = preset.vanityMode || "standard";
       $("disclosureInput").value = preset.disclosure || "";
-      $("pixelInput").value = "";
-      $("adminReviewInput").checked = preset.mode === "cloak" || preset.mode === "retarget" || preset.mode === "white_label";
+      $("cloakModeSelect").value = preset.cloakMode || "";
+      $("cloakingEnabledInput").checked = !!preset.cloakingEnabled;
+      $("retargetingEnabledInput").checked = false;
+      $("pixelPlatformSelect").value = "";
+      $("pixelIdInput").value = "";
+      $("pixelCodeInput").value = "";
       setResult(`Preset loaded: ${key}`, false);
     }
 
@@ -1070,6 +1248,38 @@
       });
     }
 
+    async function adminApprove(slug, domain) {
+      const res = await api("/admin/vanity/approve", "POST", { slug, domain });
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Approve failed");
+      showToast("Approved");
+      await loadAll();
+    }
+
+    async function adminReject(slug, domain) {
+      const reason = prompt("Reject reason:", "");
+      if (reason === null) return;
+
+      const res = await api("/admin/vanity/reject", "POST", {
+        slug,
+        domain,
+        reason
+      });
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Reject failed");
+      showToast("Rejected");
+      await loadAll();
+    }
+
+    async function adminTogglePause(slug, domain, isPaused) {
+      const path = isPaused ? "/admin/vanity/resume" : "/admin/vanity/pause";
+      const res = await api(path, "POST", { slug, domain });
+      if (!res) return;
+      if (!res.ok) return showToast(res.data?.message || "Update failed");
+      showToast(isPaused ? "Resumed" : "Paused");
+      await loadAll();
+    }
+
     $("createBtn").addEventListener("click", createVanity);
     $("refreshBtn").addEventListener("click", loadAll);
     $("reloadDomainsBtn").addEventListener("click", loadDomains);
@@ -1079,17 +1289,23 @@
     $("domainFilter").addEventListener("change", renderTable);
     $("clearBtn").addEventListener("click", () => clearForm(true));
     $("presetSelect").addEventListener("change", (e) => applyPreset(e.target.value));
-    $("modeSelect").addEventListener("change", () => {
-      const mode = $("modeSelect").value;
-      if (mode === "cloak" || mode === "retarget" || mode === "white_label") {
-        $("adminReviewInput").checked = true;
+    $("refreshAdminBtn")?.addEventListener("click", loadAdminQueue);
+
+    $("vanityModeSelect").addEventListener("change", () => {
+      const mode = $("vanityModeSelect").value;
+      if (mode === "retargeting") $("retargetingEnabledInput").checked = true;
+      if (mode === "white_label" || mode === "affiliate" || mode === "iframe_wrapper") {
+        $("cloakingEnabledInput").checked = true;
+        if (!$("cloakModeSelect").value) $("cloakModeSelect").value = mode === "white_label" ? "white_label" : mode === "affiliate" ? "affiliate" : "iframe_wrapper";
       }
     });
 
     window.copyText = copyText;
     window.deleteVanity = deleteVanity;
-    window.openEdit = openEdit;
-    window.togglePause = togglePause;
+    window.openEditByData = openEditByData;
+    window.adminApprove = adminApprove;
+    window.adminReject = adminReject;
+    window.adminTogglePause = adminTogglePause;
 
     renderQuickPatterns();
     loadAll();
