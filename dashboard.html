@@ -1108,35 +1108,14 @@
   <script>
   const PRIMARY_API = "https://api.rattleshortapi.it.com";
   const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
+  const CAPTCHA_ENABLED = true;
 
   const AUTH_STORAGE_KEY = "rattle_token";
   const ROLE_STORAGE_KEY = "rattle_role";
   const USER_STORAGE_KEY = "rattle_user";
 
-  const SUPPORT_CONFIG = {
-    telegram: "https://t.me/Rtslik",
-    discord: "https://discord.gg/xwGvhtjb",
-    email: "support@rattleshort.online",
-    phone: "+1 954 787 8220"
-  };
-
-  const FALLBACK_CRYPTO_OPTIONS = [
-    { code: "USDT_BSC", asset: "USDT", network: "BSC", label: "USDT (BSC)" },
-    { code: "USDT_TRX", asset: "USDT", network: "TRX", label: "USDT (TRC20)" },
-    { code: "USDT_ETH", asset: "USDT", network: "ETH", label: "USDT (ERC20)" },
-    { code: "USDT_SOL", asset: "USDT", network: "SOL", label: "USDT (Solana)" },
-    { code: "USDC_ETH", asset: "USDC", network: "ETH", label: "USDC (ERC20)" },
-    { code: "USDC_SOL", asset: "USDC", network: "SOL", label: "USDC (Solana)" },
-    { code: "BTC_BTC", asset: "BTC", network: "BTC", label: "Bitcoin" }
-  ];
-
   const PRIMARY_ROUTE_MAP = {
-    "/": ["/", "/health"],
-    "/health": ["/health", "/"],
-
-    "/auth/me": ["/auth/me", "/me"],
-    "/me": ["/auth/me", "/me"],
-
     "/login": ["/auth/login", "/login"],
     "/signup": ["/auth/signup", "/signup"],
     "/forgot": ["/auth/forgot", "/forgot"],
@@ -1146,1803 +1125,1424 @@
     "/magic-status": ["/auth/magic-status", "/magic-status"],
     "/verify-email": ["/auth/verify-email", "/verify-email"],
     "/resend-verify": ["/auth/resend-verify", "/resend-verify"],
-
-    "/plans": ["/auth/plans", "/plans"],
-    "/payment-request": ["/auth/payment-request", "/payment-request"],
-    "/payments/me": ["/auth/payments/me", "/payments/me"],
-    "/payment-i-made": ["/auth/payment-i-made", "/payment-i-made"],
-
-    "/list": ["/list"],
-    "/history": ["/history"],
-    "/create": ["/create"],
-    "/delete": ["/delete"]
+    "/login/2fa/verify": ["/auth/login/2fa/verify", "/login/2fa/verify"],
+    "/me": ["/auth/me", "/me"],
+    "/auth/me": ["/auth/me", "/me"]
   };
 
   const LEGACY_ROUTE_MAP = {
-    "/": ["/", "/health"],
-    "/health": ["/health", "/"],
-    "/auth/me": ["/me", "/auth/me"],
+    "/login": ["/login", "/auth/login"],
+    "/signup": ["/signup", "/auth/signup"],
+    "/forgot": ["/forgot", "/auth/forgot"],
+    "/reset": ["/reset", "/auth/reset"],
+    "/magic-request": ["/magic-request", "/auth/magic-request"],
+    "/magic-login": ["/magic-login", "/auth/magic-login"],
+    "/magic-status": ["/magic-status", "/auth/magic-status"],
+    "/verify-email": ["/verify-email", "/auth/verify-email"],
+    "/resend-verify": ["/resend-verify", "/auth/resend-verify"],
+    "/login/2fa/verify": ["/login/2fa/verify", "/auth/login/2fa/verify"],
     "/me": ["/me", "/auth/me"],
-    "/plans": ["/plans"],
-    "/payment-request": ["/payment-request"],
-    "/payments/me": ["/payments/me"],
-    "/payment-i-made": ["/payment-i-made"],
-    "/list": ["/list"],
-    "/history": ["/history"]
+    "/auth/me": ["/me", "/auth/me"]
   };
 
-  const PLAN_LIMITS_FALLBACK = {
-    free_trial: { activeShortLinks: 3, activeLandingPages: 0 },
-    weekly: { activeShortLinks: 120, activeLandingPages: 5 },
-    monthly: { activeShortLinks: 650, activeLandingPages: 15 },
-    premium_monthly: { activeShortLinks: 3000, activeLandingPages: 35 }
-  };
+  let mode = "login";
+  let loginMethod = "password";
+  let captchaWidgetId = null;
+  let recaptchaLoaded = false;
+  let recaptchaWaitTimer = null;
+  let pendingMagicRequestId = null;
+  let pendingMagicExpiresAt = null;
+  let pendingMagicBackend = null;
+  let preferredBackend = null;
+  let pollInterval = null;
+  let timerInterval = null;
 
-  let dataStore = [];
-  let paymentsStore = [];
-  let notificationsStore = [];
-  let chart = null;
-  let refreshTimer = null;
-  let paymentPoller = null;
-  let loadingLinks = false;
-  let meState = null;
-  let plansState = null;
-  let selectedPlan = "monthly";
-  let selectedPlanQuantity = 1;
-  let waitingPaymentId = localStorage.getItem("waitingPaymentId") || "";
-  let autoRefreshEnabled = (localStorage.getItem("dashboardAutoRefresh") ?? "1") === "1";
-  let compactModeEnabled = (localStorage.getItem("dashboardCompactMode") ?? "0") === "1";
-  let preferredBackend = (localStorage.getItem("preferredBackend") || "primary").toLowerCase() === "legacy" ? "legacy" : "primary";
-  let sessionBackend = (localStorage.getItem("sessionBackend") || preferredBackend).toLowerCase() === "legacy" ? "legacy" : "primary";
+  const el = (id) => document.getElementById(id);
 
-  const $ = (id) => document.getElementById(id);
+  const card = el("card");
+  const errorBox = el("error");
+  const mainBtn = el("mainBtn");
+  const btnText = el("btnText");
+  const spinner = el("spinner");
+  const username = el("username");
+  const password = el("password");
+  const confirmInput = el("confirm");
+  const remember = el("remember");
+  const title = el("title");
+  const subText = el("subText");
+  const helperText = el("helperText");
+  const formTitle = el("formTitle");
+  const formSub = el("formSub");
+  const modeLabel = el("modeLabel");
+  const loginTab = el("loginTab");
+  const signupTab = el("signupTab");
+  const magicTab = el("magicTab");
+  const confirmWrap = el("confirmWrap");
+  const strengthWrap = el("strengthWrap");
+  const captchaWrap = el("captchaWrap");
+  const optionsRow = el("optionsRow");
+  const switchBox = el("switchBox");
+  const switchText = el("switchText");
+  const switchBtn = el("switchBtn");
+  const secondaryBtn = el("secondaryBtn");
+  const passwordArea = el("passwordArea");
+  const passwordLabel = el("passwordLabel");
+  const captchaState = el("captchaState");
+  const approvalBox = el("approvalBox");
+  const approvalText = el("approvalText");
+  const statusTimer = el("statusTimer");
+  const checkStatusBtn = el("checkStatusBtn");
+  const backendUsedNote = el("backendUsedNote");
+  const stepDot1 = el("stepDot1");
+  const stepDot2 = el("stepDot2");
+  const stepDot3 = el("stepDot3");
+  const checkLen = el("checkLen");
+  const checkUpper = el("checkUpper");
+  const checkNum = el("checkNum");
+  const checkSpecial = el("checkSpecial");
+  const loginMethodArea = el("loginMethodArea");
+  const loginMethodInfo = el("loginMethodInfo");
+  const loginMethodInfoTitle = el("loginMethodInfoTitle");
+  const loginMethodInfoText = el("loginMethodInfoText");
+  const methodPasswordBox = el("methodPasswordBox");
+  const methodVerifyBox = el("methodVerifyBox");
+  const method2faBox = el("method2faBox");
 
-  const els = {
-    totalLinks: $("totalLinks"),
-    totalClicks: $("totalClicks"),
-    avgClicks: $("avgClicks"),
-    activeShortLinksRemaining: $("activeShortLinksRemaining"),
-    liveThreatCount: $("liveThreatCount"),
-    table: $("table"),
-    ranking: $("ranking"),
-    panel: $("panel"),
-    panelContent: $("panelContent"),
-    toast: $("toast"),
-    paymentsTable: $("paymentsTable"),
-    notificationsList: $("notificationsList"),
-    securityInsights: $("securityInsights"),
-    activityTimeline: $("activityTimeline"),
-    liveSyncBadge: $("liveSyncBadge"),
-    shortLinksProgressBar: $("shortLinksProgressBar"),
-    landingPagesProgressBar: $("landingPagesProgressBar"),
-
-    primaryLinksCount: $("primaryLinksCount"),
-    legacyLinksCount: $("legacyLinksCount"),
-    primaryClicksCount: $("primaryClicksCount"),
-    legacyClicksCount: $("legacyClicksCount"),
-    primaryHealth: $("primaryHealth"),
-    legacyHealth: $("legacyHealth"),
-    sessionNote: $("sessionNote"),
-
-    backendBadgeTop: $("backendBadgeTop"),
-    meEmail: $("meEmail"),
-    mePlan: $("mePlan"),
-    meExpire: $("meExpire"),
-    meRole: $("meRole"),
-    meEmailVerified: $("meEmailVerified"),
-    mePrimaryDomain: $("mePrimaryDomain"),
-    meTwoFactor: $("meTwoFactor"),
-    meTwoFactorMethod: $("meTwoFactorMethod"),
-    accessSummary: $("accessSummary"),
-    subscriptionBadge: $("subscriptionBadge"),
-    latestPaymentBox: $("latestPaymentBox"),
-    activeShortLinksText: $("activeShortLinksText"),
-    activeLandingPagesText: $("activeLandingPagesText"),
-
-    searchInput: $("search"),
-    backendFilter: $("backendFilter"),
-    statusFilter: $("statusFilter"),
-    dateRangeFilter: $("dateRangeFilter"),
-    sortFilter: $("sortFilter"),
-    chartMetricSelect: $("chartMetricSelect"),
-    onlyHighRiskToggle: $("onlyHighRiskToggle"),
-    compactModeToggle: $("compactModeToggle"),
-    autoRefreshToggle: $("autoRefreshToggle"),
-
-    refreshBtn: $("refreshBtn"),
-    exportCsvBtn: $("exportCsvBtn"),
-    exportJsonBtn: $("exportJsonBtn"),
-    quickSettingsBtn: $("quickSettingsBtn"),
-    preferPrimaryBtn: $("preferPrimaryBtn"),
-    preferLegacyBtn: $("preferLegacyBtn"),
-    verifySessionBtn: $("verifySessionBtn"),
-    clearFiltersBtn: $("clearFiltersBtn"),
-    clearNotificationsBtn: $("clearNotificationsBtn"),
-    refreshActivityBtn: $("refreshActivityBtn"),
-    rebuildBoardBtn: $("rebuildBoardBtn"),
-    openSecurityCenterBtn: $("openSecurityCenterBtn"),
-
-    overlay: $("overlay"),
-    upgradeModal: $("upgradeModal"),
-    settingsModal: $("settingsModal"),
-    securityModal: $("securityModal"),
-    securityModalContent: $("securityModalContent"),
-    modalAutoRefreshToggle: $("modalAutoRefreshToggle"),
-    modalCompactModeToggle: $("modalCompactModeToggle"),
-    modalChartMetricSelect: $("modalChartMetricSelect"),
-    settingsSearchSummary: $("settingsSearchSummary"),
-
-    planGrid: $("planGrid"),
-    cryptoSelect: $("cryptoSelect"),
-    planQuantityInput: $("planQuantity"),
-    billingPreview: $("billingPreview"),
-    requestPaymentBtn: $("requestPaymentBtn"),
-    upgradeResult: $("upgradeResult"),
-    paymentRequestBox: $("paymentRequestBox")
-  };
-
-  function getToken() {
-    return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
+  function qs() {
+    return new URLSearchParams(window.location.search);
   }
 
-  function getRole() {
-    return localStorage.getItem(ROLE_STORAGE_KEY) || localStorage.getItem("role") || "";
+  function normalizeApiUrl(url) {
+    return String(url || "").replace(/\/+$/, "");
   }
 
-  function getUsername() {
-    return localStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem("lastUser") || "";
+  function backendLabel(name) {
+    return name === "primary" ? "Backend 2" : "Legacy AWS";
   }
 
-  function clearSession() {
-    [
-      AUTH_STORAGE_KEY,
-      ROLE_STORAGE_KEY,
-      USER_STORAGE_KEY,
-      "token",
-      "role",
-      "lastUser",
-      "preferredBackend",
-      "sessionBackend",
-      "waitingPaymentId"
-    ].forEach((k) => localStorage.removeItem(k));
+  function showError(msg = "", type = "error") {
+    errorBox.textContent = msg;
+    errorBox.className = "error";
+    if (type === "success") errorBox.classList.add("success-text");
+    else if (type === "warn") errorBox.classList.add("warn-text");
+
+    if (msg && type === "error") {
+      card.classList.remove("shake");
+      void card.offsetWidth;
+      card.classList.add("shake");
+    }
   }
 
-  function authHeaders() {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+  function toggleTheme() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    if (shouldUseCaptcha()) remountCaptcha();
   }
 
-  function apiBaseForBackend(backend) {
-    return backend === "legacy" ? LEGACY_API : PRIMARY_API;
+  function loadTheme() {
+    const theme = localStorage.getItem("theme");
+    if (theme === "light") document.body.classList.remove("dark");
+    else document.body.classList.add("dark");
   }
 
-  function backendLabel(backend) {
-    return backend === "legacy" ? "AWS" : "Backend2";
+  function setLoading(state) {
+    mainBtn.disabled = state;
+    card.classList.toggle("loading", state);
+    btnText.style.display = state ? "none" : "inline";
+    spinner.style.display = state ? "inline-block" : "none";
   }
 
-  function backendClass(backend) {
-    return backend === "legacy" ? "backend-legacy" : "backend-primary";
+  function setMiniLoading(button, loading) {
+    if (!button) return;
+    if (loading) {
+      button.dataset.originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Checking...";
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.originalText || "Check status";
+    }
   }
 
-  function buildPrimaryCandidates(path) {
-    const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-    if (PRIMARY_ROUTE_MAP[p]) return PRIMARY_ROUTE_MAP[p].slice();
+  function togglePass(id) {
+    const input = el(id);
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+  }
 
-    if (p.startsWith("/auth/")) {
-      return Array.from(new Set([p, p.replace(/^\/auth/, "")].filter(Boolean)));
+  function getForcedBackendFromState() {
+    const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
+    const localBackend = String(localStorage.getItem("authBackend") || "").trim().toLowerCase();
+    const sessionBackend = String(localStorage.getItem("sessionBackend") || "").trim().toLowerCase();
+    const magicBackend = String(localStorage.getItem("magicBackend") || "").trim().toLowerCase();
+
+    if (preferredBackend === "primary" || preferredBackend === "legacy") return preferredBackend;
+    if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
+    if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
+    if (sessionBackend === "primary" || sessionBackend === "legacy") return sessionBackend;
+    if (localBackend === "primary" || localBackend === "legacy") return localBackend;
+    return null;
+  }
+
+  function shouldUseCaptcha() {
+    if (!CAPTCHA_ENABLED) return false;
+    if (mode === "signup") return true;
+    if (mode === "login" && loginMethod === "password") return true;
+    return false;
+  }
+
+  function updateModeProgress() {
+    stepDot1.classList.remove("active");
+    stepDot2.classList.remove("active");
+    stepDot3.classList.remove("active");
+
+    if (mode === "login") {
+      stepDot1.classList.add("active");
+    } else if (mode === "signup") {
+      stepDot1.classList.add("active");
+      stepDot2.classList.add("active");
+    } else {
+      stepDot1.classList.add("active");
+      stepDot2.classList.add("active");
+      stepDot3.classList.add("active");
+    }
+  }
+
+  function setPasswordCheck(node, ok) {
+    if (!node) return;
+    node.classList.toggle("ok", !!ok);
+    const icon = node.querySelector("i");
+    if (icon) icon.textContent = ok ? "✓" : "•";
+  }
+
+  function setCaptchaState(text) {
+    if (captchaState) captchaState.textContent = text;
+  }
+
+  function destroyCaptcha() {
+    const box = el("recaptchaBox");
+    if (box) box.innerHTML = "";
+    captchaWidgetId = null;
+  }
+
+  function mountCaptcha() {
+    if (!shouldUseCaptcha()) {
+      destroyCaptcha();
+      setCaptchaState("Captcha not needed");
+      return;
     }
 
-    return [p];
-  }
+    if (!recaptchaLoaded || !window.grecaptcha || typeof window.grecaptcha.render !== "function") {
+      setCaptchaState("Loading captcha...");
+      return;
+    }
 
-  function buildLegacyCandidates(path) {
-    const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-    if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
+    if (captchaWidgetId !== null) return;
 
-    return Array.from(new Set([p, p.replace(/^\/auth/, "")].filter(Boolean)));
-  }
+    const box = el("recaptchaBox");
+    if (!box) return;
+    box.innerHTML = "";
 
-  async function safeFetchRaw(base, path, options = {}) {
     try {
-      const res = await fetch(base.replace(/\/+$/, "") + path, options);
-      const raw = await res.text();
-      let data = {};
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { message: raw };
+      captchaWidgetId = window.grecaptcha.render("recaptchaBox", {
+        sitekey: RECAPTCHA_SITE_KEY,
+        theme: document.body.classList.contains("dark") ? "dark" : "light",
+        callback: function () {
+          setCaptchaState("Captcha completed");
+        },
+        "expired-callback": function () {
+          setCaptchaState("Captcha expired");
+        },
+        "error-callback": function () {
+          setCaptchaState("Captcha error");
+        }
+      });
+      setCaptchaState("Captcha required");
+    } catch (error) {
+      console.error("reCAPTCHA render error:", error);
+      setCaptchaState("Captcha failed to load");
+    }
+  }
+
+  function remountCaptcha() {
+    destroyCaptcha();
+    mountCaptcha();
+  }
+
+  function waitForCaptchaAndMount() {
+    clearInterval(recaptchaWaitTimer);
+    if (!shouldUseCaptcha()) {
+      destroyCaptcha();
+      return;
+    }
+
+    let tries = 0;
+    recaptchaWaitTimer = setInterval(() => {
+      tries += 1;
+      if (window.grecaptcha && typeof window.grecaptcha.render === "function") {
+        recaptchaLoaded = true;
+        clearInterval(recaptchaWaitTimer);
+        mountCaptcha();
       }
-      return { ok: res.ok, status: res.status, data, raw, path };
-    } catch (e) {
+      if (tries > 100) {
+        clearInterval(recaptchaWaitTimer);
+        setCaptchaState("Captcha failed to load");
+      }
+    }, 200);
+  }
+
+  window.onRecaptchaLoaded = function () {
+    recaptchaLoaded = true;
+    mountCaptcha();
+  };
+
+  function getCaptchaToken() {
+    if (!shouldUseCaptcha()) return null;
+    if (!window.grecaptcha || captchaWidgetId === null) return "";
+    try {
+      return window.grecaptcha.getResponse(captchaWidgetId) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function resetCaptcha() {
+    if (!shouldUseCaptcha()) return;
+    if (!window.grecaptcha || captchaWidgetId === null) return;
+    try {
+      window.grecaptcha.reset(captchaWidgetId);
+      setCaptchaState("Captcha required");
+    } catch (error) {
+      console.error("reCAPTCHA reset error:", error);
+    }
+  }
+
+  function saveSession(token, role = "user", user = "") {
+    if (!token) return;
+    const finalRole = role || "user";
+    const finalUser = user || "";
+
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
+    localStorage.setItem(ROLE_STORAGE_KEY, finalRole);
+    localStorage.setItem(USER_STORAGE_KEY, finalUser);
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", finalRole);
+    localStorage.setItem("lastUser", finalUser);
+  }
+
+  function clearSessionStorage() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("lastUser");
+  }
+
+  function setLoginMethod(method) {
+    loginMethod = method;
+    localStorage.setItem("preferredLoginMethod", method);
+
+    methodPasswordBox.classList.toggle("active", method === "password");
+    methodVerifyBox.classList.toggle("active", method === "verify_email");
+    method2faBox.classList.toggle("active", method === "two_factor");
+
+    if (method === "password") {
+      passwordArea.style.display = "block";
+      optionsRow.style.display = "flex";
+      passwordLabel.textContent = "Password";
+      password.placeholder = "Password";
+      password.type = "password";
+      loginMethodInfoTitle.textContent = "Password login selected";
+      loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
+      btnText.textContent = mode === "signup" ? "Create account" : "Login";
+      secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+      secondaryBtn.textContent = mode === "signup" ? "Resend verification" : "Reset password";
+    } else if (method === "verify_email") {
+      passwordArea.style.display = "none";
+      optionsRow.style.display = "none";
+      loginMethodInfoTitle.textContent = "Email verification selected";
+      loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
+      btnText.textContent = "Send verification email";
+      secondaryBtn.style.display = "block";
+      secondaryBtn.textContent = "Open verify page";
+    } else {
+      passwordArea.style.display = "block";
+      optionsRow.style.display = "none";
+      confirmWrap.classList.add("hidden");
+      strengthWrap.classList.add("hidden");
+      passwordLabel.textContent = "2FA code";
+      password.placeholder = "2FA code";
+      password.type = "text";
+      loginMethodInfoTitle.textContent = "Direct 2FA code selected";
+      loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly.";
+      btnText.textContent = "Verify 2FA code";
+      secondaryBtn.style.display = "block";
+      secondaryBtn.textContent = "Open 2FA page";
+    }
+
+    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+    if (shouldUseCaptcha()) waitForCaptchaAndMount();
+    else destroyCaptcha();
+  }
+
+  function setMode(nextMode) {
+    mode = nextMode;
+    loginTab.classList.toggle("active", mode === "login");
+    signupTab.classList.toggle("active", mode === "signup");
+    magicTab.classList.toggle("active", mode === "magic");
+    loginMethodArea.style.display = mode === "login" ? "block" : "none";
+    loginMethodInfo.classList.toggle("show", mode === "login");
+    confirmWrap.classList.toggle("hidden", mode !== "signup");
+    strengthWrap.classList.toggle("hidden", mode !== "signup");
+    switchBox.style.display = mode === "magic" ? "none" : "block";
+    secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+    passwordArea.style.display = mode === "magic" ? "none" : "block";
+    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+    approvalBox.style.display = mode === "magic" ? approvalBox.style.display : "none";
+
+    if (mode === "login") {
+      title.textContent = "Welcome back";
+      subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
+      formTitle.textContent = "Account access";
+      formSub.textContent = "Choose how you want to continue into your workspace.";
+      modeLabel.textContent = "Login";
+      switchText.textContent = "Don’t have an account?";
+      switchBtn.textContent = "Create one";
+      helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
+      secondaryBtn.textContent = "Reset password";
+      const savedMethod = localStorage.getItem("preferredLoginMethod") || "password";
+      setLoginMethod(savedMethod === "verify_email" || savedMethod === "two_factor" ? savedMethod : "password");
+    } else if (mode === "signup") {
+      title.textContent = "Create your account";
+      subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
+      formTitle.textContent = "New account setup";
+      formSub.textContent = "Create a secure account with a stronger password and email verification.";
+      modeLabel.textContent = "Signup";
+      btnText.textContent = "Create account";
+      switchText.textContent = "Already have an account?";
+      switchBtn.textContent = "Login";
+      helperText.textContent = "New signups go to Backend 2 only.";
+      secondaryBtn.textContent = "Resend verification";
+      optionsRow.style.display = "none";
+      passwordArea.style.display = "block";
+      passwordLabel.textContent = "Password";
+      password.placeholder = "Password";
+      password.type = "password";
+    } else {
+      title.textContent = "Passwordless magic login";
+      subText.textContent = "Request a login approval email and finish signing in without entering your password.";
+      formTitle.textContent = "Magic approval flow";
+      formSub.textContent = "Start an email approval request and complete sign-in after verification.";
+      modeLabel.textContent = "Magic login";
+      btnText.textContent = "Send magic login";
+      helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
+      loginMethodInfo.classList.remove("show");
+      optionsRow.style.display = "none";
+    }
+
+    updateModeProgress();
+    if (shouldUseCaptcha()) waitForCaptchaAndMount();
+    else destroyCaptcha();
+    showError("");
+    checkStrength();
+  }
+
+  function toggleLoginSignup() {
+    setMode(mode === "login" ? "signup" : "login");
+  }
+
+  function checkStrength() {
+    const fill = el("strengthFill");
+    const text = el("strength");
+
+    if (mode !== "signup") {
+      fill.style.width = "0%";
+      fill.className = "";
+      text.textContent = "";
+      setPasswordCheck(checkLen, false);
+      setPasswordCheck(checkUpper, false);
+      setPasswordCheck(checkNum, false);
+      setPasswordCheck(checkSpecial, false);
+      return;
+    }
+
+    const value = password.value || "";
+    let score = 0;
+    const okLen = value.length >= 8;
+    const okUpper = /[A-Z]/.test(value);
+    const okNum = /[0-9]/.test(value);
+    const okSpecial = /[^A-Za-z0-9]/.test(value);
+
+    setPasswordCheck(checkLen, okLen);
+    setPasswordCheck(checkUpper, okUpper);
+    setPasswordCheck(checkNum, okNum);
+    setPasswordCheck(checkSpecial, okSpecial);
+
+    if (value.length >= 6) score += 1;
+    if (value.length >= 8) score += 1;
+    if (okUpper) score += 1;
+    if (okNum) score += 1;
+    if (okSpecial) score += 1;
+
+    if (!value) {
+      fill.style.width = "0%";
+      fill.className = "";
+      text.textContent = "";
+      return;
+    }
+
+    if (score <= 2) {
+      fill.style.width = "33%";
+      fill.className = "weak";
+      text.textContent = "Weak password";
+    } else if (score <= 4) {
+      fill.style.width = "66%";
+      fill.className = "medium";
+      text.textContent = "Medium password";
+    } else {
+      fill.style.width = "100%";
+      fill.className = "strong";
+      text.textContent = "Strong password";
+    }
+  }
+
+  async function safeJson(res) {
+    try { return await res.json(); } catch { return {}; }
+  }
+
+  function getDeviceInfo() {
+    return {
+      ua: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      screen: `${screen.width}x${screen.height}`,
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"
+    };
+  }
+
+  function getRouteCandidates(backend, rawPath) {
+    const cleanPath = String(rawPath || "").split("?")[0];
+    const query = String(rawPath || "").includes("?") ? "?" + String(rawPath).split("?").slice(1).join("?") : "";
+    const map = backend === "primary" ? PRIMARY_ROUTE_MAP : LEGACY_ROUTE_MAP;
+    const baseCandidates = map[cleanPath] || [cleanPath];
+    return [...new Set(baseCandidates.map((p) => p + query))];
+  }
+
+  async function callApi(baseUrl, path, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(normalizeApiUrl(baseUrl) + path, {
+        method: options.method || "GET",
+        headers: options.headers || {},
+        body: options.body,
+        mode: "cors",
+        credentials: "omit",
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+      const data = await safeJson(res);
+      return { ok: res.ok, status: res.status, data, networkError: false, path };
+    } catch (error) {
+      clearTimeout(timer);
       return {
         ok: false,
         status: 0,
-        data: { message: e?.message || "Failed to fetch" },
-        raw: "",
+        data: { message: error?.message || "Network request failed" },
+        networkError: true,
         path
       };
     }
   }
 
-  async function callBackend(backend, path, options = {}) {
-    const headers = { ...(options.headers || {}) };
-    if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
+  function buildHeaders(extra = {}) {
+    return { "Content-Type": "application/json", ...extra };
+  }
 
-    const candidates = backend === "legacy"
-      ? buildLegacyCandidates(path)
-      : buildPrimaryCandidates(path);
-
-    const base = apiBaseForBackend(backend);
+  async function callBackend(backend, rawPath, options = {}) {
+    const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    const candidates = getRouteCandidates(backend, rawPath);
     let first401 = null;
-    let last = null;
+    let lastResult = null;
 
-    for (const candidate of candidates) {
-      const res = await safeFetchRaw(base, candidate, { ...options, headers });
-      last = res;
-
-      if (res.ok) {
-        return { ...res, backend, resolvedPath: candidate };
+    for (const path of candidates) {
+      const finalOptions = { ...options };
+      if (backend === "legacy") {
+        finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
       }
 
-      if (res.status === 401 && !first401) {
-        first401 = { ...res, backend, resolvedPath: candidate };
+      const result = await callApi(baseUrl, path, finalOptions);
+      lastResult = result;
+
+      if (result.ok) {
+        return { ...result, backend, resolvedPath: path };
       }
 
-      if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) {
+      if (result.status === 401 && !first401) {
+        first401 = { ...result, backend, resolvedPath: path };
+      }
+
+      if (result.status === 404 || result.status === 405 || result.status === 0 || result.status >= 500) {
         continue;
       }
 
-      return { ...res, backend, resolvedPath: candidate };
+      return { ...result, backend, resolvedPath: path };
     }
 
-    return first401 || {
-      ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }),
-      backend,
-      resolvedPath: last?.path || candidates[0],
-      triedPaths: candidates
+    return first401 || { ...lastResult, backend, resolvedPath: lastResult?.path || candidates[0] };
+  }
+
+  function shouldFallbackToLegacy(path, result) {
+    if (path === "/signup") return false;
+    if (path === "/login/2fa/verify") return false;
+
+    if (result.networkError) return true;
+    if (result.status === 404) return true;
+    if (result.status === 405) return true;
+    if (result.status >= 500) return true;
+
+    const msg = String(result?.data?.message || "").toLowerCase();
+
+    if (["/login", "/magic-request", "/magic-login", "/magic-status", "/resend-verify"].includes(path)) {
+      if (
+        msg.includes("account not found in backend2") ||
+        msg.includes("magic request not found") ||
+        msg.includes("invalid magic request") ||
+        msg.includes("invalid approval token") ||
+        msg.includes("route not found")
+      ) return true;
+    }
+
+    return false;
+  }
+
+  async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
+    if (behavior === "primaryOnly") {
+      const result = await callBackend("primary", path, options);
+      return { ...result, backend: "primary" };
+    }
+
+    if (behavior === "legacyOnly") {
+      const result = await callBackend("legacy", path, options);
+      return { ...result, backend: "legacy" };
+    }
+
+    const forced = getForcedBackendFromState();
+    if (forced === "primary") {
+      const result = await callBackend("primary", path, options);
+      return { ...result, backend: "primary" };
+    }
+    if (forced === "legacy") {
+      const result = await callBackend("legacy", path, options);
+      return { ...result, backend: "legacy" };
+    }
+
+    const first = await callBackend("primary", path, options);
+    if (first.ok) return { ...first, backend: "primary" };
+    if (!shouldFallbackToLegacy(path, first)) return { ...first, backend: "primary" };
+
+    const second = await callBackend("legacy", path, options);
+    return { ...second, backend: "legacy", firstAttempt: first };
+  }
+
+  async function resendVerifyHybrid(user) {
+    const forced = getForcedBackendFromState();
+    const options = {
+      method: "POST",
+      headers: buildHeaders(),
+      body: JSON.stringify({ username: user })
     };
+
+    if (forced === "primary") return apiHybrid("/resend-verify", options, "primaryOnly");
+    if (forced === "legacy") return apiHybrid("/resend-verify", options, "legacyOnly");
+    return apiHybrid("/resend-verify", options, "primaryThenLegacy");
   }
 
-  async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
-    const targetBackend = backend || sessionBackend;
-    const method = String(options.method || "GET").toUpperCase();
-    const headers = { ...authHeaders(), ...(options.headers || {}) };
+  function buildAuthPayload(user, pass, captchaToken) {
+    const payload = { username: user, password: pass, device: getDeviceInfo() };
+    if (shouldUseCaptcha()) payload.captcha = captchaToken;
+    return payload;
+  }
 
-    if (method !== "GET" && !headers["Content-Type"]) {
-      headers["Content-Type"] = "application/json";
+  function setChosenBackend(backend) {
+    if (backend === "primary" || backend === "legacy") {
+      preferredBackend = backend;
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
+    }
+  }
+
+  function savePendingMagic(requestId, expiresAt, backend, email = "") {
+    pendingMagicRequestId = requestId || null;
+    pendingMagicExpiresAt = expiresAt || null;
+    pendingMagicBackend = backend || null;
+
+    if (backend) setChosenBackend(backend);
+    if (requestId) localStorage.setItem("magicRequestId", requestId);
+    if (expiresAt) localStorage.setItem("magicExpiresAt", String(expiresAt));
+    if (backend) localStorage.setItem("magicBackend", backend);
+    if (email) localStorage.setItem("magicEmail", email);
+
+    approvalBox.style.display = "block";
+    backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
+    approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
+
+    startMagicTimer(expiresAt);
+    startMagicPolling();
+  }
+
+  function clearPendingMagic() {
+    pendingMagicRequestId = null;
+    pendingMagicExpiresAt = null;
+    pendingMagicBackend = null;
+
+    localStorage.removeItem("magicRequestId");
+    localStorage.removeItem("magicExpiresAt");
+    localStorage.removeItem("magicBackend");
+    localStorage.removeItem("magicEmail");
+
+    approvalBox.style.display = "none";
+    backendUsedNote.textContent = "";
+    statusTimer.textContent = "";
+    stopMagicPolling();
+    stopMagicTimer();
+    showError("Pending login cleared.", "warn");
+  }
+
+  function restorePendingMagic() {
+    const requestId = localStorage.getItem("magicRequestId");
+    const expiresAt = Number(localStorage.getItem("magicExpiresAt") || 0);
+    const backend = localStorage.getItem("magicBackend");
+    const savedEmail = localStorage.getItem("magicEmail") || "";
+
+    if (savedEmail && !username.value.trim()) username.value = savedEmail;
+
+    if (requestId) {
+      pendingMagicRequestId = requestId;
+      pendingMagicExpiresAt = expiresAt || null;
+      pendingMagicBackend = backend || null;
+      approvalBox.style.display = "block";
+      backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
+      startMagicTimer(expiresAt || null);
+      startMagicPolling();
+    }
+  }
+
+  function stopMagicPolling() {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  }
+
+  function startMagicPolling() {
+    stopMagicPolling();
+    if (!pendingMagicRequestId) return;
+    pollInterval = setInterval(() => checkMagicStatus(false), 3000);
+  }
+
+  function stopMagicTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function startMagicTimer(expiresAt) {
+    stopMagicTimer();
+    if (!expiresAt) {
+      statusTimer.textContent = "";
+      return;
     }
 
-    const res = await callBackend(targetBackend, path, { ...options, headers });
+    pendingMagicExpiresAt = Number(expiresAt);
 
-    if (res.status === 401 && autoLogout) {
-      clearSession();
-      window.location.href = "index.html";
-    }
-
-    return { ...res, backend: targetBackend };
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function escapeForJs(str) {
-    return String(str ?? "")
-      .replaceAll("\\", "\\\\")
-      .replaceAll("'", "\\'")
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "");
-  }
-
-  function fmtDate(ts) {
-    const n = Number(ts || 0);
-    if (!n) return "-";
-    return new Date(n).toLocaleString();
-  }
-
-  function fmtMoney(v) {
-    return `$${Number(v || 0).toFixed(2)}`;
-  }
-
-  function showToast(message = "Done") {
-    if (!els.toast) return;
-    els.toast.textContent = message;
-    els.toast.style.display = "block";
-    clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(() => {
-      els.toast.style.display = "none";
-    }, 1800);
-  }
-
-  function pushNotification(message, type = "info") {
-    const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`;
-    notificationsStore.unshift({ id, message, type, time: Date.now() });
-    notificationsStore = notificationsStore.slice(0, 8);
-    renderNotifications();
-  }
-
-  function setResult(message, isError = false, target = els.upgradeResult) {
-    if (!target) return;
-    target.textContent = message || "";
-    target.className = `result ${isError ? "error" : "success"}`;
-    if (message) pushNotification(message, isError ? "error" : "success");
-  }
-
-  function setBusy(button, busy, text = "") {
-    if (!button) return;
-    if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
-    button.disabled = busy;
-    button.textContent = busy ? text : button.dataset.originalText;
-  }
-
-  function buildPublicLink(itemOrSlug, backend) {
-    const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
-    return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
-  }
-
-  function getItemType(item) {
-    return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing"
-      ? "landing"
-      : "redirect";
-  }
-
-  function getStatusKey(item) {
-    if (item.paused) return "paused";
-    if (item.expire && Number(item.expire) <= Date.now()) return "expired";
-    return "live";
-  }
-
-  function getStatus(item) {
-    const key = getStatusKey(item);
-    if (key === "paused") return '<span class="pill paused">Paused</span>';
-    if (key === "expired") return '<span class="pill expired">Expired</span>';
-    return '<span class="pill live">Live</span>';
-  }
-
-  function fmtExpire(ts) {
-    const n = Number(ts || 0);
-    if (!n) return '<span class="muted">No expiry</span>';
-    if (n <= Date.now()) return '<span class="expired">Expired</span>';
-
-    const diff = n - Date.now();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return `<div class="success">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
-  }
-
-  function scoreLink(link) {
-    let score = 0;
-    const clicks = Number(link.clicks || 0);
-    const maxRisk = Number(link.maxRisk || 0);
-
-    if (clicks > 20) score += 20;
-    if (clicks > 50) score += 25;
-    if (clicks > 100) score += 25;
-    if (!link.paused) score += 10;
-    if (!link.expire || Number(link.expire) > Date.now()) score += 10;
-    if (link.backend === "primary") score += 5;
-    if (maxRisk > 60) score -= 15;
-
-    return Math.max(0, Math.min(score, 100));
-  }
-
-  function detectFraud(link) {
-    const clicks = Number(link.clicks || 0);
-    const risk = Number(link.maxRisk || 0);
-    if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
-    if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
-    return "✅ Normal";
-  }
-
-  function normalizeLinkItem(item, backend) {
-    return {
-      ...item,
-      backend,
-      user: item.user || item.username || "",
-      clicks: Number(item.clicks || 0),
-      paused: !!item.paused,
-      expire: item.expire ? Number(item.expire) : null,
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      maxRisk: Number(item.maxRisk || item.max_risk || 0),
-      note: item.note || "",
-      campaign: item.campaign || "",
-      linkType: getItemType(item),
-      publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug, backend)
-    };
-  }
-
-  function normalizePlanItem(plan, index = 0) {
-    const code = plan.code || plan.planCode || plan.plan_code || plan.id || `PLAN_${index + 1}`;
-    return {
-      ...plan,
-      code,
-      label: plan.label || plan.name || code,
-      amountUsd: Number(plan.amountUsd || plan.amount_usd || plan.price || 0),
-      limits: plan.limits || {
-        activeShortLinks: Number(plan.activeShortLinks || plan.active_short_links || 0),
-        activeLandingPages: Number(plan.activeLandingPages || plan.active_landing_pages || 0)
+    const tick = () => {
+      const left = pendingMagicExpiresAt - Date.now();
+      if (left <= 0) {
+        statusTimer.textContent = "Approval request expired";
+        stopMagicTimer();
+        stopMagicPolling();
+        return;
       }
-    };
-  }
-
-  function normalizeCryptoOption(item, index = 0) {
-    const code = item.code || item.cryptoCode || item.crypto_code || item.assetCode || item.symbol || `CRYPTO_${index + 1}`;
-    const asset = item.asset || item.symbol || item.crypto || code;
-    const network = item.network || item.networkCode || item.network_code || "";
-    return {
-      ...item,
-      code,
-      asset,
-      network,
-      label: item.label || `${asset}${network ? ` (${network})` : ""}`
-    };
-  }
-
-  function extractPlansAndCrypto(payload) {
-    const data = payload || {};
-    let plans = [];
-    let cryptos = [];
-
-    if (Array.isArray(data?.plans)) plans = data.plans;
-    else if (data?.plans && typeof data.plans === "object") plans = Object.values(data.plans);
-    else if (Array.isArray(data?.data?.plans)) plans = data.data.plans;
-    else if (Array.isArray(data?.subscriptions)) plans = data.subscriptions;
-    else if (Array.isArray(data)) plans = data;
-
-    if (Array.isArray(data?.cryptoOptions)) cryptos = data.cryptoOptions;
-    else if (data?.cryptoOptions && typeof data.cryptoOptions === "object") cryptos = Object.values(data.cryptoOptions);
-    else if (Array.isArray(data?.cryptos)) cryptos = data.cryptos;
-    else if (Array.isArray(data?.crypto)) cryptos = data.crypto;
-    else if (data?.crypto && typeof data.crypto === "object") cryptos = Object.values(data.crypto);
-    else if (Array.isArray(data?.coins)) cryptos = data.coins;
-    else if (Array.isArray(data?.assets)) cryptos = data.assets;
-    else if (Array.isArray(data?.paymentCoins)) cryptos = data.paymentCoins;
-    else if (Array.isArray(data?.availableCryptos)) cryptos = data.availableCryptos;
-    else if (Array.isArray(data?.available_cryptos)) cryptos = data.available_cryptos;
-    else if (Array.isArray(data?.data?.cryptoOptions)) cryptos = data.data.cryptoOptions;
-    else if (Array.isArray(data?.data?.cryptos)) cryptos = data.data.cryptos;
-    else if (Array.isArray(data?.options)) cryptos = data.options;
-
-    return {
-      plans: plans.map(normalizePlanItem).filter((x) => x.code),
-      cryptos: cryptos.map(normalizeCryptoOption).filter((x) => x.code)
-    };
-  }
-
-  function normalizePaymentItem(item, backend) {
-    return {
-      ...item,
-      backend,
-      id: item.id || item.paymentId || item.payment_id || "-",
-      amountUsd: Number(item.amountUsd || item.amount_usd || 0),
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      expiresAt: Number(item.expiresAt || item.expires_at || 0),
-      verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
-      quantity: Number(item.quantity || 1),
-      planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || null,
-      billingCycle: item.billingCycle || item.billing_cycle || item.planCode || item.plan_code || "-",
-      cryptoCode: item.cryptoCode || item.crypto_code || item.asset || item.crypto || "-",
-      networkCode: item.networkCode || item.network_code || item.network || "-",
-      qrImageUrl: item.qrImageUrl || item.qr_image_url || item.qr || "",
-      qrText: item.qrText || item.qr_text || "",
-      address: item.address || "-"
-    };
-  }
-
-  function normalizePlanLabel(planCode) {
-    const code = String(planCode || "").toLowerCase();
-    if (code === "premium_monthly") return "Premium Monthly";
-    if (code === "monthly") return "Monthly";
-    if (code === "weekly") return "Weekly";
-    if (code === "free_trial") return "Free Trial";
-    return code ? code.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase()) : "-";
-  }
-
-  function formatPaymentStatus(status) {
-    const s = String(status || "").toLowerCase();
-    if (s === "verified") return `<span class="badge live">Verified</span>`;
-    if (s === "awaiting_confirmation") return `<span class="badge awaiting">Awaiting Confirmation</span>`;
-    if (s === "pending") return `<span class="badge pending">Pending</span>`;
-    if (s === "cancelled") return `<span class="badge expired">Cancelled</span>`;
-    return `<span class="badge expired">${escapeHtml(status || "unknown")}</span>`;
-  }
-
-  function mergeLinks(primaryItems = [], legacyItems = []) {
-    return [
-      ...primaryItems.map((item) => normalizeLinkItem(item, "primary")),
-      ...legacyItems.map((item) => normalizeLinkItem(item, "legacy"))
-    ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-  }
-
-  function sortPayments(payments = []) {
-    return [...payments].sort((a, b) => {
-      const rank = (s) => {
-        s = String(s || "").toLowerCase();
-        if (s === "awaiting_confirmation") return 0;
-        if (s === "pending") return 1;
-        if (s === "verified") return 2;
-        if (s === "cancelled") return 3;
-        return 4;
-      };
-      const diff = rank(a.status) - rank(b.status);
-      if (diff !== 0) return diff;
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
-  }
-
-  function ensureAuth() {
-    const token = getToken();
-    if (!token) {
-      window.location.href = "index.html";
-      return false;
-    }
-    return true;
-  }
-
-  function updatePreferredButtons() {
-    els.preferPrimaryBtn?.classList.toggle("backend-active", preferredBackend === "primary");
-    els.preferLegacyBtn?.classList.toggle("backend-active", preferredBackend === "legacy");
-  }
-
-  function setTopBackendBadge() {
-    if (!els.backendBadgeTop) return;
-    els.backendBadgeTop.className = `backend-badge ${backendClass(preferredBackend)}`;
-    els.backendBadgeTop.textContent = preferredBackend === "legacy" ? "Preferred: AWS" : "Preferred: Backend2";
-    if (els.sessionNote) {
-      els.sessionNote.textContent = `Preferred backend: ${backendLabel(preferredBackend)} • Active session backend: ${backendLabel(sessionBackend)}`;
-    }
-    updatePreferredButtons();
-  }
-
-  function applyAutoRefreshState() {
-    localStorage.setItem("dashboardAutoRefresh", autoRefreshEnabled ? "1" : "0");
-    if (els.autoRefreshToggle) els.autoRefreshToggle.checked = autoRefreshEnabled;
-    if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
-    if (els.liveSyncBadge) {
-      els.liveSyncBadge.textContent = autoRefreshEnabled ? "Auto Sync On" : "Auto Sync Off";
-      els.liveSyncBadge.className = `badge ${autoRefreshEnabled ? "live" : "paused"}`;
-    }
-  }
-
-  function applyCompactModeState() {
-    localStorage.setItem("dashboardCompactMode", compactModeEnabled ? "1" : "0");
-    document.body.classList.toggle("compact", compactModeEnabled);
-    if (els.compactModeToggle) els.compactModeToggle.checked = compactModeEnabled;
-    if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
-  }
-
-  function getFallbackPlanLimits(me = {}) {
-    const planCode = String(
-      me.subscriptionPlan ||
-      (String(me.subscriptionStatus || "").toLowerCase() === "trial" ? "free_trial" : "")
-    ).toLowerCase();
-
-    return PLAN_LIMITS_FALLBACK[planCode] || { activeShortLinks: 0, activeLandingPages: 0 };
-  }
-
-  function getUserItemsForUsage() {
-    const username = String(meState?.username || getUsername() || "").toLowerCase();
-    if (!username) return dataStore;
-    return dataStore.filter((item) => String(item.user || "").toLowerCase() === username);
-  }
-
-  function deriveUsageFromData() {
-    const items = getUserItemsForUsage();
-    const activeShortLinks = items.filter((x) => getItemType(x) !== "landing" && getStatusKey(x) === "live").length;
-    const activeLandingPages = items.filter((x) => getItemType(x) === "landing" && getStatusKey(x) === "live").length;
-    return { activeShortLinks, activeLandingPages };
-  }
-
-  async function verifyMainSession(showToastMessage = false) {
-    const preferredRes = await authorizedFetch("/auth/me", { method: "GET" }, preferredBackend, false);
-    if (preferredRes.ok) {
-      sessionBackend = preferredBackend;
-      localStorage.setItem("sessionBackend", sessionBackend);
-      meState = preferredRes.data || null;
-      renderMe();
-      setTopBackendBadge();
-      if (showToastMessage) showToast(`Session valid on ${backendLabel(sessionBackend)}`);
-      return true;
-    }
-
-    const other = preferredBackend === "primary" ? "legacy" : "primary";
-    const fallbackRes = await authorizedFetch("/auth/me", { method: "GET" }, other, false);
-    if (fallbackRes.ok) {
-      sessionBackend = other;
-      localStorage.setItem("sessionBackend", sessionBackend);
-      meState = fallbackRes.data || null;
-      renderMe();
-      setTopBackendBadge();
-      if (showToastMessage) {
-        showToast(`Preferred ${backendLabel(preferredBackend)} is not active. Session works on ${backendLabel(sessionBackend)}.`);
-      }
-      return true;
-    }
-
-    if (preferredRes.status === 401 && fallbackRes.status === 401) {
-      logout();
-      return false;
-    }
-
-    if (els.accessSummary) {
-      els.accessSummary.textContent = "Could not confirm session yet, but your saved login token is still present.";
-    }
-    if (showToastMessage) showToast("Session check could not be confirmed.");
-    return true;
-  }
-
-  function renderNotifications() {
-    if (!els.notificationsList) return;
-    if (!notificationsStore.length) {
-      els.notificationsList.innerHTML = `<div class="muted">No notifications yet.</div>`;
-      return;
-    }
-
-    els.notificationsList.innerHTML = notificationsStore.map((n) => `
-      <div class="info-box" style="margin:0;">
-        <div><b>${escapeHtml(n.message)}</b></div>
-        <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
-      </div>
-    `).join("");
-  }
-
-  function updateMiniStats() {
-    const primaryItems = dataStore.filter((x) => x.backend === "primary");
-    const legacyItems = dataStore.filter((x) => x.backend === "legacy");
-
-    if (els.primaryLinksCount) els.primaryLinksCount.textContent = primaryItems.length;
-    if (els.legacyLinksCount) els.legacyLinksCount.textContent = legacyItems.length;
-    if (els.primaryClicksCount) els.primaryClicksCount.textContent = primaryItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
-    if (els.legacyClicksCount) els.legacyClicksCount.textContent = legacyItems.reduce((a, b) => a + Number(b.clicks || 0), 0);
-    if (els.liveThreatCount) els.liveThreatCount.textContent = dataStore.filter((x) => Number(x.maxRisk || 0) > 60).length;
-  }
-
-  function renderMe() {
-    if (!meState) return;
-
-    const fallbackLimits = getFallbackPlanLimits(meState);
-    const derivedUsage = deriveUsageFromData();
-
-    const planLimits = {
-      activeShortLinks: Number(meState?.planLimits?.activeShortLinks ?? fallbackLimits.activeShortLinks ?? 0),
-      activeLandingPages: Number(meState?.planLimits?.activeLandingPages ?? fallbackLimits.activeLandingPages ?? 0)
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
     };
 
-    const usage = {
-      activeShortLinks: Number(meState?.usage?.activeShortLinks ?? derivedUsage.activeShortLinks ?? 0),
-      activeLandingPages: Number(meState?.usage?.activeLandingPages ?? derivedUsage.activeLandingPages ?? 0)
-    };
-
-    const remaining = {
-      activeShortLinks: Math.max(0, Number(meState?.remaining?.activeShortLinks ?? (planLimits.activeShortLinks - usage.activeShortLinks))),
-      activeLandingPages: Math.max(0, Number(meState?.remaining?.activeLandingPages ?? (planLimits.activeLandingPages - usage.activeLandingPages)))
-    };
-
-    if (els.meEmail) els.meEmail.textContent = meState.username || getUsername() || "-";
-    if (els.mePlan) els.mePlan.textContent = normalizePlanLabel(meState.subscriptionPlan || (meState.subscriptionStatus === "trial" ? "free_trial" : ""));
-    if (els.meExpire) els.meExpire.textContent = meState.subscriptionExpiresAt ? fmtDate(meState.subscriptionExpiresAt) : "-";
-    if (els.meRole) els.meRole.textContent = meState.role || getRole() || "-";
-    if (els.meEmailVerified) els.meEmailVerified.innerHTML = meState.emailVerified ? '<span class="live">Verified</span>' : '<span class="expired">Not verified</span>';
-    if (els.mePrimaryDomain) els.mePrimaryDomain.textContent = meState.primaryDomain || "-";
-    if (els.meTwoFactor) els.meTwoFactor.innerHTML = meState.twoFactorEnabled ? '<span class="live">Enabled</span>' : '<span class="muted">Disabled</span>';
-    if (els.meTwoFactorMethod) els.meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
-
-    const status = String(meState.subscriptionStatus || "trial").toLowerCase();
-    const paused = !!meState.subscriptionPaused;
-
-    const shortUsed = usage.activeShortLinks;
-    const shortLimit = Math.max(0, planLimits.activeShortLinks);
-    const landingUsed = usage.activeLandingPages;
-    const landingLimit = Math.max(0, planLimits.activeLandingPages);
-    const shortRemaining = remaining.activeShortLinks;
-    const landingRemaining = remaining.activeLandingPages;
-
-    if (els.activeShortLinksRemaining) els.activeShortLinksRemaining.textContent = shortRemaining;
-    if (els.activeShortLinksText) els.activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
-    if (els.activeLandingPagesText) els.activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
-    if (els.shortLinksProgressBar) els.shortLinksProgressBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
-    if (els.landingPagesProgressBar) els.landingPagesProgressBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
-
-    let summary = "";
-    let badgeClass = "trial";
-    let badgeText = "Trial";
-
-    if (status === "active" && !paused && Number(meState.subscriptionExpiresAt || 0) > Date.now()) {
-      badgeClass = "live";
-      badgeText = "Active";
-      summary = `Plan active until ${fmtDate(meState.subscriptionExpiresAt)}. ${shortRemaining} short-link slots left and ${landingRemaining} landing-page slots left.`;
-    } else if (paused) {
-      badgeClass = "paused";
-      badgeText = "Paused";
-      summary = `Subscription is paused. Current usage: ${shortUsed}/${shortLimit} short links and ${landingUsed}/${landingLimit} landing pages.`;
-    } else if (status === "expired") {
-      badgeClass = "expired";
-      badgeText = "Expired";
-      summary = `Subscription expired. Current active usage remains ${shortUsed} short links and ${landingUsed} landing pages.`;
-    } else {
-      badgeClass = "trial";
-      badgeText = "Trial";
-      summary = `Free trial: ${shortUsed}/${shortLimit} active short links used. Deleting a short link frees a slot.`;
-    }
-
-    if (meState.emailVerified === false) summary += " Email verification is incomplete.";
-    if (meState.twoFactorEnabled) summary += ` 2FA is enabled using ${meState.twoFactorMethod || "configured method"}.`;
-    if (meState.primaryDomain) summary += ` Primary domain: ${meState.primaryDomain}.`;
-
-    if (els.subscriptionBadge) {
-      els.subscriptionBadge.className = `badge ${badgeClass}`;
-      els.subscriptionBadge.textContent = badgeText;
-    }
-    if (els.accessSummary) els.accessSummary.textContent = summary;
+    tick();
+    timerInterval = setInterval(tick, 1000);
   }
 
-  async function loadMe(showLoading = false) {
-    if (showLoading && els.accessSummary) els.accessSummary.textContent = "Loading account...";
-    const ok = await verifyMainSession(false);
-    if (!ok && els.accessSummary) els.accessSummary.textContent = "Session expired";
-  }
+  async function finishMagicLogin(exchangeOverride = "") {
+    const exchange = String(exchangeOverride || qs().get("exchange") || "").trim();
+    const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
+    const email = username.value.trim().toLowerCase() || localStorage.getItem("magicEmail") || "";
 
-  async function loadPlans(showMessage = false) {
-    const primary = await callBackend("primary", "/plans", { method: "GET" });
-    const legacy = await callBackend("legacy", "/plans", { method: "GET" });
-    const res = primary.ok ? primary : legacy;
+    if (exchange) {
+      try {
+        const behavior = backend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+        const result = await apiHybrid(
+          "/magic-login",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({ exchange })
+          },
+          behavior
+        );
 
-    if (!res.ok) {
-      plansState = {
-        plans: [
-          { code: "weekly", label: "Weekly", amountUsd: 10, limits: { activeShortLinks: 120, activeLandingPages: 5 } },
-          { code: "monthly", label: "Monthly", amountUsd: 35, limits: { activeShortLinks: 650, activeLandingPages: 15 } },
-          { code: "premium_monthly", label: "Premium Monthly", amountUsd: 135, limits: { activeShortLinks: 3000, activeLandingPages: 35 } }
-        ],
-        cryptoOptions: FALLBACK_CRYPTO_OPTIONS
-      };
-      renderPlans();
-      renderCryptoOptions();
-      updateBillingPreview();
-      if (showMessage) setResult("Plans endpoint failed, fallback crypto options loaded.", true, els.upgradeResult);
-      return;
-    }
+        const data = result.data || {};
 
-    const extracted = extractPlansAndCrypto(res.data || {});
-    plansState = {
-      ...(res.data || {}),
-      plans: extracted.plans,
-      cryptoOptions: extracted.cryptos.length ? extracted.cryptos : FALLBACK_CRYPTO_OPTIONS
-    };
+        if (data.requiresTwoFactor) {
+          localStorage.setItem("pending2faMethod", data.method || "");
+          if (data.requestId) localStorage.setItem("magicRequestId", data.requestId);
+          if (data.expiresAt) localStorage.setItem("magicExpiresAt", String(data.expiresAt));
+          if (result.backend) localStorage.setItem("magicBackend", result.backend);
 
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    if (plans.length && !plans.some((p) => p.code === selectedPlan)) {
-      selectedPlan = plans[0].code;
-    }
+          const next = new URLSearchParams({
+            email,
+            backend: result.backend || backend,
+            method: data.method || ""
+          });
 
-    renderPlans();
-    renderCryptoOptions();
-    updateBillingPreview();
+          if (data.exchange) next.set("exchange", data.exchange);
+          if (data.challenge) next.set("challenge", data.challenge);
+          if (data.challengeToken) next.set("challengeToken", data.challengeToken);
+          if (data.token) next.set("token", data.token);
+          if (data.requestId) next.set("requestId", data.requestId);
 
-    if (showMessage) {
-      setResult(
-        extracted.cryptos.length
-          ? "Plans loaded"
-          : "Plans loaded. Fallback crypto options were used.",
-        false,
-        els.upgradeResult
-      );
-    }
-  }
+          window.location.href = "2fa-login.html?" + next.toString();
+          return;
+        }
 
-  function renderPlans() {
-    if (!els.planGrid) return;
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    if (!plans.length) {
-      els.planGrid.innerHTML = `<div class="muted">No plans returned.</div>`;
-      return;
-    }
+        if (!result.ok || !data.token) {
+          showError(data.message || "Could not complete login.");
+          return;
+        }
 
-    els.planGrid.innerHTML = plans.map((plan) => `
-      <div class="panel-card ${selectedPlan === plan.code ? "backend-active" : ""}" data-plan="${escapeHtml(plan.code)}" style="cursor:pointer;">
-        <h4>${escapeHtml(normalizePlanLabel(plan.code))}</h4>
-        <div style="font-size:26px;font-weight:700;margin-bottom:6px;">${fmtMoney(plan.amountUsd)}</div>
-        <div class="muted">${Number(plan.limits?.activeShortLinks || 0)} short links • ${Number(plan.limits?.activeLandingPages || 0)} landing pages</div>
-      </div>
-    `).join("");
-  }
+        setChosenBackend(result.backend || "primary");
+        saveSession(data.token, data.role || "user", data.username || email);
+        if (remember.checked && email) localStorage.setItem("rememberUser", email);
 
-  function renderCryptoOptions() {
-    if (!els.cryptoSelect) return;
-    const options = Array.isArray(plansState?.cryptoOptions) && plansState.cryptoOptions.length
-      ? plansState.cryptoOptions
-      : FALLBACK_CRYPTO_OPTIONS;
+        clearPendingMagic();
+        localStorage.removeItem("pending2faMethod");
 
-    els.cryptoSelect.innerHTML = `
-      <option value="">Choose a crypto option</option>
-      ${options.map((opt) => `<option value="${escapeHtml(opt.code)}">${escapeHtml(opt.label || opt.code)}</option>`).join("")}
-    `;
-    if (options.length) els.cryptoSelect.value = options[0].code;
-  }
-
-  function getPlanInfoByCode(code) {
-    const plans = Array.isArray(plansState?.plans) ? plansState.plans : [];
-    return plans.find((p) => String(p.code) === String(code)) || null;
-  }
-
-  function updateBillingPreview() {
-    if (!els.billingPreview) return;
-    const plan = getPlanInfoByCode(selectedPlan);
-    const qty = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
-    selectedPlanQuantity = qty;
-
-    if (!plan) {
-      els.billingPreview.textContent = "Choose a plan and quantity.";
-      return;
-    }
-
-    const total = Number(plan.amountUsd || 0) * qty;
-    const cycleLabel = plan.code === "weekly"
-      ? `${qty} week${qty === 1 ? "" : "s"}`
-      : `${qty} month${qty === 1 ? "" : "s"}`;
-
-    const limits = plan.limits || {};
-    els.billingPreview.innerHTML = `
-      ${normalizePlanLabel(plan.code)} • ${cycleLabel}<br>
-      Total: <b>${fmtMoney(total)}</b><br>
-      Limits: ${Number(limits.activeShortLinks || 0)} active short links • ${Number(limits.activeLandingPages || 0)} active landing pages
-    `;
-  }
-
-  function stopPaymentPolling() {
-    if (paymentPoller) {
-      clearInterval(paymentPoller);
-      paymentPoller = null;
-    }
-  }
-
-  function getLatestInterestingPayment() {
-    if (!paymentsStore.length) return null;
-    return paymentsStore.find((p) => ["awaiting_confirmation", "pending"].includes(String(p.status || "").toLowerCase())) || paymentsStore[0];
-  }
-
-  function renderLatestPayment(payment) {
-    if (!els.latestPaymentBox) return;
-
-    if (!payment) {
-      els.latestPaymentBox.innerHTML = `<div class="muted">No payment request yet.</div>`;
-      return;
-    }
-
-    const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
-    const verified = String(payment.status || "").toLowerCase() === "verified";
-
-    els.latestPaymentBox.innerHTML = `
-      <div class="payment-box">
-        <div class="payment-qr">
-          <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
-        </div>
-        <div>
-          <div>
-            <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-            <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
-            <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-            ${formatPaymentStatus(payment.status)}
-          </div>
-
-          <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-          <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-          <div class="muted" style="margin-top:8px;">Send payment to this address:</div>
-          <div class="address-box">${escapeHtml(payment.address)}</div>
-          <div class="small muted">Created: ${fmtDate(payment.createdAt)}</div>
-          <div class="small muted">Expires: ${fmtDate(payment.expiresAt)}</div>
-
-          <div class="row-actions" style="margin-top:10px;">
-            <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-            <button type="button" onclick="showPaymentDetails('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')">Details</button>
-            <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
-          </div>
-
-          ${waiting ? `<div class="waiting-box"><b>Waiting for admin confirmation...</b></div>` : ""}
-          ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed</b></div>` : ""}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderPaymentsTable() {
-    if (!els.paymentsTable) return;
-
-    if (!paymentsStore.length) {
-      els.paymentsTable.innerHTML = `<tr><td colspan="10" class="muted">No payments yet</td></tr>`;
-      renderLatestPayment(null);
-      return;
-    }
-
-    els.paymentsTable.innerHTML = paymentsStore.map((p) => `
-      <tr>
-        <td><span class="backend-badge ${backendClass(p.backend)}">${backendLabel(p.backend)}</span></td>
-        <td><code>${escapeHtml(p.id)}</code></td>
-        <td>${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle))}</td>
-        <td>${Number(p.quantity || 1)}</td>
-        <td>${fmtMoney(p.amountUsd)}</td>
-        <td>${escapeHtml(p.cryptoCode)} (${escapeHtml(p.networkCode)})</td>
-        <td>${formatPaymentStatus(p.status)}</td>
-        <td>${fmtDate(p.createdAt)}</td>
-        <td>${fmtDate(p.expiresAt)}</td>
-        <td>
-          <div class="row-actions">
-            <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(p.address)}')">Copy Address</button>
-            <button type="button" onclick="showPaymentDetails('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')">View</button>
-            <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(p.id)}','${escapeForJs(p.backend)}')" ${String(p.status).toLowerCase() === "verified" ? "disabled" : ""}>I Made a Transfer</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
-
-    renderLatestPayment(getLatestInterestingPayment());
-  }
-
-  async function loadPayments(showMessage = false) {
-    const res = await authorizedFetch("/payments/me", { method: "GET" }, "primary", false);
-
-    if (!res.ok) {
-      paymentsStore = [];
-      renderPaymentsTable();
-      if (showMessage) showToast("Failed to load payments");
-      return;
-    }
-
-    let raw = res.data;
-    let payments = [];
-    if (Array.isArray(raw)) payments = raw;
-    else if (Array.isArray(raw?.payments)) payments = raw.payments;
-    else if (Array.isArray(raw?.items)) payments = raw.items;
-    else if (raw?.payment) payments = [raw.payment];
-
-    paymentsStore = sortPayments(payments.map((p) => normalizePaymentItem(p, "primary")));
-    renderPaymentsTable();
-
-    if (waitingPaymentId) {
-      const found = paymentsStore.find((x) => x.id === waitingPaymentId);
-      if (found) {
-        handleWaitingPaymentState(found);
-      } else {
-        waitingPaymentId = "";
-        localStorage.removeItem("waitingPaymentId");
-        stopPaymentPolling();
+        showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
+        setTimeout(() => {
+          window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
+        }, 500);
+        return;
+      } catch (error) {
+        console.error("MAGIC FINISH ERROR:", error);
+        showError("Could not complete login.");
+        return;
       }
     }
 
-    if (showMessage) showToast("Payments refreshed");
+    showError("Approval confirmed. Open the email link to finish login.", "success");
+    const params = new URLSearchParams();
+    if (pendingMagicRequestId) params.set("requestId", pendingMagicRequestId);
+    if (backend) params.set("backend", backend);
+    if (email) params.set("email", email);
+    params.set("approved", "1");
+    setTimeout(() => {
+      window.location.href = "magic-login.html?" + params.toString();
+    }, 900);
   }
 
-  function renderPaymentRequestBox(payment, message = "") {
-    if (!els.paymentRequestBox) return;
+  async function checkMagicStatus(showFeedback = true) {
+    const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+    if (!requestId) {
+      if (showFeedback) showError("No pending approval request found.");
+      return;
+    }
 
-    const waiting = String(payment.status || "").toLowerCase() === "awaiting_confirmation";
-    const verified = String(payment.status || "").toLowerCase() === "verified";
+    pendingMagicRequestId = requestId;
+    if (showFeedback) setMiniLoading(checkStatusBtn, true);
 
-    els.paymentRequestBox.innerHTML = `
-      <div class="card" style="margin:0;">
-        <div class="payment-box">
-          <div class="payment-qr">
-            <img src="${escapeHtml(payment.qrImageUrl || "")}" alt="QR code">
-          </div>
-          <div>
-            <div>
-              <span class="backend-badge ${backendClass(payment.backend)}">${backendLabel(payment.backend)}</span>
-              ${formatPaymentStatus(payment.status)}
-              <span class="badge pending">${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle))}</span>
-              <span class="badge">Qty ${Number(payment.quantity || 1)}</span>
-            </div>
+    try {
+      const behavior = pendingMagicBackend === "legacy" ? "legacyOnly" : "primaryThenLegacy";
+      const method = pendingMagicBackend === "legacy" ? "POST" : "GET";
+      const payloadPath = method === "GET"
+        ? `/magic-status?requestId=${encodeURIComponent(requestId)}`
+        : "/magic-status";
 
-            <div style="margin-top:8px;"><b>Amount:</b> ${fmtMoney(payment.amountUsd)}</div>
-            <div><b>Asset:</b> ${escapeHtml(payment.cryptoCode)} (${escapeHtml(payment.networkCode)})</div>
-            <div class="muted" style="margin-top:8px;">Send to:</div>
-            <div class="address-box">${escapeHtml(payment.address)}</div>
-            <div class="muted small">Payment ID: ${escapeHtml(payment.id)}</div>
-            <div class="muted small">Expires: ${fmtDate(payment.expiresAt)}</div>
+      const requestOptions = method === "GET"
+        ? { method, headers: buildHeaders() }
+        : { method, headers: buildHeaders(), body: JSON.stringify({ requestId }) };
 
-            <div class="row-actions" style="margin-top:10px;">
-              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(payment.address)}')">Copy Address</button>
-              <button type="button" onclick="copyLink('${escapeForJs(payment.id)}')">Copy Payment ID</button>
-              <button class="warn-btn" type="button" onclick="markPaymentSent('${escapeForJs(payment.id)}','${escapeForJs(payment.backend)}')" ${verified ? "disabled" : ""}>I Made a Transfer</button>
-            </div>
+      const result = await apiHybrid(payloadPath, requestOptions, behavior);
+      const data = result.data || {};
 
-            ${message ? `<div class="result success" style="margin-top:10px;">${escapeHtml(message)}</div>` : ""}
-            ${waiting ? `<div class="waiting-box"><b>Waiting for payment confirmation...</b></div>` : ""}
-            ${verified ? `<div class="confirm-box"><b>✅ Payment confirmed and successful</b></div>` : ""}
-          </div>
-        </div>
-      </div>
-    `;
+      pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
+      setChosenBackend(pendingMagicBackend);
+      localStorage.setItem("magicBackend", pendingMagicBackend);
+      backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
+
+      if (!result.ok) {
+        if (showFeedback) showError(data.message || "Could not check status.");
+        return;
+      }
+
+      if (data.expiresAt) {
+        localStorage.setItem("magicExpiresAt", String(data.expiresAt));
+        startMagicTimer(data.expiresAt);
+      }
+
+      if (data.exchange) {
+        approvalText.textContent = "Login approved. Completing sign-in.";
+        stopMagicPolling();
+        await finishMagicLogin(data.exchange);
+        return;
+      }
+
+      if (data.status === "approved") {
+        approvalText.textContent = "Login approved. Redirecting to the magic login page.";
+        showError(`Login approved on ${backendLabel(pendingMagicBackend)}.`, "success");
+        stopMagicPolling();
+        await finishMagicLogin();
+        return;
+      }
+
+      if (data.status === "expired") {
+        showError("Approval request expired. Start again.", "warn");
+        clearPendingMagic();
+        return;
+      }
+
+      if (showFeedback) {
+        showError(`Still waiting for email approval on ${backendLabel(pendingMagicBackend)}.`, "warn");
+      }
+    } catch (error) {
+      console.error("STATUS ERROR:", error);
+      if (showFeedback) showError("Status check failed.");
+    } finally {
+      if (showFeedback) setMiniLoading(checkStatusBtn, false);
+    }
   }
 
-  async function createPaymentRequest() {
-    const cryptoCode = els.cryptoSelect?.value;
-    const quantity = Math.max(1, Number(els.planQuantityInput?.value || selectedPlanQuantity || 1));
-    selectedPlanQuantity = quantity;
+  function openMagicPage() {
+    const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
+    const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
+    const email = username.value.trim().toLowerCase();
+    const params = new URLSearchParams();
 
-    if (!selectedPlan) return setResult("Choose a plan first", true, els.upgradeResult);
-    if (!cryptoCode) return setResult("Choose a crypto option", true, els.upgradeResult);
+    if (requestId) params.set("requestId", requestId);
+    if (backend) params.set("backend", backend);
+    if (email) params.set("email", email);
 
-    setBusy(els.requestPaymentBtn, true, "Creating...");
+    window.location.href = "magic-login.html?" + params.toString();
+  }
 
-    let res = await authorizedFetch(
-      "/payment-request",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          planCode: selectedPlan,
-          plan: selectedPlan,
-          billingCycle: selectedPlan,
-          quantity,
-          cryptoCode,
-          crypto: cryptoCode
-        })
-      },
-      preferredBackend,
-      false
-    );
+  async function login() {
+    showError("");
+    setLoading(true);
 
-    if (res.status === 401) {
-      await verifyMainSession(false);
-      res = await authorizedFetch(
-        "/payment-request",
+    const user = username.value.trim().toLowerCase();
+    const pass = password.value;
+    const captchaToken = getCaptchaToken();
+
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+      showError("Enter a valid email.");
+      setLoading(false);
+      return;
+    }
+    if (!pass) {
+      showError("Enter password.");
+      setLoading(false);
+      return;
+    }
+    if (shouldUseCaptcha() && !captchaToken) {
+      showError("Complete CAPTCHA.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await apiHybrid(
+        "/login",
         {
           method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify(buildAuthPayload(user, pass, captchaToken))
+        },
+        "primaryThenLegacy"
+      );
+
+      const data = result.data || {};
+
+      if (!result.ok) {
+        if (data.requiresEmailVerification) {
+          setChosenBackend(result.backend || "primary");
+          showError("Check your email and verify your account first.", "warn");
+          setTimeout(() => {
+            const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+            window.location.href = "verify-email.html?" + next.toString();
+          }, 1200);
+        } else {
+          showError(data.message || "Invalid login.");
+        }
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      if (data.requiresTwoFactor) {
+        const method = data.method || "";
+        localStorage.setItem("pending2faMethod", method);
+        setChosenBackend(result.backend || "primary");
+        if (data.requestId) localStorage.setItem("magicRequestId", data.requestId);
+        if (data.expiresAt) localStorage.setItem("magicExpiresAt", String(data.expiresAt));
+        if (data.exchange) localStorage.setItem("pending2faExchange", data.exchange);
+        if (data.challenge) localStorage.setItem("pending2faChallenge", data.challenge);
+        if (data.challengeToken) localStorage.setItem("pending2faChallenge", data.challengeToken);
+
+        showError(`Two-factor required. Redirecting to ${method === "email_otp" ? "email OTP" : "2FA"} verification.`, "warn");
+
+        const next = new URLSearchParams({ email: user, backend: result.backend || "primary", method });
+        if (data.exchange) next.set("exchange", data.exchange);
+        if (data.challenge) next.set("challenge", data.challenge);
+        if (data.challengeToken) next.set("challengeToken", data.challengeToken);
+        if (data.token) next.set("token", data.token);
+
+        setTimeout(() => {
+          window.location.href = "2fa-login.html?" + next.toString();
+        }, 900);
+
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      if (data.requiresApproval && data.requestId) {
+        savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
+        showError(`Approval email sent from ${backendLabel(result.backend)}.`, "warn");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      if (!data.token) {
+        showError(data.message || "Login failed.");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      setChosenBackend(result.backend || "primary");
+      saveSession(data.token, data.role || "user", data.username || user);
+
+      if (remember.checked) localStorage.setItem("rememberUser", user);
+      else localStorage.removeItem("rememberUser");
+
+      localStorage.removeItem("pending2faMethod");
+
+      showError(`Login successful via ${backendLabel(result.backend)}.`, "success");
+      setTimeout(() => {
+        window.location.href = data.role === "admin" ? "admin.html" : "dashboard.html";
+      }, 500);
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+      showError("Server error.");
+    }
+
+    resetCaptcha();
+    setLoading(false);
+  }
+
+  async function directTwoFactorLogin() {
+    showError("");
+    setLoading(true);
+
+    const user = username.value.trim().toLowerCase();
+    const enteredCode = password.value.trim();
+
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+      showError("Enter a valid email.");
+      setLoading(false);
+      return;
+    }
+    if (!enteredCode) {
+      showError("Enter your 2FA code.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const forced = getForcedBackendFromState();
+      const verifyBehavior = forced === "legacy" ? "legacyOnly" : "primaryOnly";
+
+      const verifyResult = await apiHybrid(
+        "/login/2fa/verify",
+        {
+          method: "POST",
+          headers: buildHeaders(),
           body: JSON.stringify({
-            planCode: selectedPlan,
-            plan: selectedPlan,
-            billingCycle: selectedPlan,
-            quantity,
-            cryptoCode,
-            crypto: cryptoCode
+            username: user,
+            email: user,
+            code: enteredCode,
+            method: localStorage.getItem("pending2faMethod") || undefined
           })
         },
-        preferredBackend,
-        false
+        verifyBehavior
       );
+
+      const verifyData = verifyResult.data || {};
+
+      if (!verifyResult.ok || !verifyData.exchange) {
+        showError(verifyData.message || verifyData.error || verifyData.detail || "Two-factor verification failed.");
+        setLoading(false);
+        return;
+      }
+
+      const backend = verifyResult.backend || "primary";
+      setChosenBackend(backend);
+
+      const loginResult = await apiHybrid(
+        "/magic-login",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify({ exchange: verifyData.exchange })
+        },
+        backend === "legacy" ? "legacyOnly" : "primaryOnly"
+      );
+
+      const loginData = loginResult.data || {};
+
+      if (loginData.requiresTwoFactor) {
+        showError("That 2FA code was not accepted yet. Please try the newest code.", "error");
+        setLoading(false);
+        return;
+      }
+
+      if (!loginResult.ok || !loginData.token) {
+        showError(loginData.message || loginData.error || loginData.detail || "2FA code verified, but final login failed.");
+        setLoading(false);
+        return;
+      }
+
+      saveSession(loginData.token, loginData.role || "user", loginData.username || user);
+      if (remember.checked) localStorage.setItem("rememberUser", user);
+      localStorage.removeItem("pending2faMethod");
+
+      showError(`2FA verified via ${backendLabel(loginResult.backend || backend)}.`, "success");
+      setTimeout(() => {
+        window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
+      }, 700);
+    } catch (error) {
+      console.error("DIRECT 2FA ERROR:", error);
+      showError("Could not verify 2FA code.");
     }
 
-    setBusy(els.requestPaymentBtn, false);
+    setLoading(false);
+  }
 
-    if (!res.ok) {
-      setResult(`${backendLabel(preferredBackend)}: ${res.data?.message || "Failed to create payment request"}`, true, els.upgradeResult);
+  async function signup() {
+    showError("");
+    setLoading(true);
+
+    const user = username.value.trim().toLowerCase();
+    const pass = password.value;
+    const confirm = confirmInput.value;
+    const captchaToken = getCaptchaToken();
+
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+      showError("Enter a valid email.");
+      setLoading(false);
+      return;
+    }
+    if (pass.length < 8) {
+      showError("Password must be at least 8 characters.");
+      setLoading(false);
+      return;
+    }
+    if (pass !== confirm) {
+      showError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+    if (shouldUseCaptcha() && !captchaToken) {
+      showError("Complete CAPTCHA.");
+      setLoading(false);
       return;
     }
 
-    const paymentRaw = res.data?.payment || res.data?.data?.payment || res.data;
-    const payment = paymentRaw ? normalizePaymentItem(paymentRaw, res.backend || preferredBackend) : null;
+    try {
+      const payload = { username: user, password: pass };
+      if (shouldUseCaptcha()) payload.captcha = captchaToken;
 
-    if (!payment) {
-      setResult("Payment request created, but response was empty", true, els.upgradeResult);
+      const result = await apiHybrid(
+        "/signup",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify(payload)
+        },
+        "primaryOnly"
+      );
+
+      const data = result.data || {};
+
+      if (!result.ok) {
+        showError(data.message || "Signup failed.");
+        resetCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      setChosenBackend("primary");
+      showError(data.message || "Account created. Verify your email before first login.", "success");
+      password.value = "";
+      confirmInput.value = "";
+      checkStrength();
+
+      setTimeout(() => {
+        const next = new URLSearchParams({ email: user, backend: "primary" });
+        window.location.href = "verify-email.html?" + next.toString();
+      }, 1200);
+    } catch (error) {
+      console.error("SIGNUP ERROR:", error);
+      showError("Signup failed.");
+    }
+
+    resetCaptcha();
+    setLoading(false);
+  }
+
+  async function magicRequest() {
+    showError("");
+    setLoading(true);
+
+    const user = username.value.trim().toLowerCase();
+    if (!user) {
+      showError("Enter email.");
+      setLoading(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+      showError("Enter a valid email.");
+      setLoading(false);
       return;
     }
 
-    waitingPaymentId = "";
-    localStorage.removeItem("waitingPaymentId");
-    stopPaymentPolling();
+    try {
+      const result = await apiHybrid(
+        "/magic-request",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify({ username: user, device: getDeviceInfo() })
+        },
+        "primaryThenLegacy"
+      );
 
-    setResult("Payment request generated.", false, els.upgradeResult);
-    renderPaymentRequestBox(payment, "Send the payment, then click I Made a Transfer.");
-    await loadPayments(false);
-  }
+      const data = result.data || {};
 
-  async function markPaymentSent(paymentId, backend) {
-    const payment = paymentsStore.find((p) => p.id === paymentId && p.backend === backend);
-    if (!payment) return;
-
-    const status = String(payment.status || "").toLowerCase();
-    if (status === "verified") {
-      showToast("This payment is already verified");
-      return;
-    }
-
-    if (status === "awaiting_confirmation") {
-      waitingPaymentId = payment.id;
-      localStorage.setItem("waitingPaymentId", payment.id);
-      renderPaymentRequestBox(payment, "Already submitted. Waiting for admin confirmation.");
-      showToast("Already waiting for confirmation");
-      return;
-    }
-
-    const res = await authorizedFetch(
-      "/payment-i-made",
-      { method: "POST", body: JSON.stringify({ paymentId, id: paymentId }) },
-      backend,
-      false
-    );
-
-    if (!res.ok) {
-      setResult(res.data?.message || "Could not mark payment as sent", true, els.upgradeResult);
-      return;
-    }
-
-    waitingPaymentId = payment.id;
-    localStorage.setItem("waitingPaymentId", payment.id);
-    showToast("Transfer submitted");
-
-    await loadPayments(false);
-
-    const updated = paymentsStore.find((p) => p.id === payment.id && p.backend === payment.backend) || payment;
-    renderPaymentRequestBox(updated, "Transfer marked. Waiting for admin confirmation...");
-  }
-
-  function handleWaitingPaymentState(payment) {
-    const status = String(payment.status || "").toLowerCase();
-
-    if (status === "verified") {
-      waitingPaymentId = "";
-      localStorage.removeItem("waitingPaymentId");
-      stopPaymentPolling();
-      renderPaymentRequestBox(payment, "Payment confirmed.");
-      loadMe(false);
-      return;
-    }
-
-    if (status === "awaiting_confirmation" || status === "pending") {
-      renderPaymentRequestBox(payment, "Waiting for admin confirmation...");
-      return;
-    }
-
-    waitingPaymentId = "";
-    localStorage.removeItem("waitingPaymentId");
-    stopPaymentPolling();
-  }
-
-  function openModal(modal) {
-    if (!modal) return;
-    if (els.overlay) els.overlay.style.display = "block";
-    modal.style.display = "block";
-  }
-
-  function closeModal(modal) {
-    if (!modal) return;
-    modal.style.display = "none";
-    syncOverlay();
-  }
-
-  function syncOverlay() {
-    const anyOpen = [els.upgradeModal, els.settingsModal, els.securityModal]
-      .some((m) => m && m.style.display === "block");
-    if (els.overlay) els.overlay.style.display = anyOpen ? "block" : "none";
-  }
-
-  function openUpgradeModal() {
-    openModal(els.upgradeModal);
-    updateBillingPreview();
-    const p = waitingPaymentId
-      ? paymentsStore.find((x) => x.id === waitingPaymentId)
-      : getLatestInterestingPayment();
-    if (p) renderPaymentRequestBox(p);
-  }
-
-  function closeUpgradeModal() {
-    closeModal(els.upgradeModal);
-  }
-
-  function openSettingsModal() {
-    openModal(els.settingsModal);
-    if (els.modalAutoRefreshToggle) els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
-    if (els.modalCompactModeToggle) els.modalCompactModeToggle.checked = compactModeEnabled;
-    if (els.modalChartMetricSelect) els.modalChartMetricSelect.value = els.chartMetricSelect?.value || "clicks";
-    if (els.settingsSearchSummary) {
-      els.settingsSearchSummary.textContent = els.searchInput?.value?.trim()
-        ? `Searching for: ${els.searchInput.value.trim()}`
-        : "No active search";
-    }
-  }
-
-  function closeSettingsModal() {
-    closeModal(els.settingsModal);
-  }
-
-  function openSecurityModal() {
-    openModal(els.securityModal);
-    renderSecurityModal();
-  }
-
-  function closeSecurityModal() {
-    closeModal(els.securityModal);
-  }
-
-  function closeAllModals() {
-    closeUpgradeModal();
-    closeSettingsModal();
-    closeSecurityModal();
-  }
-
-  function showPaymentDetails(paymentId, backend = "") {
-    const payment = paymentsStore.find((p) => p.id === paymentId && (!backend || p.backend === backend));
-    if (!payment) return;
-    openUpgradeModal();
-    renderPaymentRequestBox(payment);
-  }
-
-  async function checkOneBackendHealth(backend) {
-    const health = await safeFetchRaw(apiBaseForBackend(backend), "/health", { method: "GET" });
-    if (health.ok) return health;
-    return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
-  }
-
-  async function checkBackendHealth() {
-    const [p, l] = await Promise.all([
-      checkOneBackendHealth("primary"),
-      checkOneBackendHealth("legacy")
-    ]);
-
-    if (els.primaryHealth) {
-      els.primaryHealth.innerHTML = p.ok
-        ? `<span class="chip live">Online</span> <span class="muted">Backend2 responding</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(p.data?.message || "No response")}</span>`;
-    }
-
-    if (els.legacyHealth) {
-      els.legacyHealth.innerHTML = l.ok
-        ? `<span class="chip live">Online</span> <span class="muted">AWS responding on ${escapeHtml(l.path || "/health")}</span>`
-        : `<span class="chip expired">Issue</span> <span class="muted">${escapeHtml(l.data?.message || "Failed to fetch")}</span>`;
-    }
-  }
-
-  function getFilteredData() {
-    const q = (els.searchInput?.value || "").trim().toLowerCase();
-    const backendOnly = els.backendFilter?.value || "all";
-    const statusOnly = els.statusFilter?.value || "all";
-    const dateRange = els.dateRangeFilter?.value || "all";
-    const onlyHighRisk = !!els.onlyHighRiskToggle?.checked;
-    const nowTs = Date.now();
-
-    let filtered = dataStore.filter((item) => {
-      const slug = String(item.slug || "").toLowerCase();
-      const url = String(item.url || "").toLowerCase();
-      const backend = String(item.backend || "").toLowerCase();
-
-      const queryMatch =
-        !q ||
-        slug.includes(q) ||
-        url.includes(q) ||
-        backend.includes(q) ||
-        String(item.note || "").toLowerCase().includes(q) ||
-        String(item.campaign || "").toLowerCase().includes(q);
-
-      const backendMatch = backendOnly === "all" ? true : backend === backendOnly;
-      const statusMatch = statusOnly === "all" ? true : getStatusKey(item) === statusOnly;
-      const riskMatch = onlyHighRisk ? Number(item.maxRisk || 0) > 60 : true;
-
-      let dateMatch = true;
-      if (dateRange === "24h") dateMatch = Number(item.createdAt || 0) >= nowTs - 24 * 60 * 60 * 1000;
-      if (dateRange === "7d") dateMatch = Number(item.createdAt || 0) >= nowTs - 7 * 24 * 60 * 60 * 1000;
-      if (dateRange === "30d") dateMatch = Number(item.createdAt || 0) >= nowTs - 30 * 24 * 60 * 60 * 1000;
-
-      return queryMatch && backendMatch && statusMatch && riskMatch && dateMatch;
-    });
-
-    const sortKey = els.sortFilter?.value || "newest";
-    filtered.sort((a, b) => {
-      if (sortKey === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
-      if (sortKey === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
-      if (sortKey === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
-      if (sortKey === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
-
-    return filtered;
-  }
-
-  async function loadLinks(showLoading = false) {
-    if (loadingLinks) return;
-    loadingLinks = true;
-
-    if (showLoading) {
-      setBusy(els.refreshBtn, true, "Loading...");
-    }
-
-    const [primaryRes, legacyRes] = await Promise.all([
-      authorizedFetch("/list", { method: "GET" }, "primary", false),
-      authorizedFetch("/list", { method: "GET" }, "legacy", false)
-    ]);
-
-    loadingLinks = false;
-    setBusy(els.refreshBtn, false);
-
-    const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
-    const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
-
-    dataStore = mergeLinks(primaryItems, legacyItems);
-    const total = dataStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-
-    if (els.totalLinks) els.totalLinks.textContent = dataStore.length;
-    if (els.totalClicks) els.totalClicks.textContent = total;
-    if (els.avgClicks) els.avgClicks.textContent = dataStore.length ? (total / dataStore.length).toFixed(1) : "0";
-
-    updateMiniStats();
-    renderMe();
-    renderTable();
-    drawChart();
-    renderRanking();
-    renderSecurityInsights();
-    renderActivityTimeline();
-    renderOperationalBoard();
-
-    if (showLoading) {
-      const legacyMsg = legacyRes.ok
-        ? `AWS OK (${legacyRes.resolvedPath || "/list"})`
-        : `AWS ${legacyRes.status || "network"}: ${legacyRes.data?.message || "Failed to fetch"}`;
-
-      const primaryMsg = primaryRes.ok
-        ? `Backend2 OK (${primaryRes.resolvedPath || "/list"})`
-        : `Backend2 ${primaryRes.status || "network"}: ${primaryRes.data?.message || "Failed to fetch"}`;
-
-      pushNotification(`${primaryMsg} • ${legacyMsg}`, !(primaryRes.ok || legacyRes.ok) ? "error" : "success");
-    }
-  }
-
-  function renderTable() {
-    if (!els.table) return;
-    const filtered = getFilteredData();
-
-    if (!filtered.length) {
-      els.table.innerHTML = `<tr><td colspan="11" class="muted">No items found</td></tr>`;
-      return;
-    }
-
-    els.table.innerHTML = filtered.slice(0, 50).map((item) => {
-      const publicLink = item.publicLink || buildPublicLink(item.slug, item.backend);
-      const itemType = getItemType(item);
-
-      return `
-        <tr>
-          <td><span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></td>
-          <td><b>${escapeHtml(item.slug)}</b></td>
-          <td><span class="badge ${itemType === "landing" ? "awaiting" : "trial"}">${itemType === "landing" ? "Landing" : "Short Link"}</span></td>
-          <td><span class="badge">${Number(item.clicks || 0)}</span></td>
-          <td>${scoreLink(item)}/100</td>
-          <td>${detectFraud(item)}</td>
-          <td>
-            <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
-            <div class="muted">${escapeHtml(item.url || "")}</div>
-          </td>
-          <td>${getStatus(item)}</td>
-          <td>${fmtExpire(item.expire)}</td>
-          <td>${fmtDate(item.createdAt)}</td>
-          <td>
-            <div class="row-actions">
-              <button class="backend2-btn" type="button" onclick="copyLink('${escapeForJs(publicLink)}')">Copy</button>
-              <button type="button" onclick="openLinkDirect('${escapeForJs(publicLink)}')">Open</button>
-              <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Analytics</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function drawChart() {
-    const canvas = $("chart");
-    if (!canvas) return;
-    if (chart) chart.destroy();
-
-    const filtered = getFilteredData();
-    const metric = els.chartMetricSelect?.value || "clicks";
-    const sorted = [...filtered]
-      .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
-      .slice(0, 12);
-
-    chart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: sorted.map((i) => `${i.slug} (${backendLabel(i.backend)})`),
-        datasets: [{
-          label: metric === "score" ? "Performance Score" : "Clicks",
-          data: sorted.map((i) => metric === "score" ? scoreLink(i) : Number(i.clicks || 0)),
-          tension: 0.35
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: "#e2e8f0" } } },
-        scales: {
-          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+      if (!result.ok) {
+        if (data.requiresEmailVerification) {
+          setChosenBackend(result.backend || "primary");
+          showError("Verify your email first before magic login.", "warn");
+          setTimeout(() => {
+            const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+            window.location.href = "verify-email.html?" + next.toString();
+          }, 1200);
+        } else {
+          showError(data.message || "Failed to send magic login.");
         }
+        setLoading(false);
+        return;
+      }
+
+      if (data.requestId) savePendingMagic(data.requestId, data.expiresAt, result.backend, user);
+      showError(`${data.message || "Magic approval email sent"} via ${backendLabel(result.backend)}.`, "success");
+    } catch (error) {
+      console.error("MAGIC LINK ERROR:", error);
+      showError("Failed to send magic login.");
+    }
+
+    setLoading(false);
+  }
+
+  async function resendVerify() {
+    const user = username.value.trim().toLowerCase();
+    if (!user) {
+      showError("Enter your email first.");
+      return;
+    }
+
+    showError("Sending verification email...", "warn");
+
+    try {
+      const result = await resendVerifyHybrid(user);
+      const data = result.data || {};
+
+      if (!result.ok) {
+        showError(data.message || "Could not resend verification.");
+        return;
+      }
+
+      if (result.backend) setChosenBackend(result.backend);
+
+      showError(`${data.message || "Verification email sent"} via ${backendLabel(result.backend)}.`, "success");
+
+      setTimeout(() => {
+        const next = new URLSearchParams({ email: user, backend: result.backend || "primary" });
+        window.location.href = "verify-email.html?" + next.toString();
+      }, 1000);
+    } catch (error) {
+      console.error("RESEND VERIFY ERROR:", error);
+      showError("Could not resend verification.");
+    }
+  }
+
+  async function handleMainAction() {
+    if (mainBtn.disabled) return;
+
+    if (mode === "login") {
+      if (loginMethod === "verify_email") await resendVerify();
+      else if (loginMethod === "two_factor") await directTwoFactorLogin();
+      else await login();
+    } else if (mode === "signup") {
+      await signup();
+    } else {
+      await magicRequest();
+    }
+  }
+
+  function secondaryAction() {
+    if (mode === "signup") {
+      resendVerify();
+      return;
+    }
+
+    if (mode === "login" && loginMethod === "verify_email") {
+      const user = username.value.trim().toLowerCase();
+      const params = new URLSearchParams();
+      if (user) params.set("email", user);
+      const backend = getForcedBackendFromState();
+      if (backend) params.set("backend", backend);
+      window.location.href = "verify-email.html" + (params.toString() ? `?${params.toString()}` : "");
+      return;
+    }
+
+    if (mode === "login" && loginMethod === "two_factor") {
+      const user = username.value.trim().toLowerCase();
+      const params = new URLSearchParams();
+      if (user) params.set("email", user);
+      const backend = getForcedBackendFromState();
+      if (backend) params.set("backend", backend);
+      const m = localStorage.getItem("pending2faMethod");
+      if (m) params.set("method", m);
+      window.location.href = "2fa-login.html" + (params.toString() ? `?${params.toString()}` : "");
+      return;
+    }
+
+    goForgot();
+  }
+
+  function goForgot() {
+    window.location.href = "forgot.html";
+  }
+
+  function loadRememberedUser() {
+    const saved = localStorage.getItem("rememberUser");
+    if (saved) {
+      username.value = saved;
+      remember.checked = true;
+    }
+  }
+
+  function maybeRestoreFromParams() {
+    const email = String(qs().get("email") || "").trim().toLowerCase();
+    const requestId = String(qs().get("requestId") || "").trim();
+    const backend = String(qs().get("backend") || "").trim().toLowerCase();
+    const exchange = String(qs().get("exchange") || "").trim();
+    const approved = String(qs().get("approved") || "").trim();
+    const method = String(qs().get("method") || "").trim().toLowerCase();
+
+    if (backend === "primary" || backend === "legacy") {
+      preferredBackend = backend;
+      localStorage.setItem("authBackend", backend);
+      localStorage.setItem("sessionBackend", backend);
+    }
+
+    if (email) username.value = email;
+    if (method === "totp" || method === "email_otp") localStorage.setItem("pending2faMethod", method);
+
+    if (requestId) {
+      savePendingMagic(
+        requestId,
+        Number(localStorage.getItem("magicExpiresAt") || 0) || null,
+        backend || localStorage.getItem("magicBackend") || "primary",
+        email || localStorage.getItem("magicEmail") || ""
+      );
+      showError("Resuming pending login approval.", "warn");
+    }
+
+    if (exchange) {
+      pendingMagicBackend = backend || localStorage.getItem("magicBackend") || "primary";
+      if (pendingMagicBackend) setChosenBackend(pendingMagicBackend);
+      if (email) localStorage.setItem("magicEmail", email);
+
+      if (approved === "1") {
+        approvalBox.style.display = "block";
+        approvalText.textContent = "Approval confirmed. Completing login...";
+      }
+
+      setTimeout(() => finishMagicLogin(exchange), 50);
+    }
+  }
+
+  document.querySelectorAll(".faq-q").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const item = btn.parentElement;
+      const open = item.classList.contains("open");
+
+      document.querySelectorAll(".faq-item").forEach((x) => {
+        x.classList.remove("open");
+        const mark = x.querySelector(".faq-q span");
+        if (mark) mark.textContent = "+";
+      });
+
+      if (!open) {
+        item.classList.add("open");
+        const mark = item.querySelector(".faq-q span");
+        if (mark) mark.textContent = "−";
       }
     });
-  }
+  });
 
-  function renderRanking() {
-    if (!els.ranking) return;
-    const sorted = [...dataStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+  username.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  password.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  confirmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
 
-    if (!sorted.length) {
-      els.ranking.innerHTML = `<div class="muted">No items yet</div>`;
-      return;
-    }
-
-    els.ranking.innerHTML = sorted.slice(0, 5).map((item, idx) => `
-      <div class="ranking-item">
-        <b>#${idx + 1} ${escapeHtml(item.slug || "")}</b>
-        <div>
-          <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span>
-          <span class="badge">${getItemType(item) === "landing" ? "Landing" : "Short Link"}</span>
-        </div>
-        <div>Clicks: ${Number(item.clicks || 0)}</div>
-        <div>Score: ${scoreLink(item)}/100</div>
-        <div>${detectFraud(item)}</div>
-      </div>
-    `).join("");
-  }
-
-  function renderSecurityInsights() {
-    if (!els.securityInsights) return;
-    const risky = dataStore.filter((x) => Number(x.maxRisk || 0) > 60);
-    const paused = dataStore.filter((x) => x.paused).length;
-    const expired = dataStore.filter((x) => getStatusKey(x) === "expired").length;
-    const topRisk = [...dataStore].sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0)).slice(0, 3);
-
-    els.securityInsights.innerHTML = `
-      <div class="insight-card"><b>Risky items</b><div class="muted">${risky.length} items have elevated risk markers.</div></div>
-      <div class="insight-card"><b>Paused items</b><div class="muted">${paused} items are manually paused.</div></div>
-      <div class="insight-card"><b>Expired items</b><div class="muted">${expired} items are already expired.</div></div>
-      <div class="insight-card"><b>Highest risk</b><div class="muted">${topRisk.length ? topRisk.map((x) => `${x.slug} (${x.maxRisk || 0})`).join(", ") : "No risk data yet."}</div></div>
-    `;
-  }
-
-  function renderActivityTimeline() {
-    if (!els.activityTimeline) return;
-    const recent = [...dataStore].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 8);
-
-    els.activityTimeline.innerHTML = recent.length
-      ? recent.map((item) => `
-          <div class="timeline-item">
-            <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-            <div class="muted">${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Created ${fmtDate(item.createdAt)} • ${Number(item.clicks || 0)} clicks</div>
-          </div>
-        `).join("")
-      : `<div class="muted">No activity yet.</div>`;
-  }
-
-  function renderOperationalBoard() {
-    const review = $("boardReview");
-    const healthy = $("boardHealthy");
-    const attention = $("boardAttention");
-    if (!review || !healthy || !attention) return;
-
-    const needsReview = dataStore.filter((x) => Number(x.maxRisk || 0) > 60 || Number(x.clicks || 0) > 100).slice(0, 4);
-    const healthyItems = dataStore.filter((x) => !x.paused && getStatusKey(x) === "live" && Number(x.maxRisk || 0) <= 60).slice(0, 4);
-    const attentionItems = dataStore.filter((x) => x.paused || getStatusKey(x) === "expired").slice(0, 4);
-
-    const makeCards = (arr) => arr.length
-      ? arr.map((item) => `
-          <div class="kanban-card">
-            <div><b>${escapeHtml(item.slug)}</b></div>
-            <div class="muted">${backendLabel(item.backend)} • ${getItemType(item) === "landing" ? "Landing" : "Short link"} • ${Number(item.clicks || 0)} clicks</div>
-          </div>
-        `).join("")
-      : `<div class="muted" style="margin-top:10px;">Nothing here</div>`;
-
-    review.innerHTML = makeCards(needsReview);
-    healthy.innerHTML = makeCards(healthyItems);
-    attention.innerHTML = makeCards(attentionItems);
-  }
-
-  function getRiskSummaryText() {
-    const risky = dataStore.filter((x) => Number(x.maxRisk || 0) > 60);
-    return `${risky.length} items currently show elevated risk markers.`;
-  }
-
-  function renderRiskItemsHtml() {
-    const risky = [...dataStore]
-      .filter((x) => Number(x.maxRisk || 0) > 60)
-      .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-
-    if (!risky.length) return `<div class="muted">No elevated risk items found.</div>`;
-
-    return risky.map((item) => `
-      <div class="info-box">
-        <div><b>${escapeHtml(item.slug)}</b> <span class="backend-badge ${backendClass(item.backend)}">${backendLabel(item.backend)}</span></div>
-        <div class="muted">Type: ${getItemType(item) === "landing" ? "Landing page" : "Short link"} • Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
-        <div class="row-actions" style="margin-top:8px;">
-          <button class="blue-btn" type="button" onclick="openAnalyticsPage()">Open Analytics</button>
-        </div>
-      </div>
-    `).join("");
-  }
-
-  function renderSecurityModal() {
-    if (!els.securityModalContent) return;
-
-    const twoFactorEnabled = !!meState?.twoFactorEnabled;
-    const twoFactorMethod = meState?.twoFactorMethod || "";
-
-    els.securityModalContent.innerHTML = `
-      <div class="info-box">
-        <b>Two-Factor Authentication</b>
-        <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
-      </div>
-
-      <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-      ${renderRiskItemsHtml()}
-    `;
-  }
-
-  function exportVisibleAsCsv() {
-    const rows = getFilteredData();
-    const header = ["backend", "type", "slug", "url", "clicks", "score", "fraud", "status", "expire", "createdAt"];
-    const lines = [header.join(",")].concat(rows.map((item) => {
-      const values = [
-        backendLabel(item.backend),
-        getItemType(item),
-        item.slug || "",
-        item.url || "",
-        Number(item.clicks || 0),
-        scoreLink(item),
-        detectFraud(item),
-        getStatusKey(item),
-        item.expire || "",
-        item.createdAt || ""
-      ];
-      return values.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",");
-    }));
-
-    downloadTextFile("rattle-links.csv", lines.join("\n"), "text/csv;charset=utf-8");
-  }
-
-  function exportVisibleAsJson() {
-    downloadTextFile("rattle-links.json", JSON.stringify(getFilteredData(), null, 2), "application/json;charset=utf-8");
-  }
-
-  function downloadTextFile(filename, content, mime) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function refreshNow() {
-    Promise.all([loadMe(true), loadLinks(true), loadPayments(false), checkBackendHealth()]);
-  }
-
-  function openSupportPanel() {
-    if (!els.panel || !els.panelContent) return;
-    els.panel.style.display = "block";
-    els.panelContent.innerHTML = `
-      <h3>🆘 Support Center</h3>
-      <div class="info-box">
-        <b>Contact Support</b>
-        <div class="support-list" style="margin-top:8px;">
-          <a href="mailto:${escapeHtml(SUPPORT_CONFIG.email)}">Email: ${escapeHtml(SUPPORT_CONFIG.email)}</a>
-          <a href="${escapeHtml(SUPPORT_CONFIG.telegram)}" target="_blank" rel="noopener noreferrer">Telegram Support</a>
-          <a href="${escapeHtml(SUPPORT_CONFIG.discord)}" target="_blank" rel="noopener noreferrer">Discord Community</a>
-          <a href="tel:${escapeHtml(SUPPORT_CONFIG.phone.replace(/\s+/g, ""))}">Phone: ${escapeHtml(SUPPORT_CONFIG.phone)}</a>
-        </div>
-      </div>
-      <div class="info-box"><b>Main pages</b><div class="muted" style="margin-top:8px;">Use backend2.html, aws.html, analytics.html, help.html, landing.html, domain-manager.html, and vanity.html from the dashboard buttons.</div></div>
-    `;
-  }
-
-  function closePanel() {
-    if (els.panel) els.panel.style.display = "none";
-    if (els.panelContent) els.panelContent.innerHTML = "";
-  }
-
-  function toggleAllFaq(open) {
-    document.querySelectorAll(".faq-item").forEach((item) => item.classList.toggle("open", !!open));
-  }
-
-  function clearFilters() {
-    if (els.searchInput) els.searchInput.value = "";
-    if (els.backendFilter) els.backendFilter.value = "all";
-    if (els.statusFilter) els.statusFilter.value = "all";
-    if (els.dateRangeFilter) els.dateRangeFilter.value = "all";
-    if (els.sortFilter) els.sortFilter.value = "newest";
-    if (els.onlyHighRiskToggle) els.onlyHighRiskToggle.checked = false;
-    renderTable();
-    drawChart();
-  }
-
-  function setPreferredBackend(next) {
-    preferredBackend = next === "legacy" ? "legacy" : "primary";
-    localStorage.setItem("preferredBackend", preferredBackend);
-    setTopBackendBadge();
-    showToast(`Preferred backend set to ${backendLabel(preferredBackend)}`);
-  }
-
-  function logout() {
-    stopPaymentPolling();
-    clearSession();
-    window.location.href = "index.html";
-  }
-
-  function setupFaq() {
-    document.querySelectorAll(".faq-q").forEach((btn) => {
-      btn.addEventListener("click", () => btn.parentElement.classList.toggle("open"));
-    });
-  }
-
-  function setupKeyboardShortcuts() {
-    [
-      els.searchInput,
-      els.backendFilter,
-      els.statusFilter,
-      els.dateRangeFilter,
-      els.sortFilter,
-      els.chartMetricSelect,
-      els.onlyHighRiskToggle
-    ].forEach((el) => {
-      if (!el) return;
-      el.addEventListener("input", () => { renderTable(); drawChart(); });
-      el.addEventListener("change", () => { renderTable(); drawChart(); });
-    });
-  }
-
-  function bindPlanGridClicks() {
-    els.planGrid?.addEventListener("click", (e) => {
-      const card = e.target.closest("[data-plan]");
-      if (!card) return;
-      selectedPlan = card.dataset.plan;
-      renderPlans();
-      updateBillingPreview();
-    });
-  }
-
-  function copyLink(text) {
-    navigator.clipboard.writeText(text)
-      .then(() => showToast("Copied!"))
-      .catch(() => showToast("Copy failed"));
-  }
-
-  function openLinkDirect(link) {
-    window.open(link, "_blank", "noopener,noreferrer");
-  }
-
-  function goToPage(page) {
-    window.location.href = page;
-  }
-
-  function openBackend2Page() { goToPage("backend2.html"); }
-  function openAwsPage() { goToPage("aws.html"); }
-  function openAnalyticsPage() { goToPage("analytics.html"); }
-  function openHelpPage() { goToPage("help.html"); }
-  function openLandingPage() { goToPage("landing.html"); }
-  function openDomainPage() { goToPage("domain-manager.html"); }
-  function openVanityPage() { goToPage("vanity.html"); }
-
-  function bindUI() {
-    els.refreshBtn?.addEventListener("click", refreshNow);
-    els.exportCsvBtn?.addEventListener("click", exportVisibleAsCsv);
-    els.exportJsonBtn?.addEventListener("click", exportVisibleAsJson);
-    els.quickSettingsBtn?.addEventListener("click", openSettingsModal);
-
-    $("openBackend2Btn")?.addEventListener("click", openBackend2Page);
-    $("openAwsBtn")?.addEventListener("click", openAwsPage);
-    $("openAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
-    $("openHelpBtn")?.addEventListener("click", openHelpPage);
-    $("openLandingBtn")?.addEventListener("click", openLandingPage);
-    $("openDomainBtn")?.addEventListener("click", openDomainPage);
-    $("openVanityBtn")?.addEventListener("click", openVanityPage);
-
-    $("quickBackend2Btn")?.addEventListener("click", openBackend2Page);
-    $("quickAwsBtn")?.addEventListener("click", openAwsPage);
-    $("quickAnalyticsBtn")?.addEventListener("click", openAnalyticsPage);
-    $("quickHelpBtn")?.addEventListener("click", openHelpPage);
-    $("quickLandingBtn")?.addEventListener("click", openLandingPage);
-    $("quickDomainBtn")?.addEventListener("click", openDomainPage);
-    $("quickVanityBtn")?.addEventListener("click", openVanityPage);
-
-    els.preferPrimaryBtn?.addEventListener("click", () => setPreferredBackend("primary"));
-    els.preferLegacyBtn?.addEventListener("click", () => setPreferredBackend("legacy"));
-    els.verifySessionBtn?.addEventListener("click", async () => {
-      setBusy(els.verifySessionBtn, true, "Checking...");
-      await verifyMainSession(true);
-      setBusy(els.verifySessionBtn, false);
-    });
-
-    els.clearFiltersBtn?.addEventListener("click", clearFilters);
-
-    els.clearNotificationsBtn?.addEventListener("click", () => {
-      notificationsStore = [];
-      renderNotifications();
-    });
-
-    els.refreshActivityBtn?.addEventListener("click", renderActivityTimeline);
-    els.rebuildBoardBtn?.addEventListener("click", renderOperationalBoard);
-    els.openSecurityCenterBtn?.addEventListener("click", openSecurityModal);
-
-    els.planQuantityInput?.addEventListener("input", updateBillingPreview);
-    els.planQuantityInput?.addEventListener("change", updateBillingPreview);
-    els.requestPaymentBtn?.addEventListener("click", createPaymentRequest);
-    $("reloadPlansBtn")?.addEventListener("click", () => loadPlans(true));
-
-    els.compactModeToggle?.addEventListener("change", () => {
-      compactModeEnabled = els.compactModeToggle.checked;
-      applyCompactModeState();
-    });
-
-    els.autoRefreshToggle?.addEventListener("change", () => {
-      autoRefreshEnabled = els.autoRefreshToggle.checked;
-      applyAutoRefreshState();
-    });
-
-    els.modalCompactModeToggle?.addEventListener("change", () => {
-      compactModeEnabled = els.modalCompactModeToggle.checked;
-      applyCompactModeState();
-    });
-
-    els.modalAutoRefreshToggle?.addEventListener("change", () => {
-      autoRefreshEnabled = els.modalAutoRefreshToggle.checked;
-      applyAutoRefreshState();
-    });
-
-    els.modalChartMetricSelect?.addEventListener("change", () => {
-      if (els.chartMetricSelect) els.chartMetricSelect.value = els.modalChartMetricSelect.value;
-      drawChart();
-    });
-
-    $("openUpgradeCenterBtn")?.addEventListener("click", openUpgradeModal);
-    $("upgradeBtn")?.addEventListener("click", openUpgradeModal);
-    $("openUpgradeFromPaymentsBtn")?.addEventListener("click", openUpgradeModal);
-    $("quickPaymentBtn")?.addEventListener("click", openUpgradeModal);
-
-    $("refreshPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
-    $("reloadPaymentsBtn")?.addEventListener("click", () => loadPayments(true));
-
-    $("supportBtn")?.addEventListener("click", openSupportPanel);
-    $("openSupportPanelBtn")?.addEventListener("click", openSupportPanel);
-    $("openHelpInlineBtn")?.addEventListener("click", openHelpPage);
-    $("logoutBtn")?.addEventListener("click", logout);
-
-    $("closePanelBtn")?.addEventListener("click", closePanel);
-    $("closeUpgradeModalBtn")?.addEventListener("click", closeUpgradeModal);
-    $("closeSettingsModalBtn")?.addEventListener("click", closeSettingsModal);
-    $("closeSecurityModalBtn")?.addEventListener("click", closeSecurityModal);
-    els.overlay?.addEventListener("click", closeAllModals);
-
-    $("openAllFaqBtn")?.addEventListener("click", () => toggleAllFaq(true));
-  }
-
-  async function init() {
-    if (!ensureAuth()) return;
-
-    setTopBackendBadge();
-    applyAutoRefreshState();
-    applyCompactModeState();
-    setupKeyboardShortcuts();
-    setupFaq();
-    renderNotifications();
-    bindPlanGridClicks();
-    bindUI();
-
-    await Promise.all([
-      loadPlans(false),
-      loadMe(true),
-      loadLinks(true),
-      loadPayments(false),
-      checkBackendHealth()
-    ]);
-
-    clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => {
-      if (document.hidden || !autoRefreshEnabled) return;
-      loadMe(false);
-      loadLinks(false);
-      loadPayments(false);
-      checkBackendHealth();
-    }, 15000);
-  }
-
-  window.copyLink = copyLink;
-  window.showPaymentDetails = showPaymentDetails;
-  window.markPaymentSent = markPaymentSent;
-  window.openUpgradeModal = openUpgradeModal;
-  window.openAnalyticsPage = openAnalyticsPage;
-  window.openLinkDirect = openLinkDirect;
-
-  init();
+  loadTheme();
+  loadRememberedUser();
+  maybeRestoreFromParams();
+  setMode("login");
+  restorePendingMagic();
+  waitForCaptchaAndMount();
 </script>
 </body>
 </html>
