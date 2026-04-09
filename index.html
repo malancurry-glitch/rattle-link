@@ -516,12 +516,40 @@
   const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
   const RECAPTCHA_SITE_KEY = "6LfBaZwsAAAAAIOf9TIaONCgBvyF3L9OXPkmDeAS";
   const CAPTCHA_ENABLED = true;
-  const PRIMARY_AUTH_BASE = "/auth";
-  const LEGACY_AUTH_BASE = "";
 
   const AUTH_STORAGE_KEY = "rattle_token";
   const ROLE_STORAGE_KEY = "rattle_role";
   const USER_STORAGE_KEY = "rattle_user";
+
+  const PRIMARY_ROUTE_MAP = {
+    "/login": ["/auth/login", "/login"],
+    "/signup": ["/auth/signup", "/signup"],
+    "/forgot": ["/auth/forgot", "/forgot"],
+    "/reset": ["/auth/reset", "/reset"],
+    "/magic-request": ["/auth/magic-request", "/magic-request"],
+    "/magic-login": ["/auth/magic-login", "/magic-login"],
+    "/magic-status": ["/auth/magic-status", "/magic-status"],
+    "/verify-email": ["/auth/verify-email", "/verify-email"],
+    "/resend-verify": ["/auth/resend-verify", "/resend-verify"],
+    "/login/2fa/verify": ["/auth/login/2fa/verify", "/login/2fa/verify"],
+    "/me": ["/auth/me", "/me"],
+    "/auth/me": ["/auth/me", "/me"]
+  };
+
+  const LEGACY_ROUTE_MAP = {
+    "/login": ["/login", "/auth/login"],
+    "/signup": ["/signup", "/auth/signup"],
+    "/forgot": ["/forgot", "/auth/forgot"],
+    "/reset": ["/reset", "/auth/reset"],
+    "/magic-request": ["/magic-request", "/auth/magic-request"],
+    "/magic-login": ["/magic-login", "/auth/magic-login"],
+    "/magic-status": ["/magic-status", "/auth/magic-status"],
+    "/verify-email": ["/verify-email", "/auth/verify-email"],
+    "/resend-verify": ["/resend-verify", "/auth/resend-verify"],
+    "/login/2fa/verify": ["/login/2fa/verify", "/auth/login/2fa/verify"],
+    "/me": ["/me", "/auth/me"],
+    "/auth/me": ["/me", "/auth/me"]
+  };
 
   let mode = "login";
   let loginMethod = "password";
@@ -592,15 +620,6 @@
 
   function normalizeApiUrl(url) {
     return String(url || "").replace(/\/+$/, "");
-  }
-
-  function authPrefix(backend) {
-    return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
-  }
-
-  function buildPath(rawPath, backend) {
-    const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
-    return `${authPrefix(backend)}${clean}`;
   }
 
   function backendLabel(name) {
@@ -762,6 +781,7 @@
       destroyCaptcha();
       return;
     }
+
     let tries = 0;
     recaptchaWaitTimer = setInterval(() => {
       tries += 1;
@@ -942,6 +962,7 @@
   function checkStrength() {
     const fill = el("strengthFill");
     const text = el("strength");
+
     if (mode !== "signup") {
       fill.style.width = "0%";
       fill.className = "";
@@ -1007,9 +1028,18 @@
     };
   }
 
+  function getRouteCandidates(backend, rawPath) {
+    const cleanPath = String(rawPath || "").split("?")[0];
+    const query = String(rawPath || "").includes("?") ? "?" + String(rawPath).split("?").slice(1).join("?") : "";
+    const map = backend === "primary" ? PRIMARY_ROUTE_MAP : LEGACY_ROUTE_MAP;
+    const baseCandidates = map[cleanPath] || [cleanPath];
+    return [...new Set(baseCandidates.map((p) => p + query))];
+  }
+
   async function callApi(baseUrl, path, options = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
+
     try {
       const res = await fetch(normalizeApiUrl(baseUrl) + path, {
         method: options.method || "GET",
@@ -1019,16 +1049,18 @@
         credentials: "omit",
         signal: controller.signal
       });
+
       clearTimeout(timer);
       const data = await safeJson(res);
-      return { ok: res.ok, status: res.status, data, networkError: false };
+      return { ok: res.ok, status: res.status, data, networkError: false, path };
     } catch (error) {
       clearTimeout(timer);
       return {
         ok: false,
         status: 0,
         data: { message: error?.message || "Network request failed" },
-        networkError: true
+        networkError: true,
+        path
       };
     }
   }
@@ -1037,12 +1069,46 @@
     return { "Content-Type": "application/json", ...extra };
   }
 
+  async function callBackend(backend, rawPath, options = {}) {
+    const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+    const candidates = getRouteCandidates(backend, rawPath);
+    let first401 = null;
+    let lastResult = null;
+
+    for (const path of candidates) {
+      const finalOptions = { ...options };
+      if (backend === "legacy") {
+        finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
+      }
+
+      const result = await callApi(baseUrl, path, finalOptions);
+      lastResult = result;
+
+      if (result.ok) {
+        return { ...result, backend, resolvedPath: path };
+      }
+
+      if (result.status === 401 && !first401) {
+        first401 = { ...result, backend, resolvedPath: path };
+      }
+
+      if (result.status === 404 || result.status === 405 || result.status === 0 || result.status >= 500) {
+        continue;
+      }
+
+      return { ...result, backend, resolvedPath: path };
+    }
+
+    return first401 || { ...lastResult, backend, resolvedPath: lastResult?.path || candidates[0] };
+  }
+
   function shouldFallbackToLegacy(path, result) {
     if (path === "/signup") return false;
     if (path === "/login/2fa/verify") return false;
 
     if (result.networkError) return true;
     if (result.status === 404) return true;
+    if (result.status === 405) return true;
     if (result.status >= 500) return true;
 
     const msg = String(result?.data?.message || "").toLowerCase();
@@ -1052,21 +1118,12 @@
         msg.includes("account not found in backend2") ||
         msg.includes("magic request not found") ||
         msg.includes("invalid magic request") ||
-        msg.includes("invalid approval token")
+        msg.includes("invalid approval token") ||
+        msg.includes("route not found")
       ) return true;
     }
 
     return false;
-  }
-
-  async function callBackend(backend, rawPath, options = {}) {
-    const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
-    const path = buildPath(rawPath, backend);
-    const finalOptions = { ...options };
-    if (backend === "legacy") {
-      finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
-    }
-    return callApi(baseUrl, path, finalOptions);
   }
 
   async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
@@ -1455,15 +1512,19 @@
         if (data.exchange) localStorage.setItem("pending2faExchange", data.exchange);
         if (data.challenge) localStorage.setItem("pending2faChallenge", data.challenge);
         if (data.challengeToken) localStorage.setItem("pending2faChallenge", data.challengeToken);
+
         showError(`Two-factor required. Redirecting to ${method === "email_otp" ? "email OTP" : "2FA"} verification.`, "warn");
+
         const next = new URLSearchParams({ email: user, backend: result.backend || "primary", method });
         if (data.exchange) next.set("exchange", data.exchange);
         if (data.challenge) next.set("challenge", data.challenge);
         if (data.challengeToken) next.set("challengeToken", data.challengeToken);
         if (data.token) next.set("token", data.token);
+
         setTimeout(() => {
           window.location.href = "2fa-login.html?" + next.toString();
         }, 900);
+
         resetCaptcha();
         setLoading(false);
         return;
@@ -1537,7 +1598,12 @@
         {
           method: "POST",
           headers: buildHeaders(),
-          body: JSON.stringify({ username: user, email: user, code: enteredCode, method: localStorage.getItem("pending2faMethod") || undefined })
+          body: JSON.stringify({
+            username: user,
+            email: user,
+            code: enteredCode,
+            method: localStorage.getItem("pending2faMethod") || undefined
+          })
         },
         verifyBehavior
       );
