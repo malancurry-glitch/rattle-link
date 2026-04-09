@@ -522,18 +522,23 @@
   const USER_STORAGE_KEY = "rattle_user";
 
   const PRIMARY_ROUTE_MAP = {
-    "/login": ["/auth/login", "/login"],
-    "/signup": ["/auth/signup", "/signup"],
-    "/forgot": ["/auth/forgot", "/forgot"],
-    "/reset": ["/auth/reset", "/reset"],
-    "/magic-request": ["/auth/magic-request", "/magic-request"],
-    "/magic-login": ["/auth/magic-login", "/magic-login"],
-    "/magic-status": ["/auth/magic-status", "/magic-status"],
-    "/verify-email": ["/auth/verify-email", "/verify-email"],
-    "/resend-verify": ["/auth/resend-verify", "/resend-verify"],
-    "/login/2fa/verify": ["/auth/login/2fa/verify", "/login/2fa/verify"],
-    "/me": ["/auth/me", "/me"],
-    "/auth/me": ["/auth/me", "/me"]
+    "/login": ["/auth/login", "/app/auth/login", "/login", "/app/login"],
+    "/signup": ["/auth/signup", "/app/auth/signup", "/signup", "/app/signup"],
+    "/forgot": ["/auth/forgot", "/app/auth/forgot", "/forgot", "/app/forgot"],
+    "/reset": ["/auth/reset", "/app/auth/reset", "/reset", "/app/reset"],
+    "/magic-request": ["/auth/magic-request", "/app/auth/magic-request", "/magic-request", "/app/magic-request"],
+    "/magic-login": ["/auth/magic-login", "/app/auth/magic-login", "/magic-login", "/app/magic-login"],
+    "/magic-status": ["/auth/magic-status", "/app/auth/magic-status", "/magic-status", "/app/magic-status"],
+    "/verify-email": ["/auth/verify-email", "/app/auth/verify-email", "/verify-email", "/app/verify-email"],
+    "/resend-verify": ["/auth/resend-verify", "/app/auth/resend-verify", "/resend-verify", "/app/resend-verify"],
+    "/login/2fa/verify": [
+      "/auth/login/2fa/verify",
+      "/app/auth/login/2fa/verify",
+      "/login/2fa/verify",
+      "/app/login/2fa/verify"
+    ],
+    "/me": ["/auth/me", "/app/auth/me", "/me", "/app/me"],
+    "/auth/me": ["/auth/me", "/app/auth/me", "/me", "/app/me"]
   };
 
   const LEGACY_ROUTE_MAP = {
@@ -627,12 +632,13 @@
   }
 
   function showError(msg = "", type = "error") {
+    if (!errorBox) return;
     errorBox.textContent = msg;
     errorBox.className = "error";
     if (type === "success") errorBox.classList.add("success-text");
     else if (type === "warn") errorBox.classList.add("warn-text");
 
-    if (msg && type === "error") {
+    if (msg && type === "error" && card) {
       card.classList.remove("shake");
       void card.offsetWidth;
       card.classList.add("shake");
@@ -652,10 +658,10 @@
   }
 
   function setLoading(state) {
-    mainBtn.disabled = state;
-    card.classList.toggle("loading", state);
-    btnText.style.display = state ? "none" : "inline";
-    spinner.style.display = state ? "inline-block" : "none";
+    if (mainBtn) mainBtn.disabled = state;
+    if (card) card.classList.toggle("loading", state);
+    if (btnText) btnText.style.display = state ? "none" : "inline";
+    if (spinner) spinner.style.display = state ? "inline-block" : "none";
   }
 
   function setMiniLoading(button, loading) {
@@ -698,19 +704,17 @@
   }
 
   function updateModeProgress() {
-    stepDot1.classList.remove("active");
-    stepDot2.classList.remove("active");
-    stepDot3.classList.remove("active");
+    [stepDot1, stepDot2, stepDot3].forEach((d) => d && d.classList.remove("active"));
 
     if (mode === "login") {
-      stepDot1.classList.add("active");
+      stepDot1 && stepDot1.classList.add("active");
     } else if (mode === "signup") {
-      stepDot1.classList.add("active");
-      stepDot2.classList.add("active");
+      stepDot1 && stepDot1.classList.add("active");
+      stepDot2 && stepDot2.classList.add("active");
     } else {
-      stepDot1.classList.add("active");
-      stepDot2.classList.add("active");
-      stepDot3.classList.add("active");
+      stepDot1 && stepDot1.classList.add("active");
+      stepDot2 && stepDot2.classList.add("active");
+      stepDot3 && stepDot3.classList.add("active");
     }
   }
 
@@ -777,6 +781,7 @@
 
   function waitForCaptchaAndMount() {
     clearInterval(recaptchaWaitTimer);
+
     if (!shouldUseCaptcha()) {
       destroyCaptcha();
       return;
@@ -850,102 +855,116 @@
     loginMethod = method;
     localStorage.setItem("preferredLoginMethod", method);
 
-    methodPasswordBox.classList.toggle("active", method === "password");
-    methodVerifyBox.classList.toggle("active", method === "verify_email");
-    method2faBox.classList.toggle("active", method === "two_factor");
+    if (methodPasswordBox) methodPasswordBox.classList.toggle("active", method === "password");
+    if (methodVerifyBox) methodVerifyBox.classList.toggle("active", method === "verify_email");
+    if (method2faBox) method2faBox.classList.toggle("active", method === "two_factor");
 
     if (method === "password") {
-      passwordArea.style.display = "block";
-      optionsRow.style.display = "flex";
-      passwordLabel.textContent = "Password";
-      password.placeholder = "Password";
-      password.type = "password";
-      loginMethodInfoTitle.textContent = "Password login selected";
-      loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
-      btnText.textContent = mode === "signup" ? "Create account" : "Login";
-      secondaryBtn.style.display = mode === "magic" ? "none" : "block";
-      secondaryBtn.textContent = mode === "signup" ? "Resend verification" : "Reset password";
+      if (passwordArea) passwordArea.style.display = "block";
+      if (optionsRow) optionsRow.style.display = "flex";
+      if (passwordLabel) passwordLabel.textContent = "Password";
+      if (password) {
+        password.placeholder = "Password";
+        password.type = "password";
+      }
+      if (loginMethodInfoTitle) loginMethodInfoTitle.textContent = "Password login selected";
+      if (loginMethodInfoText) loginMethodInfoText.textContent = "Enter your password and continue. If your account needs approval or 2FA, the flow will continue automatically.";
+      if (btnText) btnText.textContent = mode === "signup" ? "Create account" : "Login";
+      if (secondaryBtn) {
+        secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+        secondaryBtn.textContent = mode === "signup" ? "Resend verification" : "Reset password";
+      }
     } else if (method === "verify_email") {
-      passwordArea.style.display = "none";
-      optionsRow.style.display = "none";
-      loginMethodInfoTitle.textContent = "Email verification selected";
-      loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
-      btnText.textContent = "Send verification email";
-      secondaryBtn.style.display = "block";
-      secondaryBtn.textContent = "Open verify page";
+      if (passwordArea) passwordArea.style.display = "none";
+      if (optionsRow) optionsRow.style.display = "none";
+      if (loginMethodInfoTitle) loginMethodInfoTitle.textContent = "Email verification selected";
+      if (loginMethodInfoText) loginMethodInfoText.textContent = "We will resend your verification email and take you to the verification page so you can finish account activation.";
+      if (btnText) btnText.textContent = "Send verification email";
+      if (secondaryBtn) {
+        secondaryBtn.style.display = "block";
+        secondaryBtn.textContent = "Open verify page";
+      }
     } else {
-      passwordArea.style.display = "block";
-      optionsRow.style.display = "none";
-      confirmWrap.classList.add("hidden");
-      strengthWrap.classList.add("hidden");
-      passwordLabel.textContent = "2FA code";
-      password.placeholder = "2FA code";
-      password.type = "text";
-      loginMethodInfoTitle.textContent = "Direct 2FA code selected";
-      loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly.";
-      btnText.textContent = "Verify 2FA code";
-      secondaryBtn.style.display = "block";
-      secondaryBtn.textContent = "Open 2FA page";
+      if (passwordArea) passwordArea.style.display = "block";
+      if (optionsRow) optionsRow.style.display = "none";
+      if (confirmWrap) confirmWrap.classList.add("hidden");
+      if (strengthWrap) strengthWrap.classList.add("hidden");
+      if (passwordLabel) passwordLabel.textContent = "2FA code";
+      if (password) {
+        password.placeholder = "2FA code";
+        password.type = "text";
+      }
+      if (loginMethodInfoTitle) loginMethodInfoTitle.textContent = "Direct 2FA code selected";
+      if (loginMethodInfoText) loginMethodInfoText.textContent = "Enter your authenticator app code or email OTP code directly.";
+      if (btnText) btnText.textContent = "Verify 2FA code";
+      if (secondaryBtn) {
+        secondaryBtn.style.display = "block";
+        secondaryBtn.textContent = "Open 2FA page";
+      }
     }
 
-    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+    if (captchaWrap) captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
     if (shouldUseCaptcha()) waitForCaptchaAndMount();
     else destroyCaptcha();
   }
 
   function setMode(nextMode) {
     mode = nextMode;
-    loginTab.classList.toggle("active", mode === "login");
-    signupTab.classList.toggle("active", mode === "signup");
-    magicTab.classList.toggle("active", mode === "magic");
-    loginMethodArea.style.display = mode === "login" ? "block" : "none";
-    loginMethodInfo.classList.toggle("show", mode === "login");
-    confirmWrap.classList.toggle("hidden", mode !== "signup");
-    strengthWrap.classList.toggle("hidden", mode !== "signup");
-    switchBox.style.display = mode === "magic" ? "none" : "block";
-    secondaryBtn.style.display = mode === "magic" ? "none" : "block";
-    passwordArea.style.display = mode === "magic" ? "none" : "block";
-    captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
-    approvalBox.style.display = mode === "magic" ? approvalBox.style.display : "none";
+
+    if (loginTab) loginTab.classList.toggle("active", mode === "login");
+    if (signupTab) signupTab.classList.toggle("active", mode === "signup");
+    if (magicTab) magicTab.classList.toggle("active", mode === "magic");
+    if (loginMethodArea) loginMethodArea.style.display = mode === "login" ? "block" : "none";
+    if (loginMethodInfo) loginMethodInfo.classList.toggle("show", mode === "login");
+    if (confirmWrap) confirmWrap.classList.toggle("hidden", mode !== "signup");
+    if (strengthWrap) strengthWrap.classList.toggle("hidden", mode !== "signup");
+    if (switchBox) switchBox.style.display = mode === "magic" ? "none" : "block";
+    if (secondaryBtn) secondaryBtn.style.display = mode === "magic" ? "none" : "block";
+    if (passwordArea) passwordArea.style.display = mode === "magic" ? "none" : "block";
+    if (captchaWrap) captchaWrap.style.display = shouldUseCaptcha() ? "block" : "none";
+    if (approvalBox) approvalBox.style.display = mode === "magic" ? approvalBox.style.display : "none";
 
     if (mode === "login") {
-      title.textContent = "Welcome back";
-      subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
-      formTitle.textContent = "Account access";
-      formSub.textContent = "Choose how you want to continue into your workspace.";
-      modeLabel.textContent = "Login";
-      switchText.textContent = "Don’t have an account?";
-      switchBtn.textContent = "Create one";
-      helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
-      secondaryBtn.textContent = "Reset password";
+      if (title) title.textContent = "Welcome back";
+      if (subText) subText.textContent = "Sign in to access your Rattle Link dashboard and continue managing your links.";
+      if (formTitle) formTitle.textContent = "Account access";
+      if (formSub) formSub.textContent = "Choose how you want to continue into your workspace.";
+      if (modeLabel) modeLabel.textContent = "Login";
+      if (switchText) switchText.textContent = "Don’t have an account?";
+      if (switchBtn) switchBtn.textContent = "Create one";
+      if (helperText) helperText.textContent = "Choose password login, resend verification email, or enter a 2FA code directly.";
+      if (secondaryBtn) secondaryBtn.textContent = "Reset password";
+
       const savedMethod = localStorage.getItem("preferredLoginMethod") || "password";
       setLoginMethod(savedMethod === "verify_email" || savedMethod === "two_factor" ? savedMethod : "password");
     } else if (mode === "signup") {
-      title.textContent = "Create your account";
-      subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
-      formTitle.textContent = "New account setup";
-      formSub.textContent = "Create a secure account with a stronger password and email verification.";
-      modeLabel.textContent = "Signup";
-      btnText.textContent = "Create account";
-      switchText.textContent = "Already have an account?";
-      switchBtn.textContent = "Login";
-      helperText.textContent = "New signups go to Backend 2 only.";
-      secondaryBtn.textContent = "Resend verification";
-      optionsRow.style.display = "none";
-      passwordArea.style.display = "block";
-      passwordLabel.textContent = "Password";
-      password.placeholder = "Password";
-      password.type = "password";
+      if (title) title.textContent = "Create your account";
+      if (subText) subText.textContent = "Get started with branded links, analytics, landing pages, and domain control.";
+      if (formTitle) formTitle.textContent = "New account setup";
+      if (formSub) formSub.textContent = "Create a secure account with a stronger password and email verification.";
+      if (modeLabel) modeLabel.textContent = "Signup";
+      if (btnText) btnText.textContent = "Create account";
+      if (switchText) switchText.textContent = "Already have an account?";
+      if (switchBtn) switchBtn.textContent = "Login";
+      if (helperText) helperText.textContent = "New signups go to Backend 2 only.";
+      if (secondaryBtn) secondaryBtn.textContent = "Resend verification";
+      if (optionsRow) optionsRow.style.display = "none";
+      if (passwordArea) passwordArea.style.display = "block";
+      if (passwordLabel) passwordLabel.textContent = "Password";
+      if (password) {
+        password.placeholder = "Password";
+        password.type = "password";
+      }
     } else {
-      title.textContent = "Passwordless magic login";
-      subText.textContent = "Request a login approval email and finish signing in without entering your password.";
-      formTitle.textContent = "Magic approval flow";
-      formSub.textContent = "Start an email approval request and complete sign-in after verification.";
-      modeLabel.textContent = "Magic login";
-      btnText.textContent = "Send magic login";
-      helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
-      loginMethodInfo.classList.remove("show");
-      optionsRow.style.display = "none";
+      if (title) title.textContent = "Passwordless magic login";
+      if (subText) subText.textContent = "Request a login approval email and finish signing in without entering your password.";
+      if (formTitle) formTitle.textContent = "Magic approval flow";
+      if (formSub) formSub.textContent = "Start an email approval request and complete sign-in after verification.";
+      if (modeLabel) modeLabel.textContent = "Magic login";
+      if (btnText) btnText.textContent = "Send magic login";
+      if (helperText) helperText.textContent = "Magic login checks Backend 2 first, then falls back to legacy AWS only when needed.";
+      if (loginMethodInfo) loginMethodInfo.classList.remove("show");
+      if (optionsRow) optionsRow.style.display = "none";
     }
 
     updateModeProgress();
@@ -962,6 +981,7 @@
   function checkStrength() {
     const fill = el("strengthFill");
     const text = el("strength");
+    if (!fill || !text) return;
 
     if (mode !== "signup") {
       fill.style.width = "0%";
@@ -974,7 +994,7 @@
       return;
     }
 
-    const value = password.value || "";
+    const value = password ? password.value || "" : "";
     let score = 0;
     const okLen = value.length >= 8;
     const okUpper = /[A-Z]/.test(value);
@@ -1014,10 +1034,6 @@
     }
   }
 
-  async function safeJson(res) {
-    try { return await res.json(); } catch { return {}; }
-  }
-
   function getDeviceInfo() {
     return {
       ua: navigator.userAgent,
@@ -1029,8 +1045,9 @@
   }
 
   function getRouteCandidates(backend, rawPath) {
-    const cleanPath = String(rawPath || "").split("?")[0];
-    const query = String(rawPath || "").includes("?") ? "?" + String(rawPath).split("?").slice(1).join("?") : "";
+    const pathString = String(rawPath || "");
+    const cleanPath = pathString.split("?")[0];
+    const query = pathString.includes("?") ? "?" + pathString.split("?").slice(1).join("?") : "";
     const map = backend === "primary" ? PRIMARY_ROUTE_MAP : LEGACY_ROUTE_MAP;
     const baseCandidates = map[cleanPath] || [cleanPath];
     return [...new Set(baseCandidates.map((p) => p + query))];
@@ -1051,14 +1068,40 @@
       });
 
       clearTimeout(timer);
-      const data = await safeJson(res);
-      return { ok: res.ok, status: res.status, data, networkError: false, path };
+
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { message: text || "" };
+      }
+
+      const bodyMessage = String(
+        data?.message || data?.error || data?.detail || text || ""
+      ).toLowerCase();
+
+      const routeNotFoundInBody =
+        bodyMessage.includes("route not found") ||
+        bodyMessage.includes("cannot post") ||
+        bodyMessage.includes("cannot get") ||
+        bodyMessage.includes("not found");
+
+      return {
+        ok: res.ok && !routeNotFoundInBody,
+        status: routeNotFoundInBody ? 404 : res.status,
+        data,
+        raw: text,
+        networkError: false,
+        path
+      };
     } catch (error) {
       clearTimeout(timer);
       return {
         ok: false,
         status: 0,
         data: { message: error?.message || "Network request failed" },
+        raw: "",
         networkError: true,
         path
       };
@@ -1066,23 +1109,33 @@
   }
 
   function buildHeaders(extra = {}) {
-    return { "Content-Type": "application/json", ...extra };
+    return {
+      "Content-Type": "application/json",
+      ...extra
+    };
   }
 
   async function callBackend(backend, rawPath, options = {}) {
     const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
     const candidates = getRouteCandidates(backend, rawPath);
+
     let first401 = null;
     let lastResult = null;
 
     for (const path of candidates) {
       const finalOptions = { ...options };
+      const baseHeaders = { ...(options.headers || {}) };
+
       if (backend === "legacy") {
-        finalOptions.headers = buildHeaders({ ...(options.headers || {}), "x-rattle-fallback": "legacy" });
+        finalOptions.headers = buildHeaders({ ...baseHeaders, "x-rattle-fallback": "legacy" });
+      } else {
+        finalOptions.headers = buildHeaders(baseHeaders);
       }
 
       const result = await callApi(baseUrl, path, finalOptions);
       lastResult = result;
+
+      console.log("[AUTH TRY]", backend.toUpperCase(), finalOptions.method || "GET", baseUrl + path, "STATUS:", result.status, "DATA:", result.data);
 
       if (result.ok) {
         return { ...result, backend, resolvedPath: path };
@@ -1099,7 +1152,11 @@
       return { ...result, backend, resolvedPath: path };
     }
 
-    return first401 || { ...lastResult, backend, resolvedPath: lastResult?.path || candidates[0] };
+    return first401 || {
+      ...(lastResult || { ok: false, status: 0, data: { message: "Failed to fetch" } }),
+      backend,
+      resolvedPath: lastResult?.path || candidates[0]
+    };
   }
 
   function shouldFallbackToLegacy(path, result) {
@@ -1111,7 +1168,7 @@
     if (result.status === 405) return true;
     if (result.status >= 500) return true;
 
-    const msg = String(result?.data?.message || "").toLowerCase();
+    const msg = String(result?.data?.message || result?.data?.error || "").toLowerCase();
 
     if (["/login", "/magic-request", "/magic-login", "/magic-status", "/resend-verify"].includes(path)) {
       if (
@@ -1169,7 +1226,11 @@
   }
 
   function buildAuthPayload(user, pass, captchaToken) {
-    const payload = { username: user, password: pass, device: getDeviceInfo() };
+    const payload = {
+      username: user,
+      password: pass,
+      device: getDeviceInfo()
+    };
     if (shouldUseCaptcha()) payload.captcha = captchaToken;
     return payload;
   }
@@ -1193,9 +1254,9 @@
     if (backend) localStorage.setItem("magicBackend", backend);
     if (email) localStorage.setItem("magicEmail", email);
 
-    approvalBox.style.display = "block";
-    backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
-    approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
+    if (approvalBox) approvalBox.style.display = "block";
+    if (backendUsedNote) backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
+    if (approvalText) approvalText.textContent = "Check your email and approve this sign-in. This page will keep checking until approval is complete.";
 
     startMagicTimer(expiresAt);
     startMagicPolling();
@@ -1211,9 +1272,9 @@
     localStorage.removeItem("magicBackend");
     localStorage.removeItem("magicEmail");
 
-    approvalBox.style.display = "none";
-    backendUsedNote.textContent = "";
-    statusTimer.textContent = "";
+    if (approvalBox) approvalBox.style.display = "none";
+    if (backendUsedNote) backendUsedNote.textContent = "";
+    if (statusTimer) statusTimer.textContent = "";
     stopMagicPolling();
     stopMagicTimer();
     showError("Pending login cleared.", "warn");
@@ -1225,14 +1286,14 @@
     const backend = localStorage.getItem("magicBackend");
     const savedEmail = localStorage.getItem("magicEmail") || "";
 
-    if (savedEmail && !username.value.trim()) username.value = savedEmail;
+    if (savedEmail && username && !username.value.trim()) username.value = savedEmail;
 
     if (requestId) {
       pendingMagicRequestId = requestId;
       pendingMagicExpiresAt = expiresAt || null;
       pendingMagicBackend = backend || null;
-      approvalBox.style.display = "block";
-      backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
+      if (approvalBox) approvalBox.style.display = "block";
+      if (backendUsedNote) backendUsedNote.textContent = backend ? `Current auth backend: ${backendLabel(backend)}` : "";
       startMagicTimer(expiresAt || null);
       startMagicPolling();
     }
@@ -1260,8 +1321,9 @@
 
   function startMagicTimer(expiresAt) {
     stopMagicTimer();
+
     if (!expiresAt) {
-      statusTimer.textContent = "";
+      if (statusTimer) statusTimer.textContent = "";
       return;
     }
 
@@ -1270,14 +1332,14 @@
     const tick = () => {
       const left = pendingMagicExpiresAt - Date.now();
       if (left <= 0) {
-        statusTimer.textContent = "Approval request expired";
+        if (statusTimer) statusTimer.textContent = "Approval request expired";
         stopMagicTimer();
         stopMagicPolling();
         return;
       }
       const m = Math.floor(left / 60000);
       const s = Math.floor((left % 60000) / 1000);
-      statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
+      if (statusTimer) statusTimer.textContent = `Expires in ${m}:${String(s).padStart(2, "0")}`;
     };
 
     tick();
@@ -1287,7 +1349,7 @@
   async function finishMagicLogin(exchangeOverride = "") {
     const exchange = String(exchangeOverride || qs().get("exchange") || "").trim();
     const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
-    const email = username.value.trim().toLowerCase() || localStorage.getItem("magicEmail") || "";
+    const email = (username ? username.value.trim().toLowerCase() : "") || localStorage.getItem("magicEmail") || "";
 
     if (exchange) {
       try {
@@ -1333,7 +1395,7 @@
 
         setChosenBackend(result.backend || "primary");
         saveSession(data.token, data.role || "user", data.username || email);
-        if (remember.checked && email) localStorage.setItem("rememberUser", email);
+        if (remember && remember.checked && email) localStorage.setItem("rememberUser", email);
 
         clearPendingMagic();
         localStorage.removeItem("pending2faMethod");
@@ -1356,6 +1418,7 @@
     if (backend) params.set("backend", backend);
     if (email) params.set("email", email);
     params.set("approved", "1");
+
     setTimeout(() => {
       window.location.href = "magic-login.html?" + params.toString();
     }, 900);
@@ -1388,7 +1451,7 @@
       pendingMagicBackend = result.backend || pendingMagicBackend || "primary";
       setChosenBackend(pendingMagicBackend);
       localStorage.setItem("magicBackend", pendingMagicBackend);
-      backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
+      if (backendUsedNote) backendUsedNote.textContent = `Current auth backend: ${backendLabel(pendingMagicBackend)}`;
 
       if (!result.ok) {
         if (showFeedback) showError(data.message || "Could not check status.");
@@ -1401,14 +1464,14 @@
       }
 
       if (data.exchange) {
-        approvalText.textContent = "Login approved. Completing sign-in.";
+        if (approvalText) approvalText.textContent = "Login approved. Completing sign-in.";
         stopMagicPolling();
         await finishMagicLogin(data.exchange);
         return;
       }
 
       if (data.status === "approved") {
-        approvalText.textContent = "Login approved. Redirecting to the magic login page.";
+        if (approvalText) approvalText.textContent = "Login approved. Redirecting to the magic login page.";
         showError(`Login approved on ${backendLabel(pendingMagicBackend)}.`, "success");
         stopMagicPolling();
         await finishMagicLogin();
@@ -1435,7 +1498,7 @@
   function openMagicPage() {
     const requestId = pendingMagicRequestId || localStorage.getItem("magicRequestId");
     const backend = pendingMagicBackend || localStorage.getItem("magicBackend") || getForcedBackendFromState() || "primary";
-    const email = username.value.trim().toLowerCase();
+    const email = username ? username.value.trim().toLowerCase() : "";
     const params = new URLSearchParams();
 
     if (requestId) params.set("requestId", requestId);
@@ -1449,8 +1512,8 @@
     showError("");
     setLoading(true);
 
-    const user = username.value.trim().toLowerCase();
-    const pass = password.value;
+    const user = username ? username.value.trim().toLowerCase() : "";
+    const pass = password ? password.value : "";
     const captchaToken = getCaptchaToken();
 
     if (!user) {
@@ -1484,6 +1547,8 @@
         },
         "primaryThenLegacy"
       );
+
+      console.log("[LOGIN RESULT]", result);
 
       const data = result.data || {};
 
@@ -1548,7 +1613,7 @@
       setChosenBackend(result.backend || "primary");
       saveSession(data.token, data.role || "user", data.username || user);
 
-      if (remember.checked) localStorage.setItem("rememberUser", user);
+      if (remember && remember.checked) localStorage.setItem("rememberUser", user);
       else localStorage.removeItem("rememberUser");
 
       localStorage.removeItem("pending2faMethod");
@@ -1570,8 +1635,8 @@
     showError("");
     setLoading(true);
 
-    const user = username.value.trim().toLowerCase();
-    const enteredCode = password.value.trim();
+    const user = username ? username.value.trim().toLowerCase() : "";
+    const enteredCode = password ? password.value.trim() : "";
 
     if (!user) {
       showError("Enter email.");
@@ -1644,7 +1709,7 @@
       }
 
       saveSession(loginData.token, loginData.role || "user", loginData.username || user);
-      if (remember.checked) localStorage.setItem("rememberUser", user);
+      if (remember && remember.checked) localStorage.setItem("rememberUser", user);
       localStorage.removeItem("pending2faMethod");
 
       showError(`2FA verified via ${backendLabel(loginResult.backend || backend)}.`, "success");
@@ -1663,9 +1728,9 @@
     showError("");
     setLoading(true);
 
-    const user = username.value.trim().toLowerCase();
-    const pass = password.value;
-    const confirm = confirmInput.value;
+    const user = username ? username.value.trim().toLowerCase() : "";
+    const pass = password ? password.value : "";
+    const confirm = confirmInput ? confirmInput.value : "";
     const captchaToken = getCaptchaToken();
 
     if (!user) {
@@ -1719,8 +1784,8 @@
 
       setChosenBackend("primary");
       showError(data.message || "Account created. Verify your email before first login.", "success");
-      password.value = "";
-      confirmInput.value = "";
+      if (password) password.value = "";
+      if (confirmInput) confirmInput.value = "";
       checkStrength();
 
       setTimeout(() => {
@@ -1740,7 +1805,8 @@
     showError("");
     setLoading(true);
 
-    const user = username.value.trim().toLowerCase();
+    const user = username ? username.value.trim().toLowerCase() : "";
+
     if (!user) {
       showError("Enter email.");
       setLoading(false);
@@ -1791,7 +1857,7 @@
   }
 
   async function resendVerify() {
-    const user = username.value.trim().toLowerCase();
+    const user = username ? username.value.trim().toLowerCase() : "";
     if (!user) {
       showError("Enter your email first.");
       return;
@@ -1823,7 +1889,7 @@
   }
 
   async function handleMainAction() {
-    if (mainBtn.disabled) return;
+    if (mainBtn && mainBtn.disabled) return;
 
     if (mode === "login") {
       if (loginMethod === "verify_email") await resendVerify();
@@ -1843,7 +1909,7 @@
     }
 
     if (mode === "login" && loginMethod === "verify_email") {
-      const user = username.value.trim().toLowerCase();
+      const user = username ? username.value.trim().toLowerCase() : "";
       const params = new URLSearchParams();
       if (user) params.set("email", user);
       const backend = getForcedBackendFromState();
@@ -1853,7 +1919,7 @@
     }
 
     if (mode === "login" && loginMethod === "two_factor") {
-      const user = username.value.trim().toLowerCase();
+      const user = username ? username.value.trim().toLowerCase() : "";
       const params = new URLSearchParams();
       if (user) params.set("email", user);
       const backend = getForcedBackendFromState();
@@ -1873,7 +1939,7 @@
 
   function loadRememberedUser() {
     const saved = localStorage.getItem("rememberUser");
-    if (saved) {
+    if (saved && username && remember) {
       username.value = saved;
       remember.checked = true;
     }
@@ -1893,7 +1959,7 @@
       localStorage.setItem("sessionBackend", backend);
     }
 
-    if (email) username.value = email;
+    if (email && username) username.value = email;
     if (method === "totp" || method === "email_otp") localStorage.setItem("pending2faMethod", method);
 
     if (requestId) {
@@ -1911,7 +1977,7 @@
       if (pendingMagicBackend) setChosenBackend(pendingMagicBackend);
       if (email) localStorage.setItem("magicEmail", email);
 
-      if (approved === "1") {
+      if (approved === "1" && approvalBox && approvalText) {
         approvalBox.style.display = "block";
         approvalText.textContent = "Approval confirmed. Completing login...";
       }
@@ -1939,9 +2005,9 @@
     });
   });
 
-  username.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
-  password.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
-  confirmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  if (username) username.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  if (password) password.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
+  if (confirmInput) confirmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleMainAction(); });
 
   loadTheme();
   loadRememberedUser();
@@ -1949,6 +2015,19 @@
   setMode("login");
   restorePendingMagic();
   waitForCaptchaAndMount();
+
+  window.toggleTheme = toggleTheme;
+  window.setMode = setMode;
+  window.setLoginMethod = setLoginMethod;
+  window.togglePass = togglePass;
+  window.handleMainAction = handleMainAction;
+  window.secondaryAction = secondaryAction;
+  window.toggleLoginSignup = toggleLoginSignup;
+  window.goForgot = goForgot;
+  window.checkStrength = checkStrength;
+  window.checkMagicStatus = checkMagicStatus;
+  window.openMagicPage = openMagicPage;
+  window.clearPendingMagic = clearPendingMagic;
 </script>
 </body>
 </html>
