@@ -7,7 +7,6 @@
 
   <style>
     *{box-sizing:border-box}
-
     body{
       margin:0;
       font-family:Inter,Arial,sans-serif;
@@ -19,7 +18,6 @@
       align-items:center;
       padding:20px;
     }
-
     .card{
       width:100%;
       max-width:470px;
@@ -30,19 +28,13 @@
       text-align:center;
       box-shadow:0 20px 60px rgba(0,0,0,.6);
     }
-
-    h2{
-      color:#00ffff;
-      margin:0 0 10px;
-    }
-
+    h2{ color:#00ffff; margin:0 0 10px; }
     .sub{
       font-size:13px;
       color:#94a3b8;
       margin-bottom:18px;
       line-height:1.5;
     }
-
     input{
       width:100%;
       padding:13px 12px;
@@ -53,11 +45,7 @@
       margin-bottom:12px;
       outline:none;
     }
-
-    input:focus{
-      box-shadow:0 0 0 2px rgba(0,255,255,0.12);
-    }
-
+    input:focus{ box-shadow:0 0 0 2px rgba(0,255,255,0.12); }
     button, a.btn{
       width:100%;
       padding:12px;
@@ -72,53 +60,48 @@
       text-decoration:none;
       display:block;
     }
-
     button:hover, a.btn:hover{
       box-shadow:0 0 20px rgba(0,255,255,.35);
       transform:translateY(-1px);
     }
-
     button:disabled{
       opacity:.6;
       cursor:not-allowed;
       transform:none;
       box-shadow:none;
     }
-
     .secondary{
       background:#020617;
       color:#0ff;
       border:1px solid #0ff;
     }
-
     .muted{
       font-size:12px;
       color:#94a3b8;
       margin-top:14px;
       line-height:1.5;
     }
-
     .error{
       color:#ef4444;
       font-size:13px;
       margin-top:14px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
-
     .success{
       color:#22c55e;
       font-size:13px;
       margin-top:14px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
-
     .warn{
       color:#f59e0b;
       font-size:13px;
       margin-top:14px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
-
     .spinner{
       width:14px;
       height:14px;
@@ -130,37 +113,24 @@
       margin-left:6px;
       vertical-align:middle;
     }
-
-    @keyframes spin{
-      to{ transform:rotate(360deg); }
-    }
-
+    @keyframes spin{ to{ transform:rotate(360deg); } }
     .timer{
       margin-top:12px;
       font-size:12px;
       color:#f59e0b;
       min-height:16px;
     }
-
-    .qr{
-      margin-top:14px;
-    }
-
-    .hidden{
-      display:none !important;
-    }
-
+    .qr{ margin-top:14px; }
+    .hidden{ display:none !important; }
     .divider{
       height:1px;
       background:rgba(148,163,184,.15);
       margin:18px 0;
     }
-
     .small-btn{
       padding:10px 12px;
       font-size:13px;
     }
-
     .status-card{
       margin-top:14px;
       padding:14px;
@@ -169,20 +139,17 @@
       background:rgba(0,255,255,0.04);
       text-align:left;
     }
-
     .status-card h3{
       margin:0 0 8px;
       color:#00ffff;
       font-size:14px;
     }
-
     .status-card p{
       margin:0 0 8px;
       font-size:12px;
       color:#94a3b8;
       line-height:1.6;
     }
-
     .backend-badge{
       display:inline-block;
       padding:6px 10px;
@@ -192,7 +159,6 @@
       color:#00ffff;
       margin-top:4px;
     }
-
     .back-link{
       display:block;
       margin-top:14px;
@@ -201,24 +167,18 @@
       text-decoration:none;
       cursor:pointer;
     }
-
-    .back-link:hover{
-      text-decoration:underline;
-    }
-
+    .back-link:hover{ text-decoration:underline; }
     .inline-actions{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       margin-top:8px;
     }
-
     .inline-actions button{
       flex:1;
       min-width:120px;
       margin-top:0;
     }
-
     .qr img{
       border-radius:12px;
       border:1px solid rgba(0,255,255,.18);
@@ -304,7 +264,6 @@
     const qrBox = document.getElementById("qr");
     const backToIndex = document.getElementById("backToIndex");
 
-    const requestSection = document.getElementById("requestSection");
     const statusSection = document.getElementById("statusSection");
     const approveSection = document.getElementById("approveSection");
     const backendBadge = document.getElementById("backendBadge");
@@ -344,6 +303,18 @@
 
     function safeText(value){
       return String(value || "").trim();
+    }
+
+    function readApproveTokenFromUrl() {
+      const params = getParams();
+      const value = params.get("approve");
+      return value ? safeText(decodeURIComponent(value)) : "";
+    }
+
+    function readRequestIdFromUrl() {
+      const params = getParams();
+      const value = params.get("requestId");
+      return value ? safeText(decodeURIComponent(value)) : "";
     }
 
     function isEmail(value){
@@ -572,6 +543,7 @@
       currentExchange = null;
       expiryTime = null;
       lastEmailUsed = null;
+      currentApproveToken = null;
 
       clearStoredPending();
       statusSection.classList.add("hidden");
@@ -669,61 +641,6 @@
       return "primaryThenLegacy";
     }
 
-    function isTwoFactorSetupRequired(data){
-      return !!(
-        data?.requiresTwoFactorSetup ||
-        data?.requires2FASetup ||
-        data?.twoFactorSetupRequired ||
-        data?.requiresTwoFactorEnrollment ||
-        data?.requires2FAEnrollment ||
-        data?.incompleteTwoFactorSetup ||
-        data?.twoFactorIncomplete ||
-        data?.twoFactorNotConfigured ||
-        data?.requiresAuthenticatorSetup ||
-        data?.mustCompleteTwoFactorSetup
-      );
-    }
-
-    function buildTwoFactorSetupUrl(options = {}){
-      const params = new URLSearchParams();
-
-      if(options.email) params.set("email", options.email);
-      if(options.backend) params.set("backend", options.backend);
-      if(options.exchange) params.set("exchange", options.exchange);
-      if(options.token) params.set("token", options.token);
-      if(options.method) params.set("method", options.method);
-      params.set("mode", "setup");
-      params.set("source", "magic-login");
-      params.set("incomplete", "1");
-
-      return `2fa-login.html?${params.toString()}`;
-    }
-
-    function redirectToTwoFactorSetup(data = {}, resolvedBackend = "primary"){
-      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
-      const method = safeText(data?.method || data?.twoFactorMethod || data?.preferredMethod || "");
-      const exchange = safeText(data?.exchange || currentExchange || "");
-      const token = safeText(data?.token || getParams().get("token") || "");
-
-      if(email) localStorage.setItem("magicEmail", email);
-      if(method) localStorage.setItem("pending2faMethod", method);
-      localStorage.setItem("pending2faSetup", "1");
-
-      showMessage(`2FA setup must be completed on ${backendLabel(resolvedBackend)}. Redirecting... ⏳`, "warn");
-
-      const url = buildTwoFactorSetupUrl({
-        email,
-        backend: resolvedBackend,
-        exchange,
-        token,
-        method
-      });
-
-      setTimeout(() => {
-        window.location.href = url;
-      }, 700);
-    }
-
     async function sendMagic(){
       const email = safeText(emailInput.value).toLowerCase();
 
@@ -750,11 +667,7 @@
         const data = result.data || {};
 
         if(!result.ok){
-          if(data.requiresEmailVerification){
-            showMessage("Your email is not verified yet. Check your inbox and verify first ✅", "warn");
-          } else {
-            showMessage(friendlyError(result) + " ❌", "error");
-          }
+          showMessage(friendlyError(result) + " ❌", "error");
           resetButton(sendBtn, "Send Magic Login");
           return;
         }
@@ -805,11 +718,7 @@
         const data = result.data || {};
 
         if(!result.ok){
-          if(data.requiresEmailVerification){
-            showMessage("Your email is not verified yet. Check your inbox and verify first ✅", "warn");
-          } else {
-            showMessage(friendlyError(result) + " ❌", "error");
-          }
+          showMessage(friendlyError(result) + " ❌", "error");
           resetButton(resendBtn, "Resend Email");
           return;
         }
@@ -918,25 +827,18 @@
 
     async function finishMagicLogin(){
       const exchange = currentExchange || safeText(getParams().get("exchange"));
-      const token = safeText(getParams().get("token"));
-      const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
-
-      if(!exchange && !token){
+      if(!exchange){
         showMessage("Missing secure login token ❌", "error");
         return;
       }
 
       try{
-        const payload = exchange
-          ? { exchange }
-          : { token, device: getDeviceInfo() };
-
         const result = await apiHybrid(
           "/magic-login",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ exchange })
           },
           chooseBehaviorForCurrentBackend()
         );
@@ -946,53 +848,12 @@
 
         rememberBackend(resolvedBackend);
 
-        if(isTwoFactorSetupRequired(data)){
-          redirectToTwoFactorSetup(data, resolvedBackend);
-          return;
-        }
-
-        if(data.requiresTwoFactor){
-          const method = safeText(data.method || data.twoFactorMethod) || localStorage.getItem("pending2faMethod") || "";
-          localStorage.setItem("pending2faMethod", method);
-
-          showMessage(`2FA required on ${backendLabel(resolvedBackend)}. Redirecting... ⏳`, "warn");
-
-          const next = new URLSearchParams();
-          if(email) next.set("email", email);
-          next.set("backend", resolvedBackend);
-          if(method) next.set("method", method);
-          if(exchange) next.set("exchange", exchange);
-          next.set("source", "magic-login");
-
-          setTimeout(() => {
-            window.location.href = "2fa-login.html?" + next.toString();
-          }, 700);
-          return;
-        }
-
         if(!result.ok || !data.token){
-          if(data.requiresEmailVerification){
-            showMessage("Please verify your email before first login ✅", "warn");
-            return;
-          }
-
-          if(data.status === "pending"){
-            showMessage("Approval still pending ⏳", "warn");
-            return;
-          }
-
-          if(isTwoFactorSetupRequired(data)){
-            redirectToTwoFactorSetup(data, resolvedBackend);
-            return;
-          }
-
           showMessage(friendlyError(result) + " ❌", "error");
           return;
         }
 
         clearStoredPending();
-        localStorage.removeItem("pending2faMethod");
-        localStorage.removeItem("pending2faSetup");
         saveAuth(data, resolvedBackend);
 
         showMessage(`Login successful via ${backendLabel(resolvedBackend)} ✅`, "success");
@@ -1005,17 +866,49 @@
     }
 
     async function approveLogin(){
-      if(!currentApproveToken) return showMessage("Missing approval token ❌", "error");
+      const runtimeApproveToken =
+        currentApproveToken ||
+        readApproveTokenFromUrl() ||
+        "";
+
+      const runtimeRequestId =
+        currentRequestId ||
+        readRequestIdFromUrl() ||
+        localStorage.getItem("magicRequestId") ||
+        "";
+
+      if(!runtimeApproveToken) {
+        showMessage("Missing approval token ❌", "error");
+        return;
+      }
+
+      if(!runtimeRequestId) {
+        showMessage("Missing request ID ❌", "error");
+        return;
+      }
+
+      currentApproveToken = runtimeApproveToken;
+      currentRequestId = runtimeRequestId;
+      savePendingState();
 
       setLoading(approveBtn, "Approving");
 
       try{
+        const qs = new URLSearchParams({
+          approve: runtimeApproveToken,
+          requestId: runtimeRequestId
+        }).toString();
+
         const result = await apiHybrid(
-          "/magic-approve",
+          `/magic-approve?${qs}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: currentApproveToken })
+            body: JSON.stringify({
+              approve: runtimeApproveToken,
+              token: runtimeApproveToken,
+              requestId: runtimeRequestId
+            })
           },
           chooseBehaviorForCurrentBackend()
         );
@@ -1034,6 +927,9 @@
 
         if(data.requestId){
           currentRequestId = safeText(data.requestId);
+          savePendingState();
+        } else {
+          currentRequestId = runtimeRequestId;
           savePendingState();
         }
 
@@ -1083,9 +979,8 @@
       const params = getParams();
 
       const email = safeText(params.get("email")).toLowerCase();
-      const requestId = safeText(params.get("requestId"));
-      const approve = safeText(params.get("approve"));
-      const token = safeText(params.get("token"));
+      const requestId = readRequestIdFromUrl();
+      const approve = readApproveTokenFromUrl();
       const exchange = safeText(params.get("exchange"));
       const backend = safeText(params.get("backend")).toLowerCase();
 
@@ -1096,6 +991,8 @@
 
       if(backend === "legacy" || backend === "primary"){
         rememberBackend(backend);
+      } else {
+        rememberBackend("primary");
       }
 
       if(exchange) currentExchange = exchange;
@@ -1103,18 +1000,17 @@
 
       if(approve){
         currentApproveToken = approve;
-        approveSection.classList.remove("hidden");
-        showBackendBadge(approveBackendBadge, currentBackend || "primary");
-        showMessage("This page can approve your login request.", "warn");
-
         if(requestId){
           currentRequestId = requestId;
           savePendingState();
         }
+        approveSection.classList.remove("hidden");
+        showBackendBadge(approveBackendBadge, currentBackend || "primary");
+        showMessage("This page can approve your login request.", "warn");
         return;
       }
 
-      if(exchange || token){
+      if(exchange){
         showMessage("Finishing magic login... ⏳", "warn");
         await finishMagicLogin();
         return;
