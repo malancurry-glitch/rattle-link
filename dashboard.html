@@ -1108,6 +1108,8 @@
   <script>
   const PRIMARY_API = "https://api.rattleshortapi.it.com";
   const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  const PUBLIC_BASE = "https://rattleshortapi.it.com";
+
 
   const AUTH_STORAGE_KEY = "rattle_token";
   const ROLE_STORAGE_KEY = "rattle_role";
@@ -1413,6 +1415,24 @@
       triedPaths: candidates
     };
   }
+  function ensureAbsoluteUrl(value, fallbackBase = PUBLIC_BASE) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  if (/^https?:\/\//i.test(raw)) {
+    return raw;
+  }
+
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) {
+    return `https://${raw.replace(/^\/+/, "")}`;
+  }
+
+  if (raw.startsWith("/")) {
+    return `${String(fallbackBase || "").replace(/\/+$/, "")}${raw}`;
+  }
+
+  return raw;
+}
 
   async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
     const targetBackend = backend || sessionBackend;
@@ -1492,10 +1512,20 @@
   }
 
   function buildPublicLink(itemOrSlug, backend) {
-    const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
-    return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
+  const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+  const item = typeof itemOrSlug === "object" ? itemOrSlug : null;
+  const customDomain = String(item?.domain || "").trim();
+
+  if (customDomain) {
+    return `https://${customDomain}/${slug}`;
   }
 
+  if (backend === "legacy") {
+    return `${String(LEGACY_API).replace(/\/+$/, "")}/${slug}`;
+  }
+
+  return `${String(PUBLIC_BASE).replace(/\/+$/, "")}/${slug}`;
+}
   function getItemType(item) {
     return String(item.linkType || item.link_type || "redirect").toLowerCase() === "landing"
       ? "landing"
