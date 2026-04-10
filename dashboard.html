@@ -2660,6 +2660,179 @@
       </div>
     `).join("");
   }
+  function resetSecuritySetupState() {
+  securitySetupState = {
+    method: null,
+    secret: "",
+    otpauthUrl: "",
+    qrImageUrl: "",
+    expiresAt: null,
+    recoveryCodes: []
+  };
+}
+
+function securityResultHtml(message = "", isError = false) {
+  if (!message) return "";
+  return `<div class="result ${isError ? "error" : "success"}" style="margin-top:12px;">${escapeHtml(message)}</div>`;
+}
+
+function renderRecoveryCodesBox() {
+  const codes = Array.isArray(securitySetupState.recoveryCodes)
+    ? securitySetupState.recoveryCodes
+    : [];
+
+  if (!codes.length) return "";
+
+  return `
+    <div class="confirm-box" style="margin-top:12px;">
+      <b>Save these recovery codes now</b>
+      <div class="muted" style="margin-top:8px;">
+        Each code can be used once if you lose access to your authenticator or email OTP flow.
+      </div>
+      <div class="address-box" style="margin-top:10px;">${codes.map(escapeHtml).join("<br>")}</div>
+      <div class="row-actions" style="margin-top:10px;">
+        <button type="button" onclick="copyLink('${escapeForJs(codes.join("\n"))}')">Copy Recovery Codes</button>
+      </div>
+    </div>
+  `;
+}
+
+async function startTotpSetup() {
+  const res = await authorizedFetch(
+    "/auth/2fa/setup",
+    {
+      method: "POST",
+      body: JSON.stringify({ method: "totp" })
+    },
+    "primary",
+    false
+  );
+
+  if (!res.ok) {
+    renderSecurityModal(res.data?.message || "Failed to start TOTP setup", true);
+    return;
+  }
+
+  securitySetupState = {
+    method: "totp",
+    secret: String(res.data?.secret || ""),
+    otpauthUrl: String(res.data?.otpauthUrl || ""),
+    qrImageUrl: String(res.data?.qrImageUrl || ""),
+    expiresAt: null,
+    recoveryCodes: []
+  };
+
+  renderSecurityModal("TOTP setup started. Scan the QR and enter the 6-digit code.");
+}
+
+async function startEmailOtpSetup() {
+  const res = await authorizedFetch(
+    "/auth/2fa/setup",
+    {
+      method: "POST",
+      body: JSON.stringify({ method: "email_otp" })
+    },
+    "primary",
+    false
+  );
+
+  if (!res.ok) {
+    renderSecurityModal(res.data?.message || "Failed to start Email OTP setup", true);
+    return;
+  }
+
+  securitySetupState = {
+    method: "email_otp",
+    secret: "",
+    otpauthUrl: "",
+    qrImageUrl: "",
+    expiresAt: Number(res.data?.expiresAt || 0) || null,
+    recoveryCodes: []
+  };
+
+  renderSecurityModal("Email OTP setup started. Check your email and enter the code.");
+}
+
+async function confirmEnable2fa(method) {
+  const codeInput = document.getElementById("security2faCode");
+  const code = String(codeInput?.value || "").trim();
+
+  if (!code) {
+    renderSecurityModal("Enter the verification code first.", true);
+    return;
+  }
+
+  const res = await authorizedFetch(
+    "/auth/2fa/enable",
+    {
+      method: "POST",
+      body: JSON.stringify({ method, code })
+    },
+    "primary",
+    false
+  );
+
+  if (!res.ok) {
+    renderSecurityModal(res.data?.message || "Failed to enable 2FA", true);
+    return;
+  }
+
+  securitySetupState.recoveryCodes = Array.isArray(res.data?.backupCodes)
+    ? res.data.backupCodes
+    : [];
+
+  await loadMe(false);
+  renderSecurityModal("Two-factor authentication enabled successfully.");
+  showToast("2FA enabled");
+}
+
+async function disable2fa() {
+  const res = await authorizedFetch(
+    "/auth/2fa/disable",
+    {
+      method: "POST",
+      body: JSON.stringify({})
+    },
+    "primary",
+    false
+  );
+
+  if (!res.ok) {
+    renderSecurityModal(res.data?.message || "Failed to disable 2FA", true);
+    return;
+  }
+
+  resetSecuritySetupState();
+  await loadMe(false);
+  renderSecurityModal("Two-factor authentication disabled.");
+  showToast("2FA disabled");
+}
+
+async function regenerateRecoveryCodes() {
+  const res = await authorizedFetch(
+    "/auth/security/2fa/recovery",
+    {
+      method: "POST",
+      body: JSON.stringify({})
+    },
+    "primary",
+    false
+  );
+
+  if (!res.ok) {
+    renderSecurityModal(res.data?.message || "Failed to regenerate recovery codes", true);
+    return;
+  }
+
+  securitySetupState.recoveryCodes = Array.isArray(res.data?.recoveryCodes)
+    ? res.data.recoveryCodes
+    : Array.isArray(res.data?.backupCodes)
+      ? res.data.backupCodes
+      : [];
+
+  renderSecurityModal("Recovery codes regenerated.");
+  showToast("Recovery codes regenerated");
+}
 
   function renderSecurityModal(message = "", isError = false) {
   if (!els.securityModalContent) return;
