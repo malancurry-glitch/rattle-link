@@ -1186,6 +1186,17 @@
   let paymentPoller = null;
   let loadingLinks = false;
   let meState = null;
+
+
+  let securitySetupState = {
+  method: null,
+  secret: "",
+  otpauthUrl: "",
+  qrImageUrl: "",
+  expiresAt: null,
+  recoveryCodes: []
+};
+
   let plansState = null;
   let selectedPlan = "monthly";
   let selectedPlanQuantity = 1;
@@ -2650,22 +2661,123 @@
     `).join("");
   }
 
-  function renderSecurityModal() {
-    if (!els.securityModalContent) return;
+  function renderSecurityModal(message = "", isError = false) {
+  if (!els.securityModalContent) return;
 
-    const twoFactorEnabled = !!meState?.twoFactorEnabled;
-    const twoFactorMethod = meState?.twoFactorMethod || "";
+  const twoFactorEnabled = !!meState?.twoFactorEnabled;
+  const twoFactorMethod = meState?.twoFactorMethod || "";
+  const isTotpSetup = securitySetupState.method === "totp";
+  const isEmailSetup = securitySetupState.method === "email_otp";
 
-    els.securityModalContent.innerHTML = `
-      <div class="info-box">
-        <b>Two-Factor Authentication</b>
-        <div class="muted" style="margin-top:8px;">Status: ${twoFactorEnabled ? "Enabled" : "Disabled"} ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}</div>
+  els.securityModalContent.innerHTML = `
+    <div class="info-box">
+      <b>Two-Factor Authentication Status</b>
+      <div class="muted" style="margin-top:8px;">
+        Status: ${twoFactorEnabled ? "Enabled" : "Disabled"}
+        ${twoFactorMethod ? `(${escapeHtml(twoFactorMethod)})` : ""}
       </div>
+      <div class="row-actions" style="margin-top:12px;">
+        ${
+          twoFactorEnabled
+            ? `
+              <button class="danger-btn" type="button" onclick="disable2fa()">Disable 2FA</button>
+              <button class="ghost-btn" type="button" onclick="regenerateRecoveryCodes()">Regenerate Recovery Codes</button>
+            `
+            : `
+              <button class="backend2-btn" type="button" onclick="startTotpSetup()">Enable TOTP Authenticator</button>
+              <button class="blue-btn" type="button" onclick="startEmailOtpSetup()">Enable Email OTP</button>
+            `
+        }
+      </div>
+    </div>
 
-      <div class="alert-box"><b>Security overview</b><br>${getRiskSummaryText()}</div>
-      ${renderRiskItemsHtml()}
-    `;
-  }
+    ${
+      !twoFactorEnabled
+        ? `
+          <div class="grid-2" style="margin-top:14px;">
+            <div class="panel-card">
+              <h4>TOTP Authenticator</h4>
+              <div class="muted">
+                Use Google Authenticator, Microsoft Authenticator, Authy, or any TOTP app.
+              </div>
+
+              ${
+                isTotpSetup
+                  ? `
+                    <div style="margin-top:12px;">
+                      ${
+                        securitySetupState.qrImageUrl
+                          ? `<img src="${escapeHtml(securitySetupState.qrImageUrl)}" alt="TOTP QR" style="max-width:220px;width:100%;border-radius:12px;border:1px solid rgba(0,255,255,.18);background:#fff;padding:8px;" />`
+                          : ""
+                      }
+                    </div>
+                    <div class="address-box" style="margin-top:12px;">${escapeHtml(securitySetupState.secret || "")}</div>
+                    <div class="muted">Scan the QR or enter the secret manually, then type the 6-digit code below.</div>
+                    <input id="security2faCode" type="text" placeholder="Enter 6-digit TOTP code" style="margin-top:12px;" />
+                    <div class="row-actions" style="margin-top:10px;">
+                      <button class="success-btn" type="button" onclick="confirmEnable2fa('totp')">Confirm TOTP</button>
+                      <button class="ghost-btn" type="button" onclick="resetSecuritySetupState(); renderSecurityModal();">Cancel</button>
+                    </div>
+                  `
+                  : `
+                    <div class="row-actions" style="margin-top:12px;">
+                      <button class="backend2-btn" type="button" onclick="startTotpSetup()">Start TOTP Setup</button>
+                    </div>
+                  `
+              }
+            </div>
+
+            <div class="panel-card">
+              <h4>Email OTP</h4>
+              <div class="muted">
+                Receive one-time codes by email to approve login.
+              </div>
+
+              ${
+                isEmailSetup
+                  ? `
+                    <div class="waiting-box" style="margin-top:12px;">
+                      An email OTP code was sent to <b>${escapeHtml(meState?.username || getUsername() || "-")}</b>.
+                      ${
+                        securitySetupState.expiresAt
+                          ? `<div class="muted" style="margin-top:6px;">Expires: ${fmtDate(securitySetupState.expiresAt)}</div>`
+                          : ""
+                      }
+                    </div>
+                    <input id="security2faCode" type="text" placeholder="Enter email OTP code" style="margin-top:12px;" />
+                    <div class="row-actions" style="margin-top:10px;">
+                      <button class="success-btn" type="button" onclick="confirmEnable2fa('email_otp')">Confirm Email OTP</button>
+                      <button class="ghost-btn" type="button" onclick="resetSecuritySetupState(); renderSecurityModal();">Cancel</button>
+                    </div>
+                  `
+                  : `
+                    <div class="row-actions" style="margin-top:12px;">
+                      <button class="blue-btn" type="button" onclick="startEmailOtpSetup()">Start Email OTP Setup</button>
+                    </div>
+                  `
+              }
+            </div>
+          </div>
+        `
+        : `
+          <div class="confirm-box" style="margin-top:14px;">
+            <b>2FA is already active</b><br>
+            Current method: <b>${escapeHtml(twoFactorMethod || "configured")}</b>
+          </div>
+        `
+    }
+
+    ${renderRecoveryCodesBox()}
+
+    <div class="alert-box" style="margin-top:14px;">
+      <b>Security overview</b><br>${getRiskSummaryText()}
+    </div>
+
+    ${renderRiskItemsHtml()}
+
+    ${securityResultHtml(message, isError)}
+  `;
+}
 
   function exportVisibleAsCsv() {
     const rows = getFilteredData();
@@ -2940,7 +3052,13 @@
   window.markPaymentSent = markPaymentSent;
   window.openUpgradeModal = openUpgradeModal;
   window.openAnalyticsPage = openAnalyticsPage;
-  window.openLinkDirect = openLinkDirect;
+  window.openLinkDirect = openLinkDirect;window.startTotpSetup = startTotpSetup;
+  window.startEmailOtpSetup = startEmailOtpSetup;
+  window.confirmEnable2fa = confirmEnable2fa;
+  window.disable2fa = disable2fa;
+  window.regenerateRecoveryCodes = regenerateRecoveryCodes;
+  window.resetSecuritySetupState = resetSecuritySetupState;
+
 
   init();
 </script>
