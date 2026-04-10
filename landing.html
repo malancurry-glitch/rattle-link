@@ -991,6 +991,7 @@
 
   <script>
     const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const PUBLIC_HOST = "https://rattleshortapi.it.com";
     const AUTOSAVE_KEY = "rattle_landing_builder_draft_v2";
 
     let landingStore = [];
@@ -1067,12 +1068,18 @@
     const statusFilter = document.getElementById("statusFilter");
 
     function authHeaders() {
-      const token = localStorage.getItem("token") || "";
+      const token =
+        localStorage.getItem("rattle_token") ||
+        localStorage.getItem("token") ||
+        "";
       return token ? { Authorization: `Bearer ${token}` } : {};
     }
 
     function ensureAuth() {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("rattle_token") ||
+        localStorage.getItem("token");
+
       if (!token) {
         alert("Missing login token. Please log in again.");
         window.location.href = "index.html";
@@ -1155,6 +1162,8 @@
         if (res.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("role");
+          localStorage.removeItem("rattle_token");
+          localStorage.removeItem("rattle_role");
           window.location.href = "index.html";
         }
         return { ok: res.ok, status: res.status, data, raw };
@@ -1188,35 +1197,60 @@
     function buildPublicLink(item) {
       const slug = String(item.slug || "").trim();
       const domain = normalizeDomain(item.domain || "");
+      if (!slug) return "#";
       if (domain) return `https://${domain}/${slug}`;
-      return `${PRIMARY_API.replace(/\/+$/, "")}/${slug}`;
+      return `${PUBLIC_HOST.replace(/\/+$/, "")}/${slug}`;
     }
 
     function normalizeLandingItem(item) {
+      let parsedButtons = [];
+
+      try {
+        if (Array.isArray(item.landingButtons)) {
+          parsedButtons = item.landingButtons;
+        } else if (Array.isArray(item.buttons)) {
+          parsedButtons = item.buttons;
+        } else if (Array.isArray(item.landing_buttons)) {
+          parsedButtons = item.landing_buttons;
+        } else if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
+          const parsed = JSON.parse(item.landing_buttons);
+          parsedButtons = Array.isArray(parsed) ? parsed : [];
+        }
+      } catch {
+        parsedButtons = [];
+      }
+
       return {
         ...item,
         backend: "primary",
+        slug: item.slug || "",
+        url: item.url || "",
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
         expire: item.expire ? Number(item.expire) : null,
         createdAt: Number(item.createdAt || item.created_at || 0),
         domain: normalizeDomain(item.domain || ""),
         linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
-        landingTitle: item.landingTitle || item.title || "",
-        landingDescription: item.landingDescription || item.description || "",
-        landingImage: item.landingImage || item.image || "",
-        landingTheme: item.landingTheme || item.theme || "#00ffff",
-        landingButtons: Array.isArray(item.landingButtons)
-          ? item.landingButtons
-          : (Array.isArray(item.buttons) ? item.buttons : []),
-        landingCtaLabel: item.landingCtaLabel || item.ctaLabel || "",
-        landingCtaUrl: item.landingCtaUrl || item.ctaUrl || "",
-        landingFooter: item.landingFooter || item.footer || "",
-        landingHtml: item.landingHtml || "",
-        landingCss: item.landingCss || "",
-        landingJs: item.landingJs || "",
-        metaTitle: item.metaTitle || "",
-        metaDescription: item.metaDescription || ""
+
+        landingTitle: item.landingTitle || item.landing_title || item.title || "",
+        landingDescription: item.landingDescription || item.landing_description || item.description || "",
+        landingImage: item.landingImage || item.landing_image || item.image || "",
+        landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
+        landingButtons: parsedButtons,
+        landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
+        landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+        landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
+        landingHtml: item.landingHtml || item.landing_html || "",
+        landingCss: item.landingCss || item.landing_css || "",
+        landingJs: item.landingJs || item.landing_js || "",
+        metaTitle: item.metaTitle || item.landing_meta_title || "",
+        metaDescription: item.metaDescription || item.landing_meta_description || "",
+
+        subtitle: item.subtitle || "",
+        ogTitle: item.ogTitle || "",
+        ogDescription: item.ogDescription || "",
+        ogImage: item.ogImage || "",
+        canonicalUrl: item.canonicalUrl || ""
       };
     }
 
@@ -1780,7 +1814,7 @@ ${customCss}
         return;
       }
 
-      setResult(`Landing created: ${res.data?.link || payload.slug}`, false);
+      setResult(`Landing created: ${res.data?.publicLink || payload.slug}`, false);
       setBuilderStatus("Landing created successfully.");
       saveDraft();
       await loadAll(false);
