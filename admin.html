@@ -8,21 +8,40 @@
   <script>
     (function bootstrapAdminAuth() {
       const params = new URLSearchParams(window.location.search);
+
       const tokenFromUrl = params.get("token");
       const roleFromUrl = params.get("role");
       const emailFromUrl = params.get("email");
 
-      if (tokenFromUrl) localStorage.setItem("token", tokenFromUrl);
-      if (roleFromUrl) localStorage.setItem("role", roleFromUrl);
-      if (emailFromUrl) localStorage.setItem("lastUser", emailFromUrl);
-
-      if (tokenFromUrl || roleFromUrl || emailFromUrl) {
-        const clean = window.location.pathname;
-        window.history.replaceState({}, "", clean);
+      if (tokenFromUrl) {
+        localStorage.setItem("token", tokenFromUrl);
+        localStorage.setItem("rattle_token", tokenFromUrl);
       }
 
-      const token = localStorage.getItem("token");
-      const role = localStorage.getItem("role");
+      if (roleFromUrl) {
+        localStorage.setItem("role", roleFromUrl);
+        localStorage.setItem("rattle_role", roleFromUrl);
+      }
+
+      if (emailFromUrl) {
+        localStorage.setItem("lastUser", emailFromUrl);
+        localStorage.setItem("rattle_user", emailFromUrl);
+      }
+
+      if (tokenFromUrl || roleFromUrl || emailFromUrl) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+
+      const token =
+        localStorage.getItem("rattle_token") ||
+        localStorage.getItem("token") ||
+        "";
+
+      const role =
+        localStorage.getItem("rattle_role") ||
+        localStorage.getItem("role") ||
+        "";
+
       if (!token || role !== "admin") {
         window.location.href = "index.html";
       }
@@ -35,53 +54,47 @@
     :root{
       --bg:#020617;
       --bg2:#0f172a;
-      --card:rgba(2,6,23,.88);
+      --card:rgba(2,6,23,.9);
       --card2:rgba(15,23,42,.72);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --primary:#00ffff;
-      --blue:#3b82f6;
       --green:#22c55e;
       --red:#ef4444;
       --yellow:#f59e0b;
+      --blue:#3b82f6;
       --purple:#8b5cf6;
-      --orange:#fb923c;
-      --sky:#60a5fa;
-      --pink:#ec4899;
-      --border:rgba(0,255,255,.15);
-      --shadow:0 0 18px rgba(0,255,255,.10);
+      --border:rgba(0,255,255,.14);
+      --shadow:0 0 18px rgba(0,255,255,.08);
       --radius:16px;
     }
 
-    *{ box-sizing:border-box; }
-    html{ scroll-behavior:smooth; }
+    * { box-sizing: border-box; }
 
-    body{
-      margin:0;
-      font-family:Inter, Arial, sans-serif;
-      background:radial-gradient(circle at top, var(--bg2), #000);
-      color:var(--text);
-      display:flex;
-      min-height:100vh;
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--bg2), #000);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
     }
-
-    body.compact .card{ padding:12px; margin-bottom:14px; }
-    body.compact th, body.compact td{ padding:8px; }
-    body.compact .stat .value{ font-size:24px; }
 
     body::before{
       content:"";
       position:fixed;
       inset:0;
       background-image:
-        linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(0,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,.035) 1px, transparent 1px);
       background-size:40px 40px;
       pointer-events:none;
     }
 
     .sidebar{
-      width:290px;
+      width:280px;
       min-height:100vh;
       background:#020617;
       border-right:1px solid var(--border);
@@ -100,20 +113,19 @@
 
     .brand h2{
       margin:0;
-      color:var(--primary);
-      text-shadow:0 0 10px var(--primary);
       font-size:22px;
+      color:var(--primary);
+      text-shadow:0 0 10px rgba(0,255,255,.28);
     }
 
     .brand p{
       margin:6px 0 0;
       color:var(--muted);
       font-size:12px;
-      line-height:1.5;
+      line-height:1.6;
     }
 
-    .nav-btn,
-    .sidebar button{
+    .nav-btn, .sidebar button{
       width:100%;
       margin:8px 0;
       padding:11px 12px;
@@ -123,24 +135,21 @@
       color:var(--primary);
       cursor:pointer;
       text-align:left;
-      transition:.2s;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:8px;
+      transition:.18s ease;
     }
 
-    .nav-btn:hover,
-    .sidebar button:hover,
-    button:hover{
+    .nav-btn:hover, .sidebar button:hover, button:hover{
       transform:translateY(-1px);
-      box-shadow:0 0 12px rgba(0,255,255,.18);
+      box-shadow:0 0 12px rgba(0,255,255,.15);
     }
 
     .nav-btn.active{
       background:rgba(0,255,255,.08);
-      border-color:rgba(0,255,255,.35);
-      box-shadow:0 0 0 1px rgba(0,255,255,.18) inset;
+      border-color:rgba(0,255,255,.28);
     }
 
     .sidebar-section{
@@ -151,34 +160,34 @@
 
     .sidebar-section h4{
       margin:0 0 8px;
-      font-size:12px;
       color:var(--muted);
-      letter-spacing:.08em;
+      font-size:12px;
       text-transform:uppercase;
+      letter-spacing:.08em;
     }
 
     .main{
       flex:1;
+      min-width:0;
       padding:20px;
       position:relative;
       z-index:1;
-      min-width:0;
     }
 
     .header{
       display:flex;
       justify-content:space-between;
-      gap:14px;
+      gap:12px;
       align-items:flex-start;
-      margin-bottom:18px;
       flex-wrap:wrap;
+      margin-bottom:18px;
     }
 
     .header h1{
       margin:0;
       color:var(--primary);
-      text-shadow:0 0 10px var(--primary);
       font-size:28px;
+      text-shadow:0 0 10px rgba(0,255,255,.26);
     }
 
     .sub{
@@ -186,17 +195,23 @@
       color:var(--muted);
       font-size:12px;
       line-height:1.6;
+      max-width:920px;
     }
 
-    .header-actions,
-    .toolbar,
-    .actions,
-    .inline-actions,
-    .toggle-row{
+    .header-actions, .toolbar, .actions{
       display:flex;
       gap:8px;
       flex-wrap:wrap;
       align-items:center;
+    }
+
+    .backend-badge{
+      display:inline-block;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      font-size:11px;
+      color:var(--primary);
     }
 
     .card{
@@ -215,60 +230,87 @@
       gap:16px;
     }
 
-    .grid-2{ display:grid; grid-template-columns:1.1fr .9fr; gap:16px; }
-    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-    .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-
-    .stat{ min-height:120px; }
-    .stat .label{ color:var(--muted); font-size:12px; margin-bottom:8px; }
-    .stat .value{ font-size:30px; color:var(--primary); font-weight:700; }
-    .stat .delta{ margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5; }
-
-    h2,h3,h4,h5{ margin-top:0; color:var(--primary); }
-
-    .toolbar{
-      margin-bottom:12px;
+    .grid-2{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:16px;
     }
 
-    .toolbar input,
-    .toolbar select,
-    .toolbar button,
-    input,
-    select,
-    textarea,
-    button{
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+    }
+
+    h2,h3,h4,h5{
+      margin-top:0;
+      color:var(--primary);
+    }
+
+    .stat .label{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+    }
+
+    .stat .value{
+      font-size:30px;
+      color:var(--primary);
+      font-weight:700;
+    }
+
+    .stat .delta{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    input, select, textarea, button{
       border-radius:10px;
       border:1px solid var(--border);
       background:#020617;
       color:var(--text);
       padding:10px 12px;
+      font:inherit;
     }
 
-    input, select, textarea{ width:100%; }
-    .toolbar input, .toolbar select{ width:auto; min-width:180px; }
-    input::placeholder, textarea::placeholder{ color:var(--muted); }
-    textarea{ width:100%; min-height:90px; resize:vertical; }
+    textarea{
+      width:100%;
+      min-height:100px;
+      resize:vertical;
+    }
 
-    button{ cursor:pointer; transition:.2s; }
-    button:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+    button{
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
 
     .btn-primary{ color:#fff; background:var(--blue); border-color:var(--blue); }
     .btn-green{ color:var(--green); border-color:var(--green); }
     .btn-red{ color:var(--red); border-color:var(--red); }
     .btn-yellow{ color:var(--yellow); border-color:var(--yellow); }
     .btn-purple{ color:var(--purple); border-color:var(--purple); }
-    .btn-action{ color:#fff; background:var(--orange); border-color:var(--orange); }
-    .btn-pink{ color:#fbcfe8; border-color:#ec4899; }
 
-    .table-wrap{ overflow:auto; width:100%; }
+    .table-wrap{
+      overflow:auto;
+      width:100%;
+    }
 
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1520px;
+      min-width:1380px;
     }
 
-    th,td{
+    th, td{
       padding:10px;
       border-bottom:1px solid rgba(255,255,255,.08);
       font-size:13px;
@@ -284,11 +326,9 @@
       color:#a5f3fc;
     }
 
-    tr:hover{ background:#020617; }
-    tr.payment-awaiting-row{ background:rgba(59,130,246,.08); }
-    tr.payment-awaiting-row:hover{ background:rgba(59,130,246,.16); }
-    tr.payment-cancelled-row{ background:rgba(239,68,68,.06); }
-    tr.payment-cancelled-row:hover{ background:rgba(239,68,68,.12); }
+    tr:hover{
+      background:#020617;
+    }
 
     .badge{
       display:inline-block;
@@ -301,21 +341,18 @@
       margin-bottom:4px;
     }
 
-    .active{ background:#022c22; color:var(--green); }
-    .banned{ background:#2b0000; color:var(--red); }
-    .paused{ background:#2b1a00; color:var(--yellow); }
+    .active{ background:#052e16; color:#86efac; }
+    .banned{ background:#3a0b0b; color:#fecaca; }
+    .paused{ background:#3b2502; color:#fde68a; }
     .admin{ background:#1e1b4b; color:#c4b5fd; }
-    .trial{ background:#03263a; color:var(--primary); }
+    .trial{ background:#03263a; color:#67e8f9; }
     .pending{ background:#332701; color:#fde68a; }
-    .awaiting{ background:#172554; color:#93c5fd; border-color:rgba(147,197,253,.3); }
-    .needs-action{ background:#431407; color:#fdba74; border-color:rgba(251,146,60,.3); }
+    .awaiting{ background:#172554; color:#93c5fd; }
     .expired{ background:#3a0b0b; color:#fca5a5; }
     .verified{ background:#052e16; color:#86efac; }
     .cancelled{ background:#3a0b0b; color:#fca5a5; }
-    .legacy-source{ background:#3a2a00; color:#fde047; }
-    .primary-source{ background:#062e1d; color:#86efac; }
-    .domain-pending{ background:#332701; color:#fde68a; }
     .domain-verified{ background:#052e16; color:#86efac; }
+    .domain-pending{ background:#332701; color:#fde68a; }
     .landing-type{ background:#1e1b4b; color:#c4b5fd; }
     .redirect-type{ background:#03263a; color:#67e8f9; }
     .risk-high{ background:#450a0a; color:#fecaca; }
@@ -331,16 +368,38 @@
       margin:0;
     }
 
+    .list-box{
+      max-height:320px;
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:#010816;
+    }
+
+    .list-box > div{
+      padding:8px 0;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .list-box > div:last-child{
+      border-bottom:none;
+    }
+
+    .hidden{ display:none !important; }
+
     .panel{
       position:fixed;
       right:0;
       top:0;
-      width:700px;
+      width:720px;
       max-width:100%;
       height:100%;
       background:#000;
       border-left:1px solid var(--border);
-      box-shadow:-12px 0 30px rgba(0,255,255,.16);
+      box-shadow:-12px 0 30px rgba(0,255,255,.12);
       padding:18px;
       display:none;
       overflow:auto;
@@ -375,104 +434,6 @@
       line-height:1.5;
     }
 
-    .mini-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:12px;
-    }
-
-    .list-box{
-      max-height:300px;
-      overflow:auto;
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:10px;
-      background:#010816;
-    }
-
-    .list-box > div{
-      padding:8px 0;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:13px;
-      line-height:1.55;
-    }
-
-    .list-box > div:last-child{ border-bottom:none; }
-    .hidden{ display:none !important; }
-
-    .backend-badge{
-      display:inline-block;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      font-size:11px;
-      color:var(--primary);
-    }
-
-    .section-note{
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:10px;
-      line-height:1.6;
-    }
-
-    .payment-qr{
-      display:inline-block;
-      background:#fff;
-      padding:8px;
-      border-radius:10px;
-      margin-top:8px;
-    }
-
-    .payment-qr img{
-      width:160px;
-      height:160px;
-      display:block;
-    }
-
-    .code-box{
-      font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
-      background:#020617;
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:10px;
-      word-break:break-all;
-      font-size:12px;
-      margin-top:8px;
-    }
-
-    .highlight-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(251,146,60,.1);
-      border:1px solid rgba(251,146,60,.28);
-      margin-bottom:12px;
-    }
-
-    .danger-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(239,68,68,.08);
-      border:1px solid rgba(239,68,68,.25);
-      margin-bottom:12px;
-    }
-
-    .success-box{
-      padding:12px;
-      border-radius:12px;
-      background:rgba(34,197,94,.08);
-      border:1px solid rgba(34,197,94,.25);
-      margin-bottom:12px;
-    }
-
-    .preview-frame{
-      width:100%;
-      min-height:520px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:#fff;
-    }
-
     .progress{
       width:100%;
       height:8px;
@@ -503,17 +464,59 @@
       padding:12px;
     }
 
-    .pill-toggle{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
+    .highlight-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(251,146,60,.1);
+      border:1px solid rgba(251,146,60,.28);
+      margin-bottom:12px;
+    }
+
+    .danger-box{
+      padding:12px;
+      border-radius:12px;
+      background:rgba(239,68,68,.08);
+      border:1px solid rgba(239,68,68,.25);
+      margin-bottom:12px;
+    }
+
+    .code-box{
+      font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+      background:#020617;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      word-break:break-all;
+      font-size:12px;
+      margin-top:8px;
+    }
+
+    .payment-qr{
+      display:inline-block;
+      background:#fff;
+      padding:8px;
+      border-radius:10px;
+      margin-top:8px;
+    }
+
+    .payment-qr img{
+      width:160px;
+      height:160px;
+      display:block;
+    }
+
+    .preview-frame{
+      width:100%;
+      min-height:520px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
     }
 
     @media (max-width: 1100px){
       body{ display:block; }
       .sidebar{ width:100%; min-height:auto; position:static; }
-      .grid-2,.grid-3,.grid-4{ grid-template-columns:1fr; }
+      .grid-2,.grid-3{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -521,7 +524,7 @@
   <aside class="sidebar">
     <div class="brand">
       <h2>👑 Admin</h2>
-      <p>Rattle Link Control Center</p>
+      <p>Backend2 Control Center</p>
     </div>
 
     <button class="nav-btn active" id="navOverview"><span>📊 Overview</span><span class="tiny">Home</span></button>
@@ -537,14 +540,11 @@
       <h4>Quick Actions</h4>
       <button id="refreshAllBtn">🔄 Refresh Now</button>
       <button id="createUserBtn">➕ Create User</button>
-      <button id="openPaymentSearchBtn">🔎 Search Payment</button>
       <button id="showAwaitingBtn">⚡ Awaiting Payments</button>
       <button id="showPendingBtn">🟡 Pending Payments</button>
       <button id="showVerifiedBtn">✅ Verified Payments</button>
       <button id="showDomainsBtn">🌐 View Domains</button>
       <button id="showLandingBtn">🪄 View Landing Pages</button>
-      <button id="openBroadcastBtn">📣 Broadcast</button>
-      <button id="openSettingsBtn">⚙️ Settings</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Items</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
@@ -552,27 +552,19 @@
       <button id="exportLandingBtn">⬇️ Export Landing</button>
       <button id="logoutBtn" class="btn-red">🚪 Logout</button>
     </div>
-
-    <div class="sidebar-section">
-      <h4>Live Controls</h4>
-      <div class="pill-toggle">
-        <label><input type="checkbox" id="compactModeToggle" /> Compact</label>
-      </div>
-      <div class="pill-toggle" style="margin-top:8px;">
-        <label><input type="checkbox" id="onlyAwaitingToggle" /> Awaiting only</label>
-      </div>
-    </div>
   </aside>
 
   <main class="main">
     <div class="header">
       <div>
-        <h1>📊 Enterprise Control Center</h1>
-        <div class="sub">Advanced admin dashboard for Backend2 + Legacy AWS merged control, custom domains, landing pages, slot-based subscriptions, payment verification, and risk review.</div>
+        <h1>📊 Admin Control Center</h1>
+        <div class="sub">
+          Backend2 admin dashboard for users, payments, links, custom domains, landing pages, audit logs, and security review.
+        </div>
       </div>
 
       <div class="header-actions">
-        <span id="backendBadge" class="backend-badge">Merged Backend View</span>
+        <span id="backendBadge" class="backend-badge">Backend2 Admin View</span>
         <span id="riskBadge" class="badge risk-low">LOW RISK</span>
         <button id="autoRefreshBtn">⏱️ Auto Refresh: ON</button>
         <button id="refreshBtn" class="btn-primary">Refresh</button>
@@ -581,64 +573,20 @@
 
     <section id="overviewSection">
       <div class="grid">
-        <div class="card stat">
-          <div class="label">Total Users</div>
-          <div class="value" id="statUsers">0</div>
-          <div class="delta" id="statUsersMeta">Accounts in system</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Total Items</div>
-          <div class="value" id="statLinks">0</div>
-          <div class="delta" id="statLinksMeta">Short links + landing pages</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Landing Pages</div>
-          <div class="value" id="statLanding">0</div>
-          <div class="delta" id="statLandingMeta">Hosted landing pages</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Custom Domains</div>
-          <div class="value" id="statDomains">0</div>
-          <div class="delta" id="statDomainsMeta">Attached user domains</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Total Clicks</div>
-          <div class="value" id="statClicks">0</div>
-          <div class="delta" id="statClicksMeta">Tracked visits</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Pending Payments</div>
-          <div class="value" id="statPendingPayments">0</div>
-          <div class="delta" id="statPendingPaymentsMeta">Waiting admin verification</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Needs Action</div>
-          <div class="value" id="statAwaitingPayments">0</div>
-          <div class="delta" id="statAwaitingPaymentsMeta">Users clicked “I Made a Transfer”</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Active Subscriptions</div>
-          <div class="value" id="statActiveSubs">0</div>
-          <div class="delta" id="statActiveSubsMeta">Users with full access</div>
-        </div>
-
-        <div class="card stat">
-          <div class="label">Admins</div>
-          <div class="value" id="statAdmins">0</div>
-          <div class="delta" id="statAdminsMeta">Admin accounts</div>
-        </div>
+        <div class="card stat"><div class="label">Total Users</div><div class="value" id="statUsers">0</div><div class="delta" id="statUsersMeta">Accounts in system</div></div>
+        <div class="card stat"><div class="label">Total Items</div><div class="value" id="statLinks">0</div><div class="delta" id="statLinksMeta">Short links + landing pages</div></div>
+        <div class="card stat"><div class="label">Landing Pages</div><div class="value" id="statLanding">0</div><div class="delta" id="statLandingMeta">Hosted landing pages</div></div>
+        <div class="card stat"><div class="label">Custom Domains</div><div class="value" id="statDomains">0</div><div class="delta" id="statDomainsMeta">Attached user domains</div></div>
+        <div class="card stat"><div class="label">Total Clicks</div><div class="value" id="statClicks">0</div><div class="delta" id="statClicksMeta">Tracked visits</div></div>
+        <div class="card stat"><div class="label">Pending Payments</div><div class="value" id="statPendingPayments">0</div><div class="delta" id="statPendingPaymentsMeta">Waiting admin verification</div></div>
+        <div class="card stat"><div class="label">Needs Action</div><div class="value" id="statAwaitingPayments">0</div><div class="delta" id="statAwaitingPaymentsMeta">Users clicked “I Made a Transfer”</div></div>
+        <div class="card stat"><div class="label">Active Subscriptions</div><div class="value" id="statActiveSubs">0</div><div class="delta" id="statActiveSubsMeta">Users with full access</div></div>
+        <div class="card stat"><div class="label">Admins</div><div class="value" id="statAdmins">0</div><div class="delta" id="statAdminsMeta">Admin accounts</div></div>
       </div>
 
       <div class="grid-3">
         <div class="card">
-          <h3>📈 Click Analytics</h3>
+          <h3>📈 Analytics</h3>
           <div class="toolbar">
             <select id="chartModeSelect">
               <option value="clicks">Top Clicks</option>
@@ -670,46 +618,22 @@
         </div>
 
         <div class="card">
-          <h3>⚙️ Quick Filters</h3>
+          <h3>🔎 Global Search</h3>
           <div class="toolbar">
-            <input id="globalSearch" placeholder="Global search users, links, domains, payments..." />
-            <select id="sourceFilterGlobal">
-              <option value="">All sources</option>
-              <option value="primary">Backend2</option>
-              <option value="legacy">Legacy AWS</option>
-            </select>
-            <button id="clearGlobalFiltersBtn">Reset</button>
+            <input id="globalSearch" placeholder="Search users, links, domains, payments..." />
           </div>
         </div>
       </div>
 
       <div class="grid-3">
-        <div class="card">
-          <h3>⚡ Awaiting Confirmation</h3>
-          <div id="awaitingList" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>🌐 Latest Domains</h3>
-          <div id="domainList" class="list-box"></div>
-        </div>
-
-        <div class="card">
-          <h3>🪄 Latest Landing Pages</h3>
-          <div id="landingList" class="list-box"></div>
-        </div>
+        <div class="card"><h3>⚡ Awaiting Confirmation</h3><div id="awaitingList" class="list-box"></div></div>
+        <div class="card"><h3>🌐 Latest Domains</h3><div id="domainList" class="list-box"></div></div>
+        <div class="card"><h3>🪄 Latest Landing Pages</h3><div id="landingList" class="list-box"></div></div>
       </div>
 
       <div class="grid-2">
-        <div class="card">
-          <h3>📌 Subscription Summary</h3>
-          <div id="subscriptionStats" class="metric-grid"></div>
-        </div>
-
-        <div class="card">
-          <h3>🕒 Activity Stream</h3>
-          <div id="activityStream" class="list-box"></div>
-        </div>
+        <div class="card"><h3>📌 Subscription Summary</h3><div id="subscriptionStats" class="metric-grid"></div></div>
+        <div class="card"><h3>🕒 Activity Stream</h3><div id="activityStream" class="list-box"></div></div>
       </div>
 
       <div class="card">
@@ -735,11 +659,6 @@
             <option value="subscribed">Subscribed</option>
             <option value="paused">Paused Subscription</option>
           </select>
-          <button id="bulkVerifyUsersBtn">Bulk Verify Visible</button>
-        </div>
-
-        <div class="section-note">
-          Users from both backends are merged. Source backend is shown so admin actions always hit the correct server. Backend2 users should expose plan limits, active slot usage, and remaining slots.
         </div>
 
         <div class="table-wrap">
@@ -752,7 +671,6 @@
                 <th>Short Links</th>
                 <th>Landing Pages</th>
                 <th>Subscription</th>
-                <th>Source</th>
                 <th>Requests</th>
                 <th>Actions</th>
               </tr>
@@ -780,11 +698,10 @@
             <option value="monthly">Monthly</option>
             <option value="premium_monthly">Premium Monthly</option>
           </select>
-          <button id="bulkVerifyAwaitingBtn" class="btn-action">Verify Visible Awaiting</button>
         </div>
 
         <div class="highlight-box">
-          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>. Backend2 payment rows also support quantity-based purchases.
+          <b>Needs Action:</b> Payments marked as <b>awaiting confirmation</b> were submitted by users after they clicked <b>I Made a Transfer</b>.
         </div>
 
         <div class="table-wrap">
@@ -798,7 +715,6 @@
                 <th>Amount</th>
                 <th>Crypto</th>
                 <th>Status</th>
-                <th>Source</th>
                 <th>Requested</th>
                 <th>Actions</th>
               </tr>
@@ -829,7 +745,6 @@
             <option value="slug_asc">Sort: Slug A-Z</option>
             <option value="user_asc">Sort: User A-Z</option>
           </select>
-          <button id="exportVisibleLinksBtn">Export Visible</button>
         </div>
 
         <div class="table-wrap">
@@ -844,7 +759,6 @@
                 <th>Clicks</th>
                 <th>Status</th>
                 <th>Expire</th>
-                <th>Source</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -863,11 +777,6 @@
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
           </select>
-          <button id="refreshDomainsOnlyBtn">Refresh Domains</button>
-        </div>
-
-        <div class="section-note">
-          Domain data comes from Backend2. Admin can review, verify, and remove custom domains. Standard setup uses TXT verification only.
         </div>
 
         <div class="table-wrap">
@@ -895,16 +804,6 @@
       <div class="card">
         <div class="toolbar">
           <input id="landingSearch" placeholder="Search landing slug, title, domain, user..." />
-          <select id="landingSourceFilter">
-            <option value="">All sources</option>
-            <option value="primary">Backend2</option>
-            <option value="legacy">Legacy AWS</option>
-          </select>
-          <button id="refreshLandingOnlyBtn">Refresh Landing</button>
-        </div>
-
-        <div class="section-note">
-          Landing pages are link records with <b>linkType = landing</b>. You can preview, inspect, and remove them here. Backend2 landing deletes should use <b>/landing/delete</b>.
         </div>
 
         <div class="table-wrap">
@@ -917,7 +816,6 @@
                 <th>Title</th>
                 <th>Theme</th>
                 <th>Clicks</th>
-                <th>Source</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -931,7 +829,6 @@
       <div class="card">
         <div class="toolbar">
           <input id="auditSearch" placeholder="Search audit action or target..." />
-          <button id="refreshAuditBtn">Refresh Audit</button>
         </div>
         <h3>📜 Audit Logs</h3>
         <div id="auditLogs" class="list-box" style="max-height:520px;"></div>
@@ -941,7 +838,6 @@
     <section id="securitySection" class="hidden">
       <div class="card">
         <h3>🛡 Security Center</h3>
-        <div class="section-note">Review elevated traffic, unusually high click volume, suspicious activity markers inferred from loaded records, and payments awaiting manual approval.</div>
         <div id="securityPanelContent" class="grid-2"></div>
       </div>
     </section>
@@ -959,37 +855,20 @@
 
   <script>
     const PRIMARY_API = "https://api.rattleshortapi.it.com";
-    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const DEFAULT_PRIMARY_HOST = "rattleshortapi.it.com";
-    const DEFAULT_LEGACY_HOST = "suvegwrmzl.execute-api.us-east-2.amazonaws.com";
-
-    const API_BY_SOURCE = {
-      primary: PRIMARY_API,
-      legacy: LEGACY_API
-    };
+    const DEFAULT_PUBLIC_HOST = "rattleshortapi.it.com";
 
     let usersData = [];
     let linksData = [];
     let paymentsData = [];
-    let auditData = [];
     let domainsData = [];
+    let auditData = [];
     let landingData = [];
     let chart = null;
     let autoRefresh = true;
     let refreshTimer = null;
     let isLoading = false;
-    let compactMode = false;
 
-    const lastGoodState = {
-      usersData: [],
-      linksData: [],
-      paymentsData: [],
-      auditData: [],
-      domainsData: [],
-      landingData: []
-    };
-
-    const $ = id => document.getElementById(id);
+    const $ = (id) => document.getElementById(id);
 
     const statUsers = $("statUsers");
     const statLinks = $("statLinks");
@@ -1049,22 +928,49 @@
     const domainSearch = $("domainSearch");
     const domainStatusFilter = $("domainStatusFilter");
     const landingSearch = $("landingSearch");
-    const landingSourceFilter = $("landingSourceFilter");
     const auditSearch = $("auditSearch");
     const globalSearch = $("globalSearch");
-    const sourceFilterGlobal = $("sourceFilterGlobal");
-    const onlyAwaitingToggle = $("onlyAwaitingToggle");
-    const compactModeToggle = $("compactModeToggle");
     const chartModeSelect = $("chartModeSelect");
 
+    function getToken() {
+      return localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
+    }
+
+    function getRole() {
+      return localStorage.getItem("rattle_role") || localStorage.getItem("role") || "";
+    }
+
+    function getUsername() {
+      return localStorage.getItem("rattle_user") || localStorage.getItem("lastUser") || "";
+    }
+
     function authHeaders(method = "GET") {
-      const token = localStorage.getItem("token") || "";
-      const headers = { "Authorization": token ? `Bearer ${token}` : "" };
+      const token = getToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       if (method !== "GET") headers["Content-Type"] = "application/json";
       return headers;
     }
 
-    function setBackendBadge(text = "Merged View • Backend2 + Legacy AWS") {
+    function clearSession() {
+      [
+        "rattle_token",
+        "token",
+        "rattle_role",
+        "role",
+        "rattle_user",
+        "lastUser",
+        "sessionBackend",
+        "authBackend",
+        "magicBackend"
+      ].forEach((k) => localStorage.removeItem(k));
+    }
+
+    function logout() {
+      clearSession();
+      window.location.href = "index.html";
+    }
+
+    function setBackendBadge(text = "Backend2 Admin View") {
       backendBadge.textContent = text;
     }
 
@@ -1091,14 +997,14 @@
         .replaceAll("'", "&#39;");
     }
 
-    function logout() {
-      localStorage.clear();
-      window.location.href = "index.html";
+    function fmtDate(ts) {
+      const n = Number(ts || 0);
+      return n ? new Date(n).toLocaleString() : "-";
     }
 
-    async function safeFetchRaw(baseUrl, path, method = "GET", body = null, allowLogout = false) {
+    async function safeFetchRaw(path, method = "GET", body = null, allowLogout = false) {
       try {
-        const res = await fetch(baseUrl.replace(/\/+$/, "") + path, {
+        const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, {
           method,
           headers: authHeaders(method),
           body: body ? JSON.stringify(body) : null
@@ -1116,59 +1022,44 @@
 
         return { ok: res.ok, status: res.status, data };
       } catch (e) {
-        console.error(e);
-        return { ok: false, status: 0, data: { message: "Network error" } };
+        return { ok: false, status: 0, data: { message: e?.message || "Network error" } };
       }
     }
 
-    async function fetchBySource(source, path, method = "GET", body = null, allowLogout = false) {
-      const base = API_BY_SOURCE[source];
-      const result = await safeFetchRaw(base, path, method, body, allowLogout);
-      return { ...result, source };
-    }
-
-    async function fetchBoth(path, method = "GET", body = null) {
-      const [primary, legacy] = await Promise.all([
-        fetchBySource("primary", path, method, body, false),
-        fetchBySource("legacy", path, method, body, false)
-      ]);
-      return { primary, legacy };
+    async function callApi(path, method = "GET", body = null, allowLogout = false) {
+      return safeFetchRaw(path, method, body, allowLogout);
     }
 
     async function logAudit(action, target) {
-      await fetchBySource("primary", "/admin/audit", "POST", {
+      await callApi("/admin/audit", "POST", {
         action,
         target,
-        time: Date.now(),
-        admin: localStorage.getItem("lastUser") || "admin"
+        admin: getUsername() || "admin",
+        time: Date.now()
       }, false);
     }
 
     function showSection(sectionName) {
-      [overviewSection, usersSection, paymentsSection, linksSection, domainsSection, landingSection, auditSection, securitySection].forEach(el => el.classList.add("hidden"));
+      [overviewSection, usersSection, paymentsSection, linksSection, domainsSection, landingSection, auditSection, securitySection]
+        .forEach(el => el.classList.add("hidden"));
+
       document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
 
-      if (sectionName === "overview") overviewSection.classList.remove("hidden");
-      if (sectionName === "users") usersSection.classList.remove("hidden");
-      if (sectionName === "payments") paymentsSection.classList.remove("hidden");
-      if (sectionName === "links") linksSection.classList.remove("hidden");
-      if (sectionName === "domains") domainsSection.classList.remove("hidden");
-      if (sectionName === "landing") landingSection.classList.remove("hidden");
-      if (sectionName === "audit") auditSection.classList.remove("hidden");
-      if (sectionName === "security") securitySection.classList.remove("hidden");
-
-      const activeBtnMap = {
-        overview: "navOverview",
-        users: "navUsers",
-        payments: "navPayments",
-        links: "navLinks",
-        domains: "navDomains",
-        landing: "navLanding",
-        audit: "navAudit",
-        security: "navSecurity"
+      const map = {
+        overview: [overviewSection, "navOverview"],
+        users: [usersSection, "navUsers"],
+        payments: [paymentsSection, "navPayments"],
+        links: [linksSection, "navLinks"],
+        domains: [domainsSection, "navDomains"],
+        landing: [landingSection, "navLanding"],
+        audit: [auditSection, "navAudit"],
+        security: [securitySection, "navSecurity"]
       };
-      const btn = $(activeBtnMap[sectionName]);
-      if (btn) btn.classList.add("active");
+
+      const pair = map[sectionName];
+      if (!pair) return;
+      pair[0].classList.remove("hidden");
+      $(pair[1]).classList.add("active");
     }
 
     function closePanel() {
@@ -1176,28 +1067,21 @@
       panelContent.innerHTML = "";
     }
 
-    function fmtDate(ts) {
-      const n = Number(ts || 0);
-      if (!n) return "-";
-      return new Date(n).toLocaleString();
-    }
-
-    function getLinkStatusBadge(link) {
-      return link.paused ? `<span class="badge paused">PAUSED</span>` : `<span class="badge active">ACTIVE</span>`;
-    }
-
     function getUserStatusBadge(user) {
       return user.banned ? `<span class="badge banned">BANNED</span>` : `<span class="badge active">ACTIVE</span>`;
     }
 
     function getRoleBadge(role) {
-      return role === "admin" ? `<span class="badge admin">ADMIN</span>` : `<span class="badge">USER</span>`;
+      return role === "admin"
+        ? `<span class="badge admin">ADMIN</span>`
+        : `<span class="badge">USER</span>`;
     }
 
     function getSubscriptionBadge(user) {
-      const status = String(user.subscriptionStatus || user.subscription_status || "trial").toLowerCase();
-      const paused = !!(user.subscriptionPaused || user.subscription_paused);
-      const expiresAt = Number(user.subscriptionExpiresAt || user.subscription_expires_at || 0);
+      const status = String(user.subscriptionStatus || "trial").toLowerCase();
+      const paused = !!user.subscriptionPaused;
+      const expiresAt = Number(user.subscriptionExpiresAt || 0);
+
       if (paused) return `<span class="badge paused">PAUSED</span>`;
       if (status === "active" && expiresAt > Date.now()) return `<span class="badge active">ACTIVE</span>`;
       if (status === "expired" || (expiresAt && expiresAt <= Date.now())) return `<span class="badge expired">EXPIRED</span>`;
@@ -1207,7 +1091,7 @@
     function getPaymentStatusBadge(payment) {
       const s = String(payment.status || "").toLowerCase();
       if (s === "verified") return `<span class="badge verified">VERIFIED</span>`;
-      if (s === "awaiting_confirmation") return `<span class="badge awaiting">AWAITING CONFIRMATION</span> <span class="badge needs-action">NEEDS ACTION</span>`;
+      if (s === "awaiting_confirmation") return `<span class="badge awaiting">AWAITING CONFIRMATION</span>`;
       if (s === "pending") return `<span class="badge pending">PENDING</span>`;
       if (s === "cancelled") return `<span class="badge cancelled">CANCELLED</span>`;
       return `<span class="badge">${escapeHtml(payment.status || "unknown")}</span>`;
@@ -1215,26 +1099,30 @@
 
     function getDomainStatusBadge(domain) {
       const s = String(domain.status || "").toLowerCase();
-      if (s === "verified") return `<span class="badge domain-verified">VERIFIED</span>`;
-      return `<span class="badge domain-pending">PENDING</span>`;
+      return s === "verified"
+        ? `<span class="badge domain-verified">VERIFIED</span>`
+        : `<span class="badge domain-pending">PENDING</span>`;
     }
 
     function getLinkTypeBadge(link) {
-      const t = String(link.linkType || link.link_type || "redirect").toLowerCase();
-      if (t === "landing") return `<span class="badge landing-type">LANDING</span>`;
-      return `<span class="badge redirect-type">REDIRECT</span>`;
+      const t = String(link.linkType || "redirect").toLowerCase();
+      return t === "landing"
+        ? `<span class="badge landing-type">LANDING</span>`
+        : `<span class="badge redirect-type">REDIRECT</span>`;
     }
 
-    function getSourceBadge(source) {
-      return source === "legacy" ? `<span class="badge legacy-source">LEGACY AWS</span>` : `<span class="badge primary-source">BACKEND2</span>`;
+    function getLinkStatusBadge(link) {
+      return link.paused
+        ? `<span class="badge paused">PAUSED</span>`
+        : `<span class="badge active">ACTIVE</span>`;
     }
 
-    function defaultHostBySource(source) {
-      return source === "legacy" ? DEFAULT_LEGACY_HOST : DEFAULT_PRIMARY_HOST;
+    function defaultHost() {
+      return DEFAULT_PUBLIC_HOST;
     }
 
     function buildPublicLink(item) {
-      const domain = item.domain || defaultHostBySource(item.source);
+      const domain = item.domain || defaultHost();
       return `https://${domain}/${item.slug}`;
     }
 
@@ -1257,176 +1145,100 @@
       return code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase());
     }
 
-    function formatActiveUsage(user, key) {
+    function formatUsage(user, key) {
       const usage = user.usage || {};
       const limits = user.planLimits || {};
       const remaining = user.remaining || {};
       const used = Number(usage[key] || 0);
       const limit = Number(limits[key] || 0);
-      const left = Number(remaining[key] || Math.max(0, limit - used) || 0);
+      const left = Number(remaining[key] || Math.max(0, limit - used));
       return `${used}/${limit} used • ${left} left`;
     }
 
-    function formatTrial(user) {
-      if (user.source === "primary" && user.planLimits && user.usage) {
-        return formatActiveUsage(user, "activeShortLinks");
-      }
-      const limit = Number(user.trialLinksLimit || user.trial_links_limit || 0);
-      const used = Number(user.trialLinksUsed || user.trial_links_used || 0);
-      const remain = Math.max(0, limit - used);
-      return `${used}/${limit} used • ${remain} left`;
-    }
-
-    function formatLandingUsage(user) {
-      if (user.source === "primary" && user.planLimits && user.usage) {
-        return formatActiveUsage(user, "activeLandingPages");
-      }
-      return "-";
-    }
-
-    function normalizeUser(item, source) {
+    function normalizeUser(item) {
       return {
-        ...item,
-        source,
         username: item.username || "",
         role: item.role || "user",
         banned: !!item.banned,
-        planLimits: item.planLimits || item.plan_limits || null,
+        requests: Number(item.requests || 0),
+        createdAt: Number(item.createdAt || 0),
+        emailVerified: !!item.emailVerified,
+        subscriptionStatus: item.subscriptionStatus || "trial",
+        subscriptionPlan: item.subscriptionPlan || null,
+        subscriptionPaused: !!item.subscriptionPaused,
+        subscriptionExpiresAt: Number(item.subscriptionExpiresAt || 0) || null,
+        planLimits: item.planLimits || null,
         usage: item.usage || null,
-        remaining: item.remaining || null
+        remaining: item.remaining || null,
+        trialLinksLimit: Number(item.trialLinksLimit || 0),
+        trialLinksUsed: Number(item.trialLinksUsed || 0)
       };
     }
 
-    function normalizeLink(item, source) {
+    function normalizeLink(item) {
       return {
-        ...item,
-        source,
+        id: item.id,
         slug: item.slug || "",
         url: item.url || "",
         user: item.user || item.username || "",
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
-        expire: item.expire || null,
+        expire: item.expire ? Number(item.expire) : null,
+        createdAt: Number(item.createdAt || 0),
         domain: item.domain || null,
         linkType: item.linkType || item.link_type || "redirect",
-        landingTitle: item.landingTitle || item.landing_title || "",
-        landingDescription: item.landingDescription || item.landing_description || "",
-        landingImage: item.landingImage || item.landing_image || "",
-        landingTheme: item.landingTheme || item.landing_theme || "",
-        landingButtons: item.landingButtons || item.landing_buttons || [],
-        landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || "",
-        landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || "",
-        landingFooter: item.landingFooter || item.landing_footer || "",
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        maxRisk: Number(item.maxRisk || item.max_risk || 0)
+        maxRisk: Number(item.maxRisk || 0)
       };
     }
 
-    function normalizePayment(item, source) {
+    function normalizePayment(item) {
       return {
-        ...item,
-        source,
         id: item.id || "",
         username: item.username || "",
-        amountUsd: Number(item.amountUsd || item.amount_usd || 0),
+        planCode: item.planCode || "",
         quantity: Number(item.quantity || 1),
-        planCode: item.planCode || item.plan_code || item.billingCycle || item.billing_cycle || ""
+        billingCycle: item.billingCycle || "",
+        amountUsd: Number(item.amountUsd || 0),
+        cryptoCode: item.cryptoCode || "",
+        networkCode: item.networkCode || "",
+        address: item.address || "",
+        qrImageUrl: item.qrImageUrl || "",
+        status: item.status || "pending",
+        requestedFrom: item.requestedFrom || "new",
+        createdAt: Number(item.createdAt || 0),
+        expiresAt: Number(item.expiresAt || 0),
+        verifiedAt: Number(item.verifiedAt || 0) || null,
+        verifiedBy: item.verifiedBy || null
       };
     }
 
     function normalizeDomain(item) {
       return {
-        ...item,
         id: item.id || "",
         username: item.username || "",
         domain: item.domain || "",
         status: item.status || "pending",
-        verifyToken: item.verifyToken || item.verify_token || "",
-        verificationTarget: item.verificationTarget || item.verification_target || "",
-        createdAt: Number(item.createdAt || item.created_at || 0),
-        verifiedAt: Number(item.verifiedAt || item.verified_at || 0) || null,
-        isPrimary: !!(item.isPrimary || item.is_primary)
+        verifyToken: item.verifyToken || "",
+        verificationTarget: item.verificationTarget || "",
+        createdAt: Number(item.createdAt || 0),
+        verifiedAt: Number(item.verifiedAt || 0) || null,
+        isPrimary: !!item.isPrimary
       };
     }
 
-    function normalizeAudit(item, source) {
-      return { ...item, source };
-    }
-
-    function mergeByKey(items, keyFn) {
-      const map = new Map();
-      for (const item of items) {
-        const key = keyFn(item);
-        if (!map.has(key)) map.set(key, item);
-        else {
-          const existing = map.get(key);
-          const preferNew = (item.source === "primary" && existing.source !== "primary");
-          if (preferNew) map.set(key, { ...existing, ...item });
-          else map.set(key, { ...item, ...existing });
-        }
-      }
-      return [...map.values()];
-    }
-
-    function mergeUsers(primaryUsers, legacyUsers) {
-      const merged = mergeByKey([
-        ...legacyUsers.map(u => normalizeUser(u, "legacy")),
-        ...primaryUsers.map(u => normalizeUser(u, "primary"))
-      ], item => item.username);
-      merged.sort((a, b) => String(a.username).localeCompare(String(b.username)));
-      return merged;
-    }
-
-    function mergeLinks(primaryLinks, legacyLinks) {
-      const merged = [...legacyLinks.map(l => normalizeLink(l, "legacy")), ...primaryLinks.map(l => normalizeLink(l, "primary"))];
-      merged.sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-      return merged;
-    }
-
-    function mergeDomains(primaryDomains) {
-      return (Array.isArray(primaryDomains) ? primaryDomains : []).map(normalizeDomain).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-    }
-
-    function paymentPriorityScore(p) {
-      const s = String(p.status || "").toLowerCase();
-      if (s === "awaiting_confirmation") return 0;
-      if (s === "pending") return 1;
-      if (s === "verified") return 2;
-      if (s === "cancelled") return 3;
-      return 4;
-    }
-
-    function mergePayments(primaryPayments, legacyPayments) {
-      const merged = mergeByKey([
-        ...legacyPayments.map(p => normalizePayment(p, "legacy")),
-        ...primaryPayments.map(p => normalizePayment(p, "primary"))
-      ], item => item.id);
-      merged.sort((a, b) => {
-        const p = paymentPriorityScore(a) - paymentPriorityScore(b);
-        if (p !== 0) return p;
-        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
-      });
-      return merged;
-    }
-
-    function mergeAudits(primaryAudits, legacyAudits) {
-      const merged = mergeByKey([
-        ...legacyAudits.map(a => normalizeAudit(a, "legacy")),
-        ...primaryAudits.map(a => normalizeAudit(a, "primary"))
-      ], item => `${item.id || ""}-${item.time || ""}-${item.action || ""}-${item.target || ""}`);
-      merged.sort((a, b) => Number(b.time || 0) - Number(a.time || 0));
-      return merged;
+    function normalizeAudit(item) {
+      return {
+        id: item.id || "",
+        admin: item.admin || "",
+        action: item.action || "",
+        target: item.target || "",
+        time: Number(item.time || 0)
+      };
     }
 
     function getGlobalFilteredData(list) {
       const q = String(globalSearch?.value || "").trim().toLowerCase();
-      const source = String(sourceFilterGlobal?.value || "");
-      return list.filter(item => {
-        const text = JSON.stringify(item).toLowerCase();
-        const qMatch = !q || text.includes(q);
-        const sourceMatch = !source || String(item.source || "") === source;
-        return qMatch && sourceMatch;
-      });
+      return list.filter(item => !q || JSON.stringify(item).toLowerCase().includes(q));
     }
 
     function computeRiskLevel() {
@@ -1440,16 +1252,16 @@
     function renderStats(refreshSummary = "") {
       const totalUsers = usersData.length;
       const totalLinks = linksData.length;
-      const totalLanding = linksData.filter(l => String(l.linkType || "").toLowerCase() === "landing").length;
+      const totalLanding = linksData.filter(l => String(l.linkType).toLowerCase() === "landing").length;
       const totalDomains = domainsData.length;
       const totalClicks = linksData.reduce((sum, link) => sum + Number(link.clicks || 0), 0);
       const pendingPayments = paymentsData.filter(p => ["pending", "awaiting_confirmation"].includes(String(p.status || "").toLowerCase())).length;
       const awaitingPayments = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").length;
       const activeSubs = usersData.filter(u => {
-        const paused = !!(u.subscriptionPaused || u.subscription_paused);
-        const status = String(u.subscriptionStatus || u.subscription_status || "").toLowerCase();
-        const expiresAt = Number(u.subscriptionExpiresAt || u.subscription_expires_at || 0);
-        return !paused && status === "active" && expiresAt > Date.now();
+        const paused = !!u.subscriptionPaused;
+        const status = String(u.subscriptionStatus || "").toLowerCase();
+        const exp = Number(u.subscriptionExpiresAt || 0);
+        return !paused && status === "active" && exp > Date.now();
       }).length;
       const admins = usersData.filter(u => String(u.role || "").toLowerCase() === "admin").length;
 
@@ -1473,10 +1285,13 @@
       $("statActiveSubsMeta").textContent = `${activeSubs} users on paid access`;
       $("statAdminsMeta").textContent = `${admins} admin accounts`;
 
-      liveStatus.innerHTML = awaitingPayments > 0 ? `🟠 Action needed • ${awaitingPayments} payment(s) awaiting confirmation` : `🟢 Live • Admin system ready`;
+      liveStatus.innerHTML = awaitingPayments > 0
+        ? `🟠 Action needed • ${awaitingPayments} payment(s) awaiting confirmation`
+        : `🟢 Live • Admin system ready`;
+
       lastRefreshText.textContent = `Last refresh: ${new Date().toLocaleTimeString()}`;
-      refreshStateText.textContent = refreshSummary || "Merged refresh complete";
-      if (refreshProgress) refreshProgress.style.width = "100%";
+      refreshStateText.textContent = refreshSummary || "Backend2 refresh complete";
+      refreshProgress.style.width = "100%";
 
       $("navUsersCount").textContent = totalUsers;
       $("navPaymentsCount").textContent = paymentsData.length;
@@ -1490,24 +1305,19 @@
     }
 
     function renderPaymentStats() {
-      const pending = paymentsData.filter(p => String(p.status || "").toLowerCase() === "pending");
-      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
-      const verified = paymentsData.filter(p => String(p.status || "").toLowerCase() === "verified");
-      const cancelled = paymentsData.filter(p => String(p.status || "").toLowerCase() === "cancelled");
-      const weekly = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "weekly").length;
-      const monthly = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "monthly").length;
-      const premium = paymentsData.filter(p => String(p.planCode || p.billingCycle || p.billing_cycle || "").toLowerCase() === "premium_monthly").length;
-      const verifiedRevenue = verified.reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
-      const pendingValue = [...pending, ...awaiting].reduce((sum, p) => sum + Number(p.amountUsd || p.amount_usd || 0), 0);
+      const pending = paymentsData.filter(p => String(p.status).toLowerCase() === "pending");
+      const awaiting = paymentsData.filter(p => String(p.status).toLowerCase() === "awaiting_confirmation");
+      const verified = paymentsData.filter(p => String(p.status).toLowerCase() === "verified");
+      const cancelled = paymentsData.filter(p => String(p.status).toLowerCase() === "cancelled");
+
+      const verifiedRevenue = verified.reduce((sum, p) => sum + Number(p.amountUsd || 0), 0);
+      const pendingValue = [...pending, ...awaiting].reduce((sum, p) => sum + Number(p.amountUsd || 0), 0);
 
       paymentStats.innerHTML = `
         <div><b>Pending:</b> ${pending.length}</div>
         <div><b>Awaiting confirmation:</b> ${awaiting.length}</div>
         <div><b>Verified:</b> ${verified.length}</div>
         <div><b>Cancelled:</b> ${cancelled.length}</div>
-        <div><b>Weekly:</b> ${weekly}</div>
-        <div><b>Monthly:</b> ${monthly}</div>
-        <div><b>Premium Monthly:</b> ${premium}</div>
         <div><b>Verified Revenue:</b> $${verifiedRevenue.toFixed(2)}</div>
         <div><b>Pending Value:</b> $${pendingValue.toFixed(2)}</div>
       `;
@@ -1517,19 +1327,24 @@
       const high = linksData.filter(l => Number(l.maxRisk || 0) > 80).length;
       const medium = linksData.filter(l => Number(l.maxRisk || 0) > 50 && Number(l.maxRisk || 0) <= 80).length;
       const paused = linksData.filter(l => l.paused).length;
+
       riskStats.innerHTML = `
         <div><b>High Risk Links:</b> ${high}</div>
         <div><b>Medium Risk Links:</b> ${medium}</div>
         <div><b>Paused Items:</b> ${paused}</div>
-        <div><b>Awaiting Payments:</b> ${paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').length}</div>
+        <div><b>Awaiting Payments:</b> ${paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").length}</div>
       `;
     }
 
     function renderSubscriptionStats() {
-      const trial = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || 'trial').toLowerCase() === 'trial').length;
-      const active = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || '').toLowerCase() === 'active').length;
-      const paused = usersData.filter(u => !!(u.subscriptionPaused || u.subscription_paused)).length;
-      const expired = usersData.filter(u => String(u.subscriptionStatus || u.subscription_status || '').toLowerCase() === 'expired').length;
+      const trial = usersData.filter(u => String(u.subscriptionStatus || "trial").toLowerCase() === "trial").length;
+      const active = usersData.filter(u => String(u.subscriptionStatus || "").toLowerCase() === "active").length;
+      const paused = usersData.filter(u => !!u.subscriptionPaused).length;
+      const expired = usersData.filter(u => {
+        const exp = Number(u.subscriptionExpiresAt || 0);
+        return exp > 0 && exp <= Date.now();
+      }).length;
+
       subscriptionStats.innerHTML = `
         <div class="metric-item"><div class="muted">Trial</div><div style="font-size:24px;color:var(--primary);">${trial}</div></div>
         <div class="metric-item"><div class="muted">Active</div><div style="font-size:24px;color:var(--green);">${active}</div></div>
@@ -1539,50 +1354,56 @@
     }
 
     function renderSideLists() {
-      const awaiting = paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation');
-      awaitingList.innerHTML = awaiting.length ? awaiting.slice(0, 25).map(p => `
-        <div>
-          <b>${escapeHtml(p.username || 'unknown')}</b><br>
-          <span class="badge awaiting">AWAITING CONFIRMATION</span>
-          ${getSourceBadge(p.source)}
-          <div class="muted">Payment: ${escapeHtml(p.id || '-')}</div>
-          <div class="muted">Plan: ${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))} • Qty ${Number(p.quantity || 1)}</div>
-        </div>
-      `).join('') : `<div>No awaiting confirmations</div>`;
+      const awaiting = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation");
+      awaitingList.innerHTML = awaiting.length
+        ? awaiting.slice(0, 25).map(p => `
+            <div>
+              <b>${escapeHtml(p.username || "unknown")}</b><br>
+              <span class="badge awaiting">AWAITING CONFIRMATION</span>
+              <div class="muted">Payment: ${escapeHtml(p.id || "-")}</div>
+              <div class="muted">Plan: ${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || "-"))} • Qty ${Number(p.quantity || 1)}</div>
+            </div>
+          `).join("")
+        : `<div>No awaiting confirmations</div>`;
 
-      domainList.innerHTML = domainsData.length ? domainsData.slice(0, 25).map(d => `
-        <div>
-          <b>${escapeHtml(d.domain)}</b><br>
-          ${getDomainStatusBadge(d)}
-          ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
-          <div class="muted">User: ${escapeHtml(d.username || '-')}</div>
-        </div>
-      `).join('') : `<div>No domains yet</div>`;
+      domainList.innerHTML = domainsData.length
+        ? domainsData.slice(0, 25).map(d => `
+            <div>
+              <b>${escapeHtml(d.domain)}</b><br>
+              ${getDomainStatusBadge(d)}
+              ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}
+              <div class="muted">User: ${escapeHtml(d.username || "-")}</div>
+            </div>
+          `).join("")
+        : `<div>No domains yet</div>`;
 
-      landingList.innerHTML = landingData.length ? landingData.slice(0, 25).map(l => `
-        <div>
-          <b>${escapeHtml(l.slug)}</b><br>
-          ${getSourceBadge(l.source)}
-          ${getLinkTypeBadge(l)}
-          <div class="muted">Domain: ${escapeHtml(l.domain || defaultHostBySource(l.source))}</div>
-          <div class="muted">Title: ${escapeHtml(l.landingTitle || '-')}</div>
-        </div>
-      `).join('') : `<div>No landing pages yet</div>`;
+      landingList.innerHTML = landingData.length
+        ? landingData.slice(0, 25).map(l => `
+            <div>
+              <b>${escapeHtml(l.slug)}</b><br>
+              ${getLinkTypeBadge(l)}
+              <div class="muted">Domain: ${escapeHtml(l.domain || defaultHost())}</div>
+              <div class="muted">Title: ${escapeHtml(l.landingTitle || "-")}</div>
+            </div>
+          `).join("")
+        : `<div>No landing pages yet</div>`;
     }
 
     function renderActivityStream() {
       const activity = [
-        ...paymentsData.slice(0, 8).map(p => ({ time: Number(p.createdAt || p.created_at || 0), text: `Payment ${p.id} • ${p.username}` })),
+        ...paymentsData.slice(0, 8).map(p => ({ time: Number(p.createdAt || 0), text: `Payment ${p.id} • ${p.username}` })),
         ...linksData.slice(0, 8).map(l => ({ time: Number(l.createdAt || 0), text: `Item ${l.slug} • ${l.user}` })),
         ...domainsData.slice(0, 8).map(d => ({ time: Number(d.createdAt || 0), text: `Domain ${d.domain} • ${d.username}` }))
       ].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 12);
 
-      activityStream.innerHTML = activity.length ? activity.map(item => `
-        <div>
-          <b>${escapeHtml(item.text)}</b>
-          <div class="muted tiny">${fmtDate(item.time)}</div>
-        </div>
-      `).join('') : `<div>No recent activity</div>`;
+      activityStream.innerHTML = activity.length
+        ? activity.map(item => `
+            <div>
+              <b>${escapeHtml(item.text)}</b>
+              <div class="muted tiny">${fmtDate(item.time)}</div>
+            </div>
+          `).join("")
+        : `<div>No recent activity</div>`;
     }
 
     function drawChart() {
@@ -1590,313 +1411,341 @@
       if (!canvas) return;
       if (chart) chart.destroy();
 
-      const mode = chartModeSelect?.value || 'clicks';
+      const mode = chartModeSelect.value || "clicks";
       let labels = [];
       let data = [];
-      let chartLabel = 'Clicks';
+      let chartLabel = "Clicks";
 
-      if (mode === 'clicks') {
+      if (mode === "clicks") {
         const sorted = [...linksData].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 15);
-        labels = sorted.map(i => `${i.slug} (${i.source === 'legacy' ? 'AWS' : 'B2'})`);
+        labels = sorted.map(i => i.slug);
         data = sorted.map(i => Number(i.clicks || 0));
-        chartLabel = 'Clicks';
+        chartLabel = "Clicks";
       }
 
-      if (mode === 'users') {
+      if (mode === "users") {
         const sorted = [...usersData].sort((a, b) => Number(b.requests || 0) - Number(a.requests || 0)).slice(0, 15);
         labels = sorted.map(i => i.username);
         data = sorted.map(i => Number(i.requests || 0));
-        chartLabel = 'Requests';
+        chartLabel = "Requests";
       }
 
-      if (mode === 'payments') {
+      if (mode === "payments") {
         const buckets = { pending: 0, awaiting_confirmation: 0, verified: 0, cancelled: 0 };
         paymentsData.forEach(p => {
-          const s = String(p.status || '').toLowerCase();
-          if (buckets[s] !== undefined) buckets[s]++;
+          const s = String(p.status || "").toLowerCase();
+          if (buckets[s] !== undefined) buckets[s] += 1;
         });
-        labels = ['Pending', 'Awaiting', 'Verified', 'Cancelled'];
+        labels = ["Pending", "Awaiting", "Verified", "Cancelled"];
         data = [buckets.pending, buckets.awaiting_confirmation, buckets.verified, buckets.cancelled];
-        chartLabel = 'Payments';
+        chartLabel = "Payments";
       }
 
       chart = new Chart(canvas, {
-        type: mode === 'payments' ? 'doughnut' : 'bar',
+        type: mode === "payments" ? "doughnut" : "bar",
         data: {
           labels,
           datasets: [{ label: chartLabel, data }]
         },
         options: {
           responsive: true,
-          plugins: { legend: { labels: { color: '#e2e8f0' } } },
-          scales: mode === 'payments' ? {} : {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
-            y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } }
+          plugins: { legend: { labels: { color: "#e2e8f0" } } },
+          scales: mode === "payments" ? {} : {
+            x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.08)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.08)" } }
           }
         }
       });
     }
 
     function renderAuditLogs() {
-      const q = String(auditSearch?.value || '').trim().toLowerCase();
+      const q = String(auditSearch?.value || "").trim().toLowerCase();
       const list = auditData.filter(log => {
-        const text = `${log.action || ''} ${log.target || ''} ${log.source || ''}`.toLowerCase();
+        const text = `${log.action || ""} ${log.target || ""}`.toLowerCase();
         return !q || text.includes(q);
       });
-      auditLogsEl.innerHTML = list.length ? [...list].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 200).map(log => `
-        <div>
-          <b>${escapeHtml(log.action || 'UNKNOWN')}</b> → ${escapeHtml(log.target || 'UNKNOWN')}<br>
-          <small>${new Date(Number(log.time || Date.now())).toLocaleString()}</small><br>
-          <span class="muted">${escapeHtml(log.source || '')}</span>
-        </div>
-      `).join('') : `<div>No audit logs</div>`;
+
+      auditLogsEl.innerHTML = list.length
+        ? [...list].sort((a, b) => Number(b.time || 0) - Number(a.time || 0)).slice(0, 200).map(log => `
+            <div>
+              <b>${escapeHtml(log.action || "UNKNOWN")}</b> → ${escapeHtml(log.target || "UNKNOWN")}<br>
+              <small>${fmtDate(log.time)}</small><br>
+              <span class="muted">${escapeHtml(log.admin || "")}</span>
+            </div>
+          `).join("")
+        : `<div>No audit logs</div>`;
     }
 
     function getFilteredUsers() {
-      const q = String(userSearch?.value || '').trim().toLowerCase();
-      const role = userFilterRole?.value || '';
-      const status = userFilterStatus?.value || '';
-      const global = getGlobalFilteredData(usersData);
+      const q = String(userSearch.value || "").trim().toLowerCase();
+      const role = userFilterRole.value || "";
+      const status = userFilterStatus.value || "";
 
-      return global.filter(u => {
-        const username = String(u.username || '').toLowerCase();
+      return getGlobalFilteredData(usersData).filter(u => {
+        const username = String(u.username || "").toLowerCase();
         const matchesQ = !q || username.includes(q);
-        const matchesRole = !role || (u.role || 'user') === role;
+        const matchesRole = !role || (u.role || "user") === role;
+
         let matchesStatus = true;
-        if (status === 'active') matchesStatus = !u.banned;
-        if (status === 'banned') matchesStatus = !!u.banned;
-        if (status === 'trial') matchesStatus = String(u.subscriptionStatus || u.subscription_status || 'trial').toLowerCase() === 'trial';
-        if (status === 'subscribed') {
-          const paused = !!(u.subscriptionPaused || u.subscription_paused);
-          const st = String(u.subscriptionStatus || u.subscription_status || '').toLowerCase();
-          const exp = Number(u.subscriptionExpiresAt || u.subscription_expires_at || 0);
-          matchesStatus = !paused && st === 'active' && exp > Date.now();
+        if (status === "active") matchesStatus = !u.banned;
+        if (status === "banned") matchesStatus = !!u.banned;
+        if (status === "trial") matchesStatus = String(u.subscriptionStatus || "trial").toLowerCase() === "trial";
+        if (status === "subscribed") {
+          const paused = !!u.subscriptionPaused;
+          const st = String(u.subscriptionStatus || "").toLowerCase();
+          const exp = Number(u.subscriptionExpiresAt || 0);
+          matchesStatus = !paused && st === "active" && exp > Date.now();
         }
-        if (status === 'paused') matchesStatus = !!(u.subscriptionPaused || u.subscription_paused);
+        if (status === "paused") matchesStatus = !!u.subscriptionPaused;
+
         return matchesQ && matchesRole && matchesStatus;
       });
     }
 
     function renderUsers() {
       const list = getFilteredUsers();
-      usersEl.innerHTML = list.length ? list.map(u => `
-        <tr>
-          <td><b>${escapeHtml(u.username)}</b><div class="muted">Created: ${fmtDate(u.createdAt || u.created_at)}</div></td>
-          <td>${getUserStatusBadge(u)} ${(u.emailVerified || u.email_verified) ? `<span class="badge active">EMAIL OK</span>` : `<span class="badge pending">UNVERIFIED</span>`}</td>
-          <td>${getRoleBadge(u.role || 'user')}</td>
-          <td>${escapeHtml(formatTrial(u))}</td>
-          <td>${escapeHtml(formatLandingUsage(u))}</td>
-          <td>${getSubscriptionBadge(u)}<div class="muted">Plan: ${escapeHtml(normalizePlanLabel(u.subscriptionPlan || u.subscription_plan || '-'))}<br>Expires: ${fmtDate(u.subscriptionExpiresAt || u.subscription_expires_at)}</div></td>
-          <td>${getSourceBadge(u.source)}</td>
-          <td>${Number(u.requests || 0)}</td>
-          <td>
-            <div class="actions">
-              <button data-action="view-user" data-username="${escapeHtml(u.username)}">View</button>
-              ${u.banned ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Enable</button>` : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Disable</button>`}
-              <button class="btn-purple" data-action="make-admin" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Make Admin</button>
-              <button class="btn-yellow" data-action="remove-admin" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Make User</button>
-              <button class="btn-yellow" data-action="pause-subscription" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Pause Sub</button>
-              <button class="btn-green" data-action="resume-subscription" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Resume Sub</button>
-              <button data-action="verify-user" data-username="${escapeHtml(u.username)}" data-source="${escapeHtml(u.source)}">Verify Email</button>
-            </div>
-          </td>
-        </tr>
-      `).join('') : `<tr><td colspan="9" class="muted">No users found</td></tr>`;
+
+      usersEl.innerHTML = list.length
+        ? list.map(u => `
+            <tr>
+              <td>
+                <b>${escapeHtml(u.username)}</b>
+                <div class="muted">Created: ${fmtDate(u.createdAt)}</div>
+              </td>
+              <td>
+                ${getUserStatusBadge(u)}
+                ${u.emailVerified ? `<span class="badge active">EMAIL OK</span>` : `<span class="badge pending">UNVERIFIED</span>`}
+              </td>
+              <td>${getRoleBadge(u.role || "user")}</td>
+              <td>${escapeHtml(formatUsage(u, "activeShortLinks"))}</td>
+              <td>${escapeHtml(formatUsage(u, "activeLandingPages"))}</td>
+              <td>
+                ${getSubscriptionBadge(u)}
+                <div class="muted">
+                  Plan: ${escapeHtml(normalizePlanLabel(u.subscriptionPlan || "trial"))}<br>
+                  Expires: ${fmtDate(u.subscriptionExpiresAt)}
+                </div>
+              </td>
+              <td>${Number(u.requests || 0)}</td>
+              <td>
+                <div class="actions">
+                  <button data-action="view-user" data-username="${escapeHtml(u.username)}">View</button>
+                  ${u.banned
+                    ? `<button class="btn-green" data-action="unban-user" data-username="${escapeHtml(u.username)}">Enable</button>`
+                    : `<button class="btn-red" data-action="ban-user" data-username="${escapeHtml(u.username)}">Disable</button>`}
+                  <button class="btn-purple" data-action="make-admin" data-username="${escapeHtml(u.username)}">Make Admin</button>
+                  <button class="btn-yellow" data-action="remove-admin" data-username="${escapeHtml(u.username)}">Make User</button>
+                  <button class="btn-yellow" data-action="pause-subscription" data-username="${escapeHtml(u.username)}">Pause Sub</button>
+                  <button class="btn-green" data-action="resume-subscription" data-username="${escapeHtml(u.username)}">Resume Sub</button>
+                  <button data-action="verify-user" data-username="${escapeHtml(u.username)}">Verify Email</button>
+                </div>
+              </td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="8" class="muted">No users found</td></tr>`;
     }
 
     function getFilteredPayments() {
-      const q = String(paymentSearch?.value || '').trim().toLowerCase();
-      const status = paymentStatusFilter?.value || '';
-      const plan = paymentPlanFilter?.value || '';
-      const global = getGlobalFilteredData(paymentsData);
-      let list = global.filter(p => {
-        const text = `${p.id || ''} ${p.username || ''} ${p.planCode || p.plan_code || ''} ${p.billingCycle || p.billing_cycle || ''} ${p.cryptoCode || p.crypto_code || ''}`.toLowerCase();
+      const q = String(paymentSearch.value || "").trim().toLowerCase();
+      const status = paymentStatusFilter.value || "";
+      const plan = paymentPlanFilter.value || "";
+
+      let list = getGlobalFilteredData(paymentsData).filter(p => {
+        const text = `${p.id || ""} ${p.username || ""} ${p.planCode || ""} ${p.billingCycle || ""} ${p.cryptoCode || ""}`.toLowerCase();
         const matchesQ = !q || text.includes(q);
-        const matchesStatus = !status || String(p.status || '').toLowerCase() === status;
-        const matchesPlan = !plan || String(p.planCode || p.billingCycle || p.billing_cycle || '').toLowerCase() === plan;
-        const awaitingOnly = onlyAwaitingToggle?.checked ? String(p.status || '').toLowerCase() === 'awaiting_confirmation' : true;
-        return matchesQ && matchesStatus && matchesPlan && awaitingOnly;
+        const matchesStatus = !status || String(p.status || "").toLowerCase() === status;
+        const matchesPlan = !plan || String(p.planCode || "").toLowerCase() === plan;
+        return matchesQ && matchesStatus && matchesPlan;
       });
-      list.sort((a, b) => {
-        const p = paymentPriorityScore(a) - paymentPriorityScore(b);
-        if (p !== 0) return p;
-        return Number(b.createdAt || b.created_at || 0) - Number(a.createdAt || a.created_at || 0);
-      });
+
+      list.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       return list;
     }
 
     function renderPayments() {
       const list = getFilteredPayments();
-      paymentsEl.innerHTML = list.length ? list.map(p => {
-        const status = String(p.status || '').toLowerCase();
-        const isAwaiting = status === 'awaiting_confirmation';
-        const isCancelled = status === 'cancelled';
-        const disableVerify = isCancelled;
-        const disableCancel = ['verified', 'cancelled'].includes(status);
-        return `
-          <tr class="${isAwaiting ? 'payment-awaiting-row' : isCancelled ? 'payment-cancelled-row' : ''}">
-            <td><code>${escapeHtml(p.id)}</code></td>
-            <td>${escapeHtml(p.username)}</td>
-            <td><span class="badge">${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))}</span><div class="muted">${escapeHtml(p.planCode || p.plan_code || '-')}</div></td>
-            <td>${Number(p.quantity || 1)}</td>
-            <td>${Number(p.amountUsd || p.amount_usd || 0).toFixed(2)} USD</td>
-            <td>${escapeHtml(p.cryptoCode || p.crypto_code || '-')}<div class="muted">${escapeHtml(p.networkCode || p.network_code || '-')}</div></td>
-            <td>${getPaymentStatusBadge(p)}<div class="muted">${escapeHtml(p.requestedFrom || p.requested_from || 'new')}</div></td>
-            <td>${getSourceBadge(p.source)}</td>
-            <td>${fmtDate(p.createdAt || p.created_at)}<div class="muted">Expires: ${fmtDate(p.expiresAt || p.expires_at)}</div></td>
-            <td>
-              <div class="actions">
-                <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
-                <button class="${isAwaiting ? 'btn-action' : 'btn-green'}" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}" ${disableVerify ? 'disabled' : ''}>${isAwaiting ? 'Verify Now' : 'Verify'}</button>
-                <button class="btn-yellow" data-action="cancel-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}" ${disableCancel ? 'disabled' : ''}>Cancel</button>
-                <button class="btn-red" data-action="delete-payment" data-payment-id="${escapeHtml(p.id)}" data-source="${escapeHtml(p.source)}">Delete</button>
-                <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || '')}">Copy Address</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') : `<tr><td colspan="10" class="muted">No payments found</td></tr>`;
+
+      paymentsEl.innerHTML = list.length
+        ? list.map(p => `
+            <tr>
+              <td><code>${escapeHtml(p.id)}</code></td>
+              <td>${escapeHtml(p.username)}</td>
+              <td><span class="badge">${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || "-"))}</span></td>
+              <td>${Number(p.quantity || 1)}</td>
+              <td>${Number(p.amountUsd || 0).toFixed(2)} USD</td>
+              <td>${escapeHtml(p.cryptoCode || "-")}<div class="muted">${escapeHtml(p.networkCode || "-")}</div></td>
+              <td>${getPaymentStatusBadge(p)}<div class="muted">${escapeHtml(p.requestedFrom || "new")}</div></td>
+              <td>${fmtDate(p.createdAt)}<div class="muted">Expires: ${fmtDate(p.expiresAt)}</div></td>
+              <td>
+                <div class="actions">
+                  <button data-action="view-payment" data-payment-id="${escapeHtml(p.id)}">View</button>
+                  <button class="btn-green" data-action="verify-payment" data-payment-id="${escapeHtml(p.id)}">Verify</button>
+                  <button class="btn-yellow" data-action="cancel-payment" data-payment-id="${escapeHtml(p.id)}">Cancel</button>
+                  <button class="btn-red" data-action="delete-payment" data-payment-id="${escapeHtml(p.id)}">Delete</button>
+                  <button data-action="copy-payment-address" data-address="${escapeHtml(p.address || "")}">Copy Address</button>
+                </div>
+              </td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="9" class="muted">No payments found</td></tr>`;
     }
 
     function getFilteredLinks() {
-      const q = String(linkSearch?.value || '').trim().toLowerCase();
-      const status = linkFilterStatus?.value || '';
-      const type = linkTypeFilter?.value || '';
-      const sort = linkSort?.value || 'clicks_desc';
+      const q = String(linkSearch.value || "").trim().toLowerCase();
+      const status = linkFilterStatus.value || "";
+      const type = linkTypeFilter.value || "";
+      const sort = linkSort.value || "clicks_desc";
+
       let list = getGlobalFilteredData(linksData).filter(l => {
-        const blob = `${l.slug || ''} ${l.url || ''} ${l.user || l.username || ''} ${l.domain || ''} ${l.linkType || ''} ${l.landingTitle || ''}`.toLowerCase();
+        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || ""} ${l.domain || ""} ${l.linkType || ""}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
-        const matchesStatus = !status || (status === 'active' && !l.paused) || (status === 'paused' && !!l.paused);
-        const matchesType = !type || String(l.linkType || '').toLowerCase() === type;
+        const matchesStatus = !status || (status === "active" && !l.paused) || (status === "paused" && !!l.paused);
+        const matchesType = !type || String(l.linkType || "").toLowerCase() === type;
         return matchesQ && matchesStatus && matchesType;
       });
-      if (sort === 'clicks_desc') list.sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0));
-      if (sort === 'clicks_asc') list.sort((a,b) => Number(a.clicks || 0) - Number(b.clicks || 0));
-      if (sort === 'slug_asc') list.sort((a,b) => String(a.slug || '').localeCompare(String(b.slug || '')));
-      if (sort === 'user_asc') list.sort((a,b) => String(a.user || '').localeCompare(String(b.user || '')));
+
+      if (sort === "clicks_desc") list.sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (sort === "clicks_asc") list.sort((a, b) => Number(a.clicks || 0) - Number(b.clicks || 0));
+      if (sort === "slug_asc") list.sort((a, b) => String(a.slug || "").localeCompare(String(b.slug || "")));
+      if (sort === "user_asc") list.sort((a, b) => String(a.user || "").localeCompare(String(b.user || "")));
+
       return list;
     }
 
     function renderLinks() {
       const list = getFilteredLinks();
-      linksEl.innerHTML = list.length ? list.map(l => {
-        const full = buildPublicLink(l);
-        return `
-          <tr>
-            <td>${escapeHtml(l.user || l.username || '')}</td>
-            <td>${escapeHtml(l.slug || '')}</td>
-            <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
-            <td>${getLinkTypeBadge(l)}</td>
-            <td><a href="${full}" target="_blank" rel="noopener noreferrer">${full}</a><div class="muted">${escapeHtml(String(l.linkType || '').toLowerCase() === 'landing' ? (l.landingTitle || l.url || '') : (l.url || ''))}</div></td>
-            <td>${Number(l.clicks || 0)} ${Number(l.maxRisk || 0) > 80 ? `<span class="badge risk-high">RISK ${Number(l.maxRisk || 0)}</span>` : Number(l.maxRisk || 0) > 50 ? `<span class="badge risk-med">RISK ${Number(l.maxRisk || 0)}</span>` : ``}</td>
-            <td>${getLinkStatusBadge(l)}</td>
-            <td>${formatExpire(l.expire)}</td>
-            <td>${getSourceBadge(l.source)}</td>
-            <td>
-              <div class="actions">
-                <button class="btn-green" data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
-                <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
-                ${String(l.linkType || '').toLowerCase() === 'landing' ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>` : ``}
-                ${l.paused ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Resume</button>` : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-source="${escapeHtml(l.source)}">Pause</button>`}
-                <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') : `<tr><td colspan="10" class="muted">No items found</td></tr>`;
+
+      linksEl.innerHTML = list.length
+        ? list.map(l => {
+            const full = buildPublicLink(l);
+            return `
+              <tr>
+                <td>${escapeHtml(l.user || "")}</td>
+                <td>${escapeHtml(l.slug || "")}</td>
+                <td>${escapeHtml(l.domain || defaultHost())}</td>
+                <td>${getLinkTypeBadge(l)}</td>
+                <td><a href="${escapeHtml(full)}" target="_blank" rel="noopener noreferrer">${escapeHtml(full)}</a></td>
+                <td>${Number(l.clicks || 0)}</td>
+                <td>${getLinkStatusBadge(l)}</td>
+                <td>${formatExpire(l.expire)}</td>
+                <td>
+                  <div class="actions">
+                    <button data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
+                    <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
+                    ${String(l.linkType || "").toLowerCase() === "landing"
+                      ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Preview</button>`
+                      : ``}
+                    ${l.paused
+                      ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Resume</button>`
+                      : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Pause</button>`}
+                    <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join("")
+        : `<tr><td colspan="9" class="muted">No items found</td></tr>`;
     }
 
     function getFilteredDomains() {
-      const q = String(domainSearch?.value || '').trim().toLowerCase();
-      const status = domainStatusFilter?.value || '';
+      const q = String(domainSearch.value || "").trim().toLowerCase();
+      const status = domainStatusFilter.value || "";
+
       return getGlobalFilteredData(domainsData).filter(d => {
-        const blob = `${d.domain || ''} ${d.username || ''} ${d.verifyToken || ''}`.toLowerCase();
+        const blob = `${d.domain || ""} ${d.username || ""} ${d.verifyToken || ""}`.toLowerCase();
         const matchesQ = !q || blob.includes(q);
-        const matchesStatus = !status || String(d.status || '').toLowerCase() === status;
+        const matchesStatus = !status || String(d.status || "").toLowerCase() === status;
         return matchesQ && matchesStatus;
       });
     }
 
     function renderDomains() {
       const list = getFilteredDomains();
-      domainsEl.innerHTML = list.length ? list.map(d => `
-        <tr>
-          <td><b>${escapeHtml(d.domain)}</b></td>
-          <td>${escapeHtml(d.username || '-')}</td>
-          <td>${getDomainStatusBadge(d)} ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}</td>
-          <td><code>${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</code></td>
-          <td><code>${escapeHtml(d.verifyToken || '-')}</code></td>
-          <td>${fmtDate(d.createdAt)}</td>
-          <td>${fmtDate(d.verifiedAt)}</td>
-          <td>${d.isPrimary ? 'Yes' : 'No'}</td>
-          <td>
-            <div class="actions">
-              <button data-action="view-domain" data-domain="${escapeHtml(d.domain)}">View</button>
-              ${String(d.status).toLowerCase() !== 'verified' ? `<button class="btn-green" data-action="verify-domain" data-domain="${escapeHtml(d.domain)}">Verify</button>` : ``}
-              ${!d.isPrimary && String(d.status).toLowerCase() === 'verified' ? `<button class="btn-yellow" data-action="set-primary-domain" data-domain="${escapeHtml(d.domain)}">Set Primary</button>` : ``}
-              <button class="btn-red" data-action="delete-domain" data-domain="${escapeHtml(d.domain)}">Delete</button>
-              <button data-action="copy-domain-token" data-token="${escapeHtml(d.verifyToken || '')}">Copy Token</button>
-            </div>
-          </td>
-        </tr>
-      `).join('') : `<tr><td colspan="9" class="muted">No domains found</td></tr>`;
+
+      domainsEl.innerHTML = list.length
+        ? list.map(d => `
+            <tr>
+              <td><b>${escapeHtml(d.domain)}</b></td>
+              <td>${escapeHtml(d.username || "-")}</td>
+              <td>${getDomainStatusBadge(d)} ${d.isPrimary ? `<span class="badge active">PRIMARY</span>` : ``}</td>
+              <td><code>${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</code></td>
+              <td><code>${escapeHtml(d.verifyToken || "-")}</code></td>
+              <td>${fmtDate(d.createdAt)}</td>
+              <td>${fmtDate(d.verifiedAt)}</td>
+              <td>${d.isPrimary ? "Yes" : "No"}</td>
+              <td>
+                <div class="actions">
+                  <button data-action="view-domain" data-domain="${escapeHtml(d.domain)}">View</button>
+                  ${String(d.status).toLowerCase() !== "verified"
+                    ? `<button class="btn-green" data-action="verify-domain" data-domain="${escapeHtml(d.domain)}">Verify</button>`
+                    : ``}
+                  ${!d.isPrimary && String(d.status).toLowerCase() === "verified"
+                    ? `<button class="btn-yellow" data-action="set-primary-domain" data-domain="${escapeHtml(d.domain)}">Set Primary</button>`
+                    : ``}
+                  <button class="btn-red" data-action="delete-domain" data-domain="${escapeHtml(d.domain)}">Delete</button>
+                  <button data-action="copy-domain-token" data-token="${escapeHtml(d.verifyToken || "")}">Copy Token</button>
+                </div>
+              </td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="9" class="muted">No domains found</td></tr>`;
     }
 
     function getFilteredLandingPages() {
-      const q = String(landingSearch?.value || '').trim().toLowerCase();
-      const source = landingSourceFilter?.value || '';
+      const q = String(landingSearch.value || "").trim().toLowerCase();
+
       return getGlobalFilteredData(landingData).filter(l => {
-        const blob = `${l.slug || ''} ${l.domain || ''} ${l.user || ''} ${l.landingTitle || ''}`.toLowerCase();
-        const matchesQ = !q || blob.includes(q);
-        const matchesSource = !source || String(l.source || '') === source;
-        return matchesQ && matchesSource;
+        const blob = `${l.slug || ""} ${l.domain || ""} ${l.user || ""} ${l.url || ""}`.toLowerCase();
+        return !q || blob.includes(q);
       });
     }
 
     function renderLandingPages() {
       const list = getFilteredLandingPages();
-      landingPagesEl.innerHTML = list.length ? list.map(l => `
-        <tr>
-          <td>${escapeHtml(l.user || l.username || '')}</td>
-          <td><b>${escapeHtml(l.slug)}</b></td>
-          <td>${escapeHtml(l.domain || defaultHostBySource(l.source))}</td>
-          <td>${escapeHtml(l.landingTitle || '-')}</td>
-          <td>${escapeHtml(l.landingTheme || '-')}</td>
-          <td>${Number(l.clicks || 0)}</td>
-          <td>${getSourceBadge(l.source)}</td>
-          <td>
-            <div class="actions">
-              <button data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Preview</button>
-              <button data-action="view-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Details</button>
-              <button class="btn-red" data-action="delete-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || '')}" data-source="${escapeHtml(l.source)}">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `).join('') : `<tr><td colspan="8" class="muted">No landing pages found</td></tr>`;
+
+      landingPagesEl.innerHTML = list.length
+        ? list.map(l => `
+            <tr>
+              <td>${escapeHtml(l.user || "")}</td>
+              <td><b>${escapeHtml(l.slug)}</b></td>
+              <td>${escapeHtml(l.domain || defaultHost())}</td>
+              <td>${escapeHtml(l.url || "-")}</td>
+              <td>${escapeHtml(l.landingTheme || "-")}</td>
+              <td>${Number(l.clicks || 0)}</td>
+              <td>
+                <div class="actions">
+                  <button data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Preview</button>
+                  <button class="btn-red" data-action="delete-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Delete</button>
+                </div>
+              </td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="7" class="muted">No landing pages found</td></tr>`;
     }
 
     function renderSecuritySection() {
       const highRisk = [...linksData].filter(l => Number(l.maxRisk || 0) > 80).slice(0, 20);
       const medRisk = [...linksData].filter(l => Number(l.maxRisk || 0) > 50 && Number(l.maxRisk || 0) <= 80).slice(0, 20);
-      const paymentAlerts = paymentsData.filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation').slice(0, 20);
+      const paymentAlerts = paymentsData.filter(p => String(p.status || "").toLowerCase() === "awaiting_confirmation").slice(0, 20);
+
       securityPanelContent.innerHTML = `
         <div class="card" style="margin:0;">
           <h4>High Risk Items</h4>
-          <div class="list-box">${highRisk.length ? highRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-high">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No high risk items</div>`}</div>
+          <div class="list-box">${highRisk.length ? highRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-high">Risk ${Number(l.maxRisk || 0)}</span></div>`).join("") : `<div>No high risk items</div>`}</div>
         </div>
         <div class="card" style="margin:0;">
           <h4>Medium Risk Items</h4>
-          <div class="list-box">${medRisk.length ? medRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-med">Risk ${Number(l.maxRisk || 0)}</span> ${getSourceBadge(l.source)}</div>`).join('') : `<div>No medium risk items</div>`}</div>
+          <div class="list-box">${medRisk.length ? medRisk.map(l => `<div><b>${escapeHtml(l.slug)}</b><br><span class="badge risk-med">Risk ${Number(l.maxRisk || 0)}</span></div>`).join("") : `<div>No medium risk items</div>`}</div>
         </div>
         <div class="card" style="margin:0;">
           <h4>Awaiting Payment Alerts</h4>
-          <div class="list-box">${paymentAlerts.length ? paymentAlerts.map(p => `<div><b>${escapeHtml(p.username)}</b><br><code>${escapeHtml(p.id)}</code><br>${getPaymentStatusBadge(p)}</div>`).join('') : `<div>No awaiting alerts</div>`}</div>
+          <div class="list-box">${paymentAlerts.length ? paymentAlerts.map(p => `<div><b>${escapeHtml(p.username)}</b><br><code>${escapeHtml(p.id)}</code><br>${getPaymentStatusBadge(p)}</div>`).join("") : `<div>No awaiting alerts</div>`}</div>
         </div>
         <div class="card" style="margin:0;">
           <h4>Recommendations</h4>
           <div class="list-box">
             <div>Review all awaiting confirmation payments first.</div>
-            <div>Check high risk items before resuming any paused traffic.</div>
+            <div>Check high risk items before resuming paused traffic.</div>
             <div>Verify pending domains using TXT records only.</div>
             <div>Review landing pages with unusual click spikes.</div>
           </div>
@@ -1906,24 +1755,25 @@
 
     async function openUser(username) {
       const u = usersData.find(x => x.username === username);
+      if (!u) return;
+
       panel.style.display = "block";
       panelTitle.textContent = "User Details";
       panelContent.innerHTML = `
-        <div><b>Email:</b> ${escapeHtml(u?.username || username)}</div>
-        <div><b>Role:</b> ${escapeHtml(u?.role || 'user')}</div>
-        <div><b>Status:</b> ${u?.banned ? 'Banned' : 'Active'}</div>
-        <div><b>Email Verified:</b> ${(u?.emailVerified || u?.email_verified) ? 'Yes' : 'No'}</div>
-        <div><b>Requests:</b> ${Number(u?.requests || 0)}</div>
-        <div><b>Short Link Usage:</b> ${escapeHtml(formatTrial(u || {}))}</div>
-        <div><b>Landing Usage:</b> ${escapeHtml(formatLandingUsage(u || {}))}</div>
-        <div><b>Subscription:</b> ${escapeHtml(normalizePlanLabel(u?.subscriptionPlan || u?.subscription_plan || 'trial'))}</div>
-        <div><b>Subscription Status:</b> ${escapeHtml(u?.subscriptionStatus || u?.subscription_status || 'trial')}</div>
-        <div><b>Subscription Expires:</b> ${fmtDate(u?.subscriptionExpiresAt || u?.subscription_expires_at)}</div>
-        <div><b>Source:</b> ${escapeHtml(u?.source || 'primary')}</div>
+        <div><b>Email:</b> ${escapeHtml(u.username)}</div>
+        <div><b>Role:</b> ${escapeHtml(u.role || "user")}</div>
+        <div><b>Status:</b> ${u.banned ? "Banned" : "Active"}</div>
+        <div><b>Email Verified:</b> ${u.emailVerified ? "Yes" : "No"}</div>
+        <div><b>Requests:</b> ${Number(u.requests || 0)}</div>
+        <div><b>Short Link Usage:</b> ${escapeHtml(formatUsage(u, "activeShortLinks"))}</div>
+        <div><b>Landing Usage:</b> ${escapeHtml(formatUsage(u, "activeLandingPages"))}</div>
+        <div><b>Subscription:</b> ${escapeHtml(normalizePlanLabel(u.subscriptionPlan || "trial"))}</div>
+        <div><b>Subscription Status:</b> ${escapeHtml(u.subscriptionStatus || "trial")}</div>
+        <div><b>Subscription Expires:</b> ${fmtDate(u.subscriptionExpiresAt)}</div>
         <div class="actions" style="margin-top:12px;">
-          <button class="btn-yellow" onclick="pauseSubscription('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Pause Sub</button>
-          <button class="btn-green" onclick="resumeSubscription('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Resume Sub</button>
-          <button onclick="verifyUser('${escapeHtml(u?.username || username)}','${escapeHtml(u?.source || 'primary')}')">Verify Email</button>
+          <button class="btn-yellow" onclick="pauseSubscription('${escapeHtml(u.username)}')">Pause Sub</button>
+          <button class="btn-green" onclick="resumeSubscription('${escapeHtml(u.username)}')">Resume Sub</button>
+          <button onclick="verifyUser('${escapeHtml(u.username)}')">Verify Email</button>
         </div>
       `;
     }
@@ -1931,34 +1781,34 @@
     async function openPayment(paymentId) {
       const payment = paymentsData.find(p => p.id === paymentId);
       if (!payment) return;
-      const status = String(payment.status || '').toLowerCase();
-      const isAwaiting = status === 'awaiting_confirmation';
-      const isCancelled = status === 'cancelled';
+
+      const status = String(payment.status || "").toLowerCase();
+      const isCancelled = status === "cancelled";
       const disableVerify = isCancelled;
-      const disableCancel = ['verified', 'cancelled'].includes(status);
+      const disableCancel = ["verified", "cancelled"].includes(status);
+
       panel.style.display = "block";
       panelTitle.textContent = "Payment Details";
       panelContent.innerHTML = `
-        ${isAwaiting ? `<div class="highlight-box"><b>Needs Action:</b> This payment was marked by the user as sent.</div>` : ''}
-        ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ''}
+        ${status === "awaiting_confirmation" ? `<div class="highlight-box"><b>Needs Action:</b> This payment was marked by the user as sent.</div>` : ""}
+        ${isCancelled ? `<div class="danger-box"><b>Cancelled:</b> This payment has been cancelled.</div>` : ""}
         <div><b>Payment ID:</b> <code>${escapeHtml(payment.id)}</code></div>
-        <div><b>User:</b> ${escapeHtml(payment.username || '-')}</div>
-        <div><b>Plan:</b> ${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle || payment.billing_cycle || '-'))}</div>
+        <div><b>User:</b> ${escapeHtml(payment.username || "-")}</div>
+        <div><b>Plan:</b> ${escapeHtml(normalizePlanLabel(payment.planCode || payment.billingCycle || "-"))}</div>
         <div><b>Quantity:</b> ${Number(payment.quantity || 1)}</div>
-        <div><b>Amount:</b> ${Number(payment.amountUsd || payment.amount_usd || 0).toFixed(2)} USD</div>
-        <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || payment.crypto_code || '-')} (${escapeHtml(payment.networkCode || payment.network_code || '-')})</div>
+        <div><b>Amount:</b> ${Number(payment.amountUsd || 0).toFixed(2)} USD</div>
+        <div><b>Crypto:</b> ${escapeHtml(payment.cryptoCode || "-")} (${escapeHtml(payment.networkCode || "-")})</div>
         <div><b>Status:</b> ${getPaymentStatusBadge(payment)}</div>
-        <div><b>Requested From:</b> ${escapeHtml(payment.requestedFrom || payment.requested_from || '-')}</div>
-        <div><b>Created:</b> ${fmtDate(payment.createdAt || payment.created_at)}</div>
-        <div><b>Expires:</b> ${fmtDate(payment.expiresAt || payment.expires_at)}</div>
-        <div><b>Source:</b> ${escapeHtml(payment.source || '-')}</div>
-        ${payment.address ? `<div class="code-box">${escapeHtml(payment.address)}</div>` : ''}
-        ${(payment.qrImageUrl || payment.qrText || payment.address) ? `<div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl || ('https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(payment.qrText || payment.qr_text || payment.address || '')))}" alt="Payment QR" /></div>` : ''}
+        <div><b>Requested From:</b> ${escapeHtml(payment.requestedFrom || "-")}</div>
+        <div><b>Created:</b> ${fmtDate(payment.createdAt)}</div>
+        <div><b>Expires:</b> ${fmtDate(payment.expiresAt)}</div>
+        ${payment.address ? `<div class="code-box">${escapeHtml(payment.address)}</div>` : ""}
+        ${payment.qrImageUrl ? `<div class="payment-qr"><img src="${escapeHtml(payment.qrImageUrl)}" alt="Payment QR" /></div>` : ""}
         <div class="actions" style="margin-top:12px;">
-          <button class="${isAwaiting ? 'btn-action' : 'btn-green'}" onclick="verifyPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')" ${disableVerify ? 'disabled' : ''}>${isAwaiting ? 'Verify This Payment' : 'Verify Payment'}</button>
-          <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')" ${disableCancel ? 'disabled' : ''}>Cancel Payment</button>
-          <button class="btn-red" onclick="deletePayment('${escapeHtml(payment.id)}','${escapeHtml(payment.source || 'primary')}')">Delete Payment</button>
-          <button onclick="copyText('${escapeHtml(payment.address || '')}')">Copy Address</button>
+          <button class="btn-green" onclick="verifyPayment('${escapeHtml(payment.id)}')" ${disableVerify ? "disabled" : ""}>Verify Payment</button>
+          <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(payment.id)}')" ${disableCancel ? "disabled" : ""}>Cancel Payment</button>
+          <button class="btn-red" onclick="deletePayment('${escapeHtml(payment.id)}')">Delete Payment</button>
+          <button onclick="copyText('${escapeHtml(payment.address || "")}')">Copy Address</button>
         </div>
       `;
     }
@@ -1966,190 +1816,186 @@
     async function openDomain(domain) {
       const d = domainsData.find(x => x.domain === domain);
       if (!d) return;
+
       panel.style.display = "block";
       panelTitle.textContent = "Domain Details";
       panelContent.innerHTML = `
         <div><b>Domain:</b> ${escapeHtml(d.domain)}</div>
-        <div><b>User:</b> ${escapeHtml(d.username || '-')}</div>
+        <div><b>User:</b> ${escapeHtml(d.username || "-")}</div>
         <div><b>Status:</b> ${getDomainStatusBadge(d)}</div>
-        <div><b>Primary:</b> ${d.isPrimary ? 'Yes' : 'No'}</div>
+        <div><b>Primary:</b> ${d.isPrimary ? "Yes" : "No"}</div>
         <div><b>TXT Record:</b></div>
         <div class="code-box">${escapeHtml(d.verificationTarget || `_rattle_verify.${d.domain}`)}</div>
         <div><b>Verify Token:</b></div>
-        <div class="code-box">${escapeHtml(d.verifyToken || '-')}</div>
+        <div class="code-box">${escapeHtml(d.verifyToken || "-")}</div>
         <div><b>Created:</b> ${fmtDate(d.createdAt)}</div>
         <div><b>Verified:</b> ${fmtDate(d.verifiedAt)}</div>
         <div class="actions" style="margin-top:12px;">
-          ${String(d.status).toLowerCase() !== 'verified' ? `<button class="btn-green" onclick="verifyDomain('${escapeHtml(d.domain)}')">Verify Domain</button>` : ''}
-          ${!d.isPrimary && String(d.status).toLowerCase() === 'verified' ? `<button class="btn-yellow" onclick="setPrimaryDomain('${escapeHtml(d.domain)}')">Set Primary</button>` : ''}
-          <button onclick="copyText('${escapeHtml(d.verifyToken || '')}')">Copy Token</button>
+          ${String(d.status).toLowerCase() !== "verified" ? `<button class="btn-green" onclick="verifyDomain('${escapeHtml(d.domain)}')">Verify Domain</button>` : ""}
+          ${!d.isPrimary && String(d.status).toLowerCase() === "verified" ? `<button class="btn-yellow" onclick="setPrimaryDomain('${escapeHtml(d.domain)}')">Set Primary</button>` : ""}
+          <button onclick="copyText('${escapeHtml(d.verifyToken || "")}')">Copy Token</button>
           <button class="btn-red" onclick="deleteDomain('${escapeHtml(d.domain)}')">Delete Domain</button>
         </div>
       `;
     }
 
-    async function openLanding(slug, domain, source, previewOnly = false) {
-      const link = landingData.find(x => x.slug === slug && (x.domain || '') === (domain || '') && x.source === source);
+    async function openLanding(slug, domain, previewOnly = false) {
+      const link = landingData.find(x => x.slug === slug && (x.domain || "") === (domain || ""));
       if (!link) return;
+
       const publicUrl = buildPublicLink(link);
       panel.style.display = "block";
-      panelTitle.textContent = previewOnly ? 'Landing Preview' : 'Landing Details';
+      panelTitle.textContent = previewOnly ? "Landing Preview" : "Landing Details";
       panelContent.innerHTML = `
         <div><b>Slug:</b> ${escapeHtml(link.slug)}</div>
-        <div><b>Domain:</b> ${escapeHtml(link.domain || defaultHostBySource(link.source))}</div>
-        <div><b>User:</b> ${escapeHtml(link.user || '-')}</div>
-        <div><b>Title:</b> ${escapeHtml(link.landingTitle || '-')}</div>
-        <div><b>Description:</b> ${escapeHtml(link.landingDescription || '-')}</div>
-        <div><b>Theme:</b> ${escapeHtml(link.landingTheme || '-')}</div>
+        <div><b>Domain:</b> ${escapeHtml(link.domain || defaultHost())}</div>
+        <div><b>User:</b> ${escapeHtml(link.user || "-")}</div>
         <div><b>Clicks:</b> ${Number(link.clicks || 0)}</div>
-        <div><b>Source:</b> ${escapeHtml(link.source)}</div>
         <div class="code-box">${escapeHtml(publicUrl)}</div>
         <div class="actions" style="margin:12px 0;">
           <button onclick="openLink('${escapeHtml(publicUrl)}')">Open Live</button>
           <button onclick="copyText('${escapeHtml(publicUrl)}')">Copy URL</button>
-          <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || '')}','${escapeHtml(link.source)}')">Delete Landing</button>
+          <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || "")}')">Delete Landing</button>
         </div>
         <iframe class="preview-frame" src="${escapeHtml(publicUrl)}"></iframe>
       `;
     }
 
-    async function banUser(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/ban`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('BAN USER', username); showToast('User banned'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Ban failed');
+    async function banUser(username) {
+      const res = await callApi("/admin/ban", "POST", { username }, false);
+      if (res.ok) { await logAudit("BAN USER", username); showToast("User banned"); await loadAdmin(); }
+      else showToast(res.data?.message || "Ban failed");
     }
 
-    async function unbanUser(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/unban`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('UNBAN USER', username); showToast('User enabled'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Enable failed');
+    async function unbanUser(username) {
+      const res = await callApi("/admin/unban", "POST", { username }, false);
+      if (res.ok) { await logAudit("UNBAN USER", username); showToast("User enabled"); await loadAdmin(); }
+      else showToast(res.data?.message || "Enable failed");
     }
 
-    async function makeAdmin(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/make-admin`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('PROMOTE ADMIN', username); showToast('User promoted'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Promote failed');
+    async function makeAdmin(username) {
+      const res = await callApi("/admin/make-admin", "POST", { username }, false);
+      if (res.ok) { await logAudit("PROMOTE ADMIN", username); showToast("User promoted"); await loadAdmin(); }
+      else showToast(res.data?.message || "Promote failed");
     }
 
-    async function removeAdmin(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/remove-admin`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('REMOVE ADMIN', username); showToast('Role changed'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Role update failed');
+    async function removeAdmin(username) {
+      const res = await callApi("/admin/remove-admin", "POST", { username }, false);
+      if (res.ok) { await logAudit("REMOVE ADMIN", username); showToast("Role changed"); await loadAdmin(); }
+      else showToast(res.data?.message || "Role update failed");
     }
 
-    async function verifyUser(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/verify-user`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('VERIFY USER', username); showToast('User verified'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Verify failed');
+    async function verifyUser(username) {
+      const res = await callApi("/admin/verify-user", "POST", { username }, false);
+      if (res.ok) { await logAudit("VERIFY USER", username); showToast("User verified"); await loadAdmin(); }
+      else showToast(res.data?.message || "Verify failed");
     }
 
-    async function pauseSubscription(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/subscription-pause`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('PAUSE SUBSCRIPTION', username); showToast('Subscription paused'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Pause subscription failed');
+    async function pauseSubscription(username) {
+      const res = await callApi("/admin/subscription-pause", "POST", { username }, false);
+      if (res.ok) { await logAudit("PAUSE SUBSCRIPTION", username); showToast("Subscription paused"); await loadAdmin(); }
+      else showToast(res.data?.message || "Pause subscription failed");
     }
 
-    async function resumeSubscription(username, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/subscription-resume`, 'POST', { username }, false);
-      if (res.ok) { await logAudit('RESUME SUBSCRIPTION', username); showToast('Subscription resumed'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Resume subscription failed');
+    async function resumeSubscription(username) {
+      const res = await callApi("/admin/subscription-resume", "POST", { username }, false);
+      if (res.ok) { await logAudit("RESUME SUBSCRIPTION", username); showToast("Subscription resumed"); await loadAdmin(); }
+      else showToast(res.data?.message || "Resume subscription failed");
     }
 
-    async function verifyPayment(paymentId, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/payment-verify`, 'POST', { paymentId }, false);
-      if (res.ok) { await logAudit('VERIFY PAYMENT', paymentId); showToast('Payment verified'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Payment verify failed');
+    async function verifyPayment(paymentId) {
+      const res = await callApi("/admin/payment-verify", "POST", { paymentId }, false);
+      if (res.ok) { await logAudit("VERIFY PAYMENT", paymentId); showToast("Payment verified"); await loadAdmin(); }
+      else showToast(res.data?.message || "Payment verify failed");
     }
 
-    async function cancelPayment(paymentId, source) {
+    async function cancelPayment(paymentId) {
       if (!confirm(`Cancel payment ${paymentId}?`)) return;
-      const res = await fetchBySource(source || 'primary', `/admin/payment-cancel`, 'POST', { paymentId }, false);
-      if (res.ok) { await logAudit('CANCEL PAYMENT', paymentId); showToast('Payment cancelled'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Payment cancel failed');
+      const res = await callApi("/admin/payment-cancel", "POST", { paymentId }, false);
+      if (res.ok) { await logAudit("CANCEL PAYMENT", paymentId); showToast("Payment cancelled"); await loadAdmin(); }
+      else showToast(res.data?.message || "Payment cancel failed");
     }
 
-    async function deletePayment(paymentId, source) {
+    async function deletePayment(paymentId) {
       if (!confirm(`Delete payment ${paymentId} permanently?`)) return;
-      const res = await fetchBySource(source || 'primary', `/admin/payment-delete`, 'POST', { paymentId }, false);
-      if (res.ok) { await logAudit('DELETE PAYMENT', paymentId); showToast('Payment deleted'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Payment delete failed');
+      const res = await callApi("/admin/payment-delete", "POST", { paymentId }, false);
+      if (res.ok) { await logAudit("DELETE PAYMENT", paymentId); showToast("Payment deleted"); await loadAdmin(); }
+      else showToast(res.data?.message || "Payment delete failed");
     }
 
     async function verifyDomain(domain) {
-      const res = await fetchBySource('primary', `/domains/verify`, 'POST', { domain }, false);
-      if (res.ok) { await logAudit('VERIFY DOMAIN', domain); showToast('Domain verified'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Domain verify failed');
+      const res = await callApi("/domains/verify", "POST", { domain }, false);
+      if (res.ok) { await logAudit("VERIFY DOMAIN", domain); showToast("Domain verified"); await loadAdmin(); }
+      else showToast(res.data?.message || "Domain verify failed");
     }
 
     async function setPrimaryDomain(domain) {
-      const res = await fetchBySource('primary', `/domains/set-primary`, 'POST', { domain }, false);
-      if (res.ok) { await logAudit('SET PRIMARY DOMAIN', domain); showToast('Primary domain updated'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Set primary failed');
+      const res = await callApi("/domains/set-primary", "POST", { domain }, false);
+      if (res.ok) { await logAudit("SET PRIMARY DOMAIN", domain); showToast("Primary domain updated"); await loadAdmin(); }
+      else showToast(res.data?.message || "Set primary failed");
     }
 
     async function deleteDomain(domain) {
       if (!confirm(`Delete domain ${domain}?`)) return;
-      let res = await fetchBySource('primary', `/admin/domain-delete`, 'POST', { domain }, false);
-      if (!res.ok) res = await fetchBySource('primary', `/domains/remove`, 'POST', { domain }, false);
-      if (res.ok) { await logAudit('DELETE DOMAIN', domain); showToast('Domain deleted'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Domain delete failed');
+      const res = await callApi("/admin/domain-delete", "POST", { domain }, false);
+      if (res.ok) { await logAudit("DELETE DOMAIN", domain); showToast("Domain deleted"); await loadAdmin(); }
+      else showToast(res.data?.message || "Domain delete failed");
     }
 
-    async function deleteLanding(slug, domain, source) {
+    async function deleteLanding(slug, domain) {
       if (!confirm(`Delete landing page ${slug}?`)) return;
-      let res;
-      if (source === 'primary') res = await fetchBySource('primary', `/landing/delete`, 'POST', { slug, domain }, false);
-      else res = await fetchBySource(source || 'legacy', `/delete`, 'POST', { slug, domain }, false);
-      if (res.ok) { await logAudit('DELETE LANDING', `${domain || defaultHostBySource(source)} / ${slug}`); showToast('Landing page deleted'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Landing delete failed');
+      const res = await callApi("/landing/delete", "POST", { slug, domain }, false);
+      if (res.ok) { await logAudit("DELETE LANDING", `${domain || defaultHost()} / ${slug}`); showToast("Landing page deleted"); await loadAdmin(); }
+      else showToast(res.data?.message || "Landing delete failed");
     }
 
-    async function pauseLink(slug, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/pause`, 'POST', { slug }, false);
-      if (res.ok) { await logAudit('PAUSE LINK', slug); showToast('Item paused'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Pause failed');
+    async function pauseLink(slug, domain = "") {
+      const res = await callApi("/admin/pause", "POST", { slug, domain }, false);
+      if (res.ok) { await logAudit("PAUSE LINK", `${domain || defaultHost()} / ${slug}`); showToast("Item paused"); await loadAdmin(); }
+      else showToast(res.data?.message || "Pause failed");
     }
 
-    async function resumeLink(slug, source) {
-      const res = await fetchBySource(source || 'primary', `/admin/resume`, 'POST', { slug }, false);
-      if (res.ok) { await logAudit('RESUME LINK', slug); showToast('Item resumed'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Resume failed');
+    async function resumeLink(slug, domain = "") {
+      const res = await callApi("/admin/resume", "POST", { slug, domain }, false);
+      if (res.ok) { await logAudit("RESUME LINK", `${domain || defaultHost()} / ${slug}`); showToast("Item resumed"); await loadAdmin(); }
+      else showToast(res.data?.message || "Resume failed");
     }
 
-    async function deleteLink(slug, source, domain = '') {
+    async function deleteLink(slug, domain = "") {
       if (!confirm(`Delete ${slug}?`)) return;
-      const res = await fetchBySource(source || 'primary', `/delete`, 'POST', { slug, domain }, false);
-      if (res.ok) { await logAudit('DELETE LINK', slug); showToast('Item deleted'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Delete failed');
+      const res = await callApi("/delete", "POST", { slug, domain }, false);
+      if (res.ok) { await logAudit("DELETE LINK", `${domain || defaultHost()} / ${slug}`); showToast("Item deleted"); await loadAdmin(); }
+      else showToast(res.data?.message || "Delete failed");
     }
 
     async function copyText(text) {
-      try { await navigator.clipboard.writeText(text); }
-      catch {
-        const input = document.createElement('input');
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const input = document.createElement("input");
         input.value = text;
         document.body.appendChild(input);
         input.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         input.remove();
       }
-      showToast('Copied');
+      showToast("Copied");
     }
 
     function openLink(link) {
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = link;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       a.remove();
     }
 
     function exportJson(filename, data) {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -2158,176 +2004,114 @@
       URL.revokeObjectURL(url);
     }
 
-    function exportVisibleLinks() {
-      exportJson('visible-items.json', getFilteredLinks());
-      showToast('Visible items exported');
-    }
+    function exportUsers() { exportJson("users.json", usersData); showToast("Users exported"); }
+    function exportLinks() { exportJson("items.json", linksData); showToast("Items exported"); }
+    function exportPayments() { exportJson("payments.json", paymentsData); showToast("Payments exported"); }
+    function exportDomains() { exportJson("domains.json", domainsData); showToast("Domains exported"); }
+    function exportLanding() { exportJson("landing-pages.json", landingData); showToast("Landing exported"); }
 
     function openCreateUser() {
-      panel.style.display = 'block';
-      panelTitle.textContent = 'Create User';
+      panel.style.display = "block";
+      panelTitle.textContent = "Create User";
       panelContent.innerHTML = `
-        <div class="mini-grid">
-          <input id="newUser" placeholder="Email" />
-          <input id="newPass" type="password" placeholder="Password" />
-          <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
-          <select id="newEmailVerified"><option value="false">Email Not Verified</option><option value="true">Email Verified</option></select>
-          <select id="newCreateSource"><option value="primary">Backend2</option><option value="legacy">Legacy AWS</option></select>
-          <button id="submitCreateUserBtn" class="btn-primary">Create User</button>
-        </div>
-      `;
-      $('submitCreateUserBtn').onclick = createUser;
-    }
-
-    function openPaymentSearch() {
-      panel.style.display = 'block';
-      panelTitle.textContent = 'Search Payment';
-      panelContent.innerHTML = `
-        <div>
-          <input id="panelPaymentSearchInput" placeholder="Enter payment id..." />
-          <div style="margin-top:10px;"><button id="panelPaymentSearchBtn" class="btn-primary">Search</button></div>
-          <div id="panelPaymentSearchResult" style="margin-top:12px;"></div>
-        </div>
-      `;
-      $('panelPaymentSearchBtn').onclick = () => {
-        const id = $('panelPaymentSearchInput').value.trim();
-        const p = paymentsData.find(x => x.id === id);
-        const resultBox = $('panelPaymentSearchResult');
-        if (!p) { resultBox.innerHTML = `<div class="muted">Payment not found in loaded results.</div>`; return; }
-        resultBox.innerHTML = `
-          <div><b>User:</b> ${escapeHtml(p.username || '-')}</div>
-          <div><b>Plan:</b> ${escapeHtml(normalizePlanLabel(p.planCode || p.billingCycle || p.billing_cycle || '-'))}</div>
-          <div><b>Quantity:</b> ${Number(p.quantity || 1)}</div>
-          <div><b>Status:</b> ${getPaymentStatusBadge(p)}</div>
-          <div><b>Source:</b> ${escapeHtml(p.source || '-')}</div>
-          <div class="actions" style="margin-top:10px;">
-            <button onclick="verifyPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Verify</button>
-            <button class="btn-yellow" onclick="cancelPayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Cancel</button>
-            <button class="btn-red" onclick="deletePayment('${escapeHtml(p.id)}','${escapeHtml(p.source || 'primary')}')">Delete</button>
+        <div class="card" style="margin:0;">
+          <div class="toolbar" style="display:block;">
+            <div style="margin-bottom:10px;">
+              <label>Email</label>
+              <input id="createUserEmail" placeholder="user@example.com" />
+            </div>
+            <div style="margin-bottom:10px;">
+              <label>Password</label>
+              <input id="createUserPassword" type="password" placeholder="Minimum 8 characters" />
+            </div>
+            <div style="margin-bottom:10px;">
+              <label>Role</label>
+              <select id="createUserRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label><input id="createUserVerified" type="checkbox" /> Email already verified</label>
+            </div>
+            <button class="btn-primary" id="submitCreateUserBtn">Create User</button>
           </div>
-        `;
+        </div>
+      `;
+
+      $("submitCreateUserBtn").onclick = async () => {
+        const username = $("createUserEmail").value.trim();
+        const password = $("createUserPassword").value;
+        const role = $("createUserRole").value;
+        const emailVerified = $("createUserVerified").checked;
+
+        const res = await callApi("/admin/create-user", "POST", {
+          username,
+          password,
+          role,
+          emailVerified
+        }, false);
+
+        if (res.ok) {
+          await logAudit("CREATE USER", username);
+          showToast("User created");
+          closePanel();
+          await loadAdmin();
+        } else {
+          showToast(res.data?.message || "Create user failed");
+        }
       };
     }
 
-    function openBroadcastPanel() {
-      panel.style.display = 'block';
-      panelTitle.textContent = 'Broadcast / Admin Note';
-      panelContent.innerHTML = `
-        <div class="section-note">This panel stores an audit-style admin note in the log feed.</div>
-        <textarea id="broadcastMessage" placeholder="Write an admin note or broadcast summary..."></textarea>
-        <div class="actions" style="margin-top:10px;">
-          <button class="btn-primary" id="saveBroadcastBtn">Save Note</button>
-        </div>
-      `;
-      $('saveBroadcastBtn').onclick = async () => {
-        const msg = $('broadcastMessage').value.trim();
-        if (!msg) return showToast('Enter a message');
-        await logAudit('ADMIN NOTE', msg);
-        showToast('Note saved');
-        await loadAdmin();
-      };
+    async function loadUsers() {
+      const res = await callApi("/admin/users", "GET", null, true);
+      if (!res.ok) throw new Error(res.data?.message || "Failed to load users");
+      usersData = Array.isArray(res.data?.users) ? res.data.users.map(normalizeUser) : [];
     }
 
-    function openSettingsPanel() {
-      panel.style.display = 'block';
-      panelTitle.textContent = 'Dashboard Settings';
-      panelContent.innerHTML = `
-        <div class="success-box"><b>Current State</b><br>Auto refresh: ${autoRefresh ? 'ON' : 'OFF'}<br>Compact mode: ${compactMode ? 'ON' : 'OFF'}</div>
-        <div class="actions">
-          <button id="toggleAutoRefreshPanelBtn">Toggle Auto Refresh</button>
-          <button id="toggleCompactPanelBtn">Toggle Compact</button>
-        </div>
-      `;
-      $('toggleAutoRefreshPanelBtn').onclick = () => { autoRefresh = !autoRefresh; $('autoRefreshBtn').textContent = `⏱️ Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`; showToast(`Auto Refresh ${autoRefresh ? 'ON' : 'OFF'}`); };
-      $('toggleCompactPanelBtn').onclick = () => { compactMode = !compactMode; document.body.classList.toggle('compact', compactMode); if (compactModeToggle) compactModeToggle.checked = compactMode; showToast(`Compact ${compactMode ? 'ON' : 'OFF'}`); };
+    async function loadPayments() {
+      const res = await callApi("/admin/payments", "GET", null, true);
+      if (!res.ok) throw new Error(res.data?.message || "Failed to load payments");
+      paymentsData = Array.isArray(res.data?.payments) ? res.data.payments.map(normalizePayment) : [];
     }
 
-    async function createUser() {
-      const username = $('newUser').value.trim();
-      const password = $('newPass').value;
-      const role = $('newRole').value;
-      const emailVerified = $('newEmailVerified').value === 'true';
-      const source = $('newCreateSource').value;
-      if (!username || !password) { showToast('Missing fields'); return; }
-      const res = await fetchBySource(source, `/admin/create-user`, 'POST', { username, password, role, emailVerified }, false);
-      if (res.ok) { await logAudit('CREATE USER', username); showToast('User created'); await loadAdmin(); }
-      else showToast(res.data?.message || 'Create failed');
+    async function loadLinks() {
+      const res = await callApi("/admin/links", "GET", null, true);
+      if (!res.ok) throw new Error(res.data?.message || "Failed to load links");
+      linksData = Array.isArray(res.data?.items) ? res.data.items.map(normalizeLink) : [];
+      landingData = linksData.filter(i => String(i.linkType || "").toLowerCase() === "landing");
     }
 
-    async function verifyAdminSession() {
-      const [primary, legacy] = await Promise.all([
-        fetchBySource('primary', '/me', 'GET', null, false),
-        fetchBySource('legacy', '/me', 'GET', null, false)
-      ]);
-      const primaryOk = primary.ok && String(primary.data?.role || '').toLowerCase() === 'admin';
-      const legacyOk = legacy.ok && String(legacy.data?.role || '').toLowerCase() === 'admin';
-      if (!primaryOk && !legacyOk) { logout(); return false; }
-      return true;
+    async function loadDomains() {
+      const res = await callApi("/admin/domains", "GET", null, true);
+      if (!res.ok) throw new Error(res.data?.message || "Failed to load domains");
+      domainsData = Array.isArray(res.data?.domains) ? res.data.domains.map(normalizeDomain) : [];
+    }
+
+    async function loadAudit() {
+      const res = await callApi("/admin/audit", "GET", null, true);
+      if (!res.ok) throw new Error(res.data?.message || "Failed to load audit");
+      auditData = Array.isArray(res.data?.logs) ? res.data.logs.map(normalizeAudit) : [];
     }
 
     async function loadAdmin() {
       if (isLoading) return;
       isLoading = true;
-      if (refreshProgress) refreshProgress.style.width = '35%';
-      try {
-        const sessionOk = await verifyAdminSession();
-        if (!sessionOk) return;
-        addTerminal('Starting merged refresh...');
+      refreshProgress.style.width = "10%";
 
-        const [usersPair, linksPair, auditPair, paymentsPair, domainsRes] = await Promise.all([
-          fetchBoth(`/admin/users`),
-          fetchBoth(`/admin/links`),
-          fetchBoth(`/admin/audit`),
-          fetchBoth(`/admin/payments`),
-          fetchBySource('primary', `/admin/domains`, 'GET', null, false)
+      try {
+        addTerminal("Refreshing admin data...");
+        await Promise.all([
+          loadUsers(),
+          loadPayments(),
+          loadLinks(),
+          loadDomains(),
+          loadAudit()
         ]);
 
-        const nextUsers = mergeUsers(
-          Array.isArray(usersPair.primary.data?.users) ? usersPair.primary.data.users : [],
-          Array.isArray(usersPair.legacy.data?.users) ? usersPair.legacy.data.users : []
-        );
+        refreshProgress.style.width = "70%";
 
-        const nextLinks = mergeLinks(
-          Array.isArray(linksPair.primary.data?.items) ? linksPair.primary.data.items : [],
-          Array.isArray(linksPair.legacy.data?.items) ? linksPair.legacy.data.items : []
-        );
-
-        const nextAudit = mergeAudits(
-          Array.isArray(auditPair.primary.data?.logs) ? auditPair.primary.data.logs : [],
-          Array.isArray(auditPair.legacy.data?.logs) ? auditPair.legacy.data.logs : []
-        );
-
-        const nextPayments = mergePayments(
-          Array.isArray(paymentsPair.primary.data?.payments) ? paymentsPair.primary.data.payments : [],
-          Array.isArray(paymentsPair.legacy.data?.payments) ? paymentsPair.legacy.data.payments : []
-        );
-
-        const nextDomains = mergeDomains(Array.isArray(domainsRes.data?.domains) ? domainsRes.data.domains : []);
-        const nextLanding = nextLinks.filter(l => String(l.linkType || '').toLowerCase() === 'landing');
-
-        usersData = nextUsers.length ? nextUsers : lastGoodState.usersData;
-        linksData = nextLinks.length ? nextLinks : lastGoodState.linksData;
-        auditData = nextAudit.length ? nextAudit : lastGoodState.auditData;
-        paymentsData = nextPayments.length ? nextPayments : lastGoodState.paymentsData;
-        domainsData = nextDomains.length || Array.isArray(domainsRes.data?.domains) ? nextDomains : lastGoodState.domainsData;
-        landingData = nextLanding.length || nextLinks.length ? nextLanding : lastGoodState.landingData;
-
-        lastGoodState.usersData = usersData;
-        lastGoodState.linksData = linksData;
-        lastGoodState.auditData = auditData;
-        lastGoodState.paymentsData = paymentsData;
-        lastGoodState.domainsData = domainsData;
-        lastGoodState.landingData = landingData;
-
-        const stateSummary = [
-          `Users P:${usersPair.primary.ok ? 'OK' : usersPair.primary.status} L:${usersPair.legacy.ok ? 'OK' : usersPair.legacy.status}`,
-          `Items P:${linksPair.primary.ok ? 'OK' : linksPair.primary.status} L:${linksPair.legacy.ok ? 'OK' : linksPair.legacy.status}`,
-          `Payments P:${paymentsPair.primary.ok ? 'OK' : paymentsPair.primary.status} L:${paymentsPair.legacy.ok ? 'OK' : paymentsPair.legacy.status}`,
-          `Domains P:${domainsRes.ok ? 'OK' : domainsRes.status}`,
-          `Audit P:${auditPair.primary.ok ? 'OK' : auditPair.primary.status} L:${auditPair.legacy.ok ? 'OK' : auditPair.legacy.status}`
-        ].join(' • ');
-
-        renderStats(stateSummary);
+        renderStats();
         renderPaymentStats();
         renderRiskStats();
         renderSubscriptionStats();
@@ -2342,179 +2126,153 @@
         renderSecuritySection();
         drawChart();
 
-        setBackendBadge('Merged View • Backend2 + Legacy AWS');
-        addTerminal('Dashboard refreshed');
+        refreshProgress.style.width = "100%";
+        addTerminal("Refresh complete");
       } catch (error) {
         console.error(error);
-        addTerminal('Refresh failed. Keeping last good data.');
-        refreshStateText.textContent = 'Refresh failed. Last good data preserved.';
-        showToast('Refresh failed - kept last data');
+        addTerminal(`Refresh failed: ${error.message || error}`);
+        showToast(error.message || "Refresh failed");
       } finally {
         isLoading = false;
-        if (refreshProgress) {
-          refreshProgress.style.width = '100%';
-          setTimeout(() => { if (refreshProgress) refreshProgress.style.width = '0%'; }, 1200);
-        }
       }
-    }
-
-    function setupFilters() {
-      [userSearch, userFilterRole, userFilterStatus].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderUsers));
-      [paymentSearch, paymentStatusFilter, paymentPlanFilter, onlyAwaitingToggle].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', renderPayments));
-      [linkSearch, linkFilterStatus, linkTypeFilter, linkSort].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLinks));
-      [domainSearch, domainStatusFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderDomains));
-      [landingSearch, landingSourceFilter].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', renderLandingPages));
-      if (auditSearch) auditSearch.addEventListener('input', renderAuditLogs);
-      [globalSearch, sourceFilterGlobal].forEach(el => el && el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
-        renderUsers(); renderPayments(); renderLinks(); renderDomains(); renderLandingPages();
-      }));
-      if (chartModeSelect) chartModeSelect.addEventListener('change', drawChart);
     }
 
     function setupNavigation() {
-      $('navOverview').onclick = () => showSection('overview');
-      $('navUsers').onclick = () => showSection('users');
-      $('navPayments').onclick = () => showSection('payments');
-      $('navLinks').onclick = () => showSection('links');
-      $('navDomains').onclick = () => showSection('domains');
-      $('navLanding').onclick = () => showSection('landing');
-      $('navAudit').onclick = () => showSection('audit');
-      $('navSecurity').onclick = () => showSection('security');
-    }
-
-    async function bulkVerifyVisibleAwaiting() {
-      const awaiting = getFilteredPayments().filter(p => String(p.status || '').toLowerCase() === 'awaiting_confirmation');
-      if (!awaiting.length) return showToast('No awaiting payments visible');
-      if (!confirm(`Verify ${awaiting.length} visible awaiting payment(s)?`)) return;
-      for (const p of awaiting) {
-        await verifyPayment(p.id, p.source);
-      }
-    }
-
-    async function bulkVerifyVisibleUsers() {
-      const users = getFilteredUsers().filter(u => !(u.emailVerified || u.email_verified));
-      if (!users.length) return showToast('No unverified visible users');
-      if (!confirm(`Verify ${users.length} visible user email(s)?`)) return;
-      for (const u of users) {
-        await verifyUser(u.username, u.source);
-      }
+      $("navOverview").onclick = () => showSection("overview");
+      $("navUsers").onclick = () => showSection("users");
+      $("navPayments").onclick = () => showSection("payments");
+      $("navLinks").onclick = () => showSection("links");
+      $("navDomains").onclick = () => showSection("domains");
+      $("navLanding").onclick = () => showSection("landing");
+      $("navAudit").onclick = () => showSection("audit");
+      $("navSecurity").onclick = () => showSection("security");
     }
 
     function setupTopButtons() {
-      $('refreshBtn').onclick = async () => { await loadAdmin(); showToast('Refreshed'); };
-      $('refreshAllBtn').onclick = async () => { await loadAdmin(); showToast('Refreshed'); };
-      $('createUserBtn').onclick = openCreateUser;
-      $('openPaymentSearchBtn').onclick = openPaymentSearch;
-      $('openBroadcastBtn').onclick = openBroadcastPanel;
-      $('openSettingsBtn').onclick = openSettingsPanel;
-      $('bulkVerifyAwaitingBtn').onclick = bulkVerifyVisibleAwaiting;
-      $('bulkVerifyUsersBtn').onclick = bulkVerifyVisibleUsers;
-      $('exportVisibleLinksBtn').onclick = exportVisibleLinks;
-      $('refreshDomainsOnlyBtn').onclick = renderDomains;
-      $('refreshLandingOnlyBtn').onclick = renderLandingPages;
-      $('refreshAuditBtn').onclick = renderAuditLogs;
-      $('clearGlobalFiltersBtn').onclick = () => {
-        if (globalSearch) globalSearch.value = '';
-        if (sourceFilterGlobal) sourceFilterGlobal.value = '';
-        renderUsers(); renderPayments(); renderLinks(); renderDomains(); renderLandingPages();
-      };
-
-      $('showAwaitingBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'awaiting_confirmation'; renderPayments(); showToast('Showing awaiting confirmation payments'); };
-      $('showPendingBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'pending'; renderPayments(); showToast('Showing pending payments'); };
-      $('showVerifiedBtn').onclick = () => { showSection('payments'); paymentStatusFilter.value = 'verified'; renderPayments(); showToast('Showing verified payments'); };
-      $('showDomainsBtn').onclick = () => { showSection('domains'); showToast('Showing domains'); };
-      $('showLandingBtn').onclick = () => { showSection('landing'); showToast('Showing landing pages'); };
-      $('closePanelBtn').onclick = closePanel;
-      $('logoutBtn').onclick = logout;
-
-      $('exportUsersBtn').onclick = () => { exportJson('users.json', usersData); showToast('Users exported'); };
-      $('exportLinksBtn').onclick = () => { exportJson('items.json', linksData); showToast('Items exported'); };
-      $('exportPaymentsBtn').onclick = () => { exportJson('payments.json', paymentsData); showToast('Payments exported'); };
-      $('exportDomainsBtn').onclick = () => { exportJson('domains.json', domainsData); showToast('Domains exported'); };
-      $('exportLandingBtn').onclick = () => { exportJson('landing-pages.json', landingData); showToast('Landing pages exported'); };
-
-      $('autoRefreshBtn').onclick = () => {
+      $("refreshBtn").onclick = () => loadAdmin();
+      $("refreshAllBtn").onclick = () => loadAdmin();
+      $("autoRefreshBtn").onclick = () => {
         autoRefresh = !autoRefresh;
-        $('autoRefreshBtn').textContent = `⏱️ Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`;
-        showToast(`Auto Refresh ${autoRefresh ? 'ON' : 'OFF'}`);
+        $("autoRefreshBtn").textContent = `⏱️ Auto Refresh: ${autoRefresh ? "ON" : "OFF"}`;
+        showToast(`Auto refresh ${autoRefresh ? "enabled" : "disabled"}`);
       };
+      $("createUserBtn").onclick = openCreateUser;
+      $("showAwaitingBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "awaiting_confirmation";
+        renderPayments();
+      };
+      $("showPendingBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "pending";
+        renderPayments();
+      };
+      $("showVerifiedBtn").onclick = () => {
+        showSection("payments");
+        paymentStatusFilter.value = "verified";
+        renderPayments();
+      };
+      $("showDomainsBtn").onclick = () => showSection("domains");
+      $("showLandingBtn").onclick = () => showSection("landing");
+      $("exportUsersBtn").onclick = exportUsers;
+      $("exportLinksBtn").onclick = exportLinks;
+      $("exportPaymentsBtn").onclick = exportPayments;
+      $("exportDomainsBtn").onclick = exportDomains;
+      $("exportLandingBtn").onclick = exportLanding;
+      $("logoutBtn").onclick = logout;
+      $("closePanelBtn").onclick = closePanel;
+      chartModeSelect.onchange = drawChart;
+    }
 
-      if (compactModeToggle) compactModeToggle.addEventListener('change', () => {
-        compactMode = compactModeToggle.checked;
-        document.body.classList.toggle('compact', compactMode);
-      });
+    function setupFilters() {
+      userSearch.oninput = renderUsers;
+      userFilterRole.onchange = renderUsers;
+      userFilterStatus.onchange = renderUsers;
+      paymentSearch.oninput = renderPayments;
+      paymentStatusFilter.onchange = renderPayments;
+      paymentPlanFilter.onchange = renderPayments;
+      linkSearch.oninput = renderLinks;
+      linkFilterStatus.onchange = renderLinks;
+      linkTypeFilter.onchange = renderLinks;
+      linkSort.onchange = renderLinks;
+      domainSearch.oninput = renderDomains;
+      domainStatusFilter.onchange = renderDomains;
+      landingSearch.oninput = renderLandingPages;
+      auditSearch.oninput = renderAuditLogs;
+      globalSearch.oninput = () => {
+        renderUsers();
+        renderPayments();
+        renderLinks();
+        renderDomains();
+        renderLandingPages();
+      };
     }
 
     function setupEventDelegation() {
-      usersEl.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-action]');
+      usersEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         const username = btn.dataset.username;
-        const source = btn.dataset.source;
-        if (action === 'view-user') return openUser(username);
-        if (action === 'ban-user') return banUser(username, source);
-        if (action === 'unban-user') return unbanUser(username, source);
-        if (action === 'make-admin') return makeAdmin(username, source);
-        if (action === 'remove-admin') return removeAdmin(username, source);
-        if (action === 'pause-subscription') return pauseSubscription(username, source);
-        if (action === 'resume-subscription') return resumeSubscription(username, source);
-        if (action === 'verify-user') return verifyUser(username, source);
+        if (action === "view-user") return openUser(username);
+        if (action === "ban-user") return banUser(username);
+        if (action === "unban-user") return unbanUser(username);
+        if (action === "make-admin") return makeAdmin(username);
+        if (action === "remove-admin") return removeAdmin(username);
+        if (action === "pause-subscription") return pauseSubscription(username);
+        if (action === "resume-subscription") return resumeSubscription(username);
+        if (action === "verify-user") return verifyUser(username);
       });
 
-      paymentsEl.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-action]');
+      paymentsEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         const paymentId = btn.dataset.paymentId;
-        const address = btn.dataset.address;
-        const source = btn.dataset.source;
-        if (action === 'view-payment') return openPayment(paymentId);
-        if (action === 'verify-payment') return verifyPayment(paymentId, source);
-        if (action === 'cancel-payment') return cancelPayment(paymentId, source);
-        if (action === 'delete-payment') return deletePayment(paymentId, source);
-        if (action === 'copy-payment-address') return copyText(address);
+        const address = btn.dataset.address || "";
+        if (action === "view-payment") return openPayment(paymentId);
+        if (action === "verify-payment") return verifyPayment(paymentId);
+        if (action === "cancel-payment") return cancelPayment(paymentId);
+        if (action === "delete-payment") return deletePayment(paymentId);
+        if (action === "copy-payment-address") return copyText(address);
       });
 
-      linksEl.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-action]');
+      linksEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         const slug = btn.dataset.slug;
         const link = btn.dataset.link;
-        const source = btn.dataset.source;
-        const domain = btn.dataset.domain || '';
-        if (action === 'copy-link') return copyText(link);
-        if (action === 'open-link') return openLink(link);
-        if (action === 'pause-link') return pauseLink(slug, source);
-        if (action === 'resume-link') return resumeLink(slug, source);
-        if (action === 'delete-link') return deleteLink(slug, source, domain);
-        if (action === 'preview-landing') return openLanding(slug, domain, source, true);
+        const domain = btn.dataset.domain || "";
+        if (action === "copy-link") return copyText(link);
+        if (action === "open-link") return openLink(link);
+        if (action === "pause-link") return pauseLink(slug, domain);
+        if (action === "resume-link") return resumeLink(slug, domain);
+        if (action === "delete-link") return deleteLink(slug, domain);
+        if (action === "preview-landing") return openLanding(slug, domain, true);
       });
 
-      domainsEl.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-action]');
+      domainsEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         const domain = btn.dataset.domain;
-        const token = btn.dataset.token || '';
-        if (action === 'view-domain') return openDomain(domain);
-        if (action === 'verify-domain') return verifyDomain(domain);
-        if (action === 'set-primary-domain') return setPrimaryDomain(domain);
-        if (action === 'delete-domain') return deleteDomain(domain);
-        if (action === 'copy-domain-token') return copyText(token);
+        const token = btn.dataset.token || "";
+        if (action === "view-domain") return openDomain(domain);
+        if (action === "verify-domain") return verifyDomain(domain);
+        if (action === "set-primary-domain") return setPrimaryDomain(domain);
+        if (action === "delete-domain") return deleteDomain(domain);
+        if (action === "copy-domain-token") return copyText(token);
       });
 
-      landingPagesEl.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-action]');
+      landingPagesEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
         const slug = btn.dataset.slug;
-        const domain = btn.dataset.domain || '';
-        const source = btn.dataset.source;
-        if (action === 'preview-landing') return openLanding(slug, domain, source, true);
-        if (action === 'view-landing') return openLanding(slug, domain, source, false);
-        if (action === 'delete-landing') return deleteLanding(slug, domain, source);
+        const domain = btn.dataset.domain || "";
+        if (action === "preview-landing") return openLanding(slug, domain, true);
+        if (action === "delete-landing") return deleteLanding(slug, domain);
       });
     }
 
@@ -2526,7 +2284,7 @@
       }, 10000);
     }
 
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener("visibilitychange", () => {
       if (!document.hidden) loadAdmin();
     });
 
@@ -2544,8 +2302,13 @@
     window.verifyUser = verifyUser;
 
     (async function init() {
+      if (!getToken() || getRole() !== "admin") {
+        logout();
+        return;
+      }
+
       setBackendBadge();
-      showSection('overview');
+      showSection("overview");
       setupNavigation();
       setupTopButtons();
       setupFilters();
