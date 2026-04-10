@@ -316,6 +316,7 @@
     a{
       color:#93c5fd;
       text-decoration:none;
+      word-break:break-all;
     }
     a:hover{ text-decoration:underline; }
 
@@ -634,6 +635,7 @@
   <script>
   const PRIMARY_API = "https://api.rattleshortapi.it.com";
   const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+  const PUBLIC_BASE = "https://rattleshortapi.it.com";
 
   const AUTH_STORAGE_KEY = "rattle_token";
   const ROLE_STORAGE_KEY = "rattle_role";
@@ -698,6 +700,25 @@
 
   function normalizeApiUrl(url) {
     return String(url || "").replace(/\/+$/, "");
+  }
+
+  function ensureAbsoluteUrl(value, fallbackBase = PUBLIC_BASE) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) {
+      return `https://${raw.replace(/^\/+/, "")}`;
+    }
+
+    if (raw.startsWith("/")) {
+      return `${normalizeApiUrl(fallbackBase)}${raw}`;
+    }
+
+    return raw;
   }
 
   function getToken() {
@@ -822,10 +843,15 @@
   }
 
   function buildPublicLink(slug) {
-    return `${normalizeApiUrl(PRIMARY_API)}/${slug}`;
+    return `${normalizeApiUrl(PUBLIC_BASE)}/${slug}`;
   }
 
   function normalizeLinkItem(item) {
+    const normalizedPublic = ensureAbsoluteUrl(
+      item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug),
+      PUBLIC_BASE
+    );
+
     return {
       ...item,
       clicks: Number(item.clicks || 0),
@@ -835,7 +861,7 @@
       maxRisk: Number(item.maxRisk || item.max_risk || 0),
       campaign: item.campaign || "",
       note: item.note || "",
-      publicLink: item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug)
+      publicLink: normalizedPublic
     };
   }
 
@@ -1133,7 +1159,8 @@
         String(item.slug || "").toLowerCase().includes(q) ||
         String(item.url || "").toLowerCase().includes(q) ||
         String(item.note || "").toLowerCase().includes(q) ||
-        String(item.campaign || "").toLowerCase().includes(q);
+        String(item.campaign || "").toLowerCase().includes(q) ||
+        String(item.publicLink || "").toLowerCase().includes(q);
 
       const matchesStatus = statusFilter === "all" ? true : getStatusKey(item) === statusFilter;
       return matchesSearch && matchesStatus;
@@ -1359,7 +1386,7 @@
       return;
     }
 
-    setResult(`Link created via ${res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}: ${res.data?.shortLink || res.data?.link || "Success"}`, false);
+    setResult(`Link created via ${res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}: ${ensureAbsoluteUrl(res.data?.shortLink || res.data?.link || "", PUBLIC_BASE) || "Success"}`, false);
     els.urlInput.value = "";
     els.slugInput.value = "";
     els.expireInput.value = "";
@@ -1452,7 +1479,7 @@
   async function bulkCopySelected() {
     const items = [...selectedLinks].map(slug => {
       const item = linksStore.find(x => x.slug === slug);
-      return item?.publicLink || buildPublicLink(slug);
+      return ensureAbsoluteUrl(item?.publicLink || buildPublicLink(slug), PUBLIC_BASE);
     });
 
     if (!items.length) return showToast("No selected items");
@@ -1460,7 +1487,12 @@
   }
 
   function openLink(link) {
-    window.open(link, "_blank", "noopener,noreferrer");
+    const safe = ensureAbsoluteUrl(link, PUBLIC_BASE);
+    if (!safe) {
+      showToast("Invalid link");
+      return;
+    }
+    window.open(safe, "_blank", "noopener,noreferrer");
   }
 
   async function getGeo(ip) {
@@ -1846,6 +1878,6 @@
   window.deleteLink = deleteLink;
 
   init();
-</script>
+  </script>
 </body>
 </html>
