@@ -535,6 +535,7 @@
     <button class="nav-btn" id="navLanding"><span>🪄 Landing Pages</span><span class="tiny" id="navLandingCount">0</span></button>
     <button class="nav-btn" id="navAudit"><span>📜 Audit</span><span class="tiny">Logs</span></button>
     <button class="nav-btn" id="navSecurity"><span>🛡 Security</span><span class="tiny">Risk</span></button>
+    <button class="nav-btn" id="navRedirectReview"><span>🔍 Redirect Review</span><span class="tiny" id="navRedirectReviewCount">0</span></button>
 
     <div class="sidebar-section">
       <h4>Quick Actions</h4>
@@ -545,6 +546,7 @@
       <button id="showVerifiedBtn">✅ Verified Payments</button>
       <button id="showDomainsBtn">🌐 View Domains</button>
       <button id="showLandingBtn">🪄 View Landing Pages</button>
+      <button id="showRedirectReviewBtn">🔍 View Redirect Review</button>
       <button id="exportUsersBtn">⬇️ Export Users</button>
       <button id="exportLinksBtn">⬇️ Export Items</button>
       <button id="exportPaymentsBtn">⬇️ Export Payments</button>
@@ -559,7 +561,7 @@
       <div>
         <h1>📊 Admin Control Center</h1>
         <div class="sub">
-          Backend2 admin dashboard for users, payments, links, custom domains, landing pages, audit logs, and security review.
+          Backend2 admin dashboard for users, payments, links, custom domains, landing pages, audit logs, security review, and redirect review.
         </div>
       </div>
 
@@ -841,6 +843,62 @@
         <div id="securityPanelContent" class="grid-2"></div>
       </div>
     </section>
+
+    <section id="redirectReviewSection" class="hidden">
+      <div class="card">
+        <h3>🔍 Redirect Review</h3>
+        <div class="highlight-box">
+          <b>Review Queue:</b> This section uses your existing item risk data and current item actions. No backend logic was changed. High risk and medium risk redirects are surfaced here for review.
+        </div>
+
+        <div class="toolbar">
+          <input id="redirectReviewSearch" placeholder="Search slug, user, domain, url..." />
+          <select id="redirectRiskFilter">
+            <option value="">All risk levels</option>
+            <option value="high">High Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="low">Low Risk</option>
+          </select>
+          <select id="redirectReviewStatusFilter">
+            <option value="">All item status</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+          </select>
+          <select id="redirectReviewTypeFilter">
+            <option value="">All types</option>
+            <option value="redirect">Short Links</option>
+            <option value="landing">Landing Pages</option>
+          </select>
+          <select id="redirectReviewSort">
+            <option value="risk_desc">Sort: Risk high to low</option>
+            <option value="risk_asc">Sort: Risk low to high</option>
+            <option value="clicks_desc">Sort: Clicks high to low</option>
+            <option value="clicks_asc">Sort: Clicks low to high</option>
+            <option value="slug_asc">Sort: Slug A-Z</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Slug</th>
+                <th>Domain</th>
+                <th>Type</th>
+                <th>Destination</th>
+                <th>Clicks</th>
+                <th>Risk</th>
+                <th>Status</th>
+                <th>Expire</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="redirectReview"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
   <div class="panel" id="panel">
@@ -905,6 +963,7 @@
     const riskBadge = $("riskBadge");
     const terminal = $("terminal");
     const securityPanelContent = $("securityPanelContent");
+    const redirectReviewEl = $("redirectReview");
 
     const overviewSection = $("overviewSection");
     const usersSection = $("usersSection");
@@ -914,6 +973,7 @@
     const landingSection = $("landingSection");
     const auditSection = $("auditSection");
     const securitySection = $("securitySection");
+    const redirectReviewSection = $("redirectReviewSection");
 
     const userSearch = $("userSearch");
     const userFilterRole = $("userFilterRole");
@@ -931,6 +991,12 @@
     const auditSearch = $("auditSearch");
     const globalSearch = $("globalSearch");
     const chartModeSelect = $("chartModeSelect");
+
+    const redirectReviewSearch = $("redirectReviewSearch");
+    const redirectRiskFilter = $("redirectRiskFilter");
+    const redirectReviewStatusFilter = $("redirectReviewStatusFilter");
+    const redirectReviewTypeFilter = $("redirectReviewTypeFilter");
+    const redirectReviewSort = $("redirectReviewSort");
 
     function getToken() {
       return localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
@@ -1040,7 +1106,7 @@
     }
 
     function showSection(sectionName) {
-      [overviewSection, usersSection, paymentsSection, linksSection, domainsSection, landingSection, auditSection, securitySection]
+      [overviewSection, usersSection, paymentsSection, linksSection, domainsSection, landingSection, auditSection, securitySection, redirectReviewSection]
         .forEach(el => el.classList.add("hidden"));
 
       document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
@@ -1053,7 +1119,8 @@
         domains: [domainsSection, "navDomains"],
         landing: [landingSection, "navLanding"],
         audit: [auditSection, "navAudit"],
-        security: [securitySection, "navSecurity"]
+        security: [securitySection, "navSecurity"],
+        redirectReview: [redirectReviewSection, "navRedirectReview"]
       };
 
       const pair = map[sectionName];
@@ -1115,6 +1182,20 @@
       return link.paused
         ? `<span class="badge paused">PAUSED</span>`
         : `<span class="badge active">ACTIVE</span>`;
+    }
+
+    function getRiskBadge(risk) {
+      const value = Number(risk || 0);
+      if (value > 80) return `<span class="badge risk-high">HIGH • ${value}</span>`;
+      if (value > 50) return `<span class="badge risk-med">MED • ${value}</span>`;
+      return `<span class="badge risk-low">LOW • ${value}</span>`;
+    }
+
+    function getRiskLevelKey(risk) {
+      const value = Number(risk || 0);
+      if (value > 80) return "high";
+      if (value > 50) return "medium";
+      return "low";
     }
 
     function defaultHost() {
@@ -1264,6 +1345,7 @@
         return !paused && status === "active" && exp > Date.now();
       }).length;
       const admins = usersData.filter(u => String(u.role || "").toLowerCase() === "admin").length;
+      const reviewCount = linksData.filter(l => Number(l.maxRisk || 0) > 50).length;
 
       statUsers.textContent = totalUsers;
       statLinks.textContent = totalLinks;
@@ -1298,6 +1380,7 @@
       $("navLinksCount").textContent = totalLinks;
       $("navDomainsCount").textContent = totalDomains;
       $("navLandingCount").textContent = totalLanding;
+      $("navRedirectReviewCount").textContent = reviewCount;
 
       const risk = computeRiskLevel();
       riskBadge.className = `badge ${risk.className}`;
@@ -1753,6 +1836,71 @@
       `;
     }
 
+    function getFilteredRedirectReviewItems() {
+      const q = String(redirectReviewSearch?.value || "").trim().toLowerCase();
+      const risk = redirectRiskFilter?.value || "";
+      const status = redirectReviewStatusFilter?.value || "";
+      const type = redirectReviewTypeFilter?.value || "";
+      const sort = redirectReviewSort?.value || "risk_desc";
+
+      let list = getGlobalFilteredData(linksData).filter(l => {
+        const blob = `${l.slug || ""} ${l.url || ""} ${l.user || ""} ${l.domain || ""} ${l.linkType || ""}`.toLowerCase();
+        const matchesQ = !q || blob.includes(q);
+        const matchesRisk = !risk || getRiskLevelKey(l.maxRisk) === risk;
+        const matchesStatus = !status || (status === "active" && !l.paused) || (status === "paused" && !!l.paused);
+        const matchesType = !type || String(l.linkType || "").toLowerCase() === type;
+        return matchesQ && matchesRisk && matchesStatus && matchesType;
+      });
+
+      if (sort === "risk_desc") list.sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+      if (sort === "risk_asc") list.sort((a, b) => Number(a.maxRisk || 0) - Number(b.maxRisk || 0));
+      if (sort === "clicks_desc") list.sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0));
+      if (sort === "clicks_asc") list.sort((a, b) => Number(a.clicks || 0) - Number(b.clicks || 0));
+      if (sort === "slug_asc") list.sort((a, b) => String(a.slug || "").localeCompare(String(b.slug || "")));
+
+      return list;
+    }
+
+    function renderRedirectReview() {
+      const list = getFilteredRedirectReviewItems();
+
+      redirectReviewEl.innerHTML = list.length
+        ? list.map(l => {
+            const full = buildPublicLink(l);
+            return `
+              <tr>
+                <td>${escapeHtml(l.user || "")}</td>
+                <td><b>${escapeHtml(l.slug || "")}</b></td>
+                <td>${escapeHtml(l.domain || defaultHost())}</td>
+                <td>${getLinkTypeBadge(l)}</td>
+                <td>
+                  <div><a href="${escapeHtml(full)}" target="_blank" rel="noopener noreferrer">${escapeHtml(full)}</a></div>
+                  <div class="muted tiny">${escapeHtml(l.url || "-")}</div>
+                </td>
+                <td>${Number(l.clicks || 0)}</td>
+                <td>${getRiskBadge(l.maxRisk)}</td>
+                <td>${getLinkStatusBadge(l)}</td>
+                <td>${formatExpire(l.expire)}</td>
+                <td>
+                  <div class="actions">
+                    <button data-action="view-redirect-review" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">View</button>
+                    <button data-action="copy-link" data-link="${escapeHtml(full)}">Copy</button>
+                    <button data-action="open-link" data-link="${escapeHtml(full)}">Open</button>
+                    ${String(l.linkType || "").toLowerCase() === "landing"
+                      ? `<button class="btn-purple" data-action="preview-landing" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Preview</button>`
+                      : ``}
+                    ${l.paused
+                      ? `<button class="btn-green" data-action="resume-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Resume</button>`
+                      : `<button class="btn-yellow" data-action="pause-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Pause</button>`}
+                    <button class="btn-red" data-action="delete-link" data-slug="${escapeHtml(l.slug)}" data-domain="${escapeHtml(l.domain || "")}">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join("")
+        : `<tr><td colspan="10" class="muted">No redirect review items found</td></tr>`;
+    }
+
     async function openUser(username) {
       const u = usersData.find(x => x.username === username);
       if (!u) return;
@@ -1851,6 +1999,7 @@
         <div><b>Domain:</b> ${escapeHtml(link.domain || defaultHost())}</div>
         <div><b>User:</b> ${escapeHtml(link.user || "-")}</div>
         <div><b>Clicks:</b> ${Number(link.clicks || 0)}</div>
+        <div><b>Risk:</b> ${getRiskBadge(link.maxRisk || 0)}</div>
         <div class="code-box">${escapeHtml(publicUrl)}</div>
         <div class="actions" style="margin:12px 0;">
           <button onclick="openLink('${escapeHtml(publicUrl)}')">Open Live</button>
@@ -1858,6 +2007,42 @@
           <button class="btn-red" onclick="deleteLanding('${escapeHtml(link.slug)}','${escapeHtml(link.domain || "")}')">Delete Landing</button>
         </div>
         <iframe class="preview-frame" src="${escapeHtml(publicUrl)}"></iframe>
+      `;
+    }
+
+    async function openRedirectReview(slug, domain = "") {
+      const item = linksData.find(x => x.slug === slug && String(x.domain || "") === String(domain || ""));
+      if (!item) return;
+
+      const publicUrl = buildPublicLink(item);
+
+      panel.style.display = "block";
+      panelTitle.textContent = "Redirect Review Details";
+      panelContent.innerHTML = `
+        <div class="highlight-box">
+          <b>Review Focus:</b> This panel uses your existing item telemetry only. No backend review state was introduced.
+        </div>
+        <div><b>User:</b> ${escapeHtml(item.user || "-")}</div>
+        <div><b>Slug:</b> ${escapeHtml(item.slug || "-")}</div>
+        <div><b>Domain:</b> ${escapeHtml(item.domain || defaultHost())}</div>
+        <div><b>Type:</b> ${getLinkTypeBadge(item)}</div>
+        <div><b>Status:</b> ${getLinkStatusBadge(item)}</div>
+        <div><b>Risk:</b> ${getRiskBadge(item.maxRisk)}</div>
+        <div><b>Clicks:</b> ${Number(item.clicks || 0)}</div>
+        <div><b>Expire:</b> ${formatExpire(item.expire)}</div>
+        <div><b>Destination URL:</b></div>
+        <div class="code-box">${escapeHtml(item.url || "-")}</div>
+        <div><b>Public URL:</b></div>
+        <div class="code-box">${escapeHtml(publicUrl)}</div>
+        <div class="actions" style="margin-top:12px;">
+          <button onclick="copyText('${escapeHtml(publicUrl)}')">Copy Public URL</button>
+          <button onclick="copyText('${escapeHtml(item.url || "")}')">Copy Destination</button>
+          <button onclick="openLink('${escapeHtml(publicUrl)}')">Open Public</button>
+          ${item.paused
+            ? `<button class="btn-green" onclick="resumeLink('${escapeHtml(item.slug)}','${escapeHtml(item.domain || "")}')">Resume</button>`
+            : `<button class="btn-yellow" onclick="pauseLink('${escapeHtml(item.slug)}','${escapeHtml(item.domain || "")}')">Pause</button>`}
+          <button class="btn-red" onclick="deleteLink('${escapeHtml(item.slug)}','${escapeHtml(item.domain || "")}')">Delete</button>
+        </div>
       `;
     }
 
@@ -2124,6 +2309,7 @@
         renderLandingPages();
         renderAuditLogs();
         renderSecuritySection();
+        renderRedirectReview();
         drawChart();
 
         refreshProgress.style.width = "100%";
@@ -2146,6 +2332,7 @@
       $("navLanding").onclick = () => showSection("landing");
       $("navAudit").onclick = () => showSection("audit");
       $("navSecurity").onclick = () => showSection("security");
+      $("navRedirectReview").onclick = () => showSection("redirectReview");
     }
 
     function setupTopButtons() {
@@ -2174,6 +2361,14 @@
       };
       $("showDomainsBtn").onclick = () => showSection("domains");
       $("showLandingBtn").onclick = () => showSection("landing");
+      $("showRedirectReviewBtn").onclick = () => {
+        showSection("redirectReview");
+        redirectRiskFilter.value = "";
+        redirectReviewStatusFilter.value = "";
+        redirectReviewTypeFilter.value = "";
+        redirectReviewSort.value = "risk_desc";
+        renderRedirectReview();
+      };
       $("exportUsersBtn").onclick = exportUsers;
       $("exportLinksBtn").onclick = exportLinks;
       $("exportPaymentsBtn").onclick = exportPayments;
@@ -2199,12 +2394,20 @@
       domainStatusFilter.onchange = renderDomains;
       landingSearch.oninput = renderLandingPages;
       auditSearch.oninput = renderAuditLogs;
+
+      redirectReviewSearch.oninput = renderRedirectReview;
+      redirectRiskFilter.onchange = renderRedirectReview;
+      redirectReviewStatusFilter.onchange = renderRedirectReview;
+      redirectReviewTypeFilter.onchange = renderRedirectReview;
+      redirectReviewSort.onchange = renderRedirectReview;
+
       globalSearch.oninput = () => {
         renderUsers();
         renderPayments();
         renderLinks();
         renderDomains();
         renderLandingPages();
+        renderRedirectReview();
       };
     }
 
@@ -2244,6 +2447,22 @@
         const slug = btn.dataset.slug;
         const link = btn.dataset.link;
         const domain = btn.dataset.domain || "";
+        if (action === "copy-link") return copyText(link);
+        if (action === "open-link") return openLink(link);
+        if (action === "pause-link") return pauseLink(slug, domain);
+        if (action === "resume-link") return resumeLink(slug, domain);
+        if (action === "delete-link") return deleteLink(slug, domain);
+        if (action === "preview-landing") return openLanding(slug, domain, true);
+      });
+
+      redirectReviewEl.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const slug = btn.dataset.slug;
+        const link = btn.dataset.link;
+        const domain = btn.dataset.domain || "";
+        if (action === "view-redirect-review") return openRedirectReview(slug, domain);
         if (action === "copy-link") return copyText(link);
         if (action === "open-link") return openLink(link);
         if (action === "pause-link") return pauseLink(slug, domain);
@@ -2300,6 +2519,9 @@
     window.pauseSubscription = pauseSubscription;
     window.resumeSubscription = resumeSubscription;
     window.verifyUser = verifyUser;
+    window.pauseLink = pauseLink;
+    window.resumeLink = resumeLink;
+    window.deleteLink = deleteLink;
 
     (async function init() {
       if (!getToken() || getRole() !== "admin") {
