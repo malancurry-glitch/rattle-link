@@ -237,7 +237,8 @@
 
     <div id="msg"></div>
 
-    <a id="backToIndex" class="back-link" href="index.html">← Back to Login</a>
+    <a id="backToApp" class="back-link" href="app.html">← Back to Login</a>
+    <a id="backToHome" class="back-link" href="index.html">← Back to Homepage</a>
 
     <div class="muted">
       First login requires email verification. If your last login was more than 5 hours ago, email approval is required before sign-in.
@@ -262,7 +263,7 @@
     const msg = document.getElementById("msg");
     const timerEl = document.getElementById("timer");
     const qrBox = document.getElementById("qr");
-    const backToIndex = document.getElementById("backToIndex");
+    const backToApp = document.getElementById("backToApp");
 
     const statusSection = document.getElementById("statusSection");
     const approveSection = document.getElementById("approveSection");
@@ -360,17 +361,17 @@
       button.textContent = text;
     }
 
-    function buildIndexHref(email = "", backend = ""){
+    function buildAppHref(email = "", backend = ""){
       const query = [];
       if(email) query.push(`email=${encodeURIComponent(email)}`);
       if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
-      return `index.html${query.length ? `?${query.join("&")}` : ""}`;
+      return `app.html${query.length ? `?${query.join("&")}` : ""}`;
     }
 
     function updateBackLink(){
       const email = safeText(emailInput.value).toLowerCase() || lastEmailUsed || localStorage.getItem("magicEmail") || "";
       const backend = currentBackend || localStorage.getItem("magicBackend") || localStorage.getItem("authBackend") || "";
-      backToIndex.href = buildIndexHref(email, backend);
+      backToApp.href = buildAppHref(email, backend);
     }
 
     async function safeBody(res){

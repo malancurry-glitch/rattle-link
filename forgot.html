@@ -218,6 +218,7 @@
       min-height:20px;
       font-size:13px;
       line-height:1.5;
+      white-space:pre-wrap;
     }
 
     .error{ color:var(--red); }
@@ -325,6 +326,7 @@
         <div id="msg" class="msg"></div>
 
         <div class="back" onclick="goBack()">← Back to Login</div>
+        <div class="back" onclick="goHome()">← Back to Homepage</div>
       </div>
 
       <div id="successBox" class="hidden">
@@ -340,207 +342,276 @@
         </div>
 
         <button class="secondary" onclick="sendAgain()">Send Again</button>
-        <a id="backToIndexBtn" class="btn-link secondary" href="index.html" style="margin-top:10px;">Back to Login</a>
+        <a id="backToAppBtn" class="btn-link secondary" href="app.html" style="margin-top:10px;">Back to Login</a>
+        <a class="btn-link secondary" href="index.html" style="margin-top:10px;">Back to Homepage</a>
       </div>
     </div>
   </div>
 
   <script>
-const PRIMARY_API = "https://rattleshortapi.it.com";
-const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_API = "https://rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
-let cooldown = 0;
-let cooldownTimer = null;
-let lastEmail = "";
-let lastBackend = null;
+    let cooldown = 0;
+    let cooldownTimer = null;
+    let lastEmail = "";
+    let lastBackend = null;
 
-const username = document.getElementById("username");
-const msgBox = document.getElementById("msg");
-const btn = document.getElementById("btn");
-const spinner = document.getElementById("spinner");
-const btnText = document.getElementById("btnText");
-const card = document.getElementById("card");
-const formBox = document.getElementById("formBox");
-const successBox = document.getElementById("successBox");
-const backendBadge = document.getElementById("backendBadge");
-const successBackendBadge = document.getElementById("successBackendBadge");
-const successText = document.getElementById("successText");
-const backToIndexBtn = document.getElementById("backToIndexBtn");
+    const username = document.getElementById("username");
+    const msgBox = document.getElementById("msg");
+    const btn = document.getElementById("btn");
+    const spinner = document.getElementById("spinner");
+    const btnText = document.getElementById("btnText");
+    const card = document.getElementById("card");
+    const formBox = document.getElementById("formBox");
+    const successBox = document.getElementById("successBox");
+    const backendBadge = document.getElementById("backendBadge");
+    const successBackendBadge = document.getElementById("successBackendBadge");
+    const successText = document.getElementById("successText");
+    const backToAppBtn = document.getElementById("backToAppBtn");
 
-/* ========================= BASIC ========================= */
+    function toggleTheme(){
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+    }
 
-function toggleTheme(){
-  document.body.classList.toggle("light");
-  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
-}
+    function loadTheme(){
+      if(localStorage.getItem("theme") === "light"){
+        document.body.classList.add("light");
+      }
+    }
 
-function loadTheme(){
-  if(localStorage.getItem("theme") === "light"){
-    document.body.classList.add("light");
-  }
-}
+    function getParams(){
+      return new URLSearchParams(window.location.search);
+    }
 
-function show(msg, type="error"){
-  msgBox.innerText = msg;
-  msgBox.className = "msg";
-  if(type==="success") msgBox.classList.add("successText");
-  else if(type==="warn") msgBox.classList.add("warnText");
-  else msgBox.classList.add("error");
-}
+    function show(message, type="error"){
+      msgBox.innerText = message;
+      msgBox.className = "msg";
+      if(type==="success") msgBox.classList.add("successText");
+      else if(type==="warn") msgBox.classList.add("warnText");
+      else msgBox.classList.add("error");
+    }
 
-function setLoading(state){
-  btn.disabled = state;
-  spinner.style.display = state ? "inline-block" : "none";
-  btnText.style.display = state ? "none" : "inline";
-}
+    function setLoading(state){
+      btn.disabled = state;
+      spinner.style.display = state ? "inline-block" : "none";
+      btnText.style.display = state ? "none" : "inline";
+    }
 
-function isEmail(val){
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-}
+    function isEmail(val){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val || "").trim());
+    }
 
-function backendLabel(b){
-  return b==="primary" ? "Backend 2" : "Legacy AWS";
-}
+    function backendLabel(b){
+      return b==="primary" ? "Backend 2" : "Legacy AWS";
+    }
 
-function showBackendBadge(el, backend){
-  if(!backend){ el.classList.add("hidden"); return; }
-  el.classList.remove("hidden");
-  el.textContent = `Using ${backendLabel(backend)}`;
-}
+    function showBackendBadge(el, backend){
+      if(!backend){
+        el.classList.add("hidden");
+        el.textContent = "";
+        return;
+      }
+      el.classList.remove("hidden");
+      el.textContent = `Using ${backendLabel(backend)}`;
+    }
 
-/* ========================= NETWORK ========================= */
+    function buildAppHref(email = "", backend = ""){
+      const query = [];
+      if(email) query.push(`email=${encodeURIComponent(email)}`);
+      if(backend) query.push(`backend=${encodeURIComponent(backend)}`);
+      return `app.html${query.length ? `?${query.join("&")}` : ""}`;
+    }
 
-function clean(url){
-  return String(url||"").replace(/\/+$/,"");
-}
+    function updateBackLink(){
+      const backend =
+        lastBackend ||
+        getParams().get("backend") ||
+        localStorage.getItem("authBackend") ||
+        localStorage.getItem("sessionBackend") ||
+        "";
 
-async function callApi(base, path, options={}){
-  try{
-    const res = await fetch(clean(base)+path, options);
-    const txt = await res.text();
-    let data={};
-    try{ data = txt ? JSON.parse(txt) : {}; }catch{ data={message:txt}; }
-    return {ok:res.ok,status:res.status,data};
-  }catch(e){
-    return {ok:false,status:0,data:{message:e.message}};
-  }
-}
+      const email =
+        username.value.trim().toLowerCase() ||
+        lastEmail ||
+        getParams().get("email") ||
+        localStorage.getItem("lastUser") ||
+        "";
 
-/* ========================= 🔥 SMART ROUTE FIX ========================= */
+      backToAppBtn.href = buildAppHref(email, backend);
+    }
 
-async function callForgotRoutes(payload){
-  const routes = [
-    "/auth/forgot",
-    "/forgot",
-    "/forgot-password",
-    "/auth/forgot-password"
-  ];
+    function clean(url){
+      return String(url||"").replace(/\/+$/,"");
+    }
 
-  const backends = [
-    {name:"primary", url:PRIMARY_API},
-    {name:"legacy", url:LEGACY_API}
-  ];
+    async function callApi(base, path, options={}){
+      try{
+        const res = await fetch(clean(base)+path, options);
+        const txt = await res.text();
+        let data={};
+        try{ data = txt ? JSON.parse(txt) : {}; }catch{ data={message:txt}; }
+        return {ok:res.ok,status:res.status,data};
+      }catch(e){
+        return {ok:false,status:0,data:{message:e.message}};
+      }
+    }
 
-  for(const backend of backends){
-    for(const path of routes){
-      const res = await callApi(backend.url, path, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
-      });
+    async function callForgotRoutes(payload){
+      const routes = [
+        "/auth/forgot",
+        "/forgot",
+        "/forgot-password",
+        "/auth/forgot-password"
+      ];
 
-      if(res.ok){
-        console.log("✅ WORKING ROUTE:", backend.name, path);
-        return { ...res, backend:backend.name, matchedPath:path };
+      const backends = [
+        {name:"primary", url:PRIMARY_API},
+        {name:"legacy", url:LEGACY_API}
+      ];
+
+      for(const backend of backends){
+        for(const path of routes){
+          const res = await callApi(backend.url, path, {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if(res.ok){
+            return { ...res, backend:backend.name, matchedPath:path };
+          }
+
+          if(res.status !== 404) return { ...res, backend:backend.name };
+        }
       }
 
-      // stop if not route issue
-      if(res.status !== 404) return { ...res, backend:backend.name };
+      return { ok:false, status:404, data:{message:"Forgot route not found on any backend"} };
     }
-  }
 
-  return { ok:false, status:404, data:{message:"Forgot route not found on any backend"} };
-}
-
-/* ========================= UI ========================= */
-
-function startCooldown(sec=30){
-  cooldown = sec;
-  clearInterval(cooldownTimer);
-
-  btn.disabled = true;
-  btnText.textContent = `Wait ${cooldown}s`;
-
-  cooldownTimer = setInterval(()=>{
-    cooldown--;
-    if(cooldown<=0){
+    function startCooldown(sec=30){
+      cooldown = sec;
       clearInterval(cooldownTimer);
-      btn.disabled = false;
-      btnText.textContent = "Send Reset Link";
-    }else{
+
+      btn.disabled = true;
       btnText.textContent = `Wait ${cooldown}s`;
+
+      cooldownTimer = setInterval(()=>{
+        cooldown--;
+        if(cooldown<=0){
+          clearInterval(cooldownTimer);
+          btn.disabled = false;
+          btnText.textContent = "Send Reset Link";
+        }else{
+          btnText.textContent = `Wait ${cooldown}s`;
+        }
+      },1000);
     }
-  },1000);
-}
 
-/* ========================= MAIN ========================= */
+    async function sendReset(){
+      if(btn.disabled && cooldown>0) return;
 
-async function sendReset(){
-  if(btn.disabled && cooldown>0) return;
+      const user = username.value.trim().toLowerCase();
 
-  const user = username.value.trim().toLowerCase();
+      if(!user) return show("Enter email ❌");
+      if(!isEmail(user)) return show("Invalid email ❌");
+      if(cooldown>0) return show(`Wait ${cooldown}s ⏳`,"warn");
 
-  if(!user) return show("Enter email ❌");
-  if(!isEmail(user)) return show("Invalid email ❌");
-  if(cooldown>0) return show(`Wait ${cooldown}s ⏳`,"warn");
+      setLoading(true);
+      show("");
+      showBackendBadge(backendBadge,null);
 
-  setLoading(true);
-  show("");
-  showBackendBadge(backendBadge,null);
+      const result = await callForgotRoutes({ username:user });
 
-  const result = await callForgotRoutes({ username:user });
+      if(!result.ok){
+        show(result.data?.message || "Failed ❌");
+        setLoading(false);
+        return;
+      }
 
-  if(!result.ok){
-    show(result.data?.message || "Failed ❌");
-    setLoading(false);
-    return;
-  }
+      lastEmail = user;
+      lastBackend = result.backend;
+      updateBackLink();
 
-  lastEmail = user;
-  lastBackend = result.backend;
+      formBox.classList.add("hidden");
+      successBox.classList.remove("hidden");
+      card.classList.add("success");
 
-  formBox.classList.add("hidden");
-  successBox.classList.remove("hidden");
-  card.classList.add("success");
+      showBackendBadge(successBackendBadge,lastBackend);
+      successText.textContent = `Reset sent via ${backendLabel(lastBackend)}`;
 
-  showBackendBadge(successBackendBadge,lastBackend);
-  successText.textContent = `Reset sent via ${backendLabel(lastBackend)}`;
+      setLoading(false);
+      startCooldown(30);
+    }
 
-  setLoading(false);
-  startCooldown(30);
-}
+    async function sendAgain(){
+      if(lastEmail){
+        username.value = lastEmail;
+        formBox.classList.remove("hidden");
+        successBox.classList.add("hidden");
+        card.classList.remove("success");
+        show("");
+        await sendReset();
+      } else {
+        formBox.classList.remove("hidden");
+        successBox.classList.add("hidden");
+        card.classList.remove("success");
+        show("Enter your email again.", "warn");
+      }
+    }
 
-/* ========================= NAV ========================= */
+    function goBack(){
+      const backend =
+        lastBackend ||
+        getParams().get("backend") ||
+        localStorage.getItem("authBackend") ||
+        localStorage.getItem("sessionBackend") ||
+        "";
 
-function goBack(){
-  window.location.href = "index.html";
-}
+      const email =
+        username.value.trim().toLowerCase() ||
+        lastEmail ||
+        getParams().get("email") ||
+        localStorage.getItem("lastUser") ||
+        "";
 
-function autoFillEmail(){
-  const saved = localStorage.getItem("lastUser");
-  if(saved){
-    username.value = saved;
-    lastEmail = saved;
-  }
-}
+      window.location.href = buildAppHref(email, backend);
+    }
 
-username.addEventListener("keydown", e=>{
-  if(e.key==="Enter") sendReset();
-});
+    function goHome(){
+      window.location.href = "index.html";
+    }
 
-loadTheme();
-autoFillEmail();
-</script>
+    function autoFillEmail(){
+      const params = getParams();
+      const queryEmail = params.get("email");
+      const saved = localStorage.getItem("lastUser");
+
+      if(queryEmail){
+        username.value = queryEmail;
+        lastEmail = queryEmail.toLowerCase();
+      } else if(saved){
+        username.value = saved;
+        lastEmail = saved.toLowerCase();
+      }
+
+      const queryBackend = params.get("backend");
+      if(queryBackend === "primary" || queryBackend === "legacy"){
+        lastBackend = queryBackend;
+        showBackendBadge(backendBadge, lastBackend);
+      }
+
+      updateBackLink();
+    }
+
+    username.addEventListener("keydown", e=>{
+      if(e.key==="Enter") sendReset();
+    });
+
+    loadTheme();
+    autoFillEmail();
+  </script>
 
 </body>
 </html>

@@ -378,15 +378,16 @@
 
         <div class="actions">
           <input id="tokenInput" class="input" placeholder="Paste verification token" />
-          <button id="verifyBtn" class="btn btn-primary" type="button">Verify Email</button>
           <input id="emailInput" class="input" type="email" placeholder="Enter your email to resend verification" />
+          <button id="verifyBtn" class="btn btn-primary" type="button">Verify Email</button>
           <button id="resendBtn" class="btn btn-secondary" type="button">Resend Verification Email</button>
         </div>
       </div>
 
       <div class="quick-links">
-        <a id="loginLink" class="btn btn-primary hidden" href="index.html">Go to Login</a>
+        <a id="loginLink" class="btn btn-primary hidden" href="app.html">Go to Login</a>
         <a id="magicLink" class="btn btn-secondary hidden" href="magic-login.html">Go to Magic Login</a>
+        <a id="homeLink" class="btn btn-secondary" href="index.html">Go to Homepage</a>
       </div>
 
       <div class="help-grid">
@@ -407,7 +408,7 @@
       <div id="msg" class="msg"></div>
 
       <div style="text-align:center;">
-        <a id="backToIndexLink" class="back-link" href="index.html">← Back to Login</a>
+        <a id="backToAppLink" class="back-link" href="app.html">← Back to Login</a>
       </div>
 
       <div class="muted">
@@ -429,7 +430,7 @@
     const msg = document.getElementById("msg");
     const loginLink = document.getElementById("loginLink");
     const magicLink = document.getElementById("magicLink");
-    const backToIndexLink = document.getElementById("backToIndexLink");
+    const backToAppLink = document.getElementById("backToAppLink");
     const backendBadge = document.getElementById("backendBadge");
     const banner = document.getElementById("banner");
 
@@ -496,11 +497,11 @@
       button.textContent = text;
     }
 
-    function buildIndexHref(email = "", backend = "") {
+    function buildAppHref(email = "", backend = "") {
       const q = [];
       if (email) q.push(`email=${encodeURIComponent(email)}`);
       if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
-      return `index.html${q.length ? `?${q.join("&")}` : ""}`;
+      return `app.html${q.length ? `?${q.join("&")}` : ""}`;
     }
 
     function buildMagicHref(email = "", backend = "") {
@@ -651,9 +652,9 @@
     }
 
     function updateNavigation(email = "", backend = "") {
-      loginLink.href = buildIndexHref(email, backend);
+      loginLink.href = buildAppHref(email, backend);
       magicLink.href = buildMagicHref(email, backend);
-      backToIndexLink.href = buildIndexHref(email, backend);
+      backToAppLink.href = buildAppHref(email, backend);
     }
 
     function showPostVerifyActions(email = "", backend = "") {
