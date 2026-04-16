@@ -1916,15 +1916,17 @@
           last = res;
 
           if (res.ok) return { ...res, backend, resolvedPath: candidate };
-          if (res.status === 401 && !first401)
+          if (res.status === 401 && !first401) {
             first401 = { ...res, backend, resolvedPath: candidate };
+          }
           if (
             res.status === 404 ||
             res.status === 405 ||
             res.status === 0 ||
             res.status >= 500
-          )
+          ) {
             continue;
+          }
 
           return { ...res, backend, resolvedPath: candidate };
         }
@@ -1947,11 +1949,29 @@
         const raw = String(value || "").trim();
         if (!raw) return "";
         if (/^https?:\/\//i.test(raw)) return raw;
-        if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw))
+        if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) {
           return `https://${raw.replace(/^\/+/, "")}`;
-        if (raw.startsWith("/"))
+        }
+        if (raw.startsWith("/")) {
           return `${String(fallbackBase || "").replace(/\/+$/, "")}${raw}`;
+        }
         return raw;
+      }
+
+      function normalizePublicUrl(url) {
+        const value = String(url || "").trim();
+        if (!value) return "";
+        if (/^https?:\/\//i.test(value)) return value;
+
+        if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(value)) {
+          return `https://${value.replace(/^\/+/, "")}`;
+        }
+
+        if (value.startsWith("/")) {
+          return `${String(PUBLIC_BASE || "").replace(/\/+$/, "")}${value}`;
+        }
+
+        return `https://${value.replace(/^\/+/, "")}`;
       }
 
       async function authorizedFetch(
@@ -2036,8 +2056,9 @@
 
       function setBusy(button, busy, text = "") {
         if (!button) return;
-        if (!button.dataset.originalText)
+        if (!button.dataset.originalText) {
           button.dataset.originalText = button.textContent;
+        }
         button.disabled = busy;
         button.textContent = busy ? text : button.dataset.originalText;
       }
@@ -2048,10 +2069,19 @@
         const item = typeof itemOrSlug === "object" ? itemOrSlug : null;
         const customDomain = String(item?.domain || "").trim();
 
-        if (customDomain) return `https://${customDomain}/${slug}`;
-        if (backend === "legacy")
-          return `${String(LEGACY_API).replace(/\/+$/, "")}/${slug}`;
-        return `${String(PUBLIC_BASE).replace(/\/+$/, "")}/${slug}`;
+        if (customDomain) {
+          return normalizePublicUrl(`${customDomain}/${slug}`);
+        }
+
+        if (backend === "legacy") {
+          return normalizePublicUrl(
+            `${String(LEGACY_API).replace(/\/+$/, "")}/${slug}`
+          );
+        }
+
+        return normalizePublicUrl(
+          `${String(PUBLIC_BASE).replace(/\/+$/, "")}/${slug}`
+        );
       }
 
       function getItemType(item) {
@@ -2129,11 +2159,12 @@
           note: item.note || "",
           campaign: item.campaign || "",
           linkType: getItemType(item),
-          publicLink:
+          publicLink: normalizePublicUrl(
             item.publicLink ||
-            item.shortLink ||
-            item.link ||
-            buildPublicLink(item, backend),
+              item.shortLink ||
+              item.link ||
+              buildPublicLink(item, backend)
+          ),
         };
       }
 
@@ -2273,8 +2304,9 @@
       function formatPaymentStatus(status) {
         const s = String(status || "").toLowerCase();
         if (s === "verified") return `<span class="badge live">Verified</span>`;
-        if (s === "awaiting_confirmation")
+        if (s === "awaiting_confirmation") {
           return `<span class="badge awaiting">Awaiting Confirmation</span>`;
+        }
         if (s === "pending")
           return `<span class="badge pending">Pending</span>`;
         if (s === "cancelled")
@@ -2503,20 +2535,23 @@
           els.primaryLinksCount.textContent = primaryItems.length;
         if (els.legacyLinksCount)
           els.legacyLinksCount.textContent = legacyItems.length;
-        if (els.primaryClicksCount)
+        if (els.primaryClicksCount) {
           els.primaryClicksCount.textContent = primaryItems.reduce(
             (a, b) => a + Number(b.clicks || 0),
             0
           );
-        if (els.legacyClicksCount)
+        }
+        if (els.legacyClicksCount) {
           els.legacyClicksCount.textContent = legacyItems.reduce(
             (a, b) => a + Number(b.clicks || 0),
             0
           );
-        if (els.liveThreatCount)
+        }
+        if (els.liveThreatCount) {
           els.liveThreatCount.textContent = dataStore.filter(
             (x) => Number(x.maxRisk || 0) > 60
           ).length;
+        }
       }
 
       function renderMe() {
@@ -2570,29 +2605,34 @@
 
         if (els.meEmail)
           els.meEmail.textContent = meState.username || getUsername() || "-";
-        if (els.mePlan)
+        if (els.mePlan) {
           els.mePlan.textContent = normalizePlanLabel(
             meState.subscriptionPlan ||
               (meState.subscriptionStatus === "trial" ? "free_trial" : "")
           );
-        if (els.meExpire)
+        }
+        if (els.meExpire) {
           els.meExpire.textContent = meState.subscriptionExpiresAt
             ? fmtDate(meState.subscriptionExpiresAt)
             : "-";
+        }
         if (els.meRole)
           els.meRole.textContent = meState.role || getRole() || "-";
-        if (els.meEmailVerified)
+        if (els.meEmailVerified) {
           els.meEmailVerified.innerHTML = meState.emailVerified
             ? '<span class="live">Verified</span>'
             : '<span class="expired">Not verified</span>';
+        }
         if (els.mePrimaryDomain)
           els.mePrimaryDomain.textContent = meState.primaryDomain || "-";
-        if (els.meTwoFactor)
+        if (els.meTwoFactor) {
           els.meTwoFactor.innerHTML = meState.twoFactorEnabled
             ? '<span class="live">Enabled</span>'
             : '<span class="muted">Disabled</span>';
-        if (els.meTwoFactorMethod)
+        }
+        if (els.meTwoFactorMethod) {
           els.meTwoFactorMethod.textContent = meState.twoFactorMethod || "-";
+        }
 
         const status = String(
           meState.subscriptionStatus || "trial"
@@ -2605,20 +2645,25 @@
         const shortRemaining = remaining.activeShortLinks;
         const landingRemaining = remaining.activeLandingPages;
 
-        if (els.activeShortLinksRemaining)
+        if (els.activeShortLinksRemaining) {
           els.activeShortLinksRemaining.textContent = shortRemaining;
-        if (els.activeShortLinksText)
+        }
+        if (els.activeShortLinksText) {
           els.activeShortLinksText.textContent = `${shortUsed} / ${shortLimit}`;
-        if (els.activeLandingPagesText)
+        }
+        if (els.activeLandingPagesText) {
           els.activeLandingPagesText.textContent = `${landingUsed} / ${landingLimit}`;
-        if (els.shortLinksProgressBar)
+        }
+        if (els.shortLinksProgressBar) {
           els.shortLinksProgressBar.style.width = shortLimit
             ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%`
             : "0%";
-        if (els.landingPagesProgressBar)
+        }
+        if (els.landingPagesProgressBar) {
           els.landingPagesProgressBar.style.width = landingLimit
             ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%`
             : "0%";
+        }
 
         let summary = "";
         let badgeClass = "trial";
@@ -2650,10 +2695,11 @@
 
         if (meState.emailVerified === false)
           summary += " Email verification is incomplete.";
-        if (meState.twoFactorEnabled)
+        if (meState.twoFactorEnabled) {
           summary += ` 2FA is enabled using ${
             meState.twoFactorMethod || "configured method"
           }.`;
+        }
         if (meState.primaryDomain)
           summary += ` Primary domain: ${meState.primaryDomain}.`;
 
@@ -2666,8 +2712,9 @@
       }
 
       async function loadMe(showLoading = false) {
-        if (showLoading && els.accessSummary)
+        if (showLoading && els.accessSummary) {
           els.accessSummary.textContent = "Loading account...";
+        }
         const ok = await verifyMainSession(false);
         if (!ok && els.accessSummary)
           els.accessSummary.textContent = "Session expired";
@@ -2707,12 +2754,13 @@
           renderPlans();
           renderCryptoOptions();
           updateBillingPreview();
-          if (showMessage)
+          if (showMessage) {
             setResult(
               "Plans endpoint failed, fallback crypto options loaded.",
               true,
               els.upgradeResult
             );
+          }
           return;
         }
 
@@ -3092,10 +3140,12 @@
         );
         selectedPlanQuantity = quantity;
 
-        if (!selectedPlan)
+        if (!selectedPlan) {
           return setResult("Choose a plan first", true, els.upgradeResult);
-        if (!cryptoCode)
+        }
+        if (!cryptoCode) {
           return setResult("Choose a crypto option", true, els.upgradeResult);
+        }
 
         setBusy(els.requestPaymentBtn, true, "Creating...");
 
@@ -3291,13 +3341,16 @@
 
       function openSettingsModal() {
         openModal(els.settingsModal);
-        if (els.modalAutoRefreshToggle)
+        if (els.modalAutoRefreshToggle) {
           els.modalAutoRefreshToggle.checked = autoRefreshEnabled;
-        if (els.modalCompactModeToggle)
+        }
+        if (els.modalCompactModeToggle) {
           els.modalCompactModeToggle.checked = compactModeEnabled;
-        if (els.modalChartMetricSelect)
+        }
+        if (els.modalChartMetricSelect) {
           els.modalChartMetricSelect.value =
             els.chartMetricSelect?.value || "clicks";
+        }
         if (els.settingsSearchSummary) {
           els.settingsSearchSummary.textContent = els.searchInput?.value?.trim()
             ? `Searching for: ${els.searchInput.value.trim()}`
@@ -3337,7 +3390,9 @@
         const health = await safeFetchRaw(
           apiBaseForBackend(backend),
           "/health",
-          { method: "GET" }
+          {
+            method: "GET",
+          }
         );
         if (health.ok) return health;
         return safeFetchRaw(apiBaseForBackend(backend), "/", { method: "GET" });
@@ -3402,15 +3457,18 @@
             : true;
 
           let dateMatch = true;
-          if (dateRange === "24h")
+          if (dateRange === "24h") {
             dateMatch =
               Number(item.createdAt || 0) >= nowTs - 24 * 60 * 60 * 1000;
-          if (dateRange === "7d")
+          }
+          if (dateRange === "7d") {
             dateMatch =
               Number(item.createdAt || 0) >= nowTs - 7 * 24 * 60 * 60 * 1000;
-          if (dateRange === "30d")
+          }
+          if (dateRange === "30d") {
             dateMatch =
               Number(item.createdAt || 0) >= nowTs - 30 * 24 * 60 * 60 * 1000;
+          }
 
           return (
             queryMatch && backendMatch && statusMatch && riskMatch && dateMatch
@@ -3464,10 +3522,11 @@
 
         if (els.totalLinks) els.totalLinks.textContent = dataStore.length;
         if (els.totalClicks) els.totalClicks.textContent = total;
-        if (els.avgClicks)
+        if (els.avgClicks) {
           els.avgClicks.textContent = dataStore.length
             ? (total / dataStore.length).toFixed(1)
             : "0";
+        }
 
         updateMiniStats();
         renderMe();
@@ -3509,8 +3568,9 @@
         els.table.innerHTML = filtered
           .slice(0, 50)
           .map((item) => {
-            const publicLink =
-              item.publicLink || buildPublicLink(item, item.backend);
+            const publicLink = normalizePublicUrl(
+              item.publicLink || buildPublicLink(item, item.backend)
+            );
             const itemType = getItemType(item);
 
             return `
@@ -3741,8 +3801,10 @@
         const risky = [...dataStore]
           .filter((x) => Number(x.maxRisk || 0) > 60)
           .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
-        if (!risky.length)
+
+        if (!risky.length) {
           return `<div class="muted">No elevated risk items found.</div>`;
+        }
 
         return risky
           .map(
@@ -4190,9 +4252,9 @@
       }
 
       function toggleAllFaq(open) {
-        document
-          .querySelectorAll(".faq-item")
-          .forEach((item) => item.classList.toggle("open", !!open));
+        document.querySelectorAll(".faq-item").forEach((item) => {
+          item.classList.toggle("open", !!open);
+        });
       }
 
       function clearFilters() {
@@ -4267,7 +4329,9 @@
       }
 
       function openLinkDirect(link) {
-        window.open(link, "_blank", "noopener,noreferrer");
+        const finalUrl = normalizePublicUrl(link);
+        if (!finalUrl) return;
+        window.open(finalUrl, "_blank", "noopener,noreferrer");
       }
 
       function goToPage(page) {
@@ -4381,8 +4445,9 @@
         });
 
         els.modalChartMetricSelect?.addEventListener("change", () => {
-          if (els.chartMetricSelect)
+          if (els.chartMetricSelect) {
             els.chartMetricSelect.value = els.modalChartMetricSelect.value;
+          }
           drawChart();
         });
 
