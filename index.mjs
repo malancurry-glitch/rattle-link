@@ -4,7 +4,8 @@ import {
   PutItemCommand,
   UpdateItemCommand,
   DeleteItemCommand,
-  ScanCommand
+  ScanCommand,
+  QueryCommand
 } from "@aws-sdk/client-dynamodb";
 import {
   ApiGatewayManagementApiClient,
@@ -12,15 +13,16 @@ import {
 } from "@aws-sdk/client-apigatewaymanagementapi";
 import crypto from "crypto";
 
-// ================= CONFIG =================
 const REGION = String(process.env.AWS_REGION || "us-east-2").trim();
 
 const REDIRECTS_TABLE = String(process.env.REDIRECTS_TABLE || "redirects").trim();
 const CLICKS_TABLE = String(process.env.CLICKS_TABLE || "clicks").trim();
 const WS_CONNECTIONS_TABLE = String(process.env.WS_CONNECTIONS_TABLE || "ws_connections").trim();
+const USERS_MIRROR_TABLE = String(process.env.USERS_MIRROR_TABLE || "users_mirror").trim();
+const PAYMENTS_MIRROR_TABLE = String(process.env.PAYMENTS_MIRROR_TABLE || "payments_mirror").trim();
 
 const APP_SECRET = String(process.env.APP_SECRET || "").trim();
-const PRIMARY_API = normalizeBaseUrl(process.env.PRIMARY_API || "https://rattleshortapi.it.com");
+const PRIMARY_API = normalizeBaseUrl(process.env.PRIMARY_API || "https://api.rattleshortapi.it.com");
 const API_BASE = normalizeBaseUrl(
   process.env.API_BASE || "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production"
 );
@@ -31,19 +33,9 @@ const WS_ENDPOINT = String(
 
 const ALLOWED_ORIGIN = String(process.env.ALLOWED_ORIGIN || "*").trim();
 const INTERNAL_SYNC_KEY = String(process.env.INTERNAL_SYNC_KEY || "").trim();
-const CLICK_HISTORY_QUERY_LIMIT = clampInt(
-  process.env.CLICK_HISTORY_QUERY_LIMIT,
-  1000,
-  1,
-  100000
-);
+const CLICK_HISTORY_QUERY_LIMIT = clampInt(process.env.CLICK_HISTORY_QUERY_LIMIT, 1000, 1, 100000);
 
-const USERS_MIRROR_TABLE = String(process.env.USERS_MIRROR_TABLE || "users_mirror").trim();
-const PAYMENTS_MIRROR_TABLE = String(process.env.PAYMENTS_MIRROR_TABLE || "payments_mirror").trim();
-const DOMAINS_MIRROR_TABLE = String(process.env.DOMAINS_MIRROR_TABLE || "domains_mirror").trim();
-
-const DEFAULT_PUBLIC_HOST = normalizeHostname(process.env.DEFAULT_PUBLIC_HOST || PRIMARY_API);
-
+const DEFAULT_PUBLIC_HOST = normalizeHostname(process.env.DEFAULT_PUBLIC_HOST || API_BASE);
 const DEFAULT_LANDING_THEME = "#00ffff";
 const MAX_LANDING_HTML_LENGTH = 200000;
 const MAX_LANDING_CSS_LENGTH = 100000;
@@ -62,6 +54,7 @@ const MAX_DOMAIN_LABEL_LENGTH = 253;
 const RESERVED_ROUTES = new Set([
   "/",
   "/health",
+  "/debug/echo",
   "/login",
   "/signup",
   "/forgot",
@@ -81,6 +74,9 @@ const RESERVED_ROUTES = new Set([
   "/list",
   "/history",
   "/delete",
+  "/landing/create",
+  "/landing/update",
+  "/landing/delete",
   "/domains/me",
   "/domains/add",
   "/domains/verify",
@@ -89,9 +85,6 @@ const RESERVED_ROUTES = new Set([
   "/domains/refresh",
   "/domains/status",
   "/domains/dns-instructions",
-  "/landing/create",
-  "/landing/update",
-  "/landing/delete",
   "/support-info",
   "/faq",
   "/about",
@@ -108,7 +101,6 @@ const RESERVED_ROUTES = new Set([
   "/admin/payment-delete",
   "/admin/subscription-pause",
   "/admin/subscription-resume",
-  "/admin/links",
   "/admin/create-user",
   "/admin/make-admin",
   "/admin/remove-admin",
@@ -118,6 +110,7 @@ const RESERVED_ROUTES = new Set([
   "/admin/verify-user",
   "/admin/email-logs",
   "/admin/audit",
+  "/admin/links",
   "/admin/pause",
   "/admin/resume",
   "/admin/support-tickets",
@@ -170,47 +163,43 @@ const PROXY_EXACT_ROUTES = new Set([
   "/admin/domain-delete"
 ]);
 
-// ================= CLIENTS =================
+const DOMAIN_PROXY_ROUTES = new Set([
+  "/domains/me",
+  "/domains/add",
+  "/domains/verify",
+  "/domains/set-primary",
+  "/domains/remove",
+  "/domains/refresh",
+  "/domains/status",
+  "/domains/dns-instructions"
+]);
+
 const db = new DynamoDBClient({ region: REGION });
 
-// ================= CORS =================
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "Content-Type,Authorization,x-rattle-fallback,x-internal-key",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
 };
 
-// ================= RESPONSE HELPERS =================
 function response(statusCode, body, extraHeaders = {}) {
   return {
     statusCode,
-    headers: {
-      ...corsHeaders,
-      ...extraHeaders
-    },
+    headers: { ...corsHeaders, ...extraHeaders },
     body: typeof body === "string" ? body : JSON.stringify(body)
   };
 }
 
 function json(statusCode, data, extraHeaders = {}) {
-  return response(statusCode, data, {
-    "Content-Type": "application/json",
-    ...extraHeaders
-  });
+  return response(statusCode, data, { "Content-Type": "application/json", ...extraHeaders });
 }
 
 function text(statusCode, message, extraHeaders = {}) {
-  return response(statusCode, message, {
-    "Content-Type": "text/plain; charset=utf-8",
-    ...extraHeaders
-  });
+  return response(statusCode, message, { "Content-Type": "text/plain; charset=utf-8", ...extraHeaders });
 }
 
 function html(statusCode, markup, extraHeaders = {}) {
-  return response(statusCode, markup, {
-    "Content-Type": "text/html; charset=utf-8",
-    ...extraHeaders
-  });
+  return response(statusCode, markup, { "Content-Type": "text/html; charset=utf-8", ...extraHeaders });
 }
 
 function redirect302(location) {
@@ -226,54 +215,38 @@ function redirect302(location) {
   };
 }
 
-function ok(data) {
-  return json(200, data);
-}
-
-function badRequest(message, extra = {}) {
-  return json(400, { message, ...extra });
-}
-
-function unauthorized(message = "Unauthorized", extra = {}) {
-  return json(401, { message, ...extra });
-}
-
-function forbidden(message = "Forbidden", extra = {}) {
-  return json(403, { message, ...extra });
-}
-
-function notFound(message = "Not found") {
-  return json(404, { message });
-}
-
-function conflict(message = "Resource already exists") {
-  return json(409, { message });
-}
-
-function paymentRequired(message = "Payment required", extra = {}) {
-  return json(402, { message, ...extra });
-}
-
-function methodNotAllowed(message = "Method not allowed") {
-  return json(405, { message });
-}
-
+const ok = (data) => json(200, data);
+const badRequest = (message, extra = {}) => json(400, { message, ...extra });
+const unauthorized = (message = "Unauthorized", extra = {}) => json(401, { message, ...extra });
+const forbidden = (message = "Forbidden", extra = {}) => json(403, { message, ...extra });
+const notFound = (message = "Not found") => json(404, { message });
+const conflict = (message = "Resource already exists") => json(409, { message });
+const methodNotAllowed = (message = "Method not allowed") => json(405, { message });
 function serverError(message = "Internal server error", error = null) {
   console.error(message, error);
-  return json(500, {
-    message,
-    error: error?.message || undefined
-  });
+  return json(500, { message, error: error?.message || undefined });
 }
 
-// ================= EVENT HELPERS =================
 function getMethod(event) {
   return event?.requestContext?.http?.method || event?.httpMethod || "GET";
 }
 
 function getPath(event) {
-  const raw = event?.requestContext?.http?.path || event?.path || "/";
-  return (raw.replace(/^\/production/, "") || "/").toLowerCase();
+  const candidates = [
+    event?.rawPath,
+    event?.requestContext?.http?.path,
+    event?.path,
+    event?.requestContext?.path
+  ].filter(Boolean);
+
+  let raw = candidates[0] || "/";
+  raw = String(raw).split("?")[0];
+  raw = raw.replace(/^https?:\/\/[^/]+/i, "");
+  raw = raw.replace(/^\/(production|prod)(?=\/|$)/i, "") || "/";
+  raw = raw.startsWith("/") ? raw : `/${raw}`;
+  raw = raw.replace(/\/+/g, "/");
+  raw = raw !== "/" ? raw.replace(/\/$/, "") : raw;
+  return raw.toLowerCase();
 }
 
 function getHeaders(event) {
@@ -302,7 +275,6 @@ function getBody(event) {
   }
 }
 
-// ================= GENERAL HELPERS =================
 function toNumber(value, fallback) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -419,13 +391,10 @@ function getIP(event) {
     event?.requestContext?.http?.sourceIp,
     event?.requestContext?.identity?.sourceIp
   ];
-
   for (const candidate of candidates) {
     const ip = normalizePossibleIp(candidate);
-    if (!ip) continue;
-    return ip;
+    if (ip) return ip;
   }
-
   return "unknown";
 }
 
@@ -483,9 +452,7 @@ function scoreIP(ip, headers = {}) {
     String(ip).startsWith("192.168.") ||
     String(ip).startsWith("127.") ||
     String(ip).startsWith("172.")
-  ) {
-    score += 30;
-  }
+  ) score += 30;
   if (isVPN(ip, headers)) score += 20;
   if (isBot(headers)) score += 40;
   return Math.min(score, 100);
@@ -515,23 +482,16 @@ function sanitizeLandingButtons(buttons) {
   const list = Array.isArray(buttons) ? buttons : [];
   return list
     .map((item) => ({
-      label: normalizeSafeText(item?.label || "", 120),
+      label: normalizeSafeText(item?.label || "", MAX_CTA_LABEL_LENGTH),
       url: normalizeSafeText(item?.url || "", MAX_CTA_URL_LENGTH)
     }))
     .filter((item) => item.label && isValidUrl(item.url))
     .slice(0, 20);
 }
 
-// IMPORTANT FIX:
-// - custom domain => https://custom-domain/slug
-// - default AWS execute-api => https://.../production/slug
 function buildPublicLink(domain, slug) {
   const cleanSlug = normalizeSlug(slug);
-
-  if (domain) {
-    return `https://${normalizeDomain(domain)}/${cleanSlug}`;
-  }
-
+  if (domain) return `https://${normalizeDomain(domain)}/${cleanSlug}`;
   return `${API_BASE.replace(/\/+$/, "")}/${cleanSlug}`;
 }
 
@@ -546,52 +506,22 @@ function safeJsonStringify(value, fallback = "[]") {
 function sanitizeLandingPayload(body, existing = null) {
   const resolvedTitle = normalizeSafeText(body.title ?? existing?.landingTitle ?? "", MAX_TITLE_LENGTH);
   const resolvedSubtitle = normalizeSafeText(body.subtitle ?? existing?.landingSubtitle ?? "", MAX_SUBTITLE_LENGTH);
-  const resolvedDescription = normalizeSafeText(
-    body.description ?? existing?.landingDescription ?? "",
-    MAX_DESCRIPTION_LENGTH
-  );
+  const resolvedDescription = normalizeSafeText(body.description ?? existing?.landingDescription ?? "", MAX_DESCRIPTION_LENGTH);
   const resolvedImage = normalizeSafeText(body.image ?? existing?.landingImage ?? "", MAX_IMAGE_LENGTH);
   const resolvedTheme = sanitizeThemeColor(body.theme ?? existing?.landingTheme ?? DEFAULT_LANDING_THEME);
   const resolvedButtons = sanitizeLandingButtons(body.buttons ?? existing?.landingButtons ?? []);
   const resolvedCtaLabel = normalizeSafeText(body.ctaLabel ?? existing?.landingCtaLabel ?? "", MAX_CTA_LABEL_LENGTH);
   const resolvedCtaUrl = normalizeSafeText(body.ctaUrl ?? existing?.landingCtaUrl ?? "", MAX_CTA_URL_LENGTH);
   const resolvedFooter = normalizeSafeText(body.footer ?? existing?.landingFooter ?? "", MAX_FOOTER_LENGTH);
-  const resolvedLandingHtml =
-    body.landingHtml !== undefined
-      ? normalizeNullableText(body.landingHtml, MAX_LANDING_HTML_LENGTH)
-      : existing?.landingHtml || null;
-  const resolvedLandingCss =
-    body.landingCss !== undefined
-      ? normalizeNullableText(body.landingCss, MAX_LANDING_CSS_LENGTH)
-      : existing?.landingCss || null;
-  const resolvedLandingJs =
-    body.landingJs !== undefined
-      ? normalizeNullableText(body.landingJs, MAX_LANDING_JS_LENGTH)
-      : existing?.landingJs || null;
-  const resolvedMetaTitle =
-    body.metaTitle !== undefined
-      ? normalizeNullableText(body.metaTitle, MAX_META_TITLE_LENGTH)
-      : existing?.metaTitle || null;
-  const resolvedMetaDescription =
-    body.metaDescription !== undefined
-      ? normalizeNullableText(body.metaDescription, MAX_META_DESCRIPTION_LENGTH)
-      : existing?.metaDescription || null;
-  const resolvedOgTitle =
-    body.ogTitle !== undefined
-      ? normalizeNullableText(body.ogTitle, MAX_META_TITLE_LENGTH)
-      : existing?.ogTitle || null;
-  const resolvedOgDescription =
-    body.ogDescription !== undefined
-      ? normalizeNullableText(body.ogDescription, MAX_META_DESCRIPTION_LENGTH)
-      : existing?.ogDescription || null;
-  const resolvedOgImage =
-    body.ogImage !== undefined
-      ? normalizeNullableText(body.ogImage, MAX_IMAGE_LENGTH)
-      : existing?.ogImage || null;
-  const resolvedCanonicalUrl =
-    body.canonicalUrl !== undefined
-      ? normalizeNullableText(body.canonicalUrl, MAX_CTA_URL_LENGTH)
-      : existing?.canonicalUrl || null;
+  const resolvedLandingHtml = body.landingHtml !== undefined ? normalizeNullableText(body.landingHtml, MAX_LANDING_HTML_LENGTH) : existing?.landingHtml || null;
+  const resolvedLandingCss = body.landingCss !== undefined ? normalizeNullableText(body.landingCss, MAX_LANDING_CSS_LENGTH) : existing?.landingCss || null;
+  const resolvedLandingJs = body.landingJs !== undefined ? normalizeNullableText(body.landingJs, MAX_LANDING_JS_LENGTH) : existing?.landingJs || null;
+  const resolvedMetaTitle = body.metaTitle !== undefined ? normalizeNullableText(body.metaTitle, MAX_META_TITLE_LENGTH) : existing?.metaTitle || null;
+  const resolvedMetaDescription = body.metaDescription !== undefined ? normalizeNullableText(body.metaDescription, MAX_META_DESCRIPTION_LENGTH) : existing?.metaDescription || null;
+  const resolvedOgTitle = body.ogTitle !== undefined ? normalizeNullableText(body.ogTitle, MAX_META_TITLE_LENGTH) : existing?.ogTitle || null;
+  const resolvedOgDescription = body.ogDescription !== undefined ? normalizeNullableText(body.ogDescription, MAX_META_DESCRIPTION_LENGTH) : existing?.ogDescription || null;
+  const resolvedOgImage = body.ogImage !== undefined ? normalizeNullableText(body.ogImage, MAX_IMAGE_LENGTH) : existing?.ogImage || null;
+  const resolvedCanonicalUrl = body.canonicalUrl !== undefined ? normalizeNullableText(body.canonicalUrl, MAX_CTA_URL_LENGTH) : existing?.canonicalUrl || null;
 
   return {
     title: resolvedTitle,
@@ -615,7 +545,6 @@ function sanitizeLandingPayload(body, existing = null) {
   };
 }
 
-// supports legacy local landing pages with separate HTML/CSS/JS
 function renderLandingHtml(link) {
   const customHtml = String(link.landingHtml || "").trim();
   if (customHtml) return customHtml;
@@ -639,10 +568,7 @@ function renderLandingHtml(link) {
   const canonicalUrl = String(link.canonicalUrl || buildPublicLink(link.domain || null, link.slug)).trim();
 
   const safeButtons = buttons
-    .map((btn) => ({
-      label: escapeHtml(btn.label),
-      url: String(btn.url || "").trim()
-    }))
+    .map((btn) => ({ label: escapeHtml(btn.label), url: String(btn.url || "").trim() }))
     .filter((btn) => btn.label && isValidUrl(btn.url));
 
   return `<!DOCTYPE html>
@@ -658,119 +584,29 @@ function renderLandingHtml(link) {
   ${ogImage && isValidUrl(ogImage) ? `<meta property="og:image" content="${escapeHtml(ogImage)}" />` : ""}
   ${canonicalUrl && isValidUrl(canonicalUrl) ? `<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />` : ""}
   <style>
-    :root{
-      --theme:${theme};
-      --bg:#020617;
-      --card:#0f172a;
-      --text:#e2e8f0;
-      --muted:#94a3b8;
-    }
+    :root{--theme:${theme};--bg:#020617;--card:#0f172a;--text:#e2e8f0;--muted:#94a3b8}
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family:Inter,Arial,sans-serif;
-      background:radial-gradient(circle at top,#0f172a,#000);
-      color:var(--text);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-    }
-    .card{
-      width:min(560px,100%);
-      background:rgba(15,23,42,.92);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:22px;
-      padding:28px;
-      box-shadow:0 0 30px rgba(0,0,0,.35);
-      text-align:center;
-    }
-    .avatar{
-      width:110px;
-      height:110px;
-      margin:0 auto 18px;
-      border-radius:999px;
-      overflow:hidden;
-      border:3px solid var(--theme);
-      background:#111827;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .avatar img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-    }
-    .eyebrow{
-      display:inline-block;
-      margin:0 0 12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--muted);
-      font-size:12px;
-    }
-    h1{
-      margin:0 0 10px;
-      color:var(--theme);
-      font-size:30px;
-    }
-    p.desc{
-      margin:0 0 22px;
-      color:var(--muted);
-      line-height:1.7;
-    }
-    .links{
-      display:grid;
-      gap:12px;
-    }
-    a.btn{
-      display:block;
-      padding:14px 16px;
-      border-radius:14px;
-      text-decoration:none;
-      font-weight:700;
-      border:1px solid rgba(255,255,255,.08);
-      background:#111827;
-      color:var(--text);
-    }
-    a.cta{
-      background:var(--theme);
-      color:#000;
-    }
-    .footer{
-      margin-top:20px;
-      color:var(--muted);
-      font-size:12px;
-    }
+    body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at top,#0f172a,#000);color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(560px,100%);background:rgba(15,23,42,.92);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px;box-shadow:0 0 30px rgba(0,0,0,.35);text-align:center}
+    .avatar{width:110px;height:110px;margin:0 auto 18px;border-radius:999px;overflow:hidden;border:3px solid var(--theme);background:#111827;display:flex;align-items:center;justify-content:center}
+    .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .eyebrow{display:inline-block;margin:0 0 12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.10);color:var(--muted);font-size:12px}
+    h1{margin:0 0 10px;color:var(--theme);font-size:30px}
+    p.desc{margin:0 0 22px;color:var(--muted);line-height:1.7}
+    .links{display:grid;gap:12px}.btn{display:block;padding:14px 16px;border-radius:14px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.08);background:#111827;color:var(--text)}
+    .cta{background:var(--theme);color:#000}.footer{margin-top:20px;color:var(--muted);font-size:12px}
     ${customCss}
   </style>
 </head>
 <body>
   <div class="card">
-    ${
-      image && isValidUrl(image)
-        ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>`
-        : ""
-    }
+    ${image && isValidUrl(image) ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
     ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
     <h1>${title}</h1>
     ${description ? `<p class="desc">${description}</p>` : ""}
     <div class="links">
-      ${safeButtons
-        .map(
-          (btn) =>
-            `<a class="btn" href="${escapeHtml(btn.url)}" target="_blank" rel="noopener noreferrer">${btn.label}</a>`
-        )
-        .join("")}
-      ${
-        ctaLabel && isValidUrl(ctaUrl)
-          ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
-          : ""
-      }
+      ${safeButtons.map((btn) => `<a class="btn" href="${escapeHtml(btn.url)}" target="_blank" rel="noopener noreferrer">${btn.label}</a>`).join("")}
+      ${ctaLabel && isValidUrl(ctaUrl) ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>` : ""}
     </div>
     <div class="footer">${footer}</div>
   </div>
@@ -779,23 +615,18 @@ function renderLandingHtml(link) {
 </html>`;
 }
 
-// ================= TOKEN HELPERS =================
 function verifySignedToken(token) {
   try {
     const [base, sig] = String(token || "").split(".");
     if (!base || !sig) return null;
-
     const expected = crypto.createHmac("sha256", APP_SECRET).update(base).digest("base64url");
-
     const a = Buffer.from(sig);
     const b = Buffer.from(expected);
     if (a.length !== b.length) return null;
     if (!crypto.timingSafeEqual(a, b)) return null;
-
     const payload = JSON.parse(Buffer.from(base, "base64url").toString("utf8"));
     if (!payload?.sub || !payload?.exp) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-
     return payload;
   } catch {
     return null;
@@ -811,41 +642,21 @@ function getBearerToken(event) {
 async function getCurrentUser(event) {
   const raw = getBearerToken(event);
   if (!raw) return null;
-
   const payload = verifySignedToken(raw);
   if (!payload?.sub) return null;
-
   return {
-    username: payload.sub,
+    username: normalizeEmail(payload.sub),
     role: payload.role || "user",
     tokenType: payload.typ || "core"
   };
 }
 
-// ================= DYNAMO HELPERS =================
-function ddbString(value) {
-  return { S: String(value) };
-}
-
-function ddbNumber(value) {
-  return { N: String(value) };
-}
-
-function ddbBool(value) {
-  return { BOOL: !!value };
-}
-
-function attrString(item, key, fallback = "") {
-  return item?.[key]?.S ?? fallback;
-}
-
-function attrNumber(item, key, fallback = 0) {
-  return item?.[key]?.N !== undefined ? Number(item[key].N) : fallback;
-}
-
-function attrBool(item, key, fallback = false) {
-  return item?.[key]?.BOOL !== undefined ? item[key].BOOL : fallback;
-}
+const ddbString = (value) => ({ S: String(value) });
+const ddbNumber = (value) => ({ N: String(value) });
+const ddbBool = (value) => ({ BOOL: !!value });
+const attrString = (item, key, fallback = "") => item?.[key]?.S ?? fallback;
+const attrNumber = (item, key, fallback = 0) => item?.[key]?.N !== undefined ? Number(item[key].N) : fallback;
+const attrBool = (item, key, fallback = false) => item?.[key]?.BOOL !== undefined ? item[key].BOOL : fallback;
 
 function buildRedirectKey(slug, domain = null) {
   const cleanSlug = normalizeSlug(slug);
@@ -856,9 +667,7 @@ function buildRedirectKey(slug, domain = null) {
 function splitRedirectKey(key) {
   const raw = String(key || "");
   const index = raw.indexOf("#");
-  if (index === -1) {
-    return { domain: null, slug: normalizeSlug(raw) };
-  }
+  if (index === -1) return { domain: null, slug: normalizeSlug(raw) };
   return {
     domain: normalizeDomain(raw.slice(0, index)),
     slug: normalizeSlug(raw.slice(index + 1))
@@ -872,7 +681,7 @@ function marshalRedirectItem(data) {
     url: ddbString(data.url),
     clicks: ddbNumber(toNumber(data.clicks, 0)),
     paused: ddbBool(!!data.paused),
-    user: ddbString(data.user),
+    user: ddbString(normalizeEmail(data.user)),
     createdAt: ddbNumber(toNumber(data.createdAt, now())),
     source: ddbString(data.source || "legacy"),
     domain: ddbString(normalizeDomain(data.domain || "")),
@@ -905,7 +714,6 @@ function marshalRedirectItem(data) {
 function unmarshallRedirectItem(item) {
   if (!item) return null;
   const parsed = splitRedirectKey(attrString(item, "slug"));
-
   return {
     redirectKey: attrString(item, "slug"),
     slug: attrString(item, "rawSlug", parsed.slug),
@@ -913,7 +721,7 @@ function unmarshallRedirectItem(item) {
     url: attrString(item, "url"),
     clicks: attrNumber(item, "clicks", 0),
     paused: attrBool(item, "paused", false),
-    user: attrString(item, "user"),
+    user: normalizeEmail(attrString(item, "user")),
     expire: item?.expire?.N ? Number(item.expire.N) : null,
     createdAt: attrNumber(item, "createdAt", 0),
     source: attrString(item, "source", "legacy"),
@@ -942,31 +750,20 @@ function unmarshallRedirectItem(item) {
 async function scanAll(TableName) {
   let items = [];
   let lastKey;
-
   do {
-    const res = await db.send(
-      new ScanCommand({
-        TableName,
-        ExclusiveStartKey: lastKey
-      })
-    );
+    const res = await db.send(new ScanCommand({ TableName, ExclusiveStartKey: lastKey }));
     items = items.concat(res.Items || []);
     lastKey = res.LastEvaluatedKey;
   } while (lastKey);
-
   return items;
 }
 
 async function getRedirectBySlugAndDomain(slug, domain = null) {
   const exactKey = buildRedirectKey(slug, domain);
-
-  const direct = await db.send(
-    new GetItemCommand({
-      TableName: REDIRECTS_TABLE,
-      Key: { slug: ddbString(exactKey) }
-    })
-  );
-
+  const direct = await db.send(new GetItemCommand({
+    TableName: REDIRECTS_TABLE,
+    Key: { slug: ddbString(exactKey) }
+  }));
   if (direct.Item) return unmarshallRedirectItem(direct.Item);
   return null;
 }
@@ -980,19 +777,11 @@ async function getLegacyLinksForUser(username) {
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
-// ================= BACKEND2 PROXY HELPERS =================
 function sanitizeHeadersForProxy(event, extra = {}) {
   const token = getBearerToken(event);
-  const headers = {
-    "Content-Type": "application/json"
-  };
-
+  const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-
-  return {
-    ...headers,
-    ...extra
-  };
+  return { ...headers, ...extra };
 }
 
 async function readResponseBody(res) {
@@ -1007,13 +796,11 @@ async function readResponseBody(res) {
 async function proxyToPrimary(event, path, method = null, body = undefined, extraHeaders = {}) {
   const finalMethod = method || getMethod(event);
   const url = `${PRIMARY_API}${path}`;
-
   const res = await fetch(url, {
     method: finalMethod,
     headers: sanitizeHeadersForProxy(event, extraHeaders),
     body: finalMethod === "GET" ? undefined : JSON.stringify(body ?? getBody(event))
   });
-
   const payload = await readResponseBody(res);
   return response(res.status, payload);
 }
@@ -1021,19 +808,11 @@ async function proxyToPrimary(event, path, method = null, body = undefined, extr
 async function callPrimaryJson(path, method = "GET", body = null, headers = {}) {
   const res = await fetch(`${PRIMARY_API}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers
-    },
+    headers: { "Content-Type": "application/json", ...headers },
     body: method === "GET" ? undefined : JSON.stringify(body || {})
   });
-
   const payload = await readResponseBody(res);
-  return {
-    ok: res.ok,
-    status: res.status,
-    data: payload
-  };
+  return { ok: res.ok, status: res.status, data: payload };
 }
 
 async function fetchVerifiedDomainForUser(event, domain) {
@@ -1051,16 +830,9 @@ async function fetchVerifiedDomainForUser(event, domain) {
   }
 
   const domains = Array.isArray(parsed?.domains) ? parsed.domains : [];
-  return (
-    domains.find(
-      (d) =>
-        normalizeDomain(d.domain) === normalizedDomain &&
-        String(d.status || "").toLowerCase() === "verified"
-    ) || null
-  );
+  return domains.find((d) => normalizeDomain(d.domain) === normalizedDomain && String(d.status || "").toLowerCase() === "verified") || null;
 }
 
-// ================= INTERNAL SYNC ROUTES =================
 function requireInternalKey(event) {
   const key = getHeader(event, "x-internal-key");
   return !!INTERNAL_SYNC_KEY && key === INTERNAL_SYNC_KEY;
@@ -1068,85 +840,129 @@ function requireInternalKey(event) {
 
 async function handleInternalSyncUser(event) {
   if (!requireInternalKey(event)) return unauthorized("Invalid internal key");
-
   const body = getBody(event);
   const username = normalizeEmail(body.username);
   if (!username) return badRequest("Missing username");
 
-  const role = body.role === "admin" ? "admin" : "user";
-  const active = body.active !== false;
-
-  await db.send(
-    new PutItemCommand({
-      TableName: USERS_MIRROR_TABLE,
-      Item: {
-        username: ddbString(username),
-        role: ddbString(role),
-        active: ddbBool(active),
-        updatedAt: ddbNumber(now())
-      }
-    })
-  );
+  // Your Dynamo table screenshot shows users_mirror partition key is id.
+  await db.send(new PutItemCommand({
+    TableName: USERS_MIRROR_TABLE,
+    Item: {
+      id: ddbString(username),
+      username: ddbString(username),
+      role: ddbString(body.role === "admin" ? "admin" : "user"),
+      active: ddbBool(body.active !== false),
+      twoFactorEnabled: ddbBool(!!body.twoFactorEnabled),
+      twoFactorMethod: ddbString(String(body.twoFactorMethod || "")),
+      updatedAt: ddbNumber(now())
+    }
+  }));
 
   return ok({ message: "User mirror synced" });
 }
 
 async function handleInternalSyncPayment(event) {
   if (!requireInternalKey(event)) return unauthorized("Invalid internal key");
-
   const body = getBody(event);
   const paymentId = String(body.id || "").trim();
   if (!paymentId) return badRequest("Missing payment id");
 
-  await db.send(
-    new PutItemCommand({
-      TableName: PAYMENTS_MIRROR_TABLE,
-      Item: {
-        id: ddbString(paymentId),
-        username: ddbString(normalizeEmail(body.username || "")),
-        status: ddbString(String(body.status || "unknown")),
-        billingCycle: ddbString(String(body.billingCycle || "")),
-        updatedAt: ddbNumber(now())
-      }
-    })
-  );
+  await db.send(new PutItemCommand({
+    TableName: PAYMENTS_MIRROR_TABLE,
+    Item: {
+      id: ddbString(paymentId),
+      username: ddbString(normalizeEmail(body.username || "")),
+      status: ddbString(String(body.status || "unknown")),
+      billingCycle: ddbString(String(body.billingCycle || "")),
+      planCode: ddbString(String(body.planCode || "")),
+      updatedAt: ddbNumber(now())
+    }
+  }));
 
   return ok({ message: "Payment mirror synced" });
 }
 
 async function handleInternalDeletePayment(event) {
   if (!requireInternalKey(event)) return unauthorized("Invalid internal key");
-
   const body = getBody(event);
   const paymentId = String(body.id || "").trim();
   if (!paymentId) return badRequest("Missing payment id");
 
-  await db.send(
-    new DeleteItemCommand({
-      TableName: PAYMENTS_MIRROR_TABLE,
-      Key: { id: ddbString(paymentId) }
-    })
-  );
+  await db.send(new DeleteItemCommand({
+    TableName: PAYMENTS_MIRROR_TABLE,
+    Key: { id: ddbString(paymentId) }
+  }));
 
   return ok({ message: "Payment mirror deleted" });
 }
 
-// ================= REALTIME =================
+async function requireLegacyCreateAccess(event, username, slug, domain, itemType = "redirect") {
+  if (!INTERNAL_SYNC_KEY) {
+    return {
+      ok: false,
+      response: serverError("INTERNAL_SYNC_KEY is not configured")
+    };
+  }
+
+  const access = await callPrimaryJson(
+    "/internal/aws-authorize-create",
+    "POST",
+    { username, itemType },
+    { "x-internal-key": INTERNAL_SYNC_KEY }
+  );
+
+  if (!access.ok) {
+    return {
+      ok: false,
+      response: response(
+        access.status || 403,
+        access.data || { message: "Create access denied" }
+      )
+    };
+  }
+
+  const consume = async () => {
+    const consumeRes = await callPrimaryJson(
+      "/internal/aws-consume-create",
+      "POST",
+      {
+        username,
+        slug,
+        domain,
+        backend: "legacy",
+        itemType
+      },
+      { "x-internal-key": INTERNAL_SYNC_KEY }
+    );
+
+    if (!consumeRes.ok) {
+      return {
+        ok: false,
+        response: response(
+          consumeRes.status || 403,
+          consumeRes.data || { message: "Create consume failed" }
+        )
+      };
+    }
+
+    return { ok: true, data: consumeRes.data };
+  };
+
+  return { ok: true, consume };
+}
+
 async function pushRealtimeUpdate(type = "click-update") {
   try {
     const connections = await scanAll(WS_CONNECTIONS_TABLE);
     if (!connections.length) return;
 
     const ws = new ApiGatewayManagementApiClient({ endpoint: WS_ENDPOINT });
-
     for (const connection of connections) {
       try {
-        await ws.send(
-          new PostToConnectionCommand({
-            ConnectionId: attrString(connection, "id"),
-            Data: JSON.stringify({ type, time: Date.now() })
-          })
-        );
+        await ws.send(new PostToConnectionCommand({
+          ConnectionId: attrString(connection, "id"),
+          Data: JSON.stringify({ type, time: Date.now() })
+        }));
       } catch (error) {
         console.error("WS PUSH ERROR", error);
       }
@@ -1156,33 +972,27 @@ async function pushRealtimeUpdate(type = "click-update") {
   }
 }
 
-// ================= WEBSOCKET =================
 async function handleWebSocket(event) {
   const routeKey = event?.requestContext?.routeKey;
   const connectionId = event?.requestContext?.connectionId;
-
   if (!connectionId) return { statusCode: 200 };
 
   try {
     if (routeKey === "$connect") {
-      await db.send(
-        new PutItemCommand({
-          TableName: WS_CONNECTIONS_TABLE,
-          Item: {
-            id: ddbString(connectionId),
-            connectedAt: ddbNumber(Date.now())
-          }
-        })
-      );
+      await db.send(new PutItemCommand({
+        TableName: WS_CONNECTIONS_TABLE,
+        Item: {
+          id: ddbString(connectionId),
+          connectedAt: ddbNumber(Date.now())
+        }
+      }));
     }
 
     if (routeKey === "$disconnect") {
-      await db.send(
-        new DeleteItemCommand({
-          TableName: WS_CONNECTIONS_TABLE,
-          Key: { id: ddbString(connectionId) }
-        })
-      );
+      await db.send(new DeleteItemCommand({
+        TableName: WS_CONNECTIONS_TABLE,
+        Key: { id: ddbString(connectionId) }
+      }));
     }
 
     if (routeKey === "broadcast") {
@@ -1196,7 +1006,6 @@ async function handleWebSocket(event) {
   }
 }
 
-// ================= ROUTE FLAGS =================
 function authRequired(path) {
   return (
     path === "/create" ||
@@ -1214,48 +1023,6 @@ function authRequired(path) {
   );
 }
 
-// IMPORTANT FIX:
-// pass itemType so Backend2 checks landing limits correctly
-async function requireLegacyCreateAccess(event, username, slug, domain, itemType = "redirect") {
-  const access = await callPrimaryJson(
-    "/internal/aws-authorize-create",
-    "POST",
-    {
-      username,
-      itemType
-    },
-    { Authorization: `Bearer ${getBearerToken(event)}` }
-  );
-
-  if (!access.ok) {
-    return { ok: false, response: response(access.status, access.data) };
-  }
-
-  const consume = async () => {
-    const consumeRes = await callPrimaryJson(
-      "/internal/aws-consume-create",
-      "POST",
-      {
-        username,
-        slug,
-        domain,
-        backend: "legacy",
-        itemType
-      },
-      { Authorization: `Bearer ${getBearerToken(event)}` }
-    );
-
-    if (!consumeRes.ok) {
-      return { ok: false, response: response(consumeRes.status, consumeRes.data) };
-    }
-
-    return { ok: true, data: consumeRes.data };
-  };
-
-  return { ok: true, consume };
-}
-
-// ================= MAIN ROUTER =================
 async function routeHttp(event) {
   if (event?.requestContext?.connectionId) {
     return handleWebSocket(event);
@@ -1267,19 +1034,24 @@ async function routeHttp(event) {
   const body = getBody(event);
   const query = getQuery(event);
 
-  if (method === "OPTIONS") {
-    return response(200, "");
+  if (method === "OPTIONS") return response(200, "");
+  if (!APP_SECRET) return serverError("APP_SECRET is not configured");
+  if (!(method === "GET" || method === "POST" || method === "OPTIONS")) return methodNotAllowed();
+
+  if (method === "GET" && path === "/debug/echo") {
+    return ok({
+      method,
+      path,
+      rawPath: event?.rawPath || null,
+      eventPath: event?.path || null,
+      requestContextPath: event?.requestContext?.http?.path || null,
+      stage: event?.requestContext?.stage || null,
+      query,
+      hasAuthorization: !!getBearerToken(event),
+      host: getRequestHost(event)
+    });
   }
 
-  if (!APP_SECRET) {
-    return serverError("APP_SECRET is not configured");
-  }
-
-  if (!(method === "GET" || method === "POST" || method === "OPTIONS")) {
-    return methodNotAllowed();
-  }
-
-  // -------- health
   if (method === "GET" && (path === "/" || path === "/health")) {
     return ok({
       ok: true,
@@ -1287,42 +1059,16 @@ async function routeHttp(event) {
       time: now(),
       region: REGION,
       primaryApi: PRIMARY_API,
-      apiBase: API_BASE
+      apiBase: API_BASE,
+      resolvedPath: path
     });
   }
 
-  // -------- internal sync
-  if (method === "POST" && path === "/internal/sync-user") {
-    return handleInternalSyncUser(event);
-  }
+  if (method === "POST" && path === "/internal/sync-user") return handleInternalSyncUser(event);
+  if (method === "POST" && path === "/internal/sync-payment") return handleInternalSyncPayment(event);
+  if (method === "POST" && path === "/internal/delete-payment") return handleInternalDeletePayment(event);
 
-  if (method === "POST" && path === "/internal/sync-payment") {
-    return handleInternalSyncPayment(event);
-  }
-
-  if (method === "POST" && path === "/internal/delete-payment") {
-    return handleInternalDeletePayment(event);
-  }
-
-  // -------- direct proxy routes to Backend2
-  if (PROXY_EXACT_ROUTES.has(path)) {
-    const suffix = method === "GET" && Object.keys(query || {}).length
-      ? `${path}?${new URLSearchParams(query).toString()}`
-      : path;
-    return proxyToPrimary(event, suffix, method, body);
-  }
-
-  // -------- extra domain proxy routes
-  if (
-    path === "/domains/me" ||
-    path === "/domains/add" ||
-    path === "/domains/verify" ||
-    path === "/domains/set-primary" ||
-    path === "/domains/remove" ||
-    path === "/domains/refresh" ||
-    path === "/domains/status" ||
-    path === "/domains/dns-instructions"
-  ) {
+  if (PROXY_EXACT_ROUTES.has(path) || DOMAIN_PROXY_ROUTES.has(path)) {
     const suffix = method === "GET" && Object.keys(query || {}).length
       ? `${path}?${new URLSearchParams(query).toString()}`
       : path;
@@ -1330,11 +1076,8 @@ async function routeHttp(event) {
   }
 
   const currentUser = await getCurrentUser(event);
-  if (authRequired(path) && !currentUser) {
-    return unauthorized();
-  }
+  if (authRequired(path) && !currentUser) return unauthorized();
 
-  // -------- local admin links route
   if (method === "GET" && path === "/admin/links") {
     if (currentUser.role !== "admin") return forbidden("Admin only");
 
@@ -1380,7 +1123,6 @@ async function routeHttp(event) {
 
   if (method === "POST" && path === "/admin/pause") {
     if (currentUser.role !== "admin") return forbidden("Admin only");
-
     const slug = normalizeSlug(body.slug);
     const domain = normalizeDomain(body.domain || "");
     if (!slug) return badRequest("Missing slug");
@@ -1388,21 +1130,18 @@ async function routeHttp(event) {
     const existing = await getRedirectBySlugAndDomain(slug, domain || null);
     if (!existing) return notFound("Link not found");
 
-    await db.send(
-      new UpdateItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) },
-        UpdateExpression: "SET paused = :p",
-        ExpressionAttributeValues: { ":p": ddbBool(true) }
-      })
-    );
+    await db.send(new UpdateItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) },
+      UpdateExpression: "SET paused = :p",
+      ExpressionAttributeValues: { ":p": ddbBool(true) }
+    }));
 
     return text(200, "paused");
   }
 
   if (method === "POST" && path === "/admin/resume") {
     if (currentUser.role !== "admin") return forbidden("Admin only");
-
     const slug = normalizeSlug(body.slug);
     const domain = normalizeDomain(body.domain || "");
     if (!slug) return badRequest("Missing slug");
@@ -1410,19 +1149,16 @@ async function routeHttp(event) {
     const existing = await getRedirectBySlugAndDomain(slug, domain || null);
     if (!existing) return notFound("Link not found");
 
-    await db.send(
-      new UpdateItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) },
-        UpdateExpression: "SET paused = :p",
-        ExpressionAttributeValues: { ":p": ddbBool(false) }
-      })
-    );
+    await db.send(new UpdateItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) },
+      UpdateExpression: "SET paused = :p",
+      ExpressionAttributeValues: { ":p": ddbBool(false) }
+    }));
 
     return text(200, "resumed");
   }
 
-  // -------- local create
   if (method === "POST" && path === "/create") {
     const url = String(body.url || "").trim();
     const providedSlug = body.slug ? normalizeSlug(body.slug) : "";
@@ -1457,33 +1193,29 @@ async function routeHttp(event) {
     const access = await requireLegacyCreateAccess(event, currentUser.username, slug, finalDomain, "redirect");
     if (!access.ok) return access.response;
 
-    await db.send(
-      new PutItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Item: marshalRedirectItem({
-          slug,
-          domain: finalDomain,
-          url,
-          clicks: 0,
-          paused: false,
-          user: currentUser.username,
-          expire: expire || null,
-          createdAt: Date.now(),
-          source: "legacy",
-          linkType: "redirect"
-        }),
-        ConditionExpression: "attribute_not_exists(slug)"
-      })
-    );
+    await db.send(new PutItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Item: marshalRedirectItem({
+        slug,
+        domain: finalDomain,
+        url,
+        clicks: 0,
+        paused: false,
+        user: currentUser.username,
+        expire: expire || null,
+        createdAt: Date.now(),
+        source: "legacy",
+        linkType: "redirect"
+      }),
+      ConditionExpression: "attribute_not_exists(slug)"
+    }));
 
     const consume = await access.consume();
     if (!consume.ok) {
-      await db.send(
-        new DeleteItemCommand({
-          TableName: REDIRECTS_TABLE,
-          Key: { slug: ddbString(buildRedirectKey(slug, finalDomain)) }
-        })
-      );
+      await db.send(new DeleteItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Key: { slug: ddbString(buildRedirectKey(slug, finalDomain)) }
+      }));
       return consume.response;
     }
 
@@ -1497,10 +1229,8 @@ async function routeHttp(event) {
     });
   }
 
-  // -------- local list
   if (method === "GET" && path === "/list") {
     const items = await getLegacyLinksForUser(currentUser.username);
-
     return ok({
       items: items.map((item) => ({
         slug: item.slug,
@@ -1536,7 +1266,6 @@ async function routeHttp(event) {
     });
   }
 
-  // -------- local history
   if (method === "GET" && path === "/history") {
     const slug = normalizeSlug(query.slug);
     const domain = normalizeDomain(query.domain || "");
@@ -1544,20 +1273,12 @@ async function routeHttp(event) {
 
     const link = await getRedirectBySlugAndDomain(slug, domain || null);
     if (!link) return notFound("Link not found");
-
-    const owner = link.user;
-    if (owner !== currentUser.username && currentUser.role !== "admin") {
-      return forbidden("Forbidden");
-    }
+    if (link.user !== currentUser.username && currentUser.role !== "admin") return forbidden("Forbidden");
 
     const allItems = await scanAll(CLICKS_TABLE);
-
     const history = allItems
       .filter((i) => attrString(i, "slug").toLowerCase() === slug)
-      .filter((i) => {
-        const clickDomain = normalizeDomain(attrString(i, "domain", ""));
-        return clickDomain === normalizeDomain(domain || "");
-      })
+      .filter((i) => normalizeDomain(attrString(i, "domain", "")) === normalizeDomain(domain || ""))
       .map((i) => ({
         id: attrString(i, "id"),
         slug: attrString(i, "slug"),
@@ -1575,7 +1296,6 @@ async function routeHttp(event) {
     return ok({ history });
   }
 
-  // -------- local delete
   if (method === "POST" && path === "/delete") {
     const slug = normalizeSlug(body.slug);
     const domain = normalizeDomain(body.domain || "");
@@ -1583,23 +1303,16 @@ async function routeHttp(event) {
 
     const link = await getRedirectBySlugAndDomain(slug, domain || null);
     if (!link) return notFound("Link not found");
+    if (link.user !== currentUser.username && currentUser.role !== "admin") return forbidden("Forbidden");
 
-    const owner = link.user;
-    if (owner !== currentUser.username && currentUser.role !== "admin") {
-      return forbidden("Forbidden");
-    }
-
-    await db.send(
-      new DeleteItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) }
-      })
-    );
+    await db.send(new DeleteItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) }
+    }));
 
     return text(200, "deleted");
   }
 
-  // -------- local landing create
   if (method === "POST" && path === "/landing/create") {
     const requestedDomain = normalizeDomain(body.domain || "");
     const slug = normalizeSlug(body.slug || generateSlug());
@@ -1627,51 +1340,47 @@ async function routeHttp(event) {
     const access = await requireLegacyCreateAccess(event, currentUser.username, slug, finalDomain, "landing");
     if (!access.ok) return access.response;
 
-    await db.send(
-      new PutItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Item: marshalRedirectItem({
-          slug,
-          domain: finalDomain,
-          url: sanitized.ctaUrl || FRONTEND_BASE,
-          clicks: 0,
-          paused: false,
-          user: currentUser.username,
-          expire: null,
-          createdAt: now(),
-          source: "legacy",
-          linkType: "landing",
-          landingTitle: sanitized.title || slug,
-          landingSubtitle: sanitized.subtitle || null,
-          landingDescription: sanitized.description || null,
-          landingImage: sanitized.image || null,
-          landingTheme: sanitized.theme,
-          landingButtons: sanitized.buttons,
-          landingCtaLabel: sanitized.ctaLabel || null,
-          landingCtaUrl: sanitized.ctaUrl || null,
-          landingFooter: sanitized.footer || null,
-          landingHtml: sanitized.landingHtml,
-          landingCss: sanitized.landingCss,
-          landingJs: sanitized.landingJs,
-          metaTitle: sanitized.metaTitle,
-          metaDescription: sanitized.metaDescription,
-          ogTitle: sanitized.ogTitle,
-          ogDescription: sanitized.ogDescription,
-          ogImage: sanitized.ogImage,
-          canonicalUrl: sanitized.canonicalUrl
-        }),
-        ConditionExpression: "attribute_not_exists(slug)"
-      })
-    );
+    await db.send(new PutItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Item: marshalRedirectItem({
+        slug,
+        domain: finalDomain,
+        url: sanitized.ctaUrl || FRONTEND_BASE,
+        clicks: 0,
+        paused: false,
+        user: currentUser.username,
+        expire: null,
+        createdAt: now(),
+        source: "legacy",
+        linkType: "landing",
+        landingTitle: sanitized.title || slug,
+        landingSubtitle: sanitized.subtitle || null,
+        landingDescription: sanitized.description || null,
+        landingImage: sanitized.image || null,
+        landingTheme: sanitized.theme,
+        landingButtons: sanitized.buttons,
+        landingCtaLabel: sanitized.ctaLabel || null,
+        landingCtaUrl: sanitized.ctaUrl || null,
+        landingFooter: sanitized.footer || null,
+        landingHtml: sanitized.landingHtml,
+        landingCss: sanitized.landingCss,
+        landingJs: sanitized.landingJs,
+        metaTitle: sanitized.metaTitle,
+        metaDescription: sanitized.metaDescription,
+        ogTitle: sanitized.ogTitle,
+        ogDescription: sanitized.ogDescription,
+        ogImage: sanitized.ogImage,
+        canonicalUrl: sanitized.canonicalUrl
+      }),
+      ConditionExpression: "attribute_not_exists(slug)"
+    }));
 
     const consume = await access.consume();
     if (!consume.ok) {
-      await db.send(
-        new DeleteItemCommand({
-          TableName: REDIRECTS_TABLE,
-          Key: { slug: ddbString(buildRedirectKey(slug, finalDomain)) }
-        })
-      );
+      await db.send(new DeleteItemCommand({
+        TableName: REDIRECTS_TABLE,
+        Key: { slug: ddbString(buildRedirectKey(slug, finalDomain)) }
+      }));
       return consume.response;
     }
 
@@ -1684,7 +1393,6 @@ async function routeHttp(event) {
     });
   }
 
-  // -------- local landing update
   if (method === "POST" && path === "/landing/update") {
     const slug = normalizeSlug(body.slug);
     const domain = normalizeDomain(body.domain || "");
@@ -1702,46 +1410,43 @@ async function routeHttp(event) {
     if (sanitized.ogImage && !isValidUrl(sanitized.ogImage)) return badRequest("Invalid OG image URL");
     if (sanitized.canonicalUrl && !isValidUrl(sanitized.canonicalUrl)) return badRequest("Invalid canonical URL");
 
-    await db.send(
-      new PutItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Item: marshalRedirectItem({
-          slug,
-          domain: domain || null,
-          url: sanitized.ctaUrl || item.url || FRONTEND_BASE,
-          clicks: item.clicks,
-          paused: item.paused,
-          user: item.user,
-          expire: item.expire,
-          createdAt: item.createdAt,
-          source: item.source || "legacy",
-          linkType: "landing",
-          landingTitle: sanitized.title || slug,
-          landingSubtitle: sanitized.subtitle || null,
-          landingDescription: sanitized.description || null,
-          landingImage: sanitized.image || null,
-          landingTheme: sanitized.theme,
-          landingButtons: sanitized.buttons,
-          landingCtaLabel: sanitized.ctaLabel || null,
-          landingCtaUrl: sanitized.ctaUrl || null,
-          landingFooter: sanitized.footer || null,
-          landingHtml: sanitized.landingHtml,
-          landingCss: sanitized.landingCss,
-          landingJs: sanitized.landingJs,
-          metaTitle: sanitized.metaTitle,
-          metaDescription: sanitized.metaDescription,
-          ogTitle: sanitized.ogTitle,
-          ogDescription: sanitized.ogDescription,
-          ogImage: sanitized.ogImage,
-          canonicalUrl: sanitized.canonicalUrl
-        })
+    await db.send(new PutItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Item: marshalRedirectItem({
+        slug,
+        domain: domain || null,
+        url: sanitized.ctaUrl || item.url || FRONTEND_BASE,
+        clicks: item.clicks,
+        paused: item.paused,
+        user: item.user,
+        expire: item.expire,
+        createdAt: item.createdAt,
+        source: item.source || "legacy",
+        linkType: "landing",
+        landingTitle: sanitized.title || slug,
+        landingSubtitle: sanitized.subtitle || null,
+        landingDescription: sanitized.description || null,
+        landingImage: sanitized.image || null,
+        landingTheme: sanitized.theme,
+        landingButtons: sanitized.buttons,
+        landingCtaLabel: sanitized.ctaLabel || null,
+        landingCtaUrl: sanitized.ctaUrl || null,
+        landingFooter: sanitized.footer || null,
+        landingHtml: sanitized.landingHtml,
+        landingCss: sanitized.landingCss,
+        landingJs: sanitized.landingJs,
+        metaTitle: sanitized.metaTitle,
+        metaDescription: sanitized.metaDescription,
+        ogTitle: sanitized.ogTitle,
+        ogDescription: sanitized.ogDescription,
+        ogImage: sanitized.ogImage,
+        canonicalUrl: sanitized.canonicalUrl
       })
-    );
+    }));
 
     return ok({ message: "Landing page updated" });
   }
 
-  // -------- local landing delete
   if (method === "POST" && path === "/landing/delete") {
     const slug = normalizeSlug(body.slug);
     const domain = normalizeDomain(body.domain || "");
@@ -1752,17 +1457,14 @@ async function routeHttp(event) {
     if (item.user !== currentUser.username && currentUser.role !== "admin") return forbidden("Forbidden");
     if (String(item.linkType || "redirect") !== "landing") return badRequest("This is not a landing page");
 
-    await db.send(
-      new DeleteItemCommand({
-        TableName: REDIRECTS_TABLE,
-        Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) }
-      })
-    );
+    await db.send(new DeleteItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(buildRedirectKey(slug, domain || null)) }
+    }));
 
     return ok({ message: "Landing page deleted" });
   }
 
-  // -------- local landing get
   if (method === "GET" && path.startsWith("/landing/")) {
     const slug = normalizeSlug(path.replace("/landing/", ""));
     const domain = normalizeDomain(query.domain || "");
@@ -1796,85 +1498,67 @@ async function routeHttp(event) {
     });
   }
 
-  // -------- public redirect and public landing
-  if (method === "GET") {
-    if (!RESERVED_ROUTES.has(path) && !path.startsWith("/admin")) {
-      const slug = normalizeSlug(path.split("/").filter(Boolean).pop());
-      if (!slug) return badRequest("Invalid slug");
+  if (method === "GET" && !RESERVED_ROUTES.has(path) && !path.startsWith("/admin")) {
+    const slug = normalizeSlug(path.split("/").filter(Boolean).pop());
+    if (!slug) return badRequest("Invalid slug");
 
-      const host = getRequestHost(event);
-      const domainToResolve = isDefaultHost(host) ? null : host;
+    const host = getRequestHost(event);
+    const domainToResolve = isDefaultHost(host) ? null : host;
 
-      const item = await getRedirectBySlugAndDomain(slug, domainToResolve);
-      if (!item) return notFound("Link not found");
-      if (item.paused) return forbidden("Link is paused");
-      if (item.expire && Date.now() > item.expire) return json(410, { message: "Link expired" });
+    const item = await getRedirectBySlugAndDomain(slug, domainToResolve);
+    if (!item) return notFound("Link not found");
+    if (item.paused) return forbidden("Link is paused");
+    if (item.expire && Date.now() > item.expire) return json(410, { message: "Link expired" });
 
-      const ip = getIP(event);
-      const risk = scoreIP(ip, headers);
-      const ua = headers["user-agent"] || headers["User-Agent"] || "unknown";
+    const ip = getIP(event);
+    const risk = scoreIP(ip, headers);
+    const ua = headers["user-agent"] || headers["User-Agent"] || "unknown";
 
-      await db.send(
-        new UpdateItemCommand({
-          TableName: REDIRECTS_TABLE,
-          Key: { slug: ddbString(buildRedirectKey(slug, domainToResolve)) },
-          UpdateExpression: "SET clicks = if_not_exists(clicks, :z) + :i",
-          ExpressionAttributeValues: {
-            ":i": ddbNumber(1),
-            ":z": ddbNumber(0)
-          }
-        })
-      );
-
-      await db.send(
-        new PutItemCommand({
-          TableName: CLICKS_TABLE,
-          Item: {
-            id: ddbString(`${slug}#${normalizeDomain(domainToResolve || "")}#${Date.now()}#${randomId(4)}`),
-            slug: ddbString(slug),
-            domain: ddbString(normalizeDomain(domainToResolve || "")),
-            time: ddbNumber(Date.now()),
-            ip: ddbString(ip),
-            vpn: ddbBool(isVPN(ip, headers)),
-            bot: ddbBool(isBot(headers)),
-            risk: ddbNumber(risk),
-            ua: ddbString(ua)
-          }
-        })
-      );
-
-      await pushRealtimeUpdate("click-update");
-
-      if (String(item.linkType || "redirect") === "landing") {
-        return html(200, renderLandingHtml(item), { "Cache-Control": "no-store" });
+    await db.send(new UpdateItemCommand({
+      TableName: REDIRECTS_TABLE,
+      Key: { slug: ddbString(buildRedirectKey(slug, domainToResolve)) },
+      UpdateExpression: "SET clicks = if_not_exists(clicks, :z) + :i",
+      ExpressionAttributeValues: {
+        ":i": ddbNumber(1),
+        ":z": ddbNumber(0)
       }
+    }));
 
-      return redirect302(item.url);
+    await db.send(new PutItemCommand({
+      TableName: CLICKS_TABLE,
+      Item: {
+        id: ddbString(`${slug}#${normalizeDomain(domainToResolve || "")}#${Date.now()}#${randomId(4)}`),
+        slug: ddbString(slug),
+        domain: ddbString(normalizeDomain(domainToResolve || "")),
+        time: ddbNumber(Date.now()),
+        ip: ddbString(ip),
+        vpn: ddbBool(isVPN(ip, headers)),
+        bot: ddbBool(isBot(headers)),
+        risk: ddbNumber(risk),
+        ua: ddbString(ua)
+      }
+    }));
+
+    await pushRealtimeUpdate("click-update");
+
+    if (String(item.linkType || "redirect") === "landing") {
+      return html(200, renderLandingHtml(item), { "Cache-Control": "no-store" });
     }
+
+    return redirect302(item.url);
   }
 
-  return notFound("Route not found");
+  return notFound(`Route not found: ${method} ${path}`);
 }
 
-// ================= HANDLER =================
 export const handler = async (event) => {
   try {
     return await routeHttp(event);
   } catch (error) {
     console.error("UNHANDLED ERROR", error);
-
-    if (error?.name === "ConditionalCheckFailedException") {
-      return conflict("Resource already exists");
-    }
-
-    if (error?.name === "ProvisionedThroughputExceededException") {
-      return serverError("DynamoDB throughput exceeded", error);
-    }
-
-    if (error?.name === "ThrottlingException") {
-      return serverError("AWS throttling", error);
-    }
-
+    if (error?.name === "ConditionalCheckFailedException") return conflict("Resource already exists");
+    if (error?.name === "ProvisionedThroughputExceededException") return serverError("DynamoDB throughput exceeded", error);
+    if (error?.name === "ThrottlingException") return serverError("AWS throttling", error);
     return serverError("Internal server error", error);
   }
 };
