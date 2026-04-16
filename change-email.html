@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Change Email - Rattle Link</title>
+  <meta
+    name="description"
+    content="Change your account email or recover access if you lost your old mailbox."
+  />
+  <style>
+    :root{
+      --bg:#eef4ff;
+      --bg-soft:#f8fbff;
+      --surface:#ffffff;
+      --surface-2:#f7faff;
+      --surface-3:#eef5ff;
+      --text:#0f172a;
+      --text-soft:#475569;
+      --muted:#64748b;
+      --line:#d7e3f4;
+      --line-strong:#c2d5ed;
+      --primary:#2563eb;
+      --primary-strong:#1d4ed8;
+      --accent:#06b6d4;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warning:#d97706;
+      --shadow:0 32px 90px rgba(15,23,42,.14);
+      --shadow-soft:0 16px 42px rgba(37,99,235,.14);
+      --radius-2xl:30px;
+      --radius-xl:24px;
+      --radius-lg:18px;
+      --radius-md:14px;
+      --radius-sm:12px;
+    }
+
+    body.dark{
+      --bg:#030914;
+      --bg-soft:#07111f;
+      --surface:#081221;
+      --surface-2:#0d1728;
+      --surface-3:#101d31;
+      --text:#e2e8f0;
+      --text-soft:#9fb1c9;
+      --muted:#7f94b0;
+      --line:rgba(148,163,184,.15);
+      --line-strong:rgba(148,163,184,.24);
+      --primary:#00d5ff;
+      --primary-strong:#00b8dc;
+      --accent:#60a5fa;
+      --success:#22c55e;
+      --danger:#ef4444;
+      --warning:#f59e0b;
+      --shadow:0 35px 100px rgba(0,0,0,.52);
+      --shadow-soft:0 20px 55px rgba(0,213,255,.12);
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left,rgba(37,99,235,.18),transparent 26%),
+        radial-gradient(circle at 85% 15%,rgba(6,182,212,.14),transparent 18%),
+        linear-gradient(180deg,var(--bg),var(--bg-soft));
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:24px;
+    }
+
+    .page{
+      width:100%;
+      max-width:1140px;
+      display:grid;
+      grid-template-columns:1.02fr .98fr;
+      border-radius:var(--radius-2xl);
+      overflow:hidden;
+      border:1px solid var(--line);
+      background:var(--surface);
+      box-shadow:var(--shadow);
+    }
+
+    .hero{
+      padding:40px 34px;
+      color:#fff;
+      background:
+        radial-gradient(circle at 80% 20%,rgba(255,255,255,.10),transparent 18%),
+        linear-gradient(145deg,#041a37 0%,#0a2d59 45%,#08182d 100%);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:24px;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 13px;
+      border-radius:999px;
+      background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.14);
+      font-size:12px;
+      font-weight:800;
+      width:max-content;
+      letter-spacing:.04em;
+    }
+
+    .hero h1{
+      margin:16px 0 12px;
+      font-size:48px;
+      line-height:1;
+      letter-spacing:-1.5px;
+    }
+
+    .hero p{
+      margin:0;
+      max-width:560px;
+      color:rgba(255,255,255,.82);
+      line-height:1.8;
+      font-size:15px;
+    }
+
+    .hero-grid{
+      display:grid;
+      gap:12px;
+      margin-top:22px;
+    }
+
+    .hero-box{
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .hero-box b{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      color:#fff;
+    }
+
+    .hero-box span{
+      display:block;
+      font-size:12px;
+      line-height:1.7;
+      color:rgba(255,255,255,.74);
+    }
+
+    .panel{
+      padding:24px 22px;
+      background:var(--surface);
+      display:flex;
+      align-items:center;
+    }
+
+    .card{
+      width:100%;
+      border-radius:26px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      box-shadow:var(--shadow-soft);
+      padding:22px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      top:-40px;
+      left:-40px;
+      width:140px;
+      height:140px;
+      border-radius:50%;
+      background:radial-gradient(circle,rgba(37,99,235,.08),transparent 68%);
+      pointer-events:none;
+    }
+
+    body.dark .card::before{
+      background:radial-gradient(circle,rgba(0,213,255,.08),transparent 68%);
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+    }
+
+    .brand-badge{
+      width:54px;
+      height:54px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,var(--primary),var(--accent));
+      color:#02131c;
+      font-size:26px;
+      font-weight:900;
+      box-shadow:0 12px 34px rgba(37,99,235,.24);
+      flex:0 0 54px;
+    }
+
+    .brand-copy h2{
+      margin:0;
+      font-size:21px;
+      line-height:1;
+      color:var(--text);
+    }
+
+    .brand-copy p{
+      margin:5px 0 0;
+      font-size:12px;
+      color:var(--text-soft);
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .chip-btn,
+    .theme-toggle{
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      color:var(--text);
+      padding:10px 13px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      text-decoration:none;
+      transition:.18s ease;
+    }
+
+    .chip-btn:hover,
+    .theme-toggle:hover{
+      border-color:var(--primary);
+      color:var(--primary);
+      transform:translateY(-1px);
+    }
+
+    .head{
+      margin:18px 0 16px;
+    }
+
+    .head h3{
+      margin:0 0 8px;
+      font-size:32px;
+      line-height:1.03;
+      letter-spacing:-1px;
+    }
+
+    .head p{
+      margin:0;
+      color:var(--text-soft);
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    .status-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .status-pill{
+      padding:8px 11px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      color:var(--text-soft);
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .status-pill.good{
+      color:var(--success);
+      border-color:rgba(34,197,94,.18);
+      background:rgba(34,197,94,.08);
+    }
+
+    .status-pill.warn{
+      color:var(--warning);
+      border-color:rgba(217,119,6,.18);
+      background:rgba(217,119,6,.08);
+    }
+
+    .mode-switch{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:6px;
+      border-radius:18px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      margin-bottom:16px;
+    }
+
+    .tab{
+      flex:1;
+      min-width:140px;
+      appearance:none;
+      border:none;
+      background:transparent;
+      color:var(--text-soft);
+      font-size:13px;
+      font-weight:800;
+      border-radius:13px;
+      padding:13px 14px;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .tab.active{
+      background:var(--surface);
+      color:var(--text);
+      border:1px solid var(--line);
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
+    }
+
+    body.dark .tab.active{
+      box-shadow:none;
+      background:rgba(255,255,255,.03);
+    }
+
+    .field-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field label{
+      font-size:12px;
+      font-weight:800;
+      color:var(--text-soft);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .field input{
+      width:100%;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      color:var(--text);
+      padding:15px 14px;
+      outline:none;
+      font-size:15px;
+      transition:.18s ease;
+    }
+
+    .field input:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    body.dark .field input:focus{
+      box-shadow:0 0 0 4px rgba(0,213,255,.10);
+    }
+
+    .panel-box{
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      padding:16px;
+    }
+
+    .panel-box b{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      color:var(--text);
+    }
+
+    .panel-box span{
+      display:block;
+      color:var(--text-soft);
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    .masked{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px dashed var(--line-strong);
+      background:var(--surface);
+      font-size:14px;
+      font-weight:800;
+      color:var(--primary);
+      word-break:break-word;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+
+    .primary-btn,
+    .secondary-btn{
+      flex:1;
+      min-width:180px;
+      appearance:none;
+      border:none;
+      border-radius:16px;
+      padding:15px 18px;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:800;
+      transition:.18s ease;
+    }
+
+    .primary-btn{
+      background:linear-gradient(135deg,var(--primary),var(--primary-strong));
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      box-shadow:0 14px 32px rgba(37,99,235,.24);
+    }
+
+    body.dark .primary-btn{
+      color:#03121b;
+      box-shadow:0 14px 34px rgba(0,213,255,.18);
+    }
+
+    .primary-btn:hover{ transform:translateY(-1px); }
+
+    .secondary-btn{
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .secondary-btn:hover{
+      border-color:var(--primary);
+      color:var(--primary);
+      background:rgba(37,99,235,.03);
+    }
+
+    .spinner{
+      width:15px;
+      height:15px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top:2px solid #fff;
+      border-radius:50%;
+      display:none;
+      animation:spin 1s linear infinite;
+    }
+
+    body.dark .spinner{
+      border-color:rgba(3,18,27,.32);
+      border-top-color:#03121b;
+    }
+
+    .loading{
+      opacity:.74;
+      pointer-events:none;
+    }
+
+    .result{
+      min-height:22px;
+      margin-top:14px;
+      text-align:center;
+      white-space:pre-wrap;
+      font-size:13px;
+      line-height:1.7;
+      color:var(--danger);
+      font-weight:700;
+    }
+
+    .success-text{ color:var(--success) !important; }
+    .warn-text{ color:var(--warning) !important; }
+
+    .helper{
+      margin-top:12px;
+      text-align:center;
+      font-size:12px;
+      color:var(--text-soft);
+      line-height:1.7;
+    }
+
+    .hidden{ display:none !important; }
+
+    @keyframes spin{
+      to{transform:rotate(360deg)}
+    }
+
+    @media (max-width:980px){
+      .page{ grid-template-columns:1fr; }
+      .hero{ padding:30px 22px; }
+      .hero h1{ font-size:36px; }
+      .panel{ padding:18px; }
+    }
+
+    @media (max-width:760px){
+      body{ padding:14px; }
+      .actions{ flex-direction:column; }
+      .primary-btn,.secondary-btn{ width:100%; }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="page">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">✉️ Account email security</div>
+        <h1>Change your login email safely without breaking your account access.</h1>
+        <p>
+          This page lets you update the email used for login, verification, reset, and secure account recovery. It supports both the normal confirmation flow and a logged-in lost-mailbox recovery flow.
+        </p>
+
+        <div class="hero-grid">
+          <div class="hero-box">
+            <b>Standard email change</b>
+            <span>Enter your new email, current password, and 2FA code if enabled. The new inbox receives a confirmation link before the account is updated.</span>
+          </div>
+          <div class="hero-box">
+            <b>Lost access to old mailbox</b>
+            <span>If you are already logged in but cannot access your old email anymore, recover the account by confirming your password and 2FA, then switch to the new email directly.</span>
+          </div>
+          <div class="hero-box">
+            <b>Safe by default</b>
+            <span>No public email reveal flow is exposed. This page only works for logged-in users with a valid session token.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="card" id="card">
+        <div class="topbar">
+          <a class="brand" href="index.html">
+            <div class="brand-badge">🐍</div>
+            <div class="brand-copy">
+              <h2>Rattle Link</h2>
+              <p>Email change center</p>
+            </div>
+          </a>
+
+          <div class="top-actions">
+            <a class="chip-btn" id="loginLink" href="app.html">Login</a>
+            <a class="chip-btn" href="dashboard.html">Dashboard</a>
+            <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 Theme</button>
+          </div>
+        </div>
+
+        <div class="head">
+          <h3 id="headTitle">Change account email</h3>
+          <p id="headSub">
+            Update the email address used for your Rattle Link account. Your current session is required.
+          </p>
+        </div>
+
+        <div class="status-row">
+          <span id="sessionPill" class="status-pill warn">Session: Checking...</span>
+          <span id="backendPill" class="status-pill">Backend: Primary</span>
+          <span id="modePill" class="status-pill">Mode: Standard Change</span>
+        </div>
+
+        <div class="mode-switch">
+          <button id="changeTab" class="tab active" type="button" onclick="switchMode('change')">Change Email</button>
+          <button id="recoveryTab" class="tab" type="button" onclick="switchMode('recovery')">Lost Old Mailbox</button>
+        </div>
+
+        <div class="field-grid">
+          <div class="panel-box">
+            <b>Current email on file</b>
+            <span>This is loaded from your authenticated session using the safe email hint endpoint.</span>
+            <div id="currentEmailMask" class="masked">Loading...</div>
+          </div>
+
+          <div class="field">
+            <label for="newEmail">New email address</label>
+            <input id="newEmail" type="email" placeholder="new@email.com" autocomplete="email" />
+          </div>
+
+          <div class="field">
+            <label for="currentPassword">Current password</label>
+            <input id="currentPassword" type="password" placeholder="Enter your current password" autocomplete="current-password" />
+          </div>
+
+          <div class="field">
+            <label for="twoFactorCode">Two-factor code (only if enabled)</label>
+            <input id="twoFactorCode" type="text" inputmode="numeric" placeholder="123456" maxlength="8" />
+          </div>
+
+          <div id="modeHelp" class="panel-box">
+            <b>Standard change flow</b>
+            <span>Your new email gets a confirmation link first. Your old email also receives a security notice.</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="mainBtn" class="primary-btn" type="button" onclick="submitCurrentMode()">
+            <span id="btnText">Request Email Change</span>
+            <span id="spinner" class="spinner"></span>
+          </button>
+
+          <button class="secondary-btn" type="button" onclick="loadEmailHint()">Refresh Current Email</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <div class="helper">
+          Standard mode sends a confirmation link to the new inbox. Recovery mode changes the email immediately for logged-in users who already proved identity with password and 2FA.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+
+    let currentMode = "change";
+    let activeBackend = "primary";
+    let currentEmail = "";
+    let maskedEmail = "";
+
+    const card = document.getElementById("card");
+    const resultBox = document.getElementById("result");
+    const mainBtn = document.getElementById("mainBtn");
+    const btnText = document.getElementById("btnText");
+    const spinner = document.getElementById("spinner");
+    const currentEmailMask = document.getElementById("currentEmailMask");
+    const sessionPill = document.getElementById("sessionPill");
+    const backendPill = document.getElementById("backendPill");
+    const modePill = document.getElementById("modePill");
+    const modeHelp = document.getElementById("modeHelp");
+    const headTitle = document.getElementById("headTitle");
+    const headSub = document.getElementById("headSub");
+    const loginLink = document.getElementById("loginLink");
+
+    function qs() {
+      return new URLSearchParams(window.location.search);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") document.body.classList.remove("dark");
+      else document.body.classList.add("dark");
+    }
+
+    function getToken() {
+      return localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
+    }
+
+    function normalizeApiUrl(url) {
+      return String(url || "").replace(/\/+$/, "");
+    }
+
+    function getBackend() {
+      const queryBackend = String(qs().get("backend") || "").trim().toLowerCase();
+      const storedBackend =
+        String(localStorage.getItem("authBackend") || "").trim().toLowerCase() ||
+        String(localStorage.getItem("sessionBackend") || "").trim().toLowerCase();
+
+      if (queryBackend === "legacy" || queryBackend === "primary") return queryBackend;
+      if (storedBackend === "legacy" || storedBackend === "primary") return storedBackend;
+      return "primary";
+    }
+
+    function authHeaders() {
+      const token = getToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+
+    function setResult(message = "", type = "") {
+      resultBox.textContent = message;
+      resultBox.className = "result";
+      if (type === "success") resultBox.classList.add("success-text");
+      if (type === "warn") resultBox.classList.add("warn-text");
+    }
+
+    function setLoading(state) {
+      mainBtn.disabled = state;
+      card.classList.toggle("loading", state);
+      btnText.style.display = state ? "none" : "inline";
+      spinner.style.display = state ? "inline-block" : "none";
+    }
+
+    function safeJson(raw) {
+      try {
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return { message: raw };
+      }
+    }
+
+    function isRouteNotFound(status, data) {
+      const msg = String(data?.message || data?.error || data?.detail || "").toLowerCase();
+      return status === 404 || msg.includes("route not found") || msg.includes("cannot get") || msg.includes("not found");
+    }
+
+    function buildCandidates(path) {
+      const clean = String(path || "").startsWith("/") ? path : `/${path}`;
+      const map = {
+        "/email/hint": [
+          "/auth/email/hint",
+          "/email/hint"
+        ],
+        "/email/change/request": [
+          "/auth/email/change/request",
+          "/email/change/request"
+        ],
+        "/email/recovery/change": [
+          "/auth/email/recovery/change",
+          "/email/recovery/change"
+        ]
+      };
+
+      return map[clean] || [clean, `/auth${clean}`];
+    }
+
+    async function safeFetchRaw(base, path, options = {}) {
+      try {
+        const res = await fetch(normalizeApiUrl(base) + path, options);
+        const raw = await res.text();
+        const data = safeJson(raw);
+        return { ok: res.ok, status: res.status, data, raw, path };
+      } catch (error) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Request failed" },
+          raw: "",
+          path
+        };
+      }
+    }
+
+    async function apiCall(canonicalPath, options = {}) {
+      const backend = activeBackend;
+      const base = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const method = String(options.method || "GET").toUpperCase();
+      const headers = {
+        ...authHeaders(),
+        ...(options.headers || {})
+      };
+
+      if (method !== "GET" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+      if (backend === "legacy") {
+        headers["x-rattle-fallback"] = "legacy";
+      }
+
+      const candidates = buildCandidates(canonicalPath);
+      let firstFailure = null;
+
+      for (const path of candidates) {
+        const res = await safeFetchRaw(base, path, { ...options, method, headers });
+
+        if (res.ok) return { ...res, backend, resolvedPath: path };
+
+        if (!firstFailure) firstFailure = { ...res, backend, resolvedPath: path };
+
+        if (!isRouteNotFound(res.status, res.data) && res.status !== 405) {
+          return { ...res, backend, resolvedPath: path };
+        }
+      }
+
+      return firstFailure || {
+        ok: false,
+        status: 0,
+        data: { message: "No route matched" },
+        backend,
+        resolvedPath: ""
+      };
+    }
+
+    function switchMode(mode) {
+      currentMode = mode === "recovery" ? "recovery" : "change";
+
+      document.getElementById("changeTab").classList.toggle("active", currentMode === "change");
+      document.getElementById("recoveryTab").classList.toggle("active", currentMode === "recovery");
+
+      if (currentMode === "change") {
+        headTitle.textContent = "Change account email";
+        headSub.textContent = "Update the email address used for your Rattle Link account. Your current session is required.";
+        btnText.textContent = "Request Email Change";
+        modePill.textContent = "Mode: Standard Change";
+        modeHelp.innerHTML = `
+          <b>Standard change flow</b>
+          <span>Your new email gets a confirmation link first. Your old email also receives a security notice.</span>
+        `;
+      } else {
+        headTitle.textContent = "Recover from lost old mailbox";
+        headSub.textContent = "Use this only if you are already logged in but cannot access your current mailbox anymore.";
+        btnText.textContent = "Recover and Change Email";
+        modePill.textContent = "Mode: Lost Mailbox Recovery";
+        modeHelp.innerHTML = `
+          <b>Recovery flow</b>
+          <span>This changes the email immediately for the logged-in account after password and 2FA verification.</span>
+        `;
+      }
+    }
+
+    function isEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
+
+    function getFieldValues() {
+      return {
+        newEmail: document.getElementById("newEmail").value.trim().toLowerCase(),
+        currentPassword: document.getElementById("currentPassword").value,
+        twoFactorCode: document.getElementById("twoFactorCode").value.trim()
+      };
+    }
+
+    async function loadEmailHint() {
+      const token = getToken();
+
+      if (!token) {
+        sessionPill.textContent = "Session: Missing";
+        sessionPill.className = "status-pill warn";
+        currentEmailMask.textContent = "You must be logged in first.";
+        loginLink.href = "app.html";
+        setResult("No active session found. Log in first.", "warn");
+        return;
+      }
+
+      activeBackend = getBackend();
+      backendPill.textContent = `Backend: ${activeBackend === "legacy" ? "Legacy AWS" : "Primary"}`;
+      loginLink.href = `app.html?backend=${encodeURIComponent(activeBackend)}`;
+
+      const res = await apiCall("/email/hint", { method: "GET" });
+
+      if (!res.ok) {
+        sessionPill.textContent = "Session: Invalid";
+        sessionPill.className = "status-pill warn";
+        currentEmailMask.textContent = "Could not load current email.";
+        setResult(res.data?.message || "Could not load current email.", "warn");
+        return;
+      }
+
+      currentEmail = String(res.data?.email || "").trim().toLowerCase();
+      maskedEmail = String(res.data?.maskedEmail || "").trim();
+
+      sessionPill.textContent = "Session: Active";
+      sessionPill.className = "status-pill good";
+      currentEmailMask.textContent = maskedEmail || currentEmail || "Loaded";
+      setResult("Current account email loaded.", "success");
+    }
+
+    async function submitStandardChange() {
+      const { newEmail, currentPassword, twoFactorCode } = getFieldValues();
+
+      if (!newEmail || !isEmail(newEmail)) {
+        setResult("Enter a valid new email.");
+        return;
+      }
+
+      if (!currentPassword) {
+        setResult("Enter your current password.");
+        return;
+      }
+
+      setLoading(true);
+      setResult("");
+
+      const res = await apiCall("/email/change/request", {
+        method: "POST",
+        body: JSON.stringify({
+          newEmail,
+          currentPassword,
+          twoFactorCode
+        })
+      });
+
+      setLoading(false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Email change request failed.");
+        return;
+      }
+
+      setResult(
+        `Confirmation sent to ${newEmail}. Open the new inbox and confirm the change.`,
+        "success"
+      );
+    }
+
+    async function submitRecoveryChange() {
+      const { newEmail, currentPassword, twoFactorCode } = getFieldValues();
+
+      if (!newEmail || !isEmail(newEmail)) {
+        setResult("Enter a valid new email.");
+        return;
+      }
+
+      if (!currentPassword) {
+        setResult("Enter your current password.");
+        return;
+      }
+
+      setLoading(true);
+      setResult("");
+
+      const res = await apiCall("/email/recovery/change", {
+        method: "POST",
+        body: JSON.stringify({
+          newEmail,
+          currentPassword,
+          twoFactorCode
+        })
+      });
+
+      setLoading(false);
+
+      if (!res.ok) {
+        setResult(res.data?.message || "Mailbox recovery change failed.");
+        return;
+      }
+
+      currentEmail = String(res.data?.newEmail || newEmail).trim().toLowerCase();
+      currentEmailMask.textContent = currentEmail;
+      setResult(
+        `Email updated successfully. Your account now uses ${currentEmail}. Log in with the new email next time.`,
+        "success"
+      );
+    }
+
+    async function submitCurrentMode() {
+      if (currentMode === "recovery") {
+        await submitRecoveryChange();
+        return;
+      }
+      await submitStandardChange();
+    }
+
+    loadTheme();
+    switchMode("change");
+    loadEmailHint();
+  </script>
+</body>
+</html>

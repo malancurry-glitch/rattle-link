@@ -618,6 +618,7 @@
 
       <div class="top-actions">
         <button class="btn-secondary" type="button" onclick="goBackDashboard()">Dashboard</button>
+        <button class="btn-secondary" type="button" onclick="goBackLogin()">Login</button>
         <button class="btn-secondary" type="button" onclick="toggleTheme()">🌗 Theme</button>
         <button class="btn-primary" type="button" onclick="refresh2FAStatus(true)">Refresh Status</button>
       </div>
@@ -701,6 +702,24 @@
           <div class="mini-kpi">
             <b id="trustedDevicesCount">0</b>
             <span>Trusted devices remembered for lower-friction login after successful 2FA verification.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hero-right">
+        <div class="status-pill">Navigation</div>
+        <div class="mini-kpis">
+          <div class="mini-kpi">
+            <b>Home</b>
+            <span><a href="index.html" style="color:inherit;text-decoration:underline;">Go to homepage</a></span>
+          </div>
+          <div class="mini-kpi">
+            <b>Login</b>
+            <span><a id="loginLinkCard" href="app.html" style="color:inherit;text-decoration:underline;">Go to login</a></span>
+          </div>
+          <div class="mini-kpi">
+            <b>Dashboard</b>
+            <span><a href="dashboard.html" style="color:inherit;text-decoration:underline;">Go to dashboard</a></span>
           </div>
         </div>
       </div>
@@ -1041,6 +1060,11 @@
     const qrHolder = $("qrHolder");
     const accountEmail = $("accountEmail");
     const backendSelect = $("backendSelect");
+    const loginLinkCard = $("loginLinkCard");
+
+    function qs() {
+      return new URLSearchParams(window.location.search);
+    }
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
@@ -1053,8 +1077,19 @@
       else document.body.classList.add("dark");
     }
 
+    function buildAppHref(email = "", backend = "") {
+      const params = new URLSearchParams();
+      if (email) params.set("email", email);
+      if (backend) params.set("backend", backend);
+      return "app.html" + (params.toString() ? `?${params.toString()}` : "");
+    }
+
     function goBackDashboard() {
       window.location.href = "dashboard.html";
+    }
+
+    function goBackLogin() {
+      window.location.href = buildAppHref(getIdentifiedEmail(), activeBackend);
     }
 
     function backendLabel(backend) {
@@ -1075,8 +1110,13 @@
         localStorage.getItem(USER_STORAGE_KEY) ||
         localStorage.getItem("lastUser") ||
         localStorage.getItem("rememberUser") ||
+        safeLower(qs().get("email")) ||
         ""
       );
+    }
+
+    function safeLower(value) {
+      return String(value || "").trim().toLowerCase();
     }
 
     function setStoredEmail(email) {
@@ -1262,6 +1302,7 @@
     function updateBadges() {
       backendBadge.textContent = `Backend: ${backendLabel(activeBackend)}`;
       accountBadge.textContent = `Account: ${identifiedEmail || "Unknown"}`;
+      loginLinkCard.href = buildAppHref(getIdentifiedEmail(), activeBackend);
     }
 
     function updateStatusUI() {
@@ -1386,7 +1427,12 @@
 
     function useRememberedAccount() {
       const savedEmail = getStoredEmail();
-      const savedBackend = localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary";
+      const savedBackend =
+        localStorage.getItem("twofa_backend") ||
+        localStorage.getItem("authBackend") ||
+        localStorage.getItem("sessionBackend") ||
+        safeLower(qs().get("backend")) ||
+        "primary";
 
       if (savedEmail) {
         accountEmail.value = savedEmail;
@@ -1402,6 +1448,7 @@
       accountEmail.value = "";
       clearStoredEmail();
       resolvedMeData = null;
+      loginLinkCard.href = "app.html";
       updateStatusUI();
       setResult(identifyResult, "Cleared identified account.");
     }
@@ -1409,7 +1456,7 @@
     async function refresh2FAStatus(showFeedback = false) {
       activeBackend = backendSelect.value === "legacy"
         ? "legacy"
-        : ((localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary") === "legacy" ? "legacy" : "primary");
+        : ((localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || safeLower(qs().get("backend")) || "primary") === "legacy" ? "legacy" : "primary");
 
       const res = await apiCall("/me", { method: "GET" }, activeBackend);
       const email = getIdentifiedEmail();
@@ -1419,7 +1466,7 @@
         resolvedMeData = data;
 
         if (!identifiedEmail) {
-          identifiedEmail = (data.username || data.email || email || "").toLowerCase();
+          identifiedEmail = safeLower(data.username || data.email || email || "");
           if (identifiedEmail) {
             accountEmail.value = identifiedEmail;
             setStoredEmail(identifiedEmail);
@@ -1796,7 +1843,12 @@
 
     function bootstrapAccount() {
       const savedEmail = getStoredEmail();
-      const savedBackend = localStorage.getItem("twofa_backend") || localStorage.getItem("authBackend") || localStorage.getItem("sessionBackend") || "primary";
+      const savedBackend =
+        localStorage.getItem("twofa_backend") ||
+        localStorage.getItem("authBackend") ||
+        localStorage.getItem("sessionBackend") ||
+        safeLower(qs().get("backend")) ||
+        "primary";
 
       if (savedEmail) {
         identifiedEmail = savedEmail.toLowerCase();

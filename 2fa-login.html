@@ -495,7 +495,7 @@
           </div>
           <div class="hero-item">
             <strong>Email OTP support</strong>
-            <span>If your account uses email OTP, enter the login code sent to your email address.</span>
+            <span>If your account uses email OTP, enter the code sent to your email address.</span>
           </div>
           <div class="hero-item">
             <strong>Production-ready flow</strong>
@@ -516,8 +516,9 @@
             </div>
           </div>
 
-          <div>
-            <a class="ghost-link" href="index.html">Back</a>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="ghost-link" id="backToAppTop" href="app.html">Back to Login</a>
+            <a class="ghost-link" href="index.html">Homepage</a>
             <button class="theme-toggle" type="button" onclick="toggleTheme()">🌗 Theme</button>
           </div>
         </div>
@@ -599,835 +600,852 @@
   </div>
 
   <script>
-  const PRIMARY_API = "https://api.rattleshortapi.it.com";
-  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-  const PRIMARY_AUTH_BASE = "/auth";
-  const LEGACY_AUTH_BASE = "";
+    const PRIMARY_API = "https://api.rattleshortapi.it.com";
+    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+    const PRIMARY_AUTH_BASE = "/auth";
+    const LEGACY_AUTH_BASE = "";
 
-  const SESSION_KEYS = {
-    token: "rattle_token",
-    role: "rattle_role",
-    user: "rattle_user",
-    authBackend: "authBackend",
-    sessionBackend: "sessionBackend",
-    magicBackend: "magicBackend",
-    magicEmail: "magicEmail",
-    pending2faMethod: "pending2faMethod",
-    pending2faSetup: "pending2faSetup",
-    pending2faExchange: "pending2faExchange",
-    pending2faChallenge: "pending2faChallenge",
-    magicRequestId: "magicRequestId",
-    magicExpiresAt: "magicExpiresAt"
-  };
+    const SESSION_KEYS = {
+      token: "rattle_token",
+      role: "rattle_role",
+      user: "rattle_user",
+      authBackend: "authBackend",
+      sessionBackend: "sessionBackend",
+      magicBackend: "magicBackend",
+      magicEmail: "magicEmail",
+      pending2faMethod: "pending2faMethod",
+      pending2faSetup: "pending2faSetup",
+      pending2faExchange: "pending2faExchange",
+      pending2faChallenge: "pending2faChallenge",
+      magicRequestId: "magicRequestId",
+      magicExpiresAt: "magicExpiresAt"
+    };
 
-  let preferredBackend = null;
-  let detectedMethod = null;
-  let currentMode = "verify";
-  let currentSecret = "";
-  let currentOtpAuthUrl = "";
-  let currentExchange = "";
-  let currentChallengeToken = "";
-  let currentToken = "";
+    let preferredBackend = null;
+    let detectedMethod = null;
+    let currentMode = "verify";
+    let currentSecret = "";
+    let currentOtpAuthUrl = "";
+    let currentExchange = "";
+    let currentChallengeToken = "";
+    let currentToken = "";
 
-  const card = document.getElementById("card");
-  const errorBox = document.getElementById("error");
-  const verifyBtn = document.getElementById("verifyBtn");
-  const btnText = document.getElementById("btnText");
-  const spinner = document.getElementById("spinner");
-  const username = document.getElementById("username");
-  const code = document.getElementById("code");
-  const methodChip = document.getElementById("methodChip");
-  const emailChip = document.getElementById("emailChip");
-  const backendChip = document.getElementById("backendChip");
-  const methodText = document.getElementById("methodText");
-  const tipText = document.getElementById("tipText");
-  const modeChip = document.getElementById("modeChip");
-  const heroTitle = document.getElementById("heroTitle");
-  const heroSub = document.getElementById("heroSub");
-  const brandModeText = document.getElementById("brandModeText");
-  const headTitle = document.getElementById("headTitle");
-  const headSub = document.getElementById("headSub");
-  const helperText = document.getElementById("helperText");
-  const setupSection = document.getElementById("setupSection");
-  const secretSection = document.getElementById("secretSection");
-  const qrSection = document.getElementById("qrSection");
-  const secretValue = document.getElementById("secretValue");
-  const qrImage = document.getElementById("qrImage");
-  const setupText = document.getElementById("setupText");
-  const codeLabel = document.getElementById("codeLabel");
-  const methodTitle = document.getElementById("methodTitle");
+    const card = document.getElementById("card");
+    const errorBox = document.getElementById("error");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const btnText = document.getElementById("btnText");
+    const spinner = document.getElementById("spinner");
+    const username = document.getElementById("username");
+    const code = document.getElementById("code");
+    const methodChip = document.getElementById("methodChip");
+    const emailChip = document.getElementById("emailChip");
+    const backendChip = document.getElementById("backendChip");
+    const methodText = document.getElementById("methodText");
+    const tipText = document.getElementById("tipText");
+    const modeChip = document.getElementById("modeChip");
+    const heroTitle = document.getElementById("heroTitle");
+    const heroSub = document.getElementById("heroSub");
+    const brandModeText = document.getElementById("brandModeText");
+    const headTitle = document.getElementById("headTitle");
+    const headSub = document.getElementById("headSub");
+    const helperText = document.getElementById("helperText");
+    const setupSection = document.getElementById("setupSection");
+    const secretSection = document.getElementById("secretSection");
+    const qrSection = document.getElementById("qrSection");
+    const secretValue = document.getElementById("secretValue");
+    const qrImage = document.getElementById("qrImage");
+    const setupText = document.getElementById("setupText");
+    const codeLabel = document.getElementById("codeLabel");
+    const methodTitle = document.getElementById("methodTitle");
+    const backToAppTop = document.getElementById("backToAppTop");
 
-  function qs() {
-    return new URLSearchParams(window.location.search);
-  }
-
-  function toggleTheme() {
-    document.body.classList.toggle("dark");
-    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-  }
-
-  function loadTheme() {
-    const theme = localStorage.getItem("theme");
-    if (theme === "light") document.body.classList.remove("dark");
-    else document.body.classList.add("dark");
-  }
-
-  function showError(msg = "", type = "error") {
-    errorBox.textContent = msg;
-    errorBox.className = "error";
-    if (type === "success") errorBox.classList.add("success-text");
-    if (type === "warn") errorBox.classList.add("warn-text");
-  }
-
-  function setLoading(state) {
-    verifyBtn.disabled = state;
-    card.classList.toggle("loading", state);
-    btnText.style.display = state ? "none" : "inline";
-    spinner.style.display = state ? "inline-block" : "none";
-  }
-
-  function normalizeApiUrl(url) {
-    return String(url || "").replace(/\/+$/, "");
-  }
-
-  function backendLabel(name) {
-    return name === "legacy" ? "Legacy AWS" : "Backend 2";
-  }
-
-  function buildHeaders(extra = {}) {
-    return { "Content-Type": "application/json", ...extra };
-  }
-
-  function authPrefix(backend) {
-    return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
-  }
-
-  function buildAuthPath(backend, path) {
-    const cleanPath = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-    return `${authPrefix(backend)}${cleanPath}`;
-  }
-
-  function safeLower(value) {
-    return String(value || "").trim().toLowerCase();
-  }
-
-  function getForcedBackend() {
-    const queryBackend = safeLower(qs().get("backend"));
-    const preferred = safeLower(preferredBackend);
-    const authBackend = safeLower(localStorage.getItem(SESSION_KEYS.authBackend));
-    const magicBackend = safeLower(localStorage.getItem(SESSION_KEYS.magicBackend));
-    const sessionBackend = safeLower(localStorage.getItem(SESSION_KEYS.sessionBackend));
-
-    if (preferred === "primary" || preferred === "legacy") return preferred;
-    if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
-    if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
-    if (sessionBackend === "primary" || sessionBackend === "legacy") return sessionBackend;
-    if (authBackend === "primary" || authBackend === "legacy") return authBackend;
-    return "primary";
-  }
-
-  function persistPendingState() {
-    if (currentExchange) localStorage.setItem(SESSION_KEYS.pending2faExchange, currentExchange);
-    if (currentChallengeToken) localStorage.setItem(SESSION_KEYS.pending2faChallenge, currentChallengeToken);
-    if (username.value.trim()) localStorage.setItem(SESSION_KEYS.magicEmail, username.value.trim().toLowerCase());
-    if (detectedMethod) localStorage.setItem(SESSION_KEYS.pending2faMethod, detectedMethod);
-  }
-
-  function clearPendingState() {
-    localStorage.removeItem(SESSION_KEYS.pending2faMethod);
-    localStorage.removeItem(SESSION_KEYS.pending2faSetup);
-    localStorage.removeItem(SESSION_KEYS.pending2faExchange);
-    localStorage.removeItem(SESSION_KEYS.pending2faChallenge);
-    localStorage.removeItem(SESSION_KEYS.magicRequestId);
-    localStorage.removeItem(SESSION_KEYS.magicExpiresAt);
-    localStorage.removeItem(SESSION_KEYS.magicBackend);
-  }
-
-  async function safeJson(res) {
-    const text = await res.text();
-    if (!text) return {};
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { message: text };
-    }
-  }
-
-  async function callApi(baseUrl, path, options = {}) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
-
-    try {
-      const res = await fetch(normalizeApiUrl(baseUrl) + path, {
-        ...options,
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-      const data = await safeJson(res);
-      return { ok: res.ok, status: res.status, data, networkError: false };
-    } catch (error) {
-      clearTimeout(timer);
-      return {
-        ok: false,
-        status: 0,
-        data: { message: error?.message || "Network request failed" },
-        networkError: true
-      };
-    }
-  }
-
-  function shouldFallbackToLegacy(result) {
-    if (!result) return true;
-    if (result.networkError) return true;
-    if (result.status === 404) return true;
-    if (result.status >= 500) return true;
-
-    const msg = String(result?.data?.message || result?.data?.error || "").toLowerCase();
-    return (
-      msg.includes("backend url not configured") ||
-      msg.includes("failed to fetch") ||
-      msg.includes("network request failed") ||
-      msg.includes("not found") ||
-      msg.includes("cannot post") ||
-      msg.includes("cannot get") ||
-      msg.includes("route")
-    );
-  }
-
-  async function callBackend(backend, rawPath, options = {}) {
-    const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
-    const finalPath = buildAuthPath(backend, rawPath);
-    const finalOptions = { ...options };
-
-    if (backend === "legacy") {
-      finalOptions.headers = buildHeaders({
-        ...(options.headers || {}),
-        "x-rattle-fallback": "legacy"
-      });
+    function qs() {
+      return new URLSearchParams(window.location.search);
     }
 
-    return callApi(baseUrl, finalPath, finalOptions);
-  }
-
-  async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-    if (behavior === "primaryOnly") {
-      const result = await callBackend("primary", path, options);
-      return { ...result, backend: "primary" };
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
     }
 
-    if (behavior === "legacyOnly") {
-      const result = await callBackend("legacy", path, options);
-      return { ...result, backend: "legacy" };
+    function loadTheme() {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") document.body.classList.remove("dark");
+      else document.body.classList.add("dark");
     }
 
-    const forced = getForcedBackend();
-
-    if (forced === "legacy") {
-      const result = await callBackend("legacy", path, options);
-      return { ...result, backend: "legacy" };
+    function showError(msg = "", type = "error") {
+      errorBox.textContent = msg;
+      errorBox.className = "error";
+      if (type === "success") errorBox.classList.add("success-text");
+      if (type === "warn") errorBox.classList.add("warn-text");
     }
 
-    const primaryResult = await callBackend("primary", path, options);
-    if (primaryResult.ok) return { ...primaryResult, backend: "primary" };
-
-    if (shouldFallbackToLegacy(primaryResult)) {
-      const legacyResult = await callBackend("legacy", path, options);
-      return { ...legacyResult, backend: "legacy", firstAttempt: primaryResult };
+    function setLoading(state) {
+      verifyBtn.disabled = state;
+      card.classList.toggle("loading", state);
+      btnText.style.display = state ? "none" : "inline";
+      spinner.style.display = state ? "inline-block" : "none";
     }
 
-    return { ...primaryResult, backend: "primary" };
-  }
-
-  function saveSession(token, role = "user", user = "", backend = "primary") {
-    localStorage.setItem(SESSION_KEYS.token, token);
-    localStorage.setItem(SESSION_KEYS.role, role);
-    localStorage.setItem(SESSION_KEYS.user, user);
-
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    localStorage.setItem("lastUser", user);
-
-    localStorage.setItem(SESSION_KEYS.authBackend, backend);
-    localStorage.setItem(SESSION_KEYS.sessionBackend, backend);
-  }
-
-  function updateBackendUi(backend) {
-    backendChip.textContent = `Backend: ${backendLabel(backend === "legacy" ? "legacy" : "primary")}`;
-  }
-
-  function updateMethodUi(method) {
-    detectedMethod = method || "unknown";
-
-    if (detectedMethod === "totp") {
-      methodChip.textContent = "Method: Authenticator app";
-      methodText.textContent = currentMode === "setup"
-        ? "Your account will use TOTP. Generate a secret, scan the QR code, then enter the first 6-digit code to complete setup."
-        : "Your account is using TOTP. Enter the current code from your authenticator app.";
-      tipText.textContent = currentMode === "setup"
-        ? "Generate your secret, scan the QR code in your authenticator app, then type the current 6-digit code."
-        : "Open your authenticator app and enter the latest 6-digit code.";
-    } else if (detectedMethod === "email_otp") {
-      methodChip.textContent = "Method: Email OTP";
-      methodText.textContent = "Your account is using email OTP. Enter the code sent to your email inbox.";
-      tipText.textContent = "Check your email for the login code, then paste it here.";
-    } else {
-      methodChip.textContent = "Method: Verification code";
-      methodText.textContent = currentMode === "setup"
-        ? "Complete 2FA setup for this account, then continue login."
-        : "Enter your two-factor code to complete login.";
-      tipText.textContent = currentMode === "setup"
-        ? "Setup generally requires an authenticator app. Generate a secret and confirm it with a code."
-        : "Use your authenticator app code or the email OTP code sent to your inbox.";
+    function normalizeApiUrl(url) {
+      return String(url || "").replace(/\/+$/, "");
     }
-  }
 
-  function updateEmailUi() {
-    const email = username.value.trim().toLowerCase();
-    emailChip.textContent = email ? `User: ${email}` : "User: Not set";
-    if (email) localStorage.setItem(SESSION_KEYS.magicEmail, email);
-  }
+    function backendLabel(name) {
+      return name === "legacy" ? "Legacy AWS" : "Backend 2";
+    }
 
-  function setMode(mode) {
-    currentMode = mode === "setup" ? "setup" : "verify";
-    const isSetup = currentMode === "setup";
+    function buildHeaders(extra = {}) {
+      return { "Content-Type": "application/json", ...extra };
+    }
 
-    modeChip.textContent = isSetup ? "Mode: Setup" : "Mode: Verify";
-    setupSection.classList.toggle("hidden", !isSetup);
+    function authPrefix(backend) {
+      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+    }
 
-    if (isSetup) {
-      heroTitle.textContent = "Complete your two-factor setup to finish login.";
-      heroSub.textContent = "Your account was identified, but 2FA setup is incomplete. Generate your secret, add it to your authenticator app, then confirm with your first code.";
-      brandModeText.textContent = "Two-Factor Setup";
-      headTitle.textContent = "Complete two-factor setup";
-      headSub.textContent = "Add your account to an authenticator app, then enter the first generated code to finish setup and complete login.";
-      helperText.textContent = "After setup succeeds, login will finish automatically.";
-      btnText.textContent = "Complete setup and continue";
-      codeLabel.textContent = "First authenticator code";
-      methodTitle.textContent = "Setup mode";
-      setupText.textContent = "This account must complete 2FA enrollment before login can finish.";
-      localStorage.setItem(SESSION_KEYS.pending2faSetup, "1");
-    } else {
-      heroTitle.textContent = "Finish your login with a verification code.";
-      heroSub.textContent = "Enter the 2FA code from your authenticator app or from your email, depending on how your account security is configured.";
-      brandModeText.textContent = "Two-Factor Verification";
-      headTitle.textContent = "Enter your security code";
-      headSub.textContent = "Verify your identity to complete login. This page supports both authenticator app codes and email OTP codes.";
-      helperText.textContent = "After successful verification, you will be redirected automatically.";
-      btnText.textContent = "Verify and continue";
-      codeLabel.textContent = "Verification code";
-      methodTitle.textContent = "Current login method";
+    function buildAuthPath(backend, path) {
+      const cleanPath = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+      return `${authPrefix(backend)}${cleanPath}`;
+    }
+
+    function safeLower(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function getForcedBackend() {
+      const queryBackend = safeLower(qs().get("backend"));
+      const preferred = safeLower(preferredBackend);
+      const authBackend = safeLower(localStorage.getItem(SESSION_KEYS.authBackend));
+      const magicBackend = safeLower(localStorage.getItem(SESSION_KEYS.magicBackend));
+      const sessionBackend = safeLower(localStorage.getItem(SESSION_KEYS.sessionBackend));
+
+      if (preferred === "primary" || preferred === "legacy") return preferred;
+      if (queryBackend === "primary" || queryBackend === "legacy") return queryBackend;
+      if (magicBackend === "primary" || magicBackend === "legacy") return magicBackend;
+      if (sessionBackend === "primary" || sessionBackend === "legacy") return sessionBackend;
+      if (authBackend === "primary" || authBackend === "legacy") return authBackend;
+      return "primary";
+    }
+
+    function buildAppHref(email = "", backend = "", method = "") {
+      const params = new URLSearchParams();
+      if (email) params.set("email", email);
+      if (backend) params.set("backend", backend);
+      if (method) params.set("method", method);
+      return "app.html" + (params.toString() ? `?${params.toString()}` : "");
+    }
+
+    function updateBackLinks() {
+      const email = username.value.trim().toLowerCase();
+      const backend = getForcedBackend();
+      const method = getPendingMethod();
+      const href = buildAppHref(email, backend, method);
+      backToAppTop.href = href;
+    }
+
+    function persistPendingState() {
+      if (currentExchange) localStorage.setItem(SESSION_KEYS.pending2faExchange, currentExchange);
+      if (currentChallengeToken) localStorage.setItem(SESSION_KEYS.pending2faChallenge, currentChallengeToken);
+      if (username.value.trim()) localStorage.setItem(SESSION_KEYS.magicEmail, username.value.trim().toLowerCase());
+      if (detectedMethod) localStorage.setItem(SESSION_KEYS.pending2faMethod, detectedMethod);
+      updateBackLinks();
+    }
+
+    function clearPendingState() {
+      localStorage.removeItem(SESSION_KEYS.pending2faMethod);
       localStorage.removeItem(SESSION_KEYS.pending2faSetup);
+      localStorage.removeItem(SESSION_KEYS.pending2faExchange);
+      localStorage.removeItem(SESSION_KEYS.pending2faChallenge);
+      localStorage.removeItem(SESSION_KEYS.magicRequestId);
+      localStorage.removeItem(SESSION_KEYS.magicExpiresAt);
+      localStorage.removeItem(SESSION_KEYS.magicBackend);
     }
 
-    updateMethodUi(detectedMethod || "unknown");
-  }
-
-  function buildQrUrl(otpauthUrl) {
-    if (!otpauthUrl) return "";
-    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(otpauthUrl)}`;
-  }
-
-  function renderSetupArtifacts() {
-    if (currentSecret) {
-      secretSection.classList.remove("hidden");
-      secretValue.textContent = currentSecret;
-    } else {
-      secretSection.classList.add("hidden");
-      secretValue.textContent = "";
+    async function safeJson(res) {
+      const text = await res.text();
+      if (!text) return {};
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { message: text };
+      }
     }
 
-    const qrUrl = buildQrUrl(currentOtpAuthUrl);
-    if (qrUrl) {
-      qrSection.classList.remove("hidden");
-      qrImage.src = qrUrl;
-    } else {
-      qrSection.classList.add("hidden");
-      qrImage.removeAttribute("src");
-    }
-  }
+    async function callApi(baseUrl, path, options = {}) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
 
-  function getPendingEmail() {
-    return username.value.trim().toLowerCase();
-  }
-
-  function getPendingMethod() {
-    return detectedMethod ||
-      safeLower(qs().get("method")) ||
-      safeLower(localStorage.getItem(SESSION_KEYS.pending2faMethod)) ||
-      "totp";
-  }
-
-  function getPendingExchange() {
-    return currentExchange ||
-      String(qs().get("exchange") || "").trim() ||
-      String(localStorage.getItem(SESSION_KEYS.pending2faExchange) || "").trim();
-  }
-
-  function getPendingChallenge() {
-    return currentChallengeToken ||
-      String(qs().get("challenge") || "").trim() ||
-      String(qs().get("challengeToken") || "").trim() ||
-      String(localStorage.getItem(SESSION_KEYS.pending2faChallenge) || "").trim();
-  }
-
-  function requiresSetup(data) {
-    return !!(
-      data?.requiresTwoFactorSetup ||
-      data?.require2faSetup ||
-      data?.mustSetup2FA ||
-      data?.must_setup_2fa ||
-      data?.requires2FASetup ||
-      data?.setupRequired ||
-      data?.twoFactorSetupRequired ||
-      data?.two_factor_setup_required
-    );
-  }
-
-  function isEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
-  }
-
-  function loadInitialState() {
-    const emailFromQuery = safeLower(qs().get("email"));
-    const methodFromQuery = safeLower(qs().get("method"));
-    const backendFromQuery = safeLower(qs().get("backend"));
-    const lastUser = safeLower(localStorage.getItem("lastUser"));
-    const pendingEmail = safeLower(localStorage.getItem(SESSION_KEYS.magicEmail));
-    const lastMfaMethod = safeLower(localStorage.getItem(SESSION_KEYS.pending2faMethod));
-    const modeFromQuery = safeLower(qs().get("mode"));
-    const incompleteFlag = safeLower(qs().get("incomplete"));
-    const forceSetup = safeLower(qs().get("setup"));
-
-    currentExchange = String(qs().get("exchange") || localStorage.getItem(SESSION_KEYS.pending2faExchange) || "").trim();
-    currentChallengeToken =
-      String(qs().get("challenge") || qs().get("challengeToken") || localStorage.getItem(SESSION_KEYS.pending2faChallenge) || "").trim();
-    currentToken = String(qs().get("token") || "").trim();
-
-    if (backendFromQuery === "primary" || backendFromQuery === "legacy") {
-      preferredBackend = backendFromQuery;
-      localStorage.setItem(SESSION_KEYS.authBackend, backendFromQuery);
-      localStorage.setItem(SESSION_KEYS.sessionBackend, backendFromQuery);
-      localStorage.setItem(SESSION_KEYS.magicBackend, backendFromQuery);
+      try {
+        const res = await fetch(normalizeApiUrl(baseUrl) + path, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        const data = await safeJson(res);
+        return { ok: res.ok, status: res.status, data, networkError: false };
+      } catch (error) {
+        clearTimeout(timer);
+        return {
+          ok: false,
+          status: 0,
+          data: { message: error?.message || "Network request failed" },
+          networkError: true
+        };
+      }
     }
 
-    username.value = emailFromQuery || pendingEmail || lastUser || "";
-    updateEmailUi();
-    updateBackendUi(getForcedBackend());
-    updateMethodUi(methodFromQuery || lastMfaMethod || "totp");
+    function shouldFallbackToLegacy(result) {
+      if (!result) return true;
+      if (result.networkError) return true;
+      if (result.status === 404) return true;
+      if (result.status >= 500) return true;
 
-    if (currentExchange) localStorage.setItem(SESSION_KEYS.pending2faExchange, currentExchange);
-    if (currentChallengeToken) localStorage.setItem(SESSION_KEYS.pending2faChallenge, currentChallengeToken);
-
-    if (
-      modeFromQuery === "setup" ||
-      incompleteFlag === "1" ||
-      forceSetup === "1" ||
-      localStorage.getItem(SESSION_KEYS.pending2faSetup) === "1"
-    ) {
-      setMode("setup");
-    } else {
-      setMode("verify");
-    }
-  }
-
-  async function generateSetupSecret() {
-    showError("");
-    const user = getPendingEmail();
-
-    if (!user) {
-      showError("Enter your email first.");
-      return;
-    }
-
-    if (!isEmail(user)) {
-      showError("Enter a valid email.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const issuer = "Rattle Link";
-      const res = await apiHybrid(
-        "/security/2fa/setup",
-        {
-          method: "POST",
-          headers: buildHeaders(),
-          body: JSON.stringify({
-            method: "totp",
-            issuer,
-            label: user,
-            username: user,
-            email: user
-          })
-        },
-        getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
+      const msg = String(result?.data?.message || result?.data?.error || "").toLowerCase();
+      return (
+        msg.includes("backend url not configured") ||
+        msg.includes("failed to fetch") ||
+        msg.includes("network request failed") ||
+        msg.includes("not found") ||
+        msg.includes("cannot post") ||
+        msg.includes("cannot get") ||
+        msg.includes("route")
       );
+    }
 
-      const data = res.data || {};
+    async function callBackend(backend, rawPath, options = {}) {
+      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+      const finalPath = buildAuthPath(backend, rawPath);
+      const finalOptions = { ...options };
 
-      if (!res.ok) {
-        showError(data.message || data.error || data.detail || "Could not generate 2FA setup secret.");
-        setLoading(false);
+      if (backend === "legacy") {
+        finalOptions.headers = buildHeaders({
+          ...(options.headers || {}),
+          "x-rattle-fallback": "legacy"
+        });
+      }
+
+      return callApi(baseUrl, finalPath, finalOptions);
+    }
+
+    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
+      if (behavior === "primaryOnly") {
+        const result = await callBackend("primary", path, options);
+        return { ...result, backend: "primary" };
+      }
+
+      if (behavior === "legacyOnly") {
+        const result = await callBackend("legacy", path, options);
+        return { ...result, backend: "legacy" };
+      }
+
+      const forced = getForcedBackend();
+
+      if (forced === "legacy") {
+        const result = await callBackend("legacy", path, options);
+        return { ...result, backend: "legacy" };
+      }
+
+      const primaryResult = await callBackend("primary", path, options);
+      if (primaryResult.ok) return { ...primaryResult, backend: "primary" };
+
+      if (shouldFallbackToLegacy(primaryResult)) {
+        const legacyResult = await callBackend("legacy", path, options);
+        return { ...legacyResult, backend: "legacy", firstAttempt: primaryResult };
+      }
+
+      return { ...primaryResult, backend: "primary" };
+    }
+
+    function saveSession(token, role = "user", user = "", backend = "primary") {
+      localStorage.setItem(SESSION_KEYS.token, token);
+      localStorage.setItem(SESSION_KEYS.role, role);
+      localStorage.setItem(SESSION_KEYS.user, user);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("lastUser", user);
+
+      localStorage.setItem(SESSION_KEYS.authBackend, backend);
+      localStorage.setItem(SESSION_KEYS.sessionBackend, backend);
+    }
+
+    function updateBackendUi(backend) {
+      backendChip.textContent = `Backend: ${backendLabel(backend === "legacy" ? "legacy" : "primary")}`;
+      updateBackLinks();
+    }
+
+    function updateMethodUi(method) {
+      detectedMethod = method || "unknown";
+
+      if (detectedMethod === "totp") {
+        methodChip.textContent = "Method: Authenticator app";
+        methodText.textContent = currentMode === "setup"
+          ? "Your account will use TOTP. Generate a secret, scan the QR code, then enter the first 6-digit code to complete setup."
+          : "Your account is using TOTP. Enter the current code from your authenticator app.";
+        tipText.textContent = currentMode === "setup"
+          ? "Generate your secret, scan the QR code in your authenticator app, then type the current 6-digit code."
+          : "Open your authenticator app and enter the latest 6-digit code.";
+      } else if (detectedMethod === "email_otp") {
+        methodChip.textContent = "Method: Email OTP";
+        methodText.textContent = "Your account is using email OTP. Enter the code sent to your email inbox.";
+        tipText.textContent = "Check your email for the login code, then paste it here.";
+      } else {
+        methodChip.textContent = "Method: Verification code";
+        methodText.textContent = currentMode === "setup"
+          ? "Complete 2FA setup for this account, then continue login."
+          : "Enter your two-factor code to complete login.";
+        tipText.textContent = currentMode === "setup"
+          ? "Setup generally requires an authenticator app. Generate a secret and confirm it with a code."
+          : "Use your authenticator app code or the email OTP code sent to your inbox.";
+      }
+
+      updateBackLinks();
+    }
+
+    function updateEmailUi() {
+      const email = username.value.trim().toLowerCase();
+      emailChip.textContent = email ? `User: ${email}` : "User: Not set";
+      if (email) localStorage.setItem(SESSION_KEYS.magicEmail, email);
+      updateBackLinks();
+    }
+
+    function setMode(mode) {
+      currentMode = mode === "setup" ? "setup" : "verify";
+      const isSetup = currentMode === "setup";
+
+      modeChip.textContent = isSetup ? "Mode: Setup" : "Mode: Verify";
+      setupSection.classList.toggle("hidden", !isSetup);
+
+      if (isSetup) {
+        heroTitle.textContent = "Complete your two-factor setup to finish login.";
+        heroSub.textContent = "Your account was identified, but 2FA setup is incomplete. Generate your secret, add it to your authenticator app, then confirm with your first code.";
+        brandModeText.textContent = "Two-Factor Setup";
+        headTitle.textContent = "Complete two-factor setup";
+        headSub.textContent = "Add your account to an authenticator app, then enter the first generated code to finish setup and complete login.";
+        helperText.textContent = "After setup succeeds, login will finish automatically.";
+        btnText.textContent = "Complete setup and continue";
+        codeLabel.textContent = "First authenticator code";
+        methodTitle.textContent = "Setup mode";
+        setupText.textContent = "This account must complete 2FA enrollment before login can finish.";
+        localStorage.setItem(SESSION_KEYS.pending2faSetup, "1");
+      } else {
+        heroTitle.textContent = "Finish your login with a verification code.";
+        heroSub.textContent = "Enter the 2FA code from your authenticator app or from your email, depending on how your account security is configured.";
+        brandModeText.textContent = "Two-Factor Verification";
+        headTitle.textContent = "Enter your security code";
+        headSub.textContent = "Verify your identity to complete login. This page supports both authenticator app codes and email OTP codes.";
+        helperText.textContent = "After successful verification, you will be redirected automatically.";
+        btnText.textContent = "Verify and continue";
+        codeLabel.textContent = "Verification code";
+        methodTitle.textContent = "Current login method";
+        localStorage.removeItem(SESSION_KEYS.pending2faSetup);
+      }
+
+      updateMethodUi(detectedMethod || "unknown");
+    }
+
+    function buildQrUrl(otpauthUrl) {
+      if (!otpauthUrl) return "";
+      return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(otpauthUrl)}`;
+    }
+
+    function renderSetupArtifacts() {
+      if (currentSecret) {
+        secretSection.classList.remove("hidden");
+        secretValue.textContent = currentSecret;
+      } else {
+        secretSection.classList.add("hidden");
+        secretValue.textContent = "";
+      }
+
+      const qrUrl = buildQrUrl(currentOtpAuthUrl);
+      if (qrUrl) {
+        qrSection.classList.remove("hidden");
+        qrImage.src = qrUrl;
+      } else {
+        qrSection.classList.add("hidden");
+        qrImage.removeAttribute("src");
+      }
+    }
+
+    function getPendingEmail() {
+      return username.value.trim().toLowerCase();
+    }
+
+    function getPendingMethod() {
+      return detectedMethod ||
+        safeLower(qs().get("method")) ||
+        safeLower(localStorage.getItem(SESSION_KEYS.pending2faMethod)) ||
+        "totp";
+    }
+
+    function getPendingExchange() {
+      return currentExchange ||
+        String(qs().get("exchange") || "").trim() ||
+        String(localStorage.getItem(SESSION_KEYS.pending2faExchange) || "").trim();
+    }
+
+    function getPendingChallenge() {
+      return currentChallengeToken ||
+        String(qs().get("challenge") || "").trim() ||
+        String(qs().get("challengeToken") || "").trim() ||
+        String(localStorage.getItem(SESSION_KEYS.pending2faChallenge) || "").trim();
+    }
+
+    function requiresSetup(data) {
+      return !!(
+        data?.requiresTwoFactorSetup ||
+        data?.require2faSetup ||
+        data?.mustSetup2FA ||
+        data?.must_setup_2fa ||
+        data?.requires2FASetup ||
+        data?.setupRequired ||
+        data?.twoFactorSetupRequired ||
+        data?.two_factor_setup_required
+      );
+    }
+
+    function isEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
+
+    function loadInitialState() {
+      const emailFromQuery = safeLower(qs().get("email"));
+      const methodFromQuery = safeLower(qs().get("method"));
+      const backendFromQuery = safeLower(qs().get("backend"));
+      const lastUser = safeLower(localStorage.getItem("lastUser"));
+      const pendingEmail = safeLower(localStorage.getItem(SESSION_KEYS.magicEmail));
+      const lastMfaMethod = safeLower(localStorage.getItem(SESSION_KEYS.pending2faMethod));
+      const modeFromQuery = safeLower(qs().get("mode"));
+      const incompleteFlag = safeLower(qs().get("incomplete"));
+      const forceSetup = safeLower(qs().get("setup"));
+
+      currentExchange = String(qs().get("exchange") || localStorage.getItem(SESSION_KEYS.pending2faExchange) || "").trim();
+      currentChallengeToken =
+        String(qs().get("challenge") || qs().get("challengeToken") || localStorage.getItem(SESSION_KEYS.pending2faChallenge) || "").trim();
+      currentToken = String(qs().get("token") || "").trim();
+
+      if (backendFromQuery === "primary" || backendFromQuery === "legacy") {
+        preferredBackend = backendFromQuery;
+        localStorage.setItem(SESSION_KEYS.authBackend, backendFromQuery);
+        localStorage.setItem(SESSION_KEYS.sessionBackend, backendFromQuery);
+        localStorage.setItem(SESSION_KEYS.magicBackend, backendFromQuery);
+      }
+
+      username.value = emailFromQuery || pendingEmail || lastUser || "";
+      updateEmailUi();
+      updateBackendUi(getForcedBackend());
+      updateMethodUi(methodFromQuery || lastMfaMethod || "totp");
+
+      if (currentExchange) localStorage.setItem(SESSION_KEYS.pending2faExchange, currentExchange);
+      if (currentChallengeToken) localStorage.setItem(SESSION_KEYS.pending2faChallenge, currentChallengeToken);
+
+      if (
+        modeFromQuery === "setup" ||
+        incompleteFlag === "1" ||
+        forceSetup === "1" ||
+        localStorage.getItem(SESSION_KEYS.pending2faSetup) === "1"
+      ) {
+        setMode("setup");
+      } else {
+        setMode("verify");
+      }
+    }
+
+    async function generateSetupSecret() {
+      showError("");
+      const user = getPendingEmail();
+
+      if (!user) {
+        showError("Enter your email first.");
         return;
       }
 
-      preferredBackend = res.backend || getForcedBackend() || "primary";
-      localStorage.setItem(SESSION_KEYS.authBackend, preferredBackend);
-      localStorage.setItem(SESSION_KEYS.sessionBackend, preferredBackend);
-      localStorage.setItem(SESSION_KEYS.magicBackend, preferredBackend);
-      updateBackendUi(preferredBackend);
-
-      currentSecret = String(data.secret || "").trim();
-      currentOtpAuthUrl = String(data.otpauthUrl || data.otpAuthUrl || data.otpauth || "").trim();
-      detectedMethod = "totp";
-      localStorage.setItem(SESSION_KEYS.pending2faMethod, "totp");
-
-      renderSetupArtifacts();
-      updateMethodUi("totp");
-      showError(`2FA setup secret generated on ${backendLabel(preferredBackend)}.`, "success");
-    } catch (error) {
-      console.error("SETUP SECRET ERROR:", error);
-      showError("Could not generate setup secret.");
-    }
-
-    setLoading(false);
-  }
-
-  async function finishLoginWithPayload(payload, backend, user) {
-    const loginRes = await apiHybrid(
-      "/magic-login",
-      {
-        method: "POST",
-        headers: buildHeaders(),
-        body: JSON.stringify(payload)
-      },
-      backend === "legacy" ? "legacyOnly" : "primaryOnly"
-    );
-
-    const loginData = loginRes.data || {};
-    const resolvedBackend = loginRes.backend || backend;
-
-    if (requiresSetup(loginData)) {
-      setMode("setup");
-      updateBackendUi(resolvedBackend);
-      showError("This account must complete 2FA setup before login can finish.", "warn");
-      return false;
-    }
-
-    if (loginData.requiresTwoFactor) {
-      showError("This login still requires another 2FA step.", "warn");
-      return false;
-    }
-
-    if (!loginRes.ok || !loginData.token) {
-      showError(
-        loginData.message ||
-        loginData.error ||
-        loginData.detail ||
-        "Final login failed."
-      );
-      return false;
-    }
-
-    saveSession(
-      loginData.token,
-      loginData.role || "user",
-      loginData.username || user,
-      resolvedBackend
-    );
-
-    clearPendingState();
-
-    showError(`2FA completed via ${backendLabel(resolvedBackend)}. Redirecting...`, "success");
-
-    setTimeout(() => {
-      window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
-    }, 700);
-
-    return true;
-  }
-
-  async function completeSetupAndLogin() {
-    showError("");
-    const user = getPendingEmail();
-    const enteredCode = code.value.trim();
-
-    if (!user) {
-      showError("Enter your email.");
-      return;
-    }
-
-    if (!isEmail(user)) {
-      showError("Enter a valid email.");
-      return;
-    }
-
-    if (!currentSecret) {
-      showError("Generate your setup secret first.");
-      return;
-    }
-
-    if (!enteredCode || enteredCode.length < 6) {
-      showError("Enter the first authenticator code.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const enableRes = await apiHybrid(
-        "/security/2fa/enable",
-        {
-          method: "POST",
-          headers: buildHeaders(),
-          body: JSON.stringify({
-            method: "totp",
-            code: enteredCode,
-            username: user,
-            email: user,
-            exchange: getPendingExchange() || undefined,
-            challenge: getPendingChallenge() || undefined,
-            challengeToken: getPendingChallenge() || undefined
-          })
-        },
-        getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
-      );
-
-      const enableData = enableRes.data || {};
-
-      if (!enableRes.ok) {
-        showError(enableData.message || enableData.error || enableData.detail || "Could not complete 2FA setup.");
-        setLoading(false);
+      if (!isEmail(user)) {
+        showError("Enter a valid email.");
         return;
       }
 
-      preferredBackend = enableRes.backend || getForcedBackend() || "primary";
-      localStorage.setItem(SESSION_KEYS.authBackend, preferredBackend);
-      localStorage.setItem(SESSION_KEYS.sessionBackend, preferredBackend);
-      localStorage.setItem(SESSION_KEYS.magicBackend, preferredBackend);
-      localStorage.setItem(SESSION_KEYS.pending2faMethod, "totp");
-      updateBackendUi(preferredBackend);
+      setLoading(true);
 
-      showError(`2FA setup completed on ${backendLabel(preferredBackend)}. Finishing login...`, "success");
-
-      const nextExchange =
-        String(enableData.exchange || "").trim() ||
-        getPendingExchange();
-
-      const nextToken =
-        String(enableData.token || "").trim() ||
-        currentToken;
-
-      if (enableData.token && !enableData.exchange) {
-        saveSession(
-          enableData.token,
-          enableData.role || "user",
-          enableData.username || user,
-          preferredBackend
+      try {
+        const issuer = "Rattle Link";
+        const res = await apiHybrid(
+          "/security/2fa/setup",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({
+              method: "totp",
+              issuer,
+              label: user,
+              username: user,
+              email: user
+            })
+          },
+          getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
         );
-        clearPendingState();
-        showError(`2FA setup complete via ${backendLabel(preferredBackend)}. Redirecting...`, "success");
-        setTimeout(() => {
-          window.location.href = (enableData.role || "user") === "admin" ? "admin.html" : "dashboard.html";
-        }, 700);
-        setLoading(false);
-        return;
+
+        const data = res.data || {};
+
+        if (!res.ok) {
+          showError(data.message || data.error || data.detail || "Could not generate 2FA setup secret.");
+          setLoading(false);
+          return;
+        }
+
+        preferredBackend = res.backend || getForcedBackend() || "primary";
+        localStorage.setItem(SESSION_KEYS.authBackend, preferredBackend);
+        localStorage.setItem(SESSION_KEYS.sessionBackend, preferredBackend);
+        localStorage.setItem(SESSION_KEYS.magicBackend, preferredBackend);
+        updateBackendUi(preferredBackend);
+
+        currentSecret = String(data.secret || "").trim();
+        currentOtpAuthUrl = String(data.otpauthUrl || data.otpAuthUrl || data.otpauth || "").trim();
+        detectedMethod = "totp";
+        localStorage.setItem(SESSION_KEYS.pending2faMethod, "totp");
+
+        renderSetupArtifacts();
+        updateMethodUi("totp");
+        showError(`2FA setup secret generated on ${backendLabel(preferredBackend)}.`, "success");
+      } catch (error) {
+        console.error("SETUP SECRET ERROR:", error);
+        showError("Could not generate setup secret.");
       }
 
-      if (nextExchange) {
-        currentExchange = nextExchange;
-        localStorage.setItem(SESSION_KEYS.pending2faExchange, nextExchange);
-        await finishLoginWithPayload({ exchange: nextExchange }, preferredBackend, user);
-        setLoading(false);
-        return;
+      setLoading(false);
+    }
+
+    async function finishLoginWithPayload(payload, backend, user) {
+      const loginRes = await apiHybrid(
+        "/magic-login",
+        {
+          method: "POST",
+          headers: buildHeaders(),
+          body: JSON.stringify(payload)
+        },
+        backend === "legacy" ? "legacyOnly" : "primaryOnly"
+      );
+
+      const loginData = loginRes.data || {};
+      const resolvedBackend = loginRes.backend || backend;
+
+      if (requiresSetup(loginData)) {
+        setMode("setup");
+        updateBackendUi(resolvedBackend);
+        showError("This account must complete 2FA setup before login can finish.", "warn");
+        return false;
       }
 
-      if (nextToken) {
-        await finishLoginWithPayload({ token: nextToken }, preferredBackend, user);
-        setLoading(false);
-        return;
+      if (loginData.requiresTwoFactor) {
+        showError("This login still requires another 2FA step.", "warn");
+        return false;
       }
+
+      if (!loginRes.ok || !loginData.token) {
+        showError(
+          loginData.message ||
+          loginData.error ||
+          loginData.detail ||
+          "Final login failed."
+        );
+        return false;
+      }
+
+      saveSession(
+        loginData.token,
+        loginData.role || "user",
+        loginData.username || user,
+        resolvedBackend
+      );
 
       clearPendingState();
-      showError("2FA setup completed. Please start login again.", "success");
+
+      showError(`2FA completed via ${backendLabel(resolvedBackend)}. Redirecting...`, "success");
+
       setTimeout(() => {
-        window.location.href = "index.html?email=" + encodeURIComponent(user) + "&backend=" + encodeURIComponent(preferredBackend);
-      }, 900);
-    } catch (error) {
-      console.error("2FA SETUP COMPLETE ERROR:", error);
-      showError("Setup completion failed.");
+        window.location.href = loginData.role === "admin" ? "admin.html" : "dashboard.html";
+      }, 700);
+
+      return true;
     }
 
-    setLoading(false);
-  }
+    async function completeSetupAndLogin() {
+      showError("");
+      const user = getPendingEmail();
+      const enteredCode = code.value.trim();
 
-  async function verifyTwoFactor() {
-    showError("");
-    setLoading(true);
-
-    const user = username.value.trim().toLowerCase();
-    const enteredCode = code.value.trim();
-    const exchange = getPendingExchange();
-    const challengeToken = getPendingChallenge();
-    const method = getPendingMethod();
-
-    if (!user) {
-      showError("Enter your email.");
-      setLoading(false);
-      return;
-    }
-
-    if (!isEmail(user)) {
-      showError("Enter a valid email.");
-      setLoading(false);
-      return;
-    }
-
-    if (!enteredCode) {
-      showError("Enter your verification code.");
-      setLoading(false);
-      return;
-    }
-
-    if (!exchange && !challengeToken && !currentToken) {
-      showError("Missing login challenge. Start login again.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const verifyBehavior = getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly";
-
-      const verifyPayload = {
-        username: user,
-        email: user,
-        code: enteredCode,
-        method,
-        exchange: exchange || undefined,
-        challenge: challengeToken || undefined,
-        challengeToken: challengeToken || undefined,
-        token: currentToken || undefined,
-        rememberDevice: true
-      };
-
-      const verifyResult = await apiHybrid(
-        "/login/2fa/verify",
-        {
-          method: "POST",
-          headers: buildHeaders(),
-          body: JSON.stringify(verifyPayload)
-        },
-        verifyBehavior
-      );
-
-      const verifyData = verifyResult.data || {};
-      const resolvedBackend = verifyResult.backend || getForcedBackend() || "primary";
-
-      preferredBackend = resolvedBackend;
-      localStorage.setItem(SESSION_KEYS.authBackend, resolvedBackend);
-      localStorage.setItem(SESSION_KEYS.sessionBackend, resolvedBackend);
-      localStorage.setItem(SESSION_KEYS.magicBackend, resolvedBackend);
-      updateBackendUi(resolvedBackend);
-
-      if (requiresSetup(verifyData)) {
-        setMode("setup");
-        showError("This account must complete 2FA setup before login can finish.", "warn");
-        setLoading(false);
+      if (!user) {
+        showError("Enter your email.");
         return;
       }
 
-      if (!verifyResult.ok) {
-        showError(
-          verifyData.message ||
-          verifyData.error ||
-          verifyData.detail ||
-          "Two-factor verification failed."
-        );
-        setLoading(false);
+      if (!isEmail(user)) {
+        showError("Enter a valid email.");
         return;
       }
 
-      if (verifyData.token) {
-        saveSession(
-          verifyData.token,
-          verifyData.role || "user",
-          verifyData.username || user,
-          resolvedBackend
+      if (!currentSecret) {
+        showError("Generate your setup secret first.");
+        return;
+      }
+
+      if (!enteredCode || enteredCode.length < 6) {
+        showError("Enter the first authenticator code.");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const enableRes = await apiHybrid(
+          "/security/2fa/enable",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify({
+              method: "totp",
+              code: enteredCode,
+              username: user,
+              email: user,
+              exchange: getPendingExchange() || undefined,
+              challenge: getPendingChallenge() || undefined,
+              challengeToken: getPendingChallenge() || undefined
+            })
+          },
+          getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly"
         );
+
+        const enableData = enableRes.data || {};
+
+        if (!enableRes.ok) {
+          showError(enableData.message || enableData.error || enableData.detail || "Could not complete 2FA setup.");
+          setLoading(false);
+          return;
+        }
+
+        preferredBackend = enableRes.backend || getForcedBackend() || "primary";
+        localStorage.setItem(SESSION_KEYS.authBackend, preferredBackend);
+        localStorage.setItem(SESSION_KEYS.sessionBackend, preferredBackend);
+        localStorage.setItem(SESSION_KEYS.magicBackend, preferredBackend);
+        localStorage.setItem(SESSION_KEYS.pending2faMethod, "totp");
+        updateBackendUi(preferredBackend);
+
+        showError(`2FA setup completed on ${backendLabel(preferredBackend)}. Finishing login...`, "success");
+
+        const nextExchange =
+          String(enableData.exchange || "").trim() ||
+          getPendingExchange();
+
+        const nextToken =
+          String(enableData.token || "").trim() ||
+          currentToken;
+
+        if (enableData.token && !enableData.exchange) {
+          saveSession(
+            enableData.token,
+            enableData.role || "user",
+            enableData.username || user,
+            preferredBackend
+          );
+          clearPendingState();
+          showError(`2FA setup complete via ${backendLabel(preferredBackend)}. Redirecting...`, "success");
+          setTimeout(() => {
+            window.location.href = (enableData.role || "user") === "admin" ? "admin.html" : "dashboard.html";
+          }, 700);
+          setLoading(false);
+          return;
+        }
+
+        if (nextExchange) {
+          currentExchange = nextExchange;
+          localStorage.setItem(SESSION_KEYS.pending2faExchange, nextExchange);
+          await finishLoginWithPayload({ exchange: nextExchange }, preferredBackend, user);
+          setLoading(false);
+          return;
+        }
+
+        if (nextToken) {
+          await finishLoginWithPayload({ token: nextToken }, preferredBackend, user);
+          setLoading(false);
+          return;
+        }
+
         clearPendingState();
-        showError(`2FA verified via ${backendLabel(resolvedBackend)}. Redirecting...`, "success");
+        showError("2FA setup completed. Please start login again.", "success");
         setTimeout(() => {
-          window.location.href = (verifyData.role || "user") === "admin" ? "admin.html" : "dashboard.html";
-        }, 700);
-        setLoading(false);
-        return;
+          window.location.href = buildAppHref(user, preferredBackend);
+        }, 900);
+      } catch (error) {
+        console.error("2FA SETUP COMPLETE ERROR:", error);
+        showError("Setup completion failed.");
       }
 
-      const nextExchange =
-        String(verifyData.exchange || "").trim() ||
-        String(verifyData.completedExchange || "").trim() ||
-        exchange;
-
-      if (!nextExchange && currentToken) {
-        await finishLoginWithPayload({ token: currentToken }, resolvedBackend, user);
-        setLoading(false);
-        return;
-      }
-
-      if (!nextExchange) {
-        showError("Code accepted, but no login exchange was returned.");
-        setLoading(false);
-        return;
-      }
-
-      currentExchange = nextExchange;
-      localStorage.setItem(SESSION_KEYS.pending2faExchange, nextExchange);
-
-      await finishLoginWithPayload({ exchange: nextExchange }, resolvedBackend, user);
-    } catch (error) {
-      console.error("2FA VERIFY ERROR:", error);
-      showError("Verification failed.");
+      setLoading(false);
     }
 
-    setLoading(false);
-  }
+    async function verifyTwoFactor() {
+      showError("");
+      setLoading(true);
 
-  async function submitCurrentMode() {
-    if (currentMode === "setup") {
-      await completeSetupAndLogin();
-      return;
+      const user = username.value.trim().toLowerCase();
+      const enteredCode = code.value.trim();
+      const exchange = getPendingExchange();
+      const challengeToken = getPendingChallenge();
+      const method = getPendingMethod();
+
+      if (!user) {
+        showError("Enter your email.");
+        setLoading(false);
+        return;
+      }
+
+      if (!isEmail(user)) {
+        showError("Enter a valid email.");
+        setLoading(false);
+        return;
+      }
+
+      if (!enteredCode) {
+        showError("Enter your verification code.");
+        setLoading(false);
+        return;
+      }
+
+      if (!exchange && !challengeToken && !currentToken) {
+        showError("Missing login challenge. Start login again.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const verifyBehavior = getForcedBackend() === "legacy" ? "legacyOnly" : "primaryOnly";
+
+        const verifyPayload = {
+          username: user,
+          email: user,
+          code: enteredCode,
+          method,
+          exchange: exchange || undefined,
+          challenge: challengeToken || undefined,
+          challengeToken: challengeToken || undefined,
+          token: currentToken || undefined,
+          rememberDevice: true
+        };
+
+        const verifyResult = await apiHybrid(
+          "/login/2fa/verify",
+          {
+            method: "POST",
+            headers: buildHeaders(),
+            body: JSON.stringify(verifyPayload)
+          },
+          verifyBehavior
+        );
+
+        const verifyData = verifyResult.data || {};
+        const resolvedBackend = verifyResult.backend || getForcedBackend() || "primary";
+
+        preferredBackend = resolvedBackend;
+        localStorage.setItem(SESSION_KEYS.authBackend, resolvedBackend);
+        localStorage.setItem(SESSION_KEYS.sessionBackend, resolvedBackend);
+        localStorage.setItem(SESSION_KEYS.magicBackend, resolvedBackend);
+        updateBackendUi(resolvedBackend);
+
+        if (requiresSetup(verifyData)) {
+          setMode("setup");
+          showError("This account must complete 2FA setup before login can finish.", "warn");
+          setLoading(false);
+          return;
+        }
+
+        if (!verifyResult.ok) {
+          showError(
+            verifyData.message ||
+            verifyData.error ||
+            verifyData.detail ||
+            "Two-factor verification failed."
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (verifyData.token) {
+          saveSession(
+            verifyData.token,
+            verifyData.role || "user",
+            verifyData.username || user,
+            resolvedBackend
+          );
+          clearPendingState();
+          showError(`2FA verified via ${backendLabel(resolvedBackend)}. Redirecting...`, "success");
+          setTimeout(() => {
+            window.location.href = (verifyData.role || "user") === "admin" ? "admin.html" : "dashboard.html";
+          }, 700);
+          setLoading(false);
+          return;
+        }
+
+        const nextExchange =
+          String(verifyData.exchange || "").trim() ||
+          String(verifyData.completedExchange || "").trim() ||
+          exchange;
+
+        if (!nextExchange && currentToken) {
+          await finishLoginWithPayload({ token: currentToken }, resolvedBackend, user);
+          setLoading(false);
+          return;
+        }
+
+        if (!nextExchange) {
+          showError("Code accepted, but no login exchange was returned.");
+          setLoading(false);
+          return;
+        }
+
+        currentExchange = nextExchange;
+        localStorage.setItem(SESSION_KEYS.pending2faExchange, nextExchange);
+
+        await finishLoginWithPayload({ exchange: nextExchange }, resolvedBackend, user);
+      } catch (error) {
+        console.error("2FA VERIFY ERROR:", error);
+        showError("Verification failed.");
+      }
+
+      setLoading(false);
     }
-    await verifyTwoFactor();
-  }
 
-  function goBackToLogin() {
-    const params = new URLSearchParams();
-    const email = username.value.trim().toLowerCase();
-    const backend = getForcedBackend();
-    const method = getPendingMethod();
+    async function submitCurrentMode() {
+      if (currentMode === "setup") {
+        await completeSetupAndLogin();
+        return;
+      }
+      await verifyTwoFactor();
+    }
 
-    if (email) params.set("email", email);
-    if (backend) params.set("backend", backend);
-    if (method) params.set("method", method);
+    function goBackToLogin() {
+      const email = username.value.trim().toLowerCase();
+      const backend = getForcedBackend();
+      const method = getPendingMethod();
+      window.location.href = buildAppHref(email, backend, method);
+    }
 
-    window.location.href = "index.html" + (params.toString() ? `?${params.toString()}` : "");
-  }
+    username.addEventListener("input", updateEmailUi);
 
-  username.addEventListener("input", updateEmailUi);
+    username.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitCurrentMode();
+    });
 
-  username.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") submitCurrentMode();
-  });
+    code.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitCurrentMode();
+    });
 
-  code.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") submitCurrentMode();
-  });
-
-  loadTheme();
-  loadInitialState();
-  persistPendingState();
-  renderSetupArtifacts();
-</script>
+    loadTheme();
+    loadInitialState();
+    persistPendingState();
+    renderSetupArtifacts();
+    updateBackLinks();
+  </script>
 </body>
 </html>
