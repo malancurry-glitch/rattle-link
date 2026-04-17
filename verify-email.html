@@ -1,885 +1,1133 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Verify Email - Rattle Link</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root {
-      --bg-1: #020617;
-      --bg-2: #000814;
-      --card: rgba(2, 12, 27, 0.94);
-      --card-2: rgba(3, 18, 38, 0.94);
-      --line: rgba(0, 255, 255, 0.16);
-      --line-strong: rgba(0, 255, 255, 0.28);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --cyan: #22d3ee;
-      --blue: #3b82f6;
-      --success: #22c55e;
-      --warn: #f59e0b;
-      --danger: #ef4444;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Verify Email - Rattle Link</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        --bg-1: #020617;
+        --bg-2: #000814;
+        --card: rgba(2, 12, 27, 0.94);
+        --card-2: rgba(3, 18, 38, 0.94);
+        --line: rgba(0, 255, 255, 0.16);
+        --line-strong: rgba(0, 255, 255, 0.28);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --cyan: #22d3ee;
+        --blue: #3b82f6;
+        --success: #22c55e;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      }
 
-    * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 22px;
-      font-family: Inter, Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 22%),
-        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.14), transparent 20%),
-        linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      overflow-x: hidden;
-      position: relative;
-    }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        font-family: Inter, Arial, sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+            circle at top,
+            rgba(34, 211, 238, 0.12),
+            transparent 22%
+          ),
+          radial-gradient(
+            circle at 85% 15%,
+            rgba(59, 130, 246, 0.14),
+            transparent 20%
+          ),
+          linear-gradient(180deg, var(--bg-1), var(--bg-2));
+        overflow-x: hidden;
+        position: relative;
+      }
 
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
-      background-size: 42px 42px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 88%);
-    }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.026) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.026) 1px,
+            transparent 1px
+          );
+        background-size: 42px 42px;
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.55),
+          transparent 88%
+        );
+      }
 
-    .card {
-      width: 100%;
-      max-width: 560px;
-      background: linear-gradient(180deg, var(--card), var(--card-2));
-      border: 1px solid var(--line);
-      border-radius: 30px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      position: relative;
-    }
+      .card {
+        width: 100%;
+        max-width: 560px;
+        background: linear-gradient(180deg, var(--card), var(--card-2));
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
+      }
 
-    .hero {
-      padding: 30px 28px 18px;
-      text-align: center;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-      position: relative;
-    }
+      .hero {
+        padding: 30px 28px 18px;
+        text-align: center;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        position: relative;
+      }
 
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 180px;
-      background: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 70%);
-      pointer-events: none;
-    }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 180px;
+        background: radial-gradient(
+          circle at top,
+          rgba(34, 211, 238, 0.12),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
 
-    .logo-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 14px;
-      position: relative;
-      z-index: 1;
-    }
+      .logo-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 14px;
+        position: relative;
+        z-index: 1;
+      }
 
-    .logo-badge {
-      width: 86px;
-      height: 86px;
-      border-radius: 24px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--cyan), var(--blue));
-      color: #04131b;
-      font-size: 40px;
-      font-weight: 900;
-      box-shadow: 0 18px 44px rgba(34, 211, 238, 0.18);
-      border: 1px solid rgba(255,255,255,.22);
-    }
+      .logo-badge {
+        width: 86px;
+        height: 86px;
+        border-radius: 24px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--cyan), var(--blue));
+        color: #04131b;
+        font-size: 40px;
+        font-weight: 900;
+        box-shadow: 0 18px 44px rgba(34, 211, 238, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
 
-    .brand {
-      position: relative;
-      z-index: 1;
-      font-size: 12px;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--cyan);
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
+      .brand {
+        position: relative;
+        z-index: 1;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--cyan);
+        font-weight: 800;
+        margin-bottom: 10px;
+      }
 
-    h1 {
-      position: relative;
-      z-index: 1;
-      margin: 0;
-      font-size: 35px;
-      line-height: 1.02;
-      letter-spacing: -1px;
-      color: #ecfeff;
-    }
+      h1 {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        font-size: 35px;
+        line-height: 1.02;
+        letter-spacing: -1px;
+        color: #ecfeff;
+      }
 
-    .sub {
-      position: relative;
-      z-index: 1;
-      margin: 12px auto 0;
-      max-width: 440px;
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.75;
-    }
+      .sub {
+        position: relative;
+        z-index: 1;
+        margin: 12px auto 0;
+        max-width: 440px;
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.75;
+      }
 
-    .body {
-      padding: 22px 24px 24px;
-    }
+      .body {
+        padding: 22px 24px 24px;
+      }
 
-    .banner {
-      display: none;
-      margin-bottom: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      font-size: 13px;
-      line-height: 1.65;
-      border: 1px solid var(--line);
-      background: rgba(34, 211, 238, 0.05);
-      color: var(--text);
-    }
+      .banner {
+        display: none;
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        font-size: 13px;
+        line-height: 1.65;
+        border: 1px solid var(--line);
+        background: rgba(34, 211, 238, 0.05);
+        color: var(--text);
+      }
 
-    .banner.show { display: block; }
+      .banner.show {
+        display: block;
+      }
 
-    .panel {
-      border: 1px solid rgba(148, 163, 184, 0.12);
-      background: rgba(2, 12, 27, 0.72);
-      border-radius: 22px;
-      padding: 18px;
-    }
+      .panel {
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(2, 12, 27, 0.72);
+        border-radius: 22px;
+        padding: 18px;
+      }
 
-    .panel + .panel { margin-top: 14px; }
+      .panel + .panel {
+        margin-top: 14px;
+      }
 
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
 
-    .panel-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: #ecfeff;
-    }
+      .panel-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #ecfeff;
+      }
 
-    .backend-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--cyan);
-      border: 1px solid var(--line);
-      background: rgba(34, 211, 238, 0.05);
-      white-space: nowrap;
-    }
+      .backend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--cyan);
+        border: 1px solid var(--line);
+        background: rgba(34, 211, 238, 0.05);
+        white-space: nowrap;
+      }
 
-    .panel-copy {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.75;
-      margin: 0 0 14px;
-    }
+      .panel-copy {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.75;
+        margin: 0 0 14px;
+      }
 
-    .input {
-      width: 100%;
-      border-radius: 16px;
-      border: 1px solid rgba(0,255,255,.18);
-      background: rgba(0,0,0,.42);
-      color: var(--cyan);
-      outline: none;
-      padding: 15px 14px;
-      font-size: 15px;
-    }
+      .input {
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.42);
+        color: var(--cyan);
+        outline: none;
+        padding: 15px 14px;
+        font-size: 15px;
+      }
 
-    .input:focus {
-      border-color: var(--line-strong);
-      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
-    }
+      .input:focus {
+        border-color: var(--line-strong);
+        box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
+      }
 
-    .actions { display: grid; gap: 10px; }
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
 
-    .btn {
-      appearance: none;
-      border: none;
-      border-radius: 16px;
-      padding: 14px 16px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: .18s ease;
-      text-align: center;
-      text-decoration: none;
-      display: block;
-      width: 100%;
-    }
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 16px;
+        padding: 14px 16px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.18s ease;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        width: 100%;
+      }
 
-    .btn:hover { transform: translateY(-1px); }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
 
-    .btn:disabled {
-      opacity: .65;
-      cursor: not-allowed;
-      transform: none;
-    }
+      .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+      }
 
-    .btn-primary {
-      background: linear-gradient(135deg, var(--cyan), #18e2ff);
-      color: #04131b;
-      box-shadow: 0 14px 34px rgba(34, 211, 238, 0.14);
-    }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--cyan), #18e2ff);
+        color: #04131b;
+        box-shadow: 0 14px 34px rgba(34, 211, 238, 0.14);
+      }
 
-    .btn-secondary {
-      background: transparent;
-      color: var(--cyan);
-      border: 1px solid var(--line-strong);
-    }
+      .btn-secondary {
+        background: transparent;
+        color: var(--cyan);
+        border: 1px solid var(--line-strong);
+      }
 
-    .msg {
-      min-height: 22px;
-      margin-top: 14px;
-      font-size: 13px;
-      line-height: 1.65;
-      text-align: center;
-      font-weight: 700;
-      white-space: pre-wrap;
-    }
+      .msg {
+        min-height: 22px;
+        margin-top: 14px;
+        font-size: 13px;
+        line-height: 1.65;
+        text-align: center;
+        font-weight: 700;
+        white-space: pre-wrap;
+      }
 
-    .msg.error { color: var(--danger); }
-    .msg.success { color: var(--success); }
-    .msg.warn { color: var(--warn); }
+      .msg.error {
+        color: var(--danger);
+      }
+      .msg.success {
+        color: var(--success);
+      }
+      .msg.warn {
+        color: var(--warn);
+      }
 
-    .quick-links {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
+      .quick-links {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
 
-    .help-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 10px;
-      margin-top: 16px;
-    }
+      .help-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
 
-    .help-box {
-      padding: 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(148,163,184,.12);
-      background: rgba(255,255,255,.02);
-    }
+      .help-box {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+      }
 
-    .help-box b {
-      display: block;
-      font-size: 12px;
-      color: #ecfeff;
-      margin-bottom: 5px;
-    }
+      .help-box b {
+        display: block;
+        font-size: 12px;
+        color: #ecfeff;
+        margin-bottom: 5px;
+      }
 
-    .help-box span {
-      display: block;
-      font-size: 11px;
-      line-height: 1.6;
-      color: var(--muted);
-    }
+      .help-box span {
+        display: block;
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
 
-    .muted {
-      margin-top: 18px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.75;
-      text-align: center;
-    }
+      .muted {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.75;
+        text-align: center;
+      }
 
-    .back-link {
-      display: inline-block;
-      margin-top: 14px;
-      color: #93c5fd;
-      font-size: 12px;
-      text-decoration: none;
-      font-weight: 700;
-    }
+      .back-link {
+        display: inline-block;
+        margin-top: 14px;
+        color: #93c5fd;
+        font-size: 12px;
+        text-decoration: none;
+        font-weight: 700;
+      }
 
-    .back-link:hover { text-decoration: underline; }
+      .back-link:hover {
+        text-decoration: underline;
+      }
 
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(4, 19, 27, 0.35);
-      border-top: 2px solid transparent;
-      border-radius: 50%;
-      display: inline-block;
-      animation: spin 1s linear infinite;
-      margin-left: 6px;
-      vertical-align: middle;
-    }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(4, 19, 27, 0.35);
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 1s linear infinite;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
 
-    .hidden { display: none !important; }
+      .hidden {
+        display: none !important;
+      }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-    @media (max-width: 640px) {
-      body { padding: 14px; }
-      .hero { padding: 24px 18px 18px; }
-      .body { padding: 16px; }
-      .logo-badge { width: 74px; height: 74px; font-size: 34px; border-radius: 20px; }
-      h1 { font-size: 30px; }
-      .help-grid { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="hero">
-      <div class="logo-wrap">
-        <div class="logo-badge">✅</div>
+      @media (max-width: 640px) {
+        body {
+          padding: 14px;
+        }
+        .hero {
+          padding: 24px 18px 18px;
+        }
+        .body {
+          padding: 16px;
+        }
+        .logo-badge {
+          width: 74px;
+          height: 74px;
+          font-size: 34px;
+          border-radius: 20px;
+        }
+        h1 {
+          font-size: 30px;
+        }
+        .help-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="hero">
+        <div class="logo-wrap">
+          <div class="logo-badge">✅</div>
+        </div>
+        <div class="brand">Rattle Link Account Security</div>
+        <h1>Verify Email</h1>
+        <div class="sub">
+          Complete email verification before first login. If you opened this
+          page from your email, it will try to verify automatically.
+        </div>
       </div>
-      <div class="brand">Rattle Link Account Security</div>
-      <h1>Verify Email</h1>
-      <div class="sub">
-        Complete email verification before first login. If you opened this page from your email, it will try to verify automatically.
+
+      <div class="body">
+        <div id="banner" class="banner"></div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Automatic verification</div>
+            <div id="backendBadge" class="backend-badge hidden"></div>
+          </div>
+          <p class="panel-copy">
+            Opened from your email? Keep this page open. If a valid token or
+            exchange exists in the URL, verification runs automatically.
+          </p>
+        </div>
+
+        <div class="panel" id="manualSection">
+          <div class="panel-head">
+            <div class="panel-title">Manual verification and resend</div>
+          </div>
+          <p class="panel-copy">
+            If the email app stripped the token or opened the wrong link, paste
+            the token manually or resend a fresh verification email.
+          </p>
+
+          <div class="actions">
+            <input
+              id="tokenInput"
+              class="input"
+              placeholder="Paste verification token"
+            />
+            <input
+              id="emailInput"
+              class="input"
+              type="email"
+              placeholder="Enter your email to resend verification"
+            />
+            <button id="verifyBtn" class="btn btn-primary" type="button">
+              Verify Email
+            </button>
+            <button id="resendBtn" class="btn btn-secondary" type="button">
+              Resend Verification Email
+            </button>
+          </div>
+        </div>
+
+        <div class="quick-links">
+          <a id="loginLink" class="btn btn-primary hidden" href="app.html"
+            >Go to Login</a
+          >
+          <a
+            id="magicLink"
+            class="btn btn-secondary hidden"
+            href="magic-login.html"
+            >Go to Magic Login</a
+          >
+          <a id="otpLink" class="btn btn-secondary hidden" href="otp.html"
+            >Go to OTP Verification</a
+          >
+          <a id="homeLink" class="btn btn-secondary" href="index.html"
+            >Go to Homepage</a
+          >
+        </div>
+
+        <div class="help-grid">
+          <div class="help-box">
+            <b>Auto verify</b>
+            <span
+              >If token or exchange is present in the URL, verification starts
+              by itself.</span
+            >
+          </div>
+          <div class="help-box">
+            <b>No token?</b>
+            <span
+              >Some email apps remove or break query params. Paste token
+              manually or resend.</span
+            >
+          </div>
+          <div class="help-box">
+            <b>Next step</b>
+            <span
+              >After success, go straight to OTP when required, otherwise
+              continue to login or dashboard.</span
+            >
+          </div>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <div style="text-align: center">
+          <a id="backToAppLink" class="back-link" href="app.html"
+            >← Back to Login</a
+          >
+        </div>
+
+        <div class="muted">
+          This page uses the backend selected in the email link when present.
+          Otherwise it tries Backend 2 first and only falls back when needed.
+        </div>
       </div>
     </div>
 
-    <div class="body">
-      <div id="banner" class="banner"></div>
+    <script>
+      const PRIMARY_API = "https://api.rattleshortapi.it.com";
+      const LEGACY_API =
+        "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+      const PRIMARY_AUTH_BASE = "/auth";
+      const LEGACY_AUTH_BASE = "";
+      const OTP_PAGE = "otp.html";
 
-      <div class="panel">
-        <div class="panel-head">
-          <div class="panel-title">Automatic verification</div>
-          <div id="backendBadge" class="backend-badge hidden"></div>
-        </div>
-        <p class="panel-copy">
-          Opened from your email? Keep this page open. If a valid token or exchange exists in the URL, verification runs automatically.
-        </p>
-      </div>
+      const tokenInput = document.getElementById("tokenInput");
+      const emailInput = document.getElementById("emailInput");
+      const verifyBtn = document.getElementById("verifyBtn");
+      const resendBtn = document.getElementById("resendBtn");
+      const msg = document.getElementById("msg");
+      const loginLink = document.getElementById("loginLink");
+      const magicLink = document.getElementById("magicLink");
+      const otpLink = document.getElementById("otpLink");
+      const backToAppLink = document.getElementById("backToAppLink");
+      const backendBadge = document.getElementById("backendBadge");
+      const banner = document.getElementById("banner");
 
-      <div class="panel" id="manualSection">
-        <div class="panel-head">
-          <div class="panel-title">Manual verification and resend</div>
-        </div>
-        <p class="panel-copy">
-          If the email app stripped the token or opened the wrong link, paste the token manually or resend a fresh verification email.
-        </p>
+      let forcedBackend = null;
 
-        <div class="actions">
-          <input id="tokenInput" class="input" placeholder="Paste verification token" />
-          <input id="emailInput" class="input" type="email" placeholder="Enter your email to resend verification" />
-          <button id="verifyBtn" class="btn btn-primary" type="button">Verify Email</button>
-          <button id="resendBtn" class="btn btn-secondary" type="button">Resend Verification Email</button>
-        </div>
-      </div>
-
-      <div class="quick-links">
-        <a id="loginLink" class="btn btn-primary hidden" href="app.html">Go to Login</a>
-        <a id="magicLink" class="btn btn-secondary hidden" href="magic-login.html">Go to Magic Login</a>
-        <a id="homeLink" class="btn btn-secondary" href="index.html">Go to Homepage</a>
-      </div>
-
-      <div class="help-grid">
-        <div class="help-box">
-          <b>Auto verify</b>
-          <span>If token or exchange is present in the URL, verification starts by itself.</span>
-        </div>
-        <div class="help-box">
-          <b>No token?</b>
-          <span>Some email apps remove or break query params. Paste token manually or resend.</span>
-        </div>
-        <div class="help-box">
-          <b>Next step</b>
-          <span>After success, go straight to login or magic login with the same backend.</span>
-        </div>
-      </div>
-
-      <div id="msg" class="msg"></div>
-
-      <div style="text-align:center;">
-        <a id="backToAppLink" class="back-link" href="app.html">← Back to Login</a>
-      </div>
-
-      <div class="muted">
-        This page uses the backend selected in the email link when present. Otherwise it tries Backend 2 first and only falls back when needed.
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const PRIMARY_API = "https://api.rattleshortapi.it.com";
-    const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-    const PRIMARY_AUTH_BASE = "/auth";
-    const LEGACY_AUTH_BASE = "";
-
-    const tokenInput = document.getElementById("tokenInput");
-    const emailInput = document.getElementById("emailInput");
-    const verifyBtn = document.getElementById("verifyBtn");
-    const resendBtn = document.getElementById("resendBtn");
-    const msg = document.getElementById("msg");
-    const loginLink = document.getElementById("loginLink");
-    const magicLink = document.getElementById("magicLink");
-    const backToAppLink = document.getElementById("backToAppLink");
-    const backendBadge = document.getElementById("backendBadge");
-    const banner = document.getElementById("banner");
-
-    let forcedBackend = null;
-
-    function params() {
-      return new URLSearchParams(window.location.search);
-    }
-
-    function normalizeApiUrl(url) {
-      return String(url || "").replace(/\/+$/, "");
-    }
-
-    function isUsableApiUrl(url) {
-      const clean = normalizeApiUrl(url);
-      return !!clean && /^https?:\/\//i.test(clean);
-    }
-
-    function authPrefix(backend) {
-      return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
-    }
-
-    function buildPath(rawPath, backend) {
-      const clean = String(rawPath || "").startsWith("/") ? String(rawPath) : `/${rawPath}`;
-      return `${authPrefix(backend)}${clean}`;
-    }
-
-    function backendLabel(name) {
-      return name === "legacy" ? "Legacy AWS" : "Backend 2";
-    }
-
-    function showBackendBadge(backend) {
-      if (!backend) {
-        backendBadge.classList.add("hidden");
-        backendBadge.textContent = "";
-        return;
+      function params() {
+        return new URLSearchParams(window.location.search);
       }
-      backendBadge.classList.remove("hidden");
-      backendBadge.textContent = `Using ${backendLabel(backend)}`;
-    }
 
-    function showBanner(text = "") {
-      if (!text) {
-        banner.textContent = "";
-        banner.className = "banner";
-        return;
+      function normalizeApiUrl(url) {
+        return String(url || "").replace(/\/+$/, "");
       }
-      banner.textContent = text;
-      banner.className = "banner show";
-    }
 
-    function showMessage(text, type = "error") {
-      msg.textContent = text;
-      msg.className = `msg ${type}`;
-    }
-
-    function setLoading(button, text) {
-      button.disabled = true;
-      button.innerHTML = `${text} <span class="spinner"></span>`;
-    }
-
-    function resetButton(button, text) {
-      button.disabled = false;
-      button.textContent = text;
-    }
-
-    function buildAppHref(email = "", backend = "") {
-      const q = [];
-      if (email) q.push(`email=${encodeURIComponent(email)}`);
-      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
-      return `app.html${q.length ? `?${q.join("&")}` : ""}`;
-    }
-
-    function buildMagicHref(email = "", backend = "") {
-      const q = [];
-      if (email) q.push(`email=${encodeURIComponent(email)}`);
-      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
-      return `magic-login.html${q.length ? `?${q.join("&")}` : ""}`;
-    }
-
-    function saveSession(token, role = "user", user = "", backend = "primary") {
-      localStorage.setItem("rattle_token", token);
-      localStorage.setItem("rattle_role", role);
-      localStorage.setItem("rattle_user", user);
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-      localStorage.setItem("lastUser", user);
-
-      localStorage.setItem("authBackend", backend);
-      localStorage.setItem("sessionBackend", backend);
-    }
-
-    async function safeBody(res) {
-      const text = await res.text();
-      if (!text) return {};
-      try {
-        return JSON.parse(text);
-      } catch {
-        return { message: text };
+      function isUsableApiUrl(url) {
+        const clean = normalizeApiUrl(url);
+        return !!clean && /^https?:\/\//i.test(clean);
       }
-    }
 
-    async function callApi(baseUrl, path, options = {}) {
-      const url = normalizeApiUrl(baseUrl);
-      if (!isUsableApiUrl(url)) {
-        return {
-          ok: false,
-          status: 0,
-          data: { message: "Backend URL not configured" },
-          networkError: true
+      function authPrefix(backend) {
+        return backend === "legacy" ? LEGACY_AUTH_BASE : PRIMARY_AUTH_BASE;
+      }
+
+      function buildPath(rawPath, backend) {
+        const clean = String(rawPath || "").startsWith("/")
+          ? String(rawPath)
+          : `/${rawPath}`;
+        return `${authPrefix(backend)}${clean}`;
+      }
+
+      function backendLabel(name) {
+        return name === "legacy" ? "Legacy AWS" : "Backend 2";
+      }
+
+      function showBackendBadge(backend) {
+        if (!backend) {
+          backendBadge.classList.add("hidden");
+          backendBadge.textContent = "";
+          return;
+        }
+        backendBadge.classList.remove("hidden");
+        backendBadge.textContent = `Using ${backendLabel(backend)}`;
+      }
+
+      function showBanner(text = "") {
+        if (!text) {
+          banner.textContent = "";
+          banner.className = "banner";
+          return;
+        }
+        banner.textContent = text;
+        banner.className = "banner show";
+      }
+
+      function showMessage(text, type = "error") {
+        msg.textContent = text;
+        msg.className = `msg ${type}`;
+      }
+
+      function setLoading(button, text) {
+        button.disabled = true;
+        button.innerHTML = `${text} <span class="spinner"></span>`;
+      }
+
+      function resetButton(button, text) {
+        button.disabled = false;
+        button.textContent = text;
+      }
+
+      function buildAppHref(email = "", backend = "") {
+        const q = [];
+        if (email) q.push(`email=${encodeURIComponent(email)}`);
+        if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
+        return `app.html${q.length ? `?${q.join("&")}` : ""}`;
+      }
+
+      function buildMagicHref(email = "", backend = "") {
+        const q = [];
+        if (email) q.push(`email=${encodeURIComponent(email)}`);
+        if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
+        return `magic-login.html${q.length ? `?${q.join("&")}` : ""}`;
+      }
+
+      function buildOtpHref(
+        email = "",
+        backend = "",
+        method = "",
+        exchange = ""
+      ) {
+        const q = [];
+        if (email) q.push(`email=${encodeURIComponent(email)}`);
+        if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
+        if (method) q.push(`method=${encodeURIComponent(method)}`);
+        if (exchange) q.push(`exchange=${encodeURIComponent(exchange)}`);
+        return `${OTP_PAGE}${q.length ? `?${q.join("&")}` : ""}`;
+      }
+
+      function saveSession(
+        token,
+        role = "user",
+        user = "",
+        backend = "primary"
+      ) {
+        localStorage.setItem("rattle_token", token);
+        localStorage.setItem("rattle_role", role);
+        localStorage.setItem("rattle_user", user);
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("role", role);
+        localStorage.setItem("lastUser", user);
+
+        localStorage.setItem("authBackend", backend);
+        localStorage.setItem("sessionBackend", backend);
+      }
+
+      function savePendingOtp(email = "", backend = "", payload = {}) {
+        const state = {
+          email,
+          backend,
+          method:
+            payload.twoFactorMethod ||
+            payload.two_factor_method ||
+            payload.method ||
+            "",
+          exchange:
+            payload.exchange ||
+            payload.otpExchange ||
+            payload.otp_exchange ||
+            payload.verifyExchangeCode ||
+            payload.verify_exchange_code ||
+            "",
+          requestedAt: Date.now(),
         };
+
+        localStorage.setItem("pendingOtpState", JSON.stringify(state));
+        localStorage.setItem("authBackend", backend);
+        localStorage.setItem("sessionBackend", backend);
+        if (email) localStorage.setItem("lastUser", email);
+        return state;
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-
-      try {
-        const res = await fetch(url + path, { ...options, signal: controller.signal });
-        clearTimeout(timeout);
-        const data = await safeBody(res);
-        return { ok: res.ok, status: res.status, data, networkError: false };
-      } catch (error) {
-        clearTimeout(timeout);
-        return {
-          ok: false,
-          status: 0,
-          data: { message: error?.message || "Network request failed" },
-          networkError: true
-        };
+      function isOtpRequired(data = {}) {
+        return !!(
+          data.twoFactorRequired ||
+          data.two_factor_required ||
+          data.requiresTwoFactor ||
+          data.requires_two_factor ||
+          data.otpRequired ||
+          data.otp_required ||
+          data.requireOtp ||
+          data.require_otp ||
+          String(data.nextStep || data.next_step || "").toLowerCase() ===
+            "otp" ||
+          String(data.status || "").toLowerCase() === "otp_required"
+        );
       }
-    }
 
-    function shouldFallback(path, result) {
-      if (result.networkError) return true;
-      if (result.status === 404 || result.status >= 500) return true;
+      function getOtpMethod(data = {}) {
+        return (
+          data.twoFactorMethod || data.two_factor_method || data.method || ""
+        );
+      }
 
-      const message = String(result?.data?.message || "").toLowerCase();
+      function updateNavigation(email = "", backend = "", otpState = null) {
+        loginLink.href = buildAppHref(email, backend);
+        magicLink.href = buildMagicHref(email, backend);
+        backToAppLink.href = buildAppHref(email, backend);
 
-      if (path === "/verify-email") {
-        if (
-          message.includes("account not found in backend2") ||
-          message.includes("invalid verification token") ||
-          message.includes("verification token expired")
-        ) {
-          return true;
+        if (otpState) {
+          otpLink.href = buildOtpHref(
+            email,
+            backend,
+            otpState.method || "",
+            otpState.exchange || ""
+          );
+        } else {
+          otpLink.href = buildOtpHref(email, backend);
         }
       }
 
-      if (path === "/verify-email/exchange") {
-        if (
-          message.includes("invalid or expired exchange code") ||
-          message.includes("account not found in backend2")
-        ) {
-          return true;
+      function showPostVerifyActions(
+        email = "",
+        backend = "",
+        otpState = null
+      ) {
+        updateNavigation(email, backend, otpState);
+        loginLink.classList.remove("hidden");
+        magicLink.classList.remove("hidden");
+        if (otpState) otpLink.classList.remove("hidden");
+        else otpLink.classList.add("hidden");
+      }
+
+      function syncUrl(email = "", backend = "", token = "", exchange = "") {
+        const q = [];
+        if (token) q.push(`token=${encodeURIComponent(token)}`);
+        if (exchange) q.push(`exchange=${encodeURIComponent(exchange)}`);
+        if (email) q.push(`email=${encodeURIComponent(email)}`);
+        if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
+        const newUrl = `verify-email.html${q.length ? `?${q.join("&")}` : ""}`;
+        window.history.replaceState({}, "", newUrl);
+      }
+
+      async function safeBody(res) {
+        const text = await res.text();
+        if (!text) return {};
+        try {
+          return JSON.parse(text);
+        } catch {
+          return { message: text };
         }
       }
 
-      if (path === "/resend-verify") {
-        if (message.includes("account not found in backend2")) {
-          return true;
+      async function callApi(baseUrl, path, options = {}) {
+        const url = normalizeApiUrl(baseUrl);
+        if (!isUsableApiUrl(url)) {
+          return {
+            ok: false,
+            status: 0,
+            data: { message: "Backend URL not configured" },
+            networkError: true,
+          };
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const res = await fetch(url + path, {
+            ...options,
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          const data = await safeBody(res);
+          return { ok: res.ok, status: res.status, data, networkError: false };
+        } catch (error) {
+          clearTimeout(timeout);
+          return {
+            ok: false,
+            status: 0,
+            data: { message: error?.message || "Network request failed" },
+            networkError: true,
+          };
         }
       }
 
-      return false;
-    }
+      function shouldFallback(path, result) {
+        if (result.networkError) return true;
+        if (result.status === 404 || result.status >= 500) return true;
 
-    async function callBackend(backend, rawPath, options = {}) {
-      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
-      const path = buildPath(rawPath, backend);
-      const finalOptions = { ...options };
+        const message = String(result?.data?.message || "").toLowerCase();
 
-      if (backend === "legacy") {
-        finalOptions.headers = {
-          ...(options.headers || {}),
-          "x-rattle-fallback": "legacy"
-        };
-      }
+        if (path === "/verify-email") {
+          if (
+            message.includes("account not found in backend2") ||
+            message.includes("invalid verification token") ||
+            message.includes("verification token expired")
+          ) {
+            return true;
+          }
+        }
 
-      return callApi(baseUrl, path, finalOptions);
-    }
+        if (path === "/verify-email/exchange") {
+          if (
+            message.includes("invalid or expired exchange code") ||
+            message.includes("account not found in backend2")
+          ) {
+            return true;
+          }
+        }
 
-    async function apiHybrid(path, options = {}, behavior = "primaryThenLegacy") {
-      if (behavior === "primaryOnly") {
-        const result = await callBackend("primary", path, options);
-        return { ...result, backend: "primary" };
-      }
+        if (path === "/resend-verify") {
+          if (message.includes("account not found in backend2")) {
+            return true;
+          }
+        }
 
-      if (behavior === "legacyOnly") {
-        const result = await callBackend("legacy", path, options);
-        return { ...result, backend: "legacy" };
-      }
-
-      const first = await callBackend("primary", path, options);
-      if (first.ok) return { ...first, backend: "primary" };
-      if (!shouldFallback(path, first)) return { ...first, backend: "primary" };
-
-      const second = await callBackend("legacy", path, options);
-      return { ...second, backend: "legacy", firstAttempt: first };
-    }
-
-    function chooseVerifyBehavior() {
-      if (forcedBackend === "primary") return "primaryOnly";
-      if (forcedBackend === "legacy") return "legacyOnly";
-      return "primaryThenLegacy";
-    }
-
-    function chooseResendBehavior() {
-      if (forcedBackend === "primary") return "primaryOnly";
-      if (forcedBackend === "legacy") return "legacyOnly";
-      return "primaryThenLegacy";
-    }
-
-    function friendlyError(result) {
-      const message = String(result?.data?.message || "").trim();
-      if (message) return message;
-      if (result?.networkError) return "Could not reach server";
-      return "Server error";
-    }
-
-    function updateNavigation(email = "", backend = "") {
-      loginLink.href = buildAppHref(email, backend);
-      magicLink.href = buildMagicHref(email, backend);
-      backToAppLink.href = buildAppHref(email, backend);
-    }
-
-    function showPostVerifyActions(email = "", backend = "") {
-      updateNavigation(email, backend);
-      loginLink.classList.remove("hidden");
-      magicLink.classList.remove("hidden");
-    }
-
-    function syncUrl(email = "", backend = "", token = "", exchange = "") {
-      const q = [];
-      if (token) q.push(`token=${encodeURIComponent(token)}`);
-      if (exchange) q.push(`exchange=${encodeURIComponent(exchange)}`);
-      if (email) q.push(`email=${encodeURIComponent(email)}`);
-      if (backend) q.push(`backend=${encodeURIComponent(backend)}`);
-      const newUrl = `verify-email.html${q.length ? `?${q.join("&")}` : ""}`;
-      window.history.replaceState({}, "", newUrl);
-    }
-
-    async function exchangeVerifyCode(exchange, email = "", backend = "") {
-      const behavior =
-        backend === "legacy" ? "legacyOnly" :
-        backend === "primary" ? "primaryOnly" :
-        "primaryThenLegacy";
-
-      const result = await apiHybrid(
-        "/verify-email/exchange",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ exchange })
-        },
-        behavior
-      );
-
-      if (!result.ok) {
-        showMessage(friendlyError(result), "error");
         return false;
       }
 
-      const data = result.data || {};
-      const usedBackend = result.backend || backend || forcedBackend || "primary";
-      forcedBackend = usedBackend;
-      showBackendBadge(usedBackend);
-      showPostVerifyActions(email, usedBackend);
-      syncUrl(email, usedBackend, "", exchange);
+      async function callBackend(backend, rawPath, options = {}) {
+        const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+        const path = buildPath(rawPath, backend);
+        const finalOptions = { ...options };
 
-      if (data.token) {
-        saveSession(
-          data.token,
-          data.role || "user",
-          data.username || email,
-          usedBackend
+        if (backend === "legacy") {
+          finalOptions.headers = {
+            ...(options.headers || {}),
+            "x-rattle-fallback": "legacy",
+          };
+        }
+
+        return callApi(baseUrl, path, finalOptions);
+      }
+
+      async function apiHybrid(
+        path,
+        options = {},
+        behavior = "primaryThenLegacy"
+      ) {
+        if (behavior === "primaryOnly") {
+          const result = await callBackend("primary", path, options);
+          return { ...result, backend: "primary" };
+        }
+
+        if (behavior === "legacyOnly") {
+          const result = await callBackend("legacy", path, options);
+          return { ...result, backend: "legacy" };
+        }
+
+        const first = await callBackend("primary", path, options);
+        if (first.ok) return { ...first, backend: "primary" };
+        if (!shouldFallback(path, first))
+          return { ...first, backend: "primary" };
+
+        const second = await callBackend("legacy", path, options);
+        return { ...second, backend: "legacy", firstAttempt: first };
+      }
+
+      function chooseVerifyBehavior() {
+        if (forcedBackend === "primary") return "primaryOnly";
+        if (forcedBackend === "legacy") return "legacyOnly";
+        return "primaryThenLegacy";
+      }
+
+      function chooseResendBehavior() {
+        if (forcedBackend === "primary") return "primaryOnly";
+        if (forcedBackend === "legacy") return "legacyOnly";
+        return "primaryThenLegacy";
+      }
+
+      function friendlyError(result) {
+        const message = String(result?.data?.message || "").trim();
+        if (message) return message;
+        if (result?.networkError) return "Could not reach server";
+        return "Server error";
+      }
+
+      function redirectToOtp(email = "", backend = "", data = {}) {
+        const otpState = savePendingOtp(email, backend, data);
+        showPostVerifyActions(email, backend, otpState);
+        showBanner(
+          "Email verified, but this account requires OTP verification before access."
+        );
+        showMessage(
+          `OTP is required on ${backendLabel(backend)}. Redirecting now...`,
+          "warn"
         );
 
-        showBanner("Email already verified. Redirecting to your account.");
-        showMessage(`Email verified successfully on ${backendLabel(usedBackend)}. Redirecting...`, "success");
-        const target = data.role === "admin" ? "admin.html" : "dashboard.html";
-        setTimeout(() => { window.location.href = target; }, 600);
+        setTimeout(() => {
+          window.location.href = buildOtpHref(
+            email,
+            backend,
+            otpState.method || "",
+            otpState.exchange || ""
+          );
+        }, 500);
+      }
+
+      function redirectToAppOrDashboard(email = "", backend = "", data = {}) {
+        if (isOtpRequired(data)) {
+          redirectToOtp(email, backend, data);
+          return;
+        }
+
+        if (data.token) {
+          saveSession(
+            data.token,
+            data.role || "user",
+            data.username || email,
+            backend
+          );
+
+          showBanner("Email verified. Redirecting to your account.");
+          showMessage(
+            `Email verified successfully on ${backendLabel(
+              backend
+            )}. Redirecting...`,
+            "success"
+          );
+          const target =
+            data.role === "admin" ? "admin.html" : "dashboard.html";
+          setTimeout(() => {
+            window.location.href = target;
+          }, 600);
+          return;
+        }
+
+        showPostVerifyActions(email, backend, null);
+        showBanner("Verification completed. Continue to login.");
+        showMessage(
+          `Email verified successfully on ${backendLabel(backend)}.`,
+          "success"
+        );
+      }
+
+      async function exchangeVerifyCode(exchange, email = "", backend = "") {
+        const behavior =
+          backend === "legacy"
+            ? "legacyOnly"
+            : backend === "primary"
+            ? "primaryOnly"
+            : "primaryThenLegacy";
+
+        const result = await apiHybrid(
+          "/verify-email/exchange",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ exchange }),
+          },
+          behavior
+        );
+
+        if (!result.ok) {
+          showMessage(friendlyError(result), "error");
+          return false;
+        }
+
+        const data = result.data || {};
+        const usedBackend =
+          result.backend || backend || forcedBackend || "primary";
+        forcedBackend = usedBackend;
+        showBackendBadge(usedBackend);
+        syncUrl(email, usedBackend, "", exchange);
+
+        redirectToAppOrDashboard(email, usedBackend, data);
         return true;
       }
 
-      showBanner("Verification completed. Continue to login.");
-      showMessage(`Email verified successfully on ${backendLabel(usedBackend)}.`, "success");
-      return true;
-    }
+      async function verifyToken(tokenFromArg) {
+        const token = String(tokenFromArg || tokenInput.value || "").trim();
+        const email = String(emailInput.value || params().get("email") || "")
+          .trim()
+          .toLowerCase();
 
-    async function verifyToken(tokenFromArg) {
-      const token = String(tokenFromArg || tokenInput.value || "").trim();
-      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
+        if (!token) {
+          showBanner(
+            "Your page opened without a token. This usually means the email app stripped the query string. Paste the token manually or resend verification."
+          );
+          return showMessage("Missing verification token.", "error");
+        }
 
-      if (!token) {
-        showBanner("Your page opened without a token. This usually means the email app stripped the query string. Paste the token manually or resend verification.");
-        return showMessage("Missing verification token.", "error");
-      }
+        setLoading(verifyBtn, "Verifying");
 
-      setLoading(verifyBtn, "Verifying");
+        try {
+          const result = await apiHybrid(
+            "/verify-email",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token }),
+            },
+            chooseVerifyBehavior()
+          );
 
-      try {
-        const result = await apiHybrid(
-          "/verify-email",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token })
-          },
-          chooseVerifyBehavior()
-        );
+          const data = result.data || {};
 
-        const data = result.data || {};
-
-        if (result.ok) {
-          forcedBackend = result.backend || forcedBackend || "primary";
-          showBackendBadge(forcedBackend);
-          showPostVerifyActions(email, forcedBackend);
-          syncUrl(email, forcedBackend, token);
-
-          showBanner("Verification succeeded. You can continue to login or magic login.");
-
-          if (data.token) {
-            saveSession(
-              data.token,
-              data.role || "user",
-              data.username || email,
-              forcedBackend
-            );
-
-            showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}. Redirecting to dashboard...`, "success");
-            const target = data.role === "admin" ? "admin.html" : "dashboard.html";
+          if (result.ok) {
+            forcedBackend = result.backend || forcedBackend || "primary";
+            showBackendBadge(forcedBackend);
+            syncUrl(email, forcedBackend, token);
+            redirectToAppOrDashboard(email, forcedBackend, data);
             resetButton(verifyBtn, "Verify Email");
-            setTimeout(() => { window.location.href = target; }, 800);
             return;
           }
 
-          showMessage(`Email verified successfully on ${backendLabel(forcedBackend)}.`, "success");
-          resetButton(verifyBtn, "Verify Email");
-          return;
+          showBackendBadge(result.backend || forcedBackend || null);
+          showMessage(friendlyError(result), "error");
+        } catch (error) {
+          console.error(error);
+          showMessage("Server error.", "error");
         }
 
-        showBackendBadge(result.backend || forcedBackend || null);
-        showMessage(friendlyError(result), "error");
-      } catch (error) {
-        console.error(error);
-        showMessage("Server error.", "error");
+        resetButton(verifyBtn, "Verify Email");
       }
 
-      resetButton(verifyBtn, "Verify Email");
-    }
+      async function resendVerification() {
+        const email = String(emailInput.value || params().get("email") || "")
+          .trim()
+          .toLowerCase();
+        if (!email) return showMessage("Enter your email first.", "error");
 
-    async function resendVerification() {
-      const email = String(emailInput.value || params().get("email") || "").trim().toLowerCase();
-      if (!email) return showMessage("Enter your email first.", "error");
+        setLoading(resendBtn, "Sending");
 
-      setLoading(resendBtn, "Sending");
+        try {
+          const result = await apiHybrid(
+            "/resend-verify",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: email }),
+            },
+            chooseResendBehavior()
+          );
 
-      try {
-        const result = await apiHybrid(
-          "/resend-verify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: email })
-          },
-          chooseResendBehavior()
-        );
+          if (result.ok) {
+            forcedBackend = result.backend || forcedBackend || "primary";
+            showBackendBadge(forcedBackend);
+            showPostVerifyActions(email, forcedBackend, null);
+            syncUrl(email, forcedBackend);
+            showBanner(
+              "A fresh verification email was sent. Open the new email and use its verify button."
+            );
+            showMessage(
+              `${String(
+                result.data?.message || "Verification email sent"
+              )} via ${backendLabel(forcedBackend)}.`,
+              "success"
+            );
+            resetButton(resendBtn, "Resend Verification Email");
+            return;
+          }
 
-        if (result.ok) {
-          forcedBackend = result.backend || forcedBackend || "primary";
+          showBackendBadge(result.backend || forcedBackend || null);
+          showMessage(friendlyError(result), "error");
+        } catch (error) {
+          console.error(error);
+          showMessage("Server error.", "error");
+        }
+
+        resetButton(resendBtn, "Resend Verification Email");
+      }
+
+      async function autoVerify() {
+        const token = String(params().get("token") || "").trim();
+        const exchange = String(params().get("exchange") || "").trim();
+        const email = String(params().get("email") || "")
+          .trim()
+          .toLowerCase();
+        const backend = String(params().get("backend") || "")
+          .trim()
+          .toLowerCase();
+        const verified = String(params().get("verified") || "").trim();
+
+        if (email) emailInput.value = email;
+
+        if (backend === "primary" || backend === "legacy") {
+          forcedBackend = backend;
+          localStorage.setItem("authBackend", backend);
+          localStorage.setItem("sessionBackend", backend);
           showBackendBadge(forcedBackend);
-          showPostVerifyActions(email, forcedBackend);
-          syncUrl(email, forcedBackend);
-          showBanner("A fresh verification email was sent. Open the new email and use its verify button.");
-          showMessage(`${String(result.data?.message || "Verification email sent")} via ${backendLabel(forcedBackend)}.`, "success");
-          resetButton(resendBtn, "Resend Verification Email");
+        } else {
+          showBackendBadge("primary");
+        }
+
+        updateNavigation(email, forcedBackend || "", null);
+
+        if (exchange && verified === "1") {
+          showBanner(
+            "Email was verified from your email link. Finishing secure login exchange now."
+          );
+          showMessage("Completing verification sign-in...", "warn");
+          await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
           return;
         }
 
-        showBackendBadge(result.backend || forcedBackend || null);
-        showMessage(friendlyError(result), "error");
-      } catch (error) {
-        console.error(error);
-        showMessage("Server error.", "error");
-      }
-
-      resetButton(resendBtn, "Resend Verification Email");
-    }
-
-    async function autoVerify() {
-      const token = String(params().get("token") || "").trim();
-      const exchange = String(params().get("exchange") || "").trim();
-      const email = String(params().get("email") || "").trim().toLowerCase();
-      const backend = String(params().get("backend") || "").trim().toLowerCase();
-      const verified = String(params().get("verified") || "").trim();
-
-      if (email) emailInput.value = email;
-
-      if (backend === "primary" || backend === "legacy") {
-        forcedBackend = backend;
-        localStorage.setItem("authBackend", backend);
-        localStorage.setItem("sessionBackend", backend);
-        showBackendBadge(forcedBackend);
-      } else {
-        showBackendBadge("primary");
-      }
-
-      updateNavigation(email, forcedBackend || "");
-
-      if (exchange && verified === "1") {
-        showBanner("Email was verified from your email link. Finishing secure login exchange now.");
-        showMessage("Completing verification sign-in...", "warn");
-        await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
-        return;
-      }
-
-      if (exchange) {
-        showBanner("Verification exchange found. Completing verification now.");
-        showMessage("Completing verification...", "warn");
-        await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
-        return;
-      }
-
-      if (!token) {
-        if (email) {
-          showBanner("No token was found in this page URL. If you expected auto verification, your email app may have removed the token. Paste it manually or resend verification.");
+        if (exchange) {
+          showBanner(
+            "Verification exchange found. Completing verification now."
+          );
+          showMessage("Completing verification...", "warn");
+          await exchangeVerifyCode(exchange, email, forcedBackend || "primary");
+          return;
         }
-        return;
+
+        if (!token) {
+          if (email) {
+            showBanner(
+              "No token was found in this page URL. If you expected auto verification, your email app may have removed the token. Paste it manually or resend verification."
+            );
+          }
+          return;
+        }
+
+        tokenInput.value = token;
+        showBanner(
+          "Verification token found. Running automatic verification now."
+        );
+        showMessage("Verifying your email...", "warn");
+        await verifyToken(token);
       }
 
-      tokenInput.value = token;
-      showBanner("Verification token found. Running automatic verification now.");
-      showMessage("Verifying your email...", "warn");
-      await verifyToken(token);
-    }
+      verifyBtn.addEventListener("click", () => verifyToken());
+      resendBtn.addEventListener("click", resendVerification);
 
-    verifyBtn.addEventListener("click", () => verifyToken());
-    resendBtn.addEventListener("click", resendVerification);
+      tokenInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") verifyToken();
+      });
 
-    tokenInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") verifyToken();
-    });
+      emailInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") resendVerification();
+      });
 
-    emailInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") resendVerification();
-    });
-
-    autoVerify();
-  </script>
-</body>
+      autoVerify();
+    </script>
+  </body>
 </html>
