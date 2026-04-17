@@ -895,9 +895,16 @@
             <canvas id="qrCanvas"></canvas>
           </div>
           <div id="qrLink" class="qr-meta muted"></div>
+          <div id="qrImageUrl" class="qr-meta muted tiny"></div>
           <div class="qr-actions">
             <button id="downloadQrBtn" class="purple-btn" type="button">
               Download QR
+            </button>
+            <button id="openQrImageBtn" class="ghost-btn" type="button">
+              Open QR URL
+            </button>
+            <button id="copyQrUrlBtn" class="ghost-btn" type="button">
+              Copy QR URL
             </button>
             <button id="copyQrLinkBtn" class="copy" type="button">
               Copy Link
@@ -960,6 +967,7 @@
       let meState = null;
       let currentQrLink = "";
       let currentQrSlug = "";
+      let currentQrImageUrl = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -1010,6 +1018,7 @@
         planBadge: $("planBadge"),
         qrCanvas: $("qrCanvas"),
         qrLink: $("qrLink"),
+        qrImageUrl: $("qrImageUrl"),
         qrMetaDetails: $("qrMetaDetails"),
         bulkQrList: $("bulkQrList"),
       };
@@ -1167,6 +1176,13 @@
 
       function buildPublicLink(slug) {
         return `${normalizeApiUrl(PUBLIC_BASE)}/${slug}`;
+      }
+
+      function buildQrImageUrl(link, size = 280) {
+        const safeLink = ensureAbsoluteUrl(link, PUBLIC_BASE);
+        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+          safeLink
+        )}`;
       }
 
       function normalizeLinkItem(item) {
@@ -2022,13 +2038,29 @@
 
         currentQrLink = safeLink;
         currentQrSlug = slug || "link";
+        currentQrImageUrl = buildQrImageUrl(safeLink, 280);
 
         els.qrLink.textContent = safeLink;
+        els.qrImageUrl.innerHTML = `
+      <a href="${escapeHtml(
+        currentQrImageUrl
+      )}" target="_blank" rel="noopener noreferrer">
+        ${escapeHtml(currentQrImageUrl)}
+      </a>
+    `;
+
         els.qrMetaDetails.innerHTML = `
       <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
       <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
         safeLink
       )}</div>
+      <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
+        <a href="${escapeHtml(
+          currentQrImageUrl
+        )}" target="_blank" rel="noopener noreferrer">
+          ${escapeHtml(currentQrImageUrl)}
+        </a>
+      </div>
       <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
     `;
 
@@ -2042,6 +2074,14 @@
       }
 
       function downloadCurrentQR() {
+        if (currentQrImageUrl) {
+          const link = document.createElement("a");
+          link.download = getQrFilename(currentQrSlug);
+          link.href = currentQrImageUrl;
+          link.click();
+          return;
+        }
+
         if (!els.qrCanvas) return;
         const link = document.createElement("a");
         link.download = getQrFilename(currentQrSlug);
@@ -2066,11 +2106,20 @@
         <div>
           <div><b>${escapeHtml(item.slug || "")}</b></div>
           <div class="muted tiny">${escapeHtml(item.publicLink || "")}</div>
+          <div class="muted tiny">
+            <a href="${escapeHtml(
+              buildQrImageUrl(item.publicLink, 280)
+            )}" target="_blank" rel="noopener noreferrer">
+              Open QR URL
+            </a>
+          </div>
         </div>
         <div class="row-actions">
           <canvas id="bulkQrCanvas-${index}" width="90" height="90" style="background:#fff;border-radius:10px;padding:4px;"></canvas>
           <button class="purple-btn" type="button" data-download-bulk-qr="${index}" data-slug="${escapeHtml(
               item.slug || "link"
+            )}" data-link="${escapeHtml(
+              item.publicLink || ""
             )}">Download</button>
         </div>
       </div>
@@ -2094,13 +2143,11 @@
 
         document.querySelectorAll("[data-download-bulk-qr]").forEach((btn) => {
           btn.onclick = () => {
-            const idx = Number(btn.dataset.downloadBulkQr || 0);
             const slug = btn.dataset.slug || "link";
-            const canvas = document.getElementById(`bulkQrCanvas-${idx}`);
-            if (!canvas) return;
+            const publicLink = btn.dataset.link || "";
             const a = document.createElement("a");
             a.download = getQrFilename(slug);
-            a.href = canvas.toDataURL("image/png");
+            a.href = buildQrImageUrl(publicLink, 280);
             a.click();
           };
         });
@@ -2504,6 +2551,12 @@
         $("closeBulkQrModalBtn").addEventListener("click", closeBulkQrModal);
 
         $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
+        $("copyQrUrlBtn").addEventListener("click", () =>
+          copyLink(currentQrImageUrl)
+        );
+        $("openQrImageBtn").addEventListener("click", () =>
+          openLink(currentQrImageUrl)
+        );
         $("copyQrLinkBtn").addEventListener("click", () =>
           copyLink(currentQrLink)
         );
