@@ -1,1032 +1,1404 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rattle Link - Backend2 Manager</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rattle Link - Backend2 Manager</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <style>
-    :root{
-      --bg:#020617;
-      --bg2:#000000;
-      --card:rgba(2,6,23,0.88);
-      --text:#e2e8f0;
-      --muted:#94a3b8;
-      --cyan:#00ffff;
-      --green:#22c55e;
-      --red:#ef4444;
-      --blue:#3b82f6;
-      --purple:#a855f7;
-      --pink:#ec4899;
-      --border:rgba(34,197,94,.22);
-      --radius:18px;
-      --shadow:0 0 16px rgba(34,197,94,.08), inset 0 0 18px rgba(34,197,94,.03);
-    }
+    <style>
+      :root {
+        --bg: #020617;
+        --bg2: #000000;
+        --card: rgba(2, 6, 23, 0.88);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --cyan: #00ffff;
+        --green: #22c55e;
+        --red: #ef4444;
+        --blue: #3b82f6;
+        --purple: #a855f7;
+        --pink: #ec4899;
+        --border: rgba(34, 197, 94, 0.22);
+        --radius: 18px;
+        --shadow: 0 0 16px rgba(34, 197, 94, 0.08),
+          inset 0 0 18px rgba(34, 197, 94, 0.03);
+      }
 
-    *{ box-sizing:border-box; }
-    html{ scroll-behavior:smooth; }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
 
-    body{
-      margin:0;
-      font-family:Inter, Arial, sans-serif;
-      color:var(--text);
-      background:radial-gradient(circle at top, #052e16 0%, #020617 45%, var(--bg2) 100%);
-      min-height:100vh;
-      position:relative;
-    }
+      body {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+          circle at top,
+          #052e16 0%,
+          #020617 45%,
+          var(--bg2) 100%
+        );
+        min-height: 100vh;
+        position: relative;
+      }
 
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background-image:
-        linear-gradient(rgba(34,197,94,.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(34,197,94,.035) 1px, transparent 1px);
-      background-size:38px 38px;
-      pointer-events:none;
-      z-index:0;
-    }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(34, 197, 94, 0.035) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(34, 197, 94, 0.035) 1px, transparent 1px);
+        background-size: 38px 38px;
+        pointer-events: none;
+        z-index: 0;
+      }
 
-    .container{
-      position:relative;
-      z-index:1;
-      max-width:1500px;
-      margin:0 auto;
-      padding:20px;
-    }
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 20px;
+      }
 
-    .header{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:16px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
-    }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
 
-    .header h1{
-      margin:0 0 8px;
-      font-size:30px;
-      color:var(--green);
-      text-shadow:0 0 12px rgba(34,197,94,.22);
-    }
+      .header h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+        color: var(--green);
+        text-shadow: 0 0 12px rgba(34, 197, 94, 0.22);
+      }
 
-    .sub{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.7;
-      max-width:920px;
-    }
+      .sub {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+        max-width: 920px;
+      }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:16px;
-      margin-bottom:16px;
-      backdrop-filter:blur(12px);
-      box-shadow:var(--shadow);
-    }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 16px;
+        backdrop-filter: blur(12px);
+        box-shadow: var(--shadow);
+      }
 
-    .card h2,.card h3,.card h4{
-      margin:0 0 12px;
-      color:var(--green);
-    }
+      .card h2,
+      .card h3,
+      .card h4 {
+        margin: 0 0 12px;
+        color: var(--green);
+      }
 
-    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
-    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
-    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-    .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-    .grid-5{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-    .two-col{ display:grid; grid-template-columns:1.15fr .85fr; gap:16px; }
-    .stack{ display:flex; flex-direction:column; gap:12px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+      }
+      .two-col {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 16px;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-    .top-actions,.section-head,.toolbar-actions,.row-actions,.toggle-wrap,.backend-switch{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
+      .top-actions,
+      .section-head,
+      .toolbar-actions,
+      .row-actions,
+      .toggle-wrap,
+      .backend-switch {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
 
-    .section-head{
-      justify-content:space-between;
-      margin-bottom:12px;
-    }
+      .section-head {
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
 
-    .stat-card{ text-align:center; }
-    .stat-num{
-      font-size:30px;
-      font-weight:800;
-      color:var(--green);
-      margin-bottom:6px;
-    }
-    .stat-label{
-      color:var(--muted);
-      font-size:13px;
-    }
+      .stat-card {
+        text-align: center;
+      }
+      .stat-num {
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--green);
+        margin-bottom: 6px;
+      }
+      .stat-label {
+        color: var(--muted);
+        font-size: 13px;
+      }
 
-    .surface{
-      border:1px solid rgba(34,197,94,.14);
-      border-radius:14px;
-      padding:14px;
-      background:rgba(15,23,42,.45);
-    }
+      .surface {
+        border: 1px solid rgba(34, 197, 94, 0.14);
+        border-radius: 14px;
+        padding: 14px;
+        background: rgba(15, 23, 42, 0.45);
+      }
 
-    .form-row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
+      .form-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
 
-    .form-row > *{
-      flex:1 1 180px;
-    }
+      .form-row > * {
+        flex: 1 1 180px;
+      }
 
-    input,select,textarea{
-      width:100%;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(34,197,94,.22);
-      background:#000;
-      color:var(--text);
-      outline:none;
-      font:inherit;
-    }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(34, 197, 94, 0.22);
+        background: #000;
+        color: var(--text);
+        outline: none;
+        font: inherit;
+      }
 
-    input::placeholder, textarea::placeholder{ color:var(--muted); }
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--muted);
+      }
 
-    input:focus,select:focus,textarea:focus{
-      border-color:rgba(34,197,94,.5);
-      box-shadow:0 0 12px rgba(34,197,94,.18);
-    }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(34, 197, 94, 0.5);
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.18);
+      }
 
-    input[type="checkbox"]{
-      width:auto;
-      accent-color:var(--green);
-    }
+      input[type="checkbox"] {
+        width: auto;
+        accent-color: var(--green);
+      }
 
-    textarea{
-      min-height:120px;
-      resize:vertical;
-    }
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
 
-    button,.btn{
-      padding:11px 14px;
-      border-radius:12px;
-      border:1px solid rgba(34,197,94,.24);
-      background:#0f172a;
-      color:var(--green);
-      cursor:pointer;
-      font-size:12px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-      text-decoration:none;
-      transition:.18s ease;
-    }
+      button,
+      .btn {
+        padding: 11px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(34, 197, 94, 0.24);
+        background: #0f172a;
+        color: var(--green);
+        cursor: pointer;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: 0.18s ease;
+      }
 
-    button:hover,.btn:hover{
-      transform:translateY(-1px);
-      color:#fff;
-      border-color:var(--green);
-      box-shadow:0 0 12px rgba(34,197,94,.18);
-    }
+      button:hover,
+      .btn:hover {
+        transform: translateY(-1px);
+        color: #fff;
+        border-color: var(--green);
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.18);
+      }
 
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
 
-    .danger-btn{ color:#fff; border-color:var(--red); background:var(--red); }
-    .success-btn{ color:#000; border-color:var(--green); background:var(--green); }
-    .ghost-btn{ color:#cbd5e1; border-color:#475569; }
-    .purple-btn{ color:#fff; border-color:var(--purple); background:var(--purple); }
-    .pink-btn{ color:#fff; border-color:var(--pink); background:var(--pink); }
-    .copy{ color:var(--green); border-color:var(--green); }
-    .open{ color:var(--blue); border-color:var(--blue); }
-    .delete{ color:var(--red); border-color:var(--red); }
+      .danger-btn {
+        color: #fff;
+        border-color: var(--red);
+        background: var(--red);
+      }
+      .success-btn {
+        color: #000;
+        border-color: var(--green);
+        background: var(--green);
+      }
+      .ghost-btn {
+        color: #cbd5e1;
+        border-color: #475569;
+      }
+      .purple-btn {
+        color: #fff;
+        border-color: var(--purple);
+        background: var(--purple);
+      }
+      .pink-btn {
+        color: #fff;
+        border-color: var(--pink);
+        background: var(--pink);
+      }
+      .copy {
+        color: var(--green);
+        border-color: var(--green);
+      }
+      .open {
+        color: var(--blue);
+        border-color: var(--blue);
+      }
+      .delete {
+        color: var(--red);
+        border-color: var(--red);
+      }
 
-    .badge,.pill{
-      display:inline-block;
-      padding:5px 10px;
-      border-radius:999px;
-      font-size:11px;
-      border:1px solid currentColor;
-      white-space:nowrap;
-    }
+      .badge,
+      .pill {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
 
-    .live{ color:var(--green); }
-    .paused{ color:#f59e0b; }
-    .expired{ color:var(--red); }
-    .primary{ color:var(--green); }
-    .trial{ color:var(--cyan); }
-    .awaiting{ color:#60a5fa; }
+      .live {
+        color: var(--green);
+      }
+      .paused {
+        color: #f59e0b;
+      }
+      .expired {
+        color: var(--red);
+      }
+      .primary {
+        color: var(--green);
+      }
+      .trial {
+        color: var(--cyan);
+      }
+      .awaiting {
+        color: #60a5fa;
+      }
 
-    .muted{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.6;
-    }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
 
-    .tiny{ font-size:11px; }
-    .small{ font-size:12px; }
+      .tiny {
+        font-size: 11px;
+      }
+      .small {
+        font-size: 12px;
+      }
 
-    .progress{
-      width:100%;
-      height:8px;
-      border-radius:999px;
-      overflow:hidden;
-      background:rgba(255,255,255,.08);
-      margin-top:8px;
-    }
+      .progress {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+        margin-top: 8px;
+      }
 
-    .progress > span{
-      display:block;
-      height:100%;
-      width:0%;
-      background:linear-gradient(90deg,var(--green),var(--cyan));
-      border-radius:999px;
-    }
+      .progress > span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--green), var(--cyan));
+        border-radius: 999px;
+      }
 
-    .result{
-      min-height:20px;
-      margin-top:10px;
-      white-space:pre-wrap;
-      line-height:1.6;
-      font-size:13px;
-    }
+      .result {
+        min-height: 20px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        font-size: 13px;
+      }
 
-    .success{ color:var(--green); }
-    .error{ color:var(--red); }
+      .success {
+        color: var(--green);
+      }
+      .error {
+        color: var(--red);
+      }
 
-    .drop-zone{
-      border:2px dashed rgba(34,197,94,.22);
-      border-radius:14px;
-      padding:14px;
-      text-align:center;
-      margin-top:10px;
-      transition:.18s ease;
-    }
+      .drop-zone {
+        border: 2px dashed rgba(34, 197, 94, 0.22);
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+        margin-top: 10px;
+        transition: 0.18s ease;
+      }
 
-    .drop-zone.dragover{
-      background:#052e16;
-      border-color:var(--green);
-      box-shadow:0 0 14px rgba(34,197,94,.18) inset;
-    }
+      .drop-zone.dragover {
+        background: #052e16;
+        border-color: var(--green);
+        box-shadow: 0 0 14px rgba(34, 197, 94, 0.18) inset;
+      }
 
-    .table-wrap{
-      overflow:auto;
-      width:100%;
-    }
+      .table-wrap {
+        overflow: auto;
+        width: 100%;
+      }
 
-    table{
-      width:100%;
-      min-width:1250px;
-      border-collapse:collapse;
-    }
+      table {
+        width: 100%;
+        min-width: 1250px;
+        border-collapse: collapse;
+      }
 
-    th,td{
-      padding:10px;
-      text-align:left;
-      vertical-align:top;
-      border-bottom:1px solid rgba(148,163,184,.18);
-      font-size:13px;
-    }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        font-size: 13px;
+      }
 
-    th{
-      position:sticky;
-      top:0;
-      background:#0b1120;
-      color:var(--green);
-      z-index:1;
-    }
+      th {
+        position: sticky;
+        top: 0;
+        background: #0b1120;
+        color: var(--green);
+        z-index: 1;
+      }
 
-    tr:hover{
-      background:rgba(15,23,42,.6);
-    }
+      tr:hover {
+        background: rgba(15, 23, 42, 0.6);
+      }
 
-    a{
-      color:#93c5fd;
-      text-decoration:none;
-      word-break:break-all;
-    }
-    a:hover{ text-decoration:underline; }
+      a {
+        color: #93c5fd;
+        text-decoration: none;
+        word-break: break-all;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-    .modal,.panel{
-      position:fixed;
-      z-index:1001;
-      background:#000;
-      border:1px solid rgba(34,197,94,.24);
-      box-shadow:0 0 40px rgba(34,197,94,.12);
-    }
+      .modal,
+      .panel {
+        position: fixed;
+        z-index: 1001;
+        background: #000;
+        border: 1px solid rgba(34, 197, 94, 0.24);
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.12);
+      }
 
-    .overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.65);
-      display:none;
-      z-index:1000;
-    }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: none;
+        z-index: 1000;
+      }
 
-    .modal{
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:min(1100px,95vw);
-      max-height:90vh;
-      overflow:auto;
-      display:none;
-      border-radius:18px;
-      padding:18px;
-    }
+      .modal {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(1100px, 95vw);
+        max-height: 90vh;
+        overflow: auto;
+        display: none;
+        border-radius: 18px;
+        padding: 18px;
+      }
 
-    .panel{
-      right:0;
-      top:0;
-      width:520px;
-      max-width:100%;
-      height:100%;
-      border-left:1px solid rgba(34,197,94,.25);
-      display:none;
-      overflow:auto;
-      padding:20px;
-    }
+      .panel {
+        right: 0;
+        top: 0;
+        width: 520px;
+        max-width: 100%;
+        height: 100%;
+        border-left: 1px solid rgba(34, 197, 94, 0.25);
+        display: none;
+        overflow: auto;
+        padding: 20px;
+      }
 
-    .map-box{
-      height:340px;
-      border-radius:14px;
-      overflow:hidden;
-      border:1px solid rgba(34,197,94,.14);
-      margin-top:12px;
-    }
+      .map-box {
+        height: 340px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(34, 197, 94, 0.14);
+        margin-top: 12px;
+      }
 
-    .stats-kpis{
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:12px;
-      margin-bottom:14px;
-    }
+      .stats-kpis {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+      }
 
-    .stats-kpi{
-      padding:14px;
-      border-radius:14px;
-      border:1px solid rgba(34,197,94,.14);
-      background:rgba(15,23,42,.5);
-    }
+      .stats-kpi {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(34, 197, 94, 0.14);
+        background: rgba(15, 23, 42, 0.5);
+      }
 
-    .stats-kpi .k-label{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:8px;
-    }
+      .stats-kpi .k-label {
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
 
-    .stats-kpi .k-value{
-      font-size:24px;
-      color:var(--green);
-      font-weight:800;
-    }
+      .stats-kpi .k-value {
+        font-size: 24px;
+        color: var(--green);
+        font-weight: 800;
+      }
 
-    .toast{
-      position:fixed;
-      right:20px;
-      bottom:20px;
-      background:var(--green);
-      color:#000;
-      padding:12px 14px;
-      border-radius:12px;
-      font-weight:700;
-      z-index:2000;
-      display:none;
-      box-shadow:0 0 16px rgba(34,197,94,.28);
-    }
+      .qr-shell {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 18px;
+        align-items: start;
+      }
 
-    @media (max-width:1100px){
-      .grid-5,.grid-4,.grid-3,.stats-kpis,.two-col,.grid-2{ grid-template-columns:1fr; }
-    }
+      .qr-preview {
+        border: 1px solid rgba(34, 197, 94, 0.14);
+        border-radius: 18px;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
 
-    @media (max-width:760px){
-      .container{ padding:14px; }
-      table{ min-width:1050px; }
-      .top-actions{ width:100%; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div>
-        <h1>🟢 Backend2 Manager</h1>
-        <div class="sub">
-          Main Backend2 area for short links, usage limits, analytics, security review, and quick access to landing pages and custom domains.
+      .qr-canvas-wrap {
+        width: 280px;
+        height: 280px;
+        border-radius: 16px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+
+      .qr-canvas-wrap canvas,
+      .qr-canvas-wrap img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+
+      .qr-meta {
+        word-break: break-all;
+        text-align: center;
+      }
+
+      .qr-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .qr-bulk-list {
+        max-height: 320px;
+        overflow: auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      .qr-bulk-item {
+        border: 1px solid rgba(34, 197, 94, 0.14);
+        border-radius: 14px;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        background: var(--green);
+        color: #000;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        z-index: 2000;
+        display: none;
+        box-shadow: 0 0 16px rgba(34, 197, 94, 0.28);
+      }
+
+      @media (max-width: 1100px) {
+        .grid-5,
+        .grid-4,
+        .grid-3,
+        .stats-kpis,
+        .two-col,
+        .grid-2,
+        .qr-shell {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .container {
+          padding: 14px;
+        }
+        table {
+          min-width: 1050px;
+        }
+        .top-actions {
+          width: 100%;
+        }
+        .qr-canvas-wrap {
+          width: 240px;
+          height: 240px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1>🟢 Backend2 Manager</h1>
+          <div class="sub">
+            Main Backend2 area for short links, usage limits, analytics,
+            security review, and quick access to landing pages and custom
+            domains.
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <span id="planBadge" class="badge trial">Trial</span>
+          <button id="backToDashboardBtn" type="button">Main Dashboard</button>
+          <button id="goLandingBtn" type="button">Landing Pages</button>
+          <button id="goDomainsBtn" type="button">Custom Domains</button>
+          <button id="refreshBtn" type="button">Refresh</button>
+          <button id="supportBtn" type="button">Support</button>
+          <button id="logoutBtn" class="danger-btn" type="button">
+            Logout
+          </button>
         </div>
       </div>
 
-      <div class="top-actions">
-        <span id="planBadge" class="badge trial">Trial</span>
-        <button id="backToDashboardBtn" type="button">Main Dashboard</button>
-        <button id="goLandingBtn" type="button">Landing Pages</button>
-        <button id="goDomainsBtn" type="button">Custom Domains</button>
-        <button id="refreshBtn" type="button">Refresh</button>
-        <button id="supportBtn" type="button">Support</button>
-        <button id="logoutBtn" class="danger-btn" type="button">Logout</button>
+      <div class="grid-5">
+        <div class="card stat-card">
+          <div class="stat-num" id="totalLinks">0</div>
+          <div class="stat-label">Backend2 Links</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="totalClicks">0</div>
+          <div class="stat-label">Total Clicks</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="avgClicks">0</div>
+          <div class="stat-label">Avg Clicks</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="slotsLeft">0</div>
+          <div class="stat-label">Short-Link Slots Left</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="riskCount">0</div>
+          <div class="stat-label">Risky Links</div>
+        </div>
       </div>
-    </div>
 
-    <div class="grid-5">
-      <div class="card stat-card"><div class="stat-num" id="totalLinks">0</div><div class="stat-label">Backend2 Links</div></div>
-      <div class="card stat-card"><div class="stat-num" id="totalClicks">0</div><div class="stat-label">Total Clicks</div></div>
-      <div class="card stat-card"><div class="stat-num" id="avgClicks">0</div><div class="stat-label">Avg Clicks</div></div>
-      <div class="card stat-card"><div class="stat-num" id="slotsLeft">0</div><div class="stat-label">Short-Link Slots Left</div></div>
-      <div class="card stat-card"><div class="stat-num" id="riskCount">0</div><div class="stat-label">Risky Links</div></div>
-    </div>
-
-    <div class="two-col">
-      <div class="stack">
-        <div class="card">
-          <div class="section-head">
-            <h3>👤 Account & Usage</h3>
-            <span class="badge primary">Backend2</span>
-          </div>
-
-          <div class="grid-3">
-            <div><div class="muted">Email</div><div id="meEmail">-</div></div>
-            <div><div class="muted">Plan</div><div id="mePlan">-</div></div>
-            <div><div class="muted">Expires</div><div id="meExpire">-</div></div>
-          </div>
-
-          <div class="grid-2" style="margin-top:14px;">
-            <div>
-              <div class="muted">Active short links</div>
-              <div id="shortUsageText" style="margin-top:6px;">0 / 0</div>
-              <div class="progress"><span id="shortUsageBar"></span></div>
+      <div class="two-col">
+        <div class="stack">
+          <div class="card">
+            <div class="section-head">
+              <h3>👤 Account & Usage</h3>
+              <span class="badge primary">Backend2</span>
             </div>
-            <div>
-              <div class="muted">Active landing pages</div>
-              <div id="landingUsageText" style="margin-top:6px;">0 / 0</div>
-              <div class="progress"><span id="landingUsageBar"></span></div>
+
+            <div class="grid-3">
+              <div>
+                <div class="muted">Email</div>
+                <div id="meEmail">-</div>
+              </div>
+              <div>
+                <div class="muted">Plan</div>
+                <div id="mePlan">-</div>
+              </div>
+              <div>
+                <div class="muted">Expires</div>
+                <div id="meExpire">-</div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 14px">
+              <div>
+                <div class="muted">Active short links</div>
+                <div id="shortUsageText" style="margin-top: 6px">0 / 0</div>
+                <div class="progress"><span id="shortUsageBar"></span></div>
+              </div>
+              <div>
+                <div class="muted">Active landing pages</div>
+                <div id="landingUsageText" style="margin-top: 6px">0 / 0</div>
+                <div class="progress"><span id="landingUsageBar"></span></div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px">
+              <div class="muted">Access Summary</div>
+              <div id="accessSummary" class="small" style="margin-top: 6px">
+                Loading...
+              </div>
+            </div>
+
+            <div class="row-actions" style="margin-top: 14px">
+              <button id="openSecurityBtn" class="pink-btn" type="button">
+                Security Center
+              </button>
+              <button id="verifySessionBtn" class="ghost-btn" type="button">
+                Verify Session
+              </button>
             </div>
           </div>
 
-          <div style="margin-top:14px;">
-            <div class="muted">Access Summary</div>
-            <div id="accessSummary" class="small" style="margin-top:6px;">Loading...</div>
-          </div>
+          <div class="card">
+            <div class="section-head">
+              <h3>🚀 Create Backend2 Link</h3>
+              <span class="badge live">Primary Backend</span>
+            </div>
 
-          <div class="row-actions" style="margin-top:14px;">
-            <button id="openSecurityBtn" class="pink-btn" type="button">Security Center</button>
-            <button id="verifySessionBtn" class="ghost-btn" type="button">Verify Session</button>
-          </div>
-        </div>
+            <div class="form-row">
+              <input id="urlInput" placeholder="Paste URL (https://...)" />
+              <input id="slugInput" placeholder="Custom slug (optional)" />
+              <input
+                id="expireInput"
+                type="number"
+                min="1"
+                placeholder="Expire in hours"
+              />
+            </div>
 
-        <div class="card">
-          <div class="section-head">
-            <h3>🚀 Create Backend2 Link</h3>
-            <span class="badge live">Primary Backend</span>
-          </div>
-
-          <div class="form-row">
-            <input id="urlInput" placeholder="Paste URL (https://...)" />
-            <input id="slugInput" placeholder="Custom slug (optional)" />
-            <input id="expireInput" type="number" min="1" placeholder="Expire in hours" />
-          </div>
-
-          <div class="form-row">
-            <input id="campaignInput" placeholder="Campaign tag (optional)" />
-            <input id="noteInput" placeholder="Internal note (optional)" />
-            <select id="riskModeSelect">
-              <option value="standard">Standard traffic mode</option>
-              <option value="strict">Strict monitoring mode</option>
-            </select>
-          </div>
-
-          <div class="row-actions">
-            <button id="createBtn" type="button">Create Backend2 Link</button>
-            <input id="bulkCountInput" type="number" min="1" placeholder="Bulk count" style="max-width:140px;" />
-            <button id="bulkCreateBtn" type="button">Bulk Create</button>
-          </div>
-
-          <div class="drop-zone" id="dropZone">
-            <p>📂 Upload CSV for Backend2 links</p>
-            <input id="csvFileInput" type="file" accept=".csv,.txt" />
-            <button id="uploadCsvBtn" type="button" style="margin-top:10px;">Upload CSV</button>
-          </div>
-
-          <div id="result" class="result"></div>
-        </div>
-
-        <div class="card">
-          <div class="section-head">
-            <h3>🔗 Backend2 Links</h3>
-            <div class="toolbar-actions">
-              <select id="statusFilter" style="max-width:160px;">
-                <option value="all">All statuses</option>
-                <option value="live">Live</option>
-                <option value="paused">Paused</option>
-                <option value="expired">Expired</option>
+            <div class="form-row">
+              <input id="campaignInput" placeholder="Campaign tag (optional)" />
+              <input id="noteInput" placeholder="Internal note (optional)" />
+              <select id="riskModeSelect">
+                <option value="standard">Standard traffic mode</option>
+                <option value="strict">Strict monitoring mode</option>
               </select>
-              <select id="sortFilter" style="max-width:170px;">
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="clicks_desc">Clicks high to low</option>
-                <option value="clicks_asc">Clicks low to high</option>
-                <option value="slug_asc">Slug A-Z</option>
-              </select>
-              <input id="searchInput" placeholder="Search slug or URL..." style="max-width:260px;" />
+            </div>
+
+            <div class="row-actions">
+              <button id="createBtn" type="button">Create Backend2 Link</button>
+              <input
+                id="bulkCountInput"
+                type="number"
+                min="1"
+                placeholder="Bulk count"
+                style="max-width: 140px"
+              />
+              <button id="bulkCreateBtn" type="button">Bulk Create</button>
+            </div>
+
+            <div class="drop-zone" id="dropZone">
+              <p>📂 Upload CSV for Backend2 links</p>
+              <input id="csvFileInput" type="file" accept=".csv,.txt" />
+              <button id="uploadCsvBtn" type="button" style="margin-top: 10px">
+                Upload CSV
+              </button>
+            </div>
+
+            <div id="result" class="result"></div>
+          </div>
+
+          <div class="card">
+            <div class="section-head">
+              <h3>🔗 Backend2 Links</h3>
+              <div class="toolbar-actions">
+                <select id="statusFilter" style="max-width: 160px">
+                  <option value="all">All statuses</option>
+                  <option value="live">Live</option>
+                  <option value="paused">Paused</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <select id="sortFilter" style="max-width: 170px">
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="clicks_desc">Clicks high to low</option>
+                  <option value="clicks_asc">Clicks low to high</option>
+                  <option value="slug_asc">Slug A-Z</option>
+                </select>
+                <input
+                  id="searchInput"
+                  placeholder="Search slug or URL..."
+                  style="max-width: 260px"
+                />
+              </div>
+            </div>
+
+            <div class="row-actions" style="margin-bottom: 12px">
+              <label
+                ><input id="selectAllLinks" type="checkbox" /> Select
+                visible</label
+              >
+              <button id="bulkCopyBtn" class="copy" type="button">
+                Copy Selected
+              </button>
+              <button id="bulkQrBtn" class="purple-btn" type="button">
+                QR Selected
+              </button>
+              <button id="bulkDeleteBtn" class="delete" type="button">
+                Delete Selected
+              </button>
+              <button id="refreshVisibleBtn" class="ghost-btn" type="button">
+                Refresh View
+              </button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Slug</th>
+                    <th>Clicks</th>
+                    <th>Score</th>
+                    <th>Fraud</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                    <th>Expire</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="card">
+            <h3>📈 Backend2 Performance</h3>
+            <canvas id="chart"></canvas>
+          </div>
+
+          <div class="card">
+            <h3>🛰 Backend2 Health</h3>
+            <div class="surface">
+              <div class="muted">Backend status</div>
+              <div id="healthBox" style="margin-top: 8px">Checking...</div>
             </div>
           </div>
 
-          <div class="row-actions" style="margin-bottom:12px;">
-            <label><input id="selectAllLinks" type="checkbox" /> Select visible</label>
-            <button id="bulkCopyBtn" class="copy" type="button">Copy Selected</button>
-            <button id="bulkDeleteBtn" class="delete" type="button">Delete Selected</button>
-            <button id="refreshVisibleBtn" class="ghost-btn" type="button">Refresh View</button>
+          <div class="card">
+            <h3>🏆 Top Backend2 Links</h3>
+            <div id="topLinks"></div>
           </div>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Slug</th>
-                  <th>Clicks</th>
-                  <th>Score</th>
-                  <th>Fraud</th>
-                  <th>Link</th>
-                  <th>Status</th>
-                  <th>Expire</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-            </table>
+          <div class="card">
+            <h3>🔔 Notifications</h3>
+            <div id="notifications"></div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="stack">
-        <div class="card">
-          <h3>📈 Backend2 Performance</h3>
-          <canvas id="chart"></canvas>
-        </div>
+    <div id="overlay" class="overlay"></div>
 
-        <div class="card">
-          <h3>🛰 Backend2 Health</h3>
-          <div class="surface">
-            <div class="muted">Backend status</div>
-            <div id="healthBox" style="margin-top:8px;">Checking...</div>
+    <div id="statsModal" class="modal">
+      <div class="section-head">
+        <h3>📊 Backend2 Link Analytics</h3>
+        <button id="closeStatsModalBtn" type="button">Close</button>
+      </div>
+      <div id="statsContent"></div>
+    </div>
+
+    <div id="geoModal" class="modal">
+      <div class="section-head">
+        <h3>🌍 Backend2 Geo View</h3>
+        <button id="closeGeoModalBtn" type="button">Close</button>
+      </div>
+      <div id="geoContent"></div>
+    </div>
+
+    <div id="securityModal" class="modal">
+      <div class="section-head">
+        <h3>🛡 Security Center</h3>
+        <button id="closeSecurityModalBtn" type="button">Close</button>
+      </div>
+      <div id="securityContent"></div>
+    </div>
+
+    <div id="qrModal" class="modal">
+      <div class="section-head">
+        <h3>📱 QR Code</h3>
+        <button id="closeQrModalBtn" type="button">Close</button>
+      </div>
+      <div class="qr-shell">
+        <div class="qr-preview">
+          <div class="qr-canvas-wrap">
+            <canvas id="qrCanvas"></canvas>
+          </div>
+          <div id="qrLink" class="qr-meta muted"></div>
+          <div class="qr-actions">
+            <button id="downloadQrBtn" class="purple-btn" type="button">
+              Download QR
+            </button>
+            <button id="copyQrLinkBtn" class="copy" type="button">
+              Copy Link
+            </button>
+            <button id="openQrLinkBtn" class="open" type="button">
+              Open Link
+            </button>
           </div>
         </div>
-
-        <div class="card">
-          <h3>🏆 Top Backend2 Links</h3>
-          <div id="topLinks"></div>
-        </div>
-
-        <div class="card">
-          <h3>🔔 Notifications</h3>
-          <div id="notifications"></div>
+        <div class="surface">
+          <h4 style="margin-top: 0">QR Details</h4>
+          <div class="muted">
+            Use this QR code for ads, flyers, posters, packaging, or direct
+            mobile traffic. The same short link tracking still applies when
+            scanned.
+          </div>
+          <div style="margin-top: 14px" id="qrMetaDetails"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="overlay" class="overlay"></div>
-
-  <div id="statsModal" class="modal">
-    <div class="section-head">
-      <h3>📊 Backend2 Link Analytics</h3>
-      <button id="closeStatsModalBtn" type="button">Close</button>
+    <div id="bulkQrModal" class="modal">
+      <div class="section-head">
+        <h3>📦 Selected QR Codes</h3>
+        <button id="closeBulkQrModalBtn" type="button">Close</button>
+      </div>
+      <div class="surface" style="margin-bottom: 14px">
+        <div class="muted">
+          Preview and download QR codes for all selected links.
+        </div>
+      </div>
+      <div id="bulkQrList" class="qr-bulk-list"></div>
     </div>
-    <div id="statsContent"></div>
-  </div>
 
-  <div id="geoModal" class="modal">
-    <div class="section-head">
-      <h3>🌍 Backend2 Geo View</h3>
-      <button id="closeGeoModalBtn" type="button">Close</button>
+    <div id="panel" class="panel">
+      <div id="panelContent"></div>
+      <button id="closePanelBtn" type="button">Close</button>
     </div>
-    <div id="geoContent"></div>
-  </div>
 
-  <div id="securityModal" class="modal">
-    <div class="section-head">
-      <h3>🛡 Security Center</h3>
-      <button id="closeSecurityModalBtn" type="button">Close</button>
-    </div>
-    <div id="securityContent"></div>
-  </div>
+    <div id="toast" class="toast">Copied!</div>
 
-  <div id="panel" class="panel">
-    <div id="panelContent"></div>
-    <button id="closePanelBtn" type="button">Close</button>
-  </div>
+    <script>
+      const PRIMARY_API = "https://api.rattleshortapi.it.com";
+      const LEGACY_API =
+        "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+      const PUBLIC_BASE = "https://rattleshortapi.it.com";
 
-  <div id="toast" class="toast">Copied!</div>
+      const AUTH_STORAGE_KEY = "rattle_token";
+      const ROLE_STORAGE_KEY = "rattle_role";
+      const USER_STORAGE_KEY = "rattle_user";
 
-  <script>
-  const PRIMARY_API = "https://api.rattleshortapi.it.com";
-  const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
-  const PUBLIC_BASE = "https://rattleshortapi.it.com";
+      let linksStore = [];
+      let selectedLinks = new Set();
+      let chart = null;
+      let statsChart = null;
+      let statsMap = null;
+      let geoMap = null;
+      let refreshTimer = null;
+      let notificationsStore = [];
+      let meState = null;
+      let currentQrLink = "";
+      let currentQrSlug = "";
 
-  const AUTH_STORAGE_KEY = "rattle_token";
-  const ROLE_STORAGE_KEY = "rattle_role";
-  const USER_STORAGE_KEY = "rattle_user";
+      const $ = (id) => document.getElementById(id);
 
-  let linksStore = [];
-  let selectedLinks = new Set();
-  let chart = null;
-  let statsChart = null;
-  let statsMap = null;
-  let geoMap = null;
-  let refreshTimer = null;
-  let notificationsStore = [];
-  let meState = null;
-
-  const $ = (id) => document.getElementById(id);
-
-  const els = {
-    totalLinks: $("totalLinks"),
-    totalClicks: $("totalClicks"),
-    avgClicks: $("avgClicks"),
-    slotsLeft: $("slotsLeft"),
-    riskCount: $("riskCount"),
-    result: $("result"),
-    tableBody: $("tableBody"),
-    topLinks: $("topLinks"),
-    notifications: $("notifications"),
-    searchInput: $("searchInput"),
-    statusFilter: $("statusFilter"),
-    sortFilter: $("sortFilter"),
-    urlInput: $("urlInput"),
-    slugInput: $("slugInput"),
-    expireInput: $("expireInput"),
-    campaignInput: $("campaignInput"),
-    noteInput: $("noteInput"),
-    riskModeSelect: $("riskModeSelect"),
-    bulkCountInput: $("bulkCountInput"),
-    csvFileInput: $("csvFileInput"),
-    dropZone: $("dropZone"),
-    healthBox: $("healthBox"),
-    overlay: $("overlay"),
-    statsModal: $("statsModal"),
-    geoModal: $("geoModal"),
-    securityModal: $("securityModal"),
-    statsContent: $("statsContent"),
-    geoContent: $("geoContent"),
-    securityContent: $("securityContent"),
-    panel: $("panel"),
-    panelContent: $("panelContent"),
-    toast: $("toast"),
-    selectAllLinks: $("selectAllLinks"),
-    meEmail: $("meEmail"),
-    mePlan: $("mePlan"),
-    meExpire: $("meExpire"),
-    shortUsageText: $("shortUsageText"),
-    landingUsageText: $("landingUsageText"),
-    shortUsageBar: $("shortUsageBar"),
-    landingUsageBar: $("landingUsageBar"),
-    accessSummary: $("accessSummary"),
-    planBadge: $("planBadge")
-  };
-
-  function normalizeApiUrl(url) {
-    return String(url || "").replace(/\/+$/, "");
-  }
-
-  function ensureAbsoluteUrl(value, fallbackBase = PUBLIC_BASE) {
-    const raw = String(value || "").trim();
-    if (!raw) return "";
-
-    if (/^https?:\/\//i.test(raw)) {
-      return raw;
-    }
-
-    if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) {
-      return `https://${raw.replace(/^\/+/, "")}`;
-    }
-
-    if (raw.startsWith("/")) {
-      return `${normalizeApiUrl(fallbackBase)}${raw}`;
-    }
-
-    return raw;
-  }
-
-  function getToken() {
-    return (
-      localStorage.getItem(AUTH_STORAGE_KEY) ||
-      localStorage.getItem("token") ||
-      ""
-    );
-  }
-
-  function getSessionBackend() {
-    const queryBackend = new URLSearchParams(window.location.search).get("backend");
-    const stored =
-      queryBackend ||
-      localStorage.getItem("sessionBackend") ||
-      localStorage.getItem("authBackend") ||
-      localStorage.getItem("magicBackend") ||
-      "primary";
-
-    return stored === "legacy" ? "legacy" : "primary";
-  }
-
-  function setSessionBackend(backend) {
-    const safe = backend === "legacy" ? "legacy" : "primary";
-    localStorage.setItem("sessionBackend", safe);
-    localStorage.setItem("authBackend", safe);
-  }
-
-  function authHeaders(extra = {}) {
-    const token = getToken();
-    return token
-      ? { Authorization: `Bearer ${token}`, ...extra }
-      : { ...extra };
-  }
-
-  function ensureAuth() {
-    if (!getToken()) {
-      window.location.href = "index.html";
-      return false;
-    }
-    return true;
-  }
-
-  function clearSessionAndRedirect() {
-    localStorage.removeItem("rattle_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("rattle_role");
-    localStorage.removeItem("role");
-    localStorage.removeItem("rattle_user");
-    localStorage.removeItem("lastUser");
-    localStorage.removeItem("sessionBackend");
-    localStorage.removeItem("authBackend");
-    localStorage.removeItem("magicBackend");
-    window.location.href = "index.html";
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function escapeForJs(str) {
-    return String(str ?? "")
-      .replaceAll("\\", "\\\\")
-      .replaceAll("'", "\\'")
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "");
-  }
-
-  function fmtDate(ts) {
-    const n = Number(ts || 0);
-    return n ? new Date(n).toLocaleString() : "-";
-  }
-
-  function getStatusKey(item) {
-    if (item.paused) return "paused";
-    if (item.expire && Number(item.expire) <= Date.now()) return "expired";
-    return "live";
-  }
-
-  function getStatusBadge(item) {
-    const key = getStatusKey(item);
-    if (key === "paused") return '<span class="pill paused">Paused</span>';
-    if (key === "expired") return '<span class="pill expired">Expired</span>';
-    return '<span class="pill live">Live</span>';
-  }
-
-  function fmtExpire(ts) {
-    const n = Number(ts || 0);
-    if (!n) return '<span class="muted">No expiry</span>';
-    if (n <= Date.now()) return '<span class="expired">Expired</span>';
-    const diff = n - Date.now();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return `<div class="live">${fmtDate(n)}<br><small>${days}d ${hrs}h left</small></div>`;
-  }
-
-  function scoreLink(item) {
-    let score = 0;
-    const clicks = Number(item.clicks || 0);
-    const maxRisk = Number(item.maxRisk || 0);
-    if (clicks > 20) score += 20;
-    if (clicks > 50) score += 25;
-    if (clicks > 100) score += 25;
-    if (!item.paused) score += 10;
-    if (!item.expire || Number(item.expire) > Date.now()) score += 10;
-    score += 5;
-    if (maxRisk > 60) score -= 15;
-    return Math.max(0, Math.min(score, 100));
-  }
-
-  function detectFraud(item) {
-    const clicks = Number(item.clicks || 0);
-    const risk = Number(item.maxRisk || 0);
-    if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
-    if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
-    return "✅ Normal";
-  }
-
-  function buildPublicLink(slug) {
-    return `${normalizeApiUrl(PUBLIC_BASE)}/${slug}`;
-  }
-
-  function normalizeLinkItem(item) {
-    const normalizedPublic = ensureAbsoluteUrl(
-      item.publicLink || item.shortLink || item.link || buildPublicLink(item.slug),
-      PUBLIC_BASE
-    );
-
-    return {
-      ...item,
-      clicks: Number(item.clicks || 0),
-      paused: !!item.paused,
-      expire: item.expire ? Number(item.expire) : null,
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      maxRisk: Number(item.maxRisk || item.max_risk || 0),
-      campaign: item.campaign || "",
-      note: item.note || "",
-      publicLink: normalizedPublic
-    };
-  }
-
-  async function parseResponse(res) {
-    const raw = await res.text();
-    let data = {};
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch {
-      data = { message: raw || "" };
-    }
-    return { raw, data };
-  }
-
-  async function callApi(baseUrl, path, options = {}) {
-    try {
-      const res = await fetch(`${normalizeApiUrl(baseUrl)}${path}`, options);
-      const parsed = await parseResponse(res);
-      return {
-        ok: res.ok,
-        status: res.status,
-        data: parsed.data,
-        raw: parsed.raw
+      const els = {
+        totalLinks: $("totalLinks"),
+        totalClicks: $("totalClicks"),
+        avgClicks: $("avgClicks"),
+        slotsLeft: $("slotsLeft"),
+        riskCount: $("riskCount"),
+        result: $("result"),
+        tableBody: $("tableBody"),
+        topLinks: $("topLinks"),
+        notifications: $("notifications"),
+        searchInput: $("searchInput"),
+        statusFilter: $("statusFilter"),
+        sortFilter: $("sortFilter"),
+        urlInput: $("urlInput"),
+        slugInput: $("slugInput"),
+        expireInput: $("expireInput"),
+        campaignInput: $("campaignInput"),
+        noteInput: $("noteInput"),
+        riskModeSelect: $("riskModeSelect"),
+        bulkCountInput: $("bulkCountInput"),
+        csvFileInput: $("csvFileInput"),
+        dropZone: $("dropZone"),
+        healthBox: $("healthBox"),
+        overlay: $("overlay"),
+        statsModal: $("statsModal"),
+        geoModal: $("geoModal"),
+        securityModal: $("securityModal"),
+        qrModal: $("qrModal"),
+        bulkQrModal: $("bulkQrModal"),
+        statsContent: $("statsContent"),
+        geoContent: $("geoContent"),
+        securityContent: $("securityContent"),
+        panel: $("panel"),
+        panelContent: $("panelContent"),
+        toast: $("toast"),
+        selectAllLinks: $("selectAllLinks"),
+        meEmail: $("meEmail"),
+        mePlan: $("mePlan"),
+        meExpire: $("meExpire"),
+        shortUsageText: $("shortUsageText"),
+        landingUsageText: $("landingUsageText"),
+        shortUsageBar: $("shortUsageBar"),
+        landingUsageBar: $("landingUsageBar"),
+        accessSummary: $("accessSummary"),
+        planBadge: $("planBadge"),
+        qrCanvas: $("qrCanvas"),
+        qrLink: $("qrLink"),
+        qrMetaDetails: $("qrMetaDetails"),
+        bulkQrList: $("bulkQrList"),
       };
-    } catch (e) {
-      return {
-        ok: false,
-        status: 0,
-        data: { message: e?.message || "Failed to fetch" },
-        raw: ""
-      };
-    }
-  }
 
-  async function safeFetch(path, options = {}) {
-    const preferredBackend = getSessionBackend();
-    const order = preferredBackend === "legacy"
-      ? ["legacy", "primary"]
-      : ["primary", "legacy"];
-
-    let first401 = null;
-    let lastResult = null;
-
-    for (const backend of order) {
-      const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
-      const headers = authHeaders(
-        backend === "legacy"
-          ? { ...(options.headers || {}), "x-rattle-fallback": "legacy" }
-          : { ...(options.headers || {}) }
-      );
-
-      const result = await callApi(baseUrl, path, {
-        ...options,
-        headers
-      });
-
-      lastResult = { ...result, backend };
-
-      if (result.ok) {
-        setSessionBackend(backend);
-        return { ...result, backend };
+      function normalizeApiUrl(url) {
+        return String(url || "").replace(/\/+$/, "");
       }
 
-      if (result.status === 401 && !first401) {
-        first401 = { ...result, backend };
-        continue;
+      function ensureAbsoluteUrl(value, fallbackBase = PUBLIC_BASE) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+
+        if (/^https?:\/\//i.test(raw)) {
+          return raw;
+        }
+
+        if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) {
+          return `https://${raw.replace(/^\/+/, "")}`;
+        }
+
+        if (raw.startsWith("/")) {
+          return `${normalizeApiUrl(fallbackBase)}${raw}`;
+        }
+
+        return raw;
       }
 
-      if (result.status === 404 || result.status === 405 || result.status >= 500 || result.status === 0) {
-        continue;
+      function getToken() {
+        return (
+          localStorage.getItem(AUTH_STORAGE_KEY) ||
+          localStorage.getItem("token") ||
+          ""
+        );
       }
 
-      return { ...result, backend };
-    }
+      function getSessionBackend() {
+        const queryBackend = new URLSearchParams(window.location.search).get(
+          "backend"
+        );
+        const stored =
+          queryBackend ||
+          localStorage.getItem("sessionBackend") ||
+          localStorage.getItem("authBackend") ||
+          localStorage.getItem("magicBackend") ||
+          "primary";
 
-    if (first401 && lastResult && lastResult.status === 401) {
-      clearSessionAndRedirect();
-      return first401;
-    }
+        return stored === "legacy" ? "legacy" : "primary";
+      }
 
-    return lastResult || { ok: false, status: 0, data: { message: "Request failed" }, backend: preferredBackend };
-  }
+      function setSessionBackend(backend) {
+        const safe = backend === "legacy" ? "legacy" : "primary";
+        localStorage.setItem("sessionBackend", safe);
+        localStorage.setItem("authBackend", safe);
+      }
 
-  async function safeFetchNoAuth(url) {
-    try {
-      const res = await fetch(url);
-      return { ok: res.ok, status: res.status };
-    } catch {
-      return { ok: false, status: 0 };
-    }
-  }
+      function authHeaders(extra = {}) {
+        const token = getToken();
+        return token
+          ? { Authorization: `Bearer ${token}`, ...extra }
+          : { ...extra };
+      }
 
-  function showToast(message = "Done") {
-    els.toast.textContent = message;
-    els.toast.style.display = "block";
-    clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(() => {
-      els.toast.style.display = "none";
-    }, 1800);
-  }
+      function ensureAuth() {
+        if (!getToken()) {
+          window.location.href = "index.html";
+          return false;
+        }
+        return true;
+      }
 
-  function pushNotification(message) {
-    notificationsStore.unshift({
-      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now()),
-      message,
-      time: Date.now()
-    });
-    notificationsStore = notificationsStore.slice(0, 6);
-    renderNotifications();
-  }
+      function clearSessionAndRedirect() {
+        localStorage.removeItem("rattle_token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("rattle_role");
+        localStorage.removeItem("role");
+        localStorage.removeItem("rattle_user");
+        localStorage.removeItem("lastUser");
+        localStorage.removeItem("sessionBackend");
+        localStorage.removeItem("authBackend");
+        localStorage.removeItem("magicBackend");
+        window.location.href = "index.html";
+      }
 
-  function setResult(message, isError = false) {
-    els.result.textContent = message || "";
-    els.result.className = `result ${isError ? "error" : "success"}`;
-    if (message) pushNotification(message);
-  }
+      function escapeHtml(str) {
+        return String(str ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
 
-  function renderNotifications() {
-    if (!notificationsStore.length) {
-      els.notifications.innerHTML = `<div class="muted">No notifications yet.</div>`;
-      return;
-    }
+      function escapeForJs(str) {
+        return String(str ?? "")
+          .replaceAll("\\", "\\\\")
+          .replaceAll("'", "\\'")
+          .replaceAll("\n", "\\n")
+          .replaceAll("\r", "");
+      }
 
-    els.notifications.innerHTML = notificationsStore.map(n => `
+      function fmtDate(ts) {
+        const n = Number(ts || 0);
+        return n ? new Date(n).toLocaleString() : "-";
+      }
+
+      function getStatusKey(item) {
+        if (item.paused) return "paused";
+        if (item.expire && Number(item.expire) <= Date.now()) return "expired";
+        return "live";
+      }
+
+      function getStatusBadge(item) {
+        const key = getStatusKey(item);
+        if (key === "paused") return '<span class="pill paused">Paused</span>';
+        if (key === "expired")
+          return '<span class="pill expired">Expired</span>';
+        return '<span class="pill live">Live</span>';
+      }
+
+      function fmtExpire(ts) {
+        const n = Number(ts || 0);
+        if (!n) return '<span class="muted">No expiry</span>';
+        if (n <= Date.now()) return '<span class="expired">Expired</span>';
+        const diff = n - Date.now();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hrs = Math.floor(
+          (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        return `<div class="live">${fmtDate(
+          n
+        )}<br><small>${days}d ${hrs}h left</small></div>`;
+      }
+
+      function scoreLink(item) {
+        let score = 0;
+        const clicks = Number(item.clicks || 0);
+        const maxRisk = Number(item.maxRisk || 0);
+        if (clicks > 20) score += 20;
+        if (clicks > 50) score += 25;
+        if (clicks > 100) score += 25;
+        if (!item.paused) score += 10;
+        if (!item.expire || Number(item.expire) > Date.now()) score += 10;
+        score += 5;
+        if (maxRisk > 60) score -= 15;
+        return Math.max(0, Math.min(score, 100));
+      }
+
+      function detectFraud(item) {
+        const clicks = Number(item.clicks || 0);
+        const risk = Number(item.maxRisk || 0);
+        if (risk > 85 || clicks > 200) return "🔥 Bot Attack";
+        if (risk > 60 || clicks > 100) return "⚠️ Suspicious";
+        return "✅ Normal";
+      }
+
+      function buildPublicLink(slug) {
+        return `${normalizeApiUrl(PUBLIC_BASE)}/${slug}`;
+      }
+
+      function normalizeLinkItem(item) {
+        const normalizedPublic = ensureAbsoluteUrl(
+          item.publicLink ||
+            item.shortLink ||
+            item.link ||
+            buildPublicLink(item.slug),
+          PUBLIC_BASE
+        );
+
+        return {
+          ...item,
+          clicks: Number(item.clicks || 0),
+          paused: !!item.paused,
+          expire: item.expire ? Number(item.expire) : null,
+          createdAt: Number(item.createdAt || item.created_at || 0),
+          maxRisk: Number(item.maxRisk || item.max_risk || 0),
+          campaign: item.campaign || "",
+          note: item.note || "",
+          publicLink: normalizedPublic,
+          qrCodeUrl: item.qrCodeUrl || item.qr_code_url || "",
+        };
+      }
+
+      async function parseResponse(res) {
+        const raw = await res.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = { message: raw || "" };
+        }
+        return { raw, data };
+      }
+
+      async function callApi(baseUrl, path, options = {}) {
+        try {
+          const res = await fetch(
+            `${normalizeApiUrl(baseUrl)}${path}`,
+            options
+          );
+          const parsed = await parseResponse(res);
+          return {
+            ok: res.ok,
+            status: res.status,
+            data: parsed.data,
+            raw: parsed.raw,
+          };
+        } catch (e) {
+          return {
+            ok: false,
+            status: 0,
+            data: { message: e?.message || "Failed to fetch" },
+            raw: "",
+          };
+        }
+      }
+
+      async function safeFetch(path, options = {}) {
+        const preferredBackend = getSessionBackend();
+        const order =
+          preferredBackend === "legacy"
+            ? ["legacy", "primary"]
+            : ["primary", "legacy"];
+
+        let first401 = null;
+        let lastResult = null;
+
+        for (const backend of order) {
+          const baseUrl = backend === "legacy" ? LEGACY_API : PRIMARY_API;
+          const headers = authHeaders(
+            backend === "legacy"
+              ? { ...(options.headers || {}), "x-rattle-fallback": "legacy" }
+              : { ...(options.headers || {}) }
+          );
+
+          const result = await callApi(baseUrl, path, {
+            ...options,
+            headers,
+          });
+
+          lastResult = { ...result, backend };
+
+          if (result.ok) {
+            setSessionBackend(backend);
+            return { ...result, backend };
+          }
+
+          if (result.status === 401 && !first401) {
+            first401 = { ...result, backend };
+            continue;
+          }
+
+          if (
+            result.status === 404 ||
+            result.status === 405 ||
+            result.status >= 500 ||
+            result.status === 0
+          ) {
+            continue;
+          }
+
+          return { ...result, backend };
+        }
+
+        if (first401 && lastResult && lastResult.status === 401) {
+          clearSessionAndRedirect();
+          return first401;
+        }
+
+        return (
+          lastResult || {
+            ok: false,
+            status: 0,
+            data: { message: "Request failed" },
+            backend: preferredBackend,
+          }
+        );
+      }
+
+      async function safeFetchNoAuth(url) {
+        try {
+          const res = await fetch(url);
+          return { ok: res.ok, status: res.status };
+        } catch {
+          return { ok: false, status: 0 };
+        }
+      }
+
+      function showToast(message = "Done") {
+        els.toast.textContent = message;
+        els.toast.style.display = "block";
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+          els.toast.style.display = "none";
+        }, 1800);
+      }
+
+      function pushNotification(message) {
+        notificationsStore.unshift({
+          id: window.crypto?.randomUUID
+            ? window.crypto.randomUUID()
+            : String(Date.now()),
+          message,
+          time: Date.now(),
+        });
+        notificationsStore = notificationsStore.slice(0, 6);
+        renderNotifications();
+      }
+
+      function setResult(message, isError = false) {
+        els.result.textContent = message || "";
+        els.result.className = `result ${isError ? "error" : "success"}`;
+        if (message) pushNotification(message);
+      }
+
+      function renderNotifications() {
+        if (!notificationsStore.length) {
+          els.notifications.innerHTML = `<div class="muted">No notifications yet.</div>`;
+          return;
+        }
+
+        els.notifications.innerHTML = notificationsStore
+          .map(
+            (n) => `
       <div class="surface">
         <div><b>${escapeHtml(n.message)}</b></div>
         <div class="muted tiny">${new Date(n.time).toLocaleString()}</div>
       </div>
-    `).join("");
-  }
+    `
+          )
+          .join("");
+      }
 
-  function openModal(modal) {
-    els.overlay.style.display = "block";
-    modal.style.display = "block";
-  }
+      function openModal(modal) {
+        els.overlay.style.display = "block";
+        modal.style.display = "block";
+      }
 
-  function closeModal(modal) {
-    modal.style.display = "none";
-    syncOverlay();
-  }
+      function closeModal(modal) {
+        modal.style.display = "none";
+        syncOverlay();
+      }
 
-  function syncOverlay() {
-    const anyOpen = [els.statsModal, els.geoModal, els.securityModal].some(m => m.style.display === "block");
-    els.overlay.style.display = anyOpen ? "block" : "none";
-  }
+      function syncOverlay() {
+        const anyOpen = [
+          els.statsModal,
+          els.geoModal,
+          els.securityModal,
+          els.qrModal,
+          els.bulkQrModal,
+        ].some((m) => m.style.display === "block");
+        els.overlay.style.display = anyOpen ? "block" : "none";
+      }
 
-  function closeStatsModal() {
-    closeModal(els.statsModal);
-    if (statsChart) { statsChart.destroy(); statsChart = null; }
-    if (statsMap) { statsMap.remove(); statsMap = null; }
-  }
+      function closeStatsModal() {
+        closeModal(els.statsModal);
+        if (statsChart) {
+          statsChart.destroy();
+          statsChart = null;
+        }
+        if (statsMap) {
+          statsMap.remove();
+          statsMap = null;
+        }
+      }
 
-  function closeGeoModal() {
-    closeModal(els.geoModal);
-    if (geoMap) { geoMap.remove(); geoMap = null; }
-  }
+      function closeGeoModal() {
+        closeModal(els.geoModal);
+        if (geoMap) {
+          geoMap.remove();
+          geoMap = null;
+        }
+      }
 
-  function closeSecurityModal() {
-    closeModal(els.securityModal);
-  }
+      function closeSecurityModal() {
+        closeModal(els.securityModal);
+      }
 
-  function openSupportPanel() {
-    const activeBackend = getSessionBackend();
-    els.panel.style.display = "block";
-    els.panelContent.innerHTML = `
+      function closeQrModal() {
+        closeModal(els.qrModal);
+      }
+
+      function closeBulkQrModal() {
+        closeModal(els.bulkQrModal);
+      }
+
+      function openSupportPanel() {
+        const activeBackend = getSessionBackend();
+        els.panel.style.display = "block";
+        els.panelContent.innerHTML = `
       <h3>🆘 Backend2 Support</h3>
       <div class="surface">
         <div><b>Email:</b> support@rattleshort.online</div>
@@ -1035,489 +1407,734 @@
         <div><b>Phone:</b> +1 954 787 8220</div>
       </div>
       <div class="surface" style="margin-top:12px;">
-        <div><b>Current session backend:</b> ${activeBackend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}</div>
+        <div><b>Current session backend:</b> ${
+          activeBackend === "legacy" ? "Legacy AWS" : "Backend2 Primary"
+        }</div>
         <div class="muted" style="margin-top:8px;">This page now follows your saved auth backend instead of forcing logout on the first primary 401.</div>
       </div>
     `;
-  }
+      }
 
-  function closePanel() {
-    els.panel.style.display = "none";
-    els.panelContent.innerHTML = "";
-  }
+      function closePanel() {
+        els.panel.style.display = "none";
+        els.panelContent.innerHTML = "";
+      }
 
-  function logout() {
-    clearSessionAndRedirect();
-  }
+      function logout() {
+        clearSessionAndRedirect();
+      }
 
-  function normalizePlanLabel(planCode) {
-    const code = String(planCode || "").toLowerCase();
-    if (code === "premium_monthly") return "Premium Monthly";
-    if (code === "monthly") return "Monthly";
-    if (code === "weekly") return "Weekly";
-    if (code === "free_trial") return "Free Trial";
-    return code ? code.replaceAll("_", " ").replace(/\b\w/g, m => m.toUpperCase()) : "-";
-  }
+      function normalizePlanLabel(planCode) {
+        const code = String(planCode || "").toLowerCase();
+        if (code === "premium_monthly") return "Premium Monthly";
+        if (code === "monthly") return "Monthly";
+        if (code === "weekly") return "Weekly";
+        if (code === "free_trial") return "Free Trial";
+        return code
+          ? code.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase())
+          : "-";
+      }
 
-  async function loadMe(showMessage = false) {
-    const res = await safeFetch("/auth/me", { method: "GET" });
+      async function loadMe(showMessage = false) {
+        const res = await safeFetch("/auth/me", { method: "GET" });
 
-    if (!res.ok) {
-      els.meEmail.textContent = "-";
-      els.mePlan.textContent = "-";
-      els.meExpire.textContent = "-";
-      els.shortUsageText.textContent = "0 / 0";
-      els.landingUsageText.textContent = "0 / 0";
-      els.shortUsageBar.style.width = "0%";
-      els.landingUsageBar.style.width = "0%";
-      els.slotsLeft.textContent = "0";
-      els.accessSummary.textContent = "Could not load account details.";
-      if (showMessage) showToast("Failed to load account");
-      return;
-    }
+        if (!res.ok) {
+          els.meEmail.textContent = "-";
+          els.mePlan.textContent = "-";
+          els.meExpire.textContent = "-";
+          els.shortUsageText.textContent = "0 / 0";
+          els.landingUsageText.textContent = "0 / 0";
+          els.shortUsageBar.style.width = "0%";
+          els.landingUsageBar.style.width = "0%";
+          els.slotsLeft.textContent = "0";
+          els.accessSummary.textContent = "Could not load account details.";
+          if (showMessage) showToast("Failed to load account");
+          return;
+        }
 
-    meState = res.data || {};
+        meState = res.data || {};
 
-    const planLimits = meState.planLimits || {};
-    const usage = meState.usage || {};
-    const remaining = meState.remaining || {};
+        const planLimits = meState.planLimits || {};
+        const usage = meState.usage || {};
+        const remaining = meState.remaining || {};
 
-    const shortUsed = Number(usage.activeShortLinks || 0);
-    const shortLimit = Number(planLimits.activeShortLinks || 0);
-    const landingUsed = Number(usage.activeLandingPages || 0);
-    const landingLimit = Number(planLimits.activeLandingPages || 0);
-    const shortLeft = Math.max(0, Number(remaining.activeShortLinks || 0));
+        const shortUsed = Number(usage.activeShortLinks || 0);
+        const shortLimit = Number(planLimits.activeShortLinks || 0);
+        const landingUsed = Number(usage.activeLandingPages || 0);
+        const landingLimit = Number(planLimits.activeLandingPages || 0);
+        const shortLeft = Math.max(0, Number(remaining.activeShortLinks || 0));
 
-    els.meEmail.textContent = meState.username || meState.email || "-";
-    els.mePlan.textContent = normalizePlanLabel(
-      meState.subscriptionPlan ||
-      meState.subscription_plan ||
-      (String(meState.subscriptionStatus || meState.subscription_status || "").toLowerCase() === "trial" ? "free_trial" : "")
-    );
-    els.meExpire.textContent = meState.subscriptionExpiresAt
-      ? fmtDate(meState.subscriptionExpiresAt)
-      : (meState.subscription_expires_at ? fmtDate(meState.subscription_expires_at) : "-");
+        els.meEmail.textContent = meState.username || meState.email || "-";
+        els.mePlan.textContent = normalizePlanLabel(
+          meState.subscriptionPlan ||
+            meState.subscription_plan ||
+            (String(
+              meState.subscriptionStatus || meState.subscription_status || ""
+            ).toLowerCase() === "trial"
+              ? "free_trial"
+              : "")
+        );
+        els.meExpire.textContent = meState.subscriptionExpiresAt
+          ? fmtDate(meState.subscriptionExpiresAt)
+          : meState.subscription_expires_at
+          ? fmtDate(meState.subscription_expires_at)
+          : "-";
 
-    els.shortUsageText.textContent = `${shortUsed} / ${shortLimit}`;
-    els.landingUsageText.textContent = `${landingUsed} / ${landingLimit}`;
-    els.shortUsageBar.style.width = shortLimit ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%` : "0%";
-    els.landingUsageBar.style.width = landingLimit ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%` : "0%";
-    els.slotsLeft.textContent = shortLeft;
+        els.shortUsageText.textContent = `${shortUsed} / ${shortLimit}`;
+        els.landingUsageText.textContent = `${landingUsed} / ${landingLimit}`;
+        els.shortUsageBar.style.width = shortLimit
+          ? `${Math.min(100, (shortUsed / shortLimit) * 100)}%`
+          : "0%";
+        els.landingUsageBar.style.width = landingLimit
+          ? `${Math.min(100, (landingUsed / landingLimit) * 100)}%`
+          : "0%";
+        els.slotsLeft.textContent = shortLeft;
 
-    const status = String(meState.subscriptionStatus || meState.subscription_status || "trial").toLowerCase();
-    const expiresAt = Number(meState.subscriptionExpiresAt || meState.subscription_expires_at || 0);
-    const activeBackend = res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
+        const status = String(
+          meState.subscriptionStatus || meState.subscription_status || "trial"
+        ).toLowerCase();
+        const expiresAt = Number(
+          meState.subscriptionExpiresAt || meState.subscription_expires_at || 0
+        );
+        const activeBackend =
+          res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
 
-    let summary = `Session backend: ${activeBackend}.`;
-    if (shortLimit || landingLimit) {
-      summary += ` Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
-    }
+        let summary = `Session backend: ${activeBackend}.`;
+        if (shortLimit || landingLimit) {
+          summary += ` Short links: ${shortUsed}/${shortLimit}. Landing pages: ${landingUsed}/${landingLimit}.`;
+        }
 
-    if (status === "active" && (!expiresAt || expiresAt > Date.now())) {
-      els.planBadge.className = "badge live";
-      els.planBadge.textContent = "Active";
-      summary += shortLimit || landingLimit
-        ? ` Plan active until ${expiresAt ? fmtDate(expiresAt) : "-"}. ${shortLeft} short-link slots left.`
-        : ` Plan active${expiresAt ? ` until ${fmtDate(expiresAt)}` : ""}.`;
-    } else if (status === "expired") {
-      els.planBadge.className = "badge expired";
-      els.planBadge.textContent = "Expired";
-      summary += " Subscription expired.";
-    } else {
-      els.planBadge.className = "badge trial";
-      els.planBadge.textContent = "Trial";
-      summary += shortLimit
-        ? ` Free trial active. ${shortUsed}/${shortLimit} short links currently used.`
-        : " Free trial active.";
-    }
+        if (status === "active" && (!expiresAt || expiresAt > Date.now())) {
+          els.planBadge.className = "badge live";
+          els.planBadge.textContent = "Active";
+          summary +=
+            shortLimit || landingLimit
+              ? ` Plan active until ${
+                  expiresAt ? fmtDate(expiresAt) : "-"
+                }. ${shortLeft} short-link slots left.`
+              : ` Plan active${
+                  expiresAt ? ` until ${fmtDate(expiresAt)}` : ""
+                }.`;
+        } else if (status === "expired") {
+          els.planBadge.className = "badge expired";
+          els.planBadge.textContent = "Expired";
+          summary += " Subscription expired.";
+        } else {
+          els.planBadge.className = "badge trial";
+          els.planBadge.textContent = "Trial";
+          summary += shortLimit
+            ? ` Free trial active. ${shortUsed}/${shortLimit} short links currently used.`
+            : " Free trial active.";
+        }
 
-    if (meState.emailVerified === false || meState.email_verified === false) {
-      summary += " Email verification is incomplete.";
-    }
+        if (
+          meState.emailVerified === false ||
+          meState.email_verified === false
+        ) {
+          summary += " Email verification is incomplete.";
+        }
 
-    if (meState.primaryDomain) {
-      summary += ` Primary domain: ${meState.primaryDomain}.`;
-    }
+        if (meState.primaryDomain) {
+          summary += ` Primary domain: ${meState.primaryDomain}.`;
+        }
 
-    els.accessSummary.textContent = summary.trim();
-    if (showMessage) showToast("Account refreshed");
-  }
+        els.accessSummary.textContent = summary.trim();
+        if (showMessage) showToast("Account refreshed");
+      }
 
-  async function verifySession() {
-    const res = await safeFetch("/auth/me", { method: "GET" });
-    showToast(res.ok ? `Session valid (${res.backend === "legacy" ? "legacy" : "primary"})` : "Session check failed");
-  }
+      async function verifySession() {
+        const res = await safeFetch("/auth/me", { method: "GET" });
+        showToast(
+          res.ok
+            ? `Session valid (${
+                res.backend === "legacy" ? "legacy" : "primary"
+              })`
+            : "Session check failed"
+        );
+      }
 
-  function getFilteredData() {
-    const q = (els.searchInput.value || "").trim().toLowerCase();
-    const statusFilter = els.statusFilter.value || "all";
-    const sort = els.sortFilter.value || "newest";
+      function getFilteredData() {
+        const q = (els.searchInput.value || "").trim().toLowerCase();
+        const statusFilter = els.statusFilter.value || "all";
+        const sort = els.sortFilter.value || "newest";
 
-    let filtered = linksStore.filter(item => {
-      const matchesSearch =
-        !q ||
-        String(item.slug || "").toLowerCase().includes(q) ||
-        String(item.url || "").toLowerCase().includes(q) ||
-        String(item.note || "").toLowerCase().includes(q) ||
-        String(item.campaign || "").toLowerCase().includes(q) ||
-        String(item.publicLink || "").toLowerCase().includes(q);
+        let filtered = linksStore.filter((item) => {
+          const matchesSearch =
+            !q ||
+            String(item.slug || "")
+              .toLowerCase()
+              .includes(q) ||
+            String(item.url || "")
+              .toLowerCase()
+              .includes(q) ||
+            String(item.note || "")
+              .toLowerCase()
+              .includes(q) ||
+            String(item.campaign || "")
+              .toLowerCase()
+              .includes(q) ||
+            String(item.publicLink || "")
+              .toLowerCase()
+              .includes(q);
 
-      const matchesStatus = statusFilter === "all" ? true : getStatusKey(item) === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
+          const matchesStatus =
+            statusFilter === "all" ? true : getStatusKey(item) === statusFilter;
+          return matchesSearch && matchesStatus;
+        });
 
-    filtered.sort((a, b) => {
-      if (sort === "oldest") return Number(a.createdAt || 0) - Number(b.createdAt || 0);
-      if (sort === "clicks_desc") return Number(b.clicks || 0) - Number(a.clicks || 0);
-      if (sort === "clicks_asc") return Number(a.clicks || 0) - Number(b.clicks || 0);
-      if (sort === "slug_asc") return String(a.slug || "").localeCompare(String(b.slug || ""));
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
+        filtered.sort((a, b) => {
+          if (sort === "oldest")
+            return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+          if (sort === "clicks_desc")
+            return Number(b.clicks || 0) - Number(a.clicks || 0);
+          if (sort === "clicks_asc")
+            return Number(a.clicks || 0) - Number(b.clicks || 0);
+          if (sort === "slug_asc")
+            return String(a.slug || "").localeCompare(String(b.slug || ""));
+          return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+        });
 
-    return filtered;
-  }
+        return filtered;
+      }
 
-  function renderTable() {
-    const rows = getFilteredData();
+      function renderTable() {
+        const rows = getFilteredData();
 
-    if (!rows.length) {
-      els.tableBody.innerHTML = `<tr><td colspan="10" class="muted">No Backend2 links found</td></tr>`;
-      return;
-    }
+        if (!rows.length) {
+          els.tableBody.innerHTML = `<tr><td colspan="10" class="muted">No Backend2 links found</td></tr>`;
+          return;
+        }
 
-    els.tableBody.innerHTML = rows.map(item => {
-      const key = item.slug;
-      const checked = selectedLinks.has(key) ? "checked" : "";
-      return `
+        els.tableBody.innerHTML = rows
+          .map((item) => {
+            const key = item.slug;
+            const checked = selectedLinks.has(key) ? "checked" : "";
+            return `
         <tr>
-          <td><input class="row-select" type="checkbox" data-key="${escapeHtml(key)}" ${checked} /></td>
+          <td><input class="row-select" type="checkbox" data-key="${escapeHtml(
+            key
+          )}" ${checked} /></td>
           <td>
             <b>${escapeHtml(item.slug || "")}</b>
-            ${item.campaign ? `<div class="muted tiny">Campaign: ${escapeHtml(item.campaign)}</div>` : ""}
+            ${
+              item.campaign
+                ? `<div class="muted tiny">Campaign: ${escapeHtml(
+                    item.campaign
+                  )}</div>`
+                : ""
+            }
           </td>
-          <td><span class="badge primary">${Number(item.clicks || 0)}</span></td>
+          <td><span class="badge primary">${Number(
+            item.clicks || 0
+          )}</span></td>
           <td>${scoreLink(item)}/100</td>
           <td>${detectFraud(item)}</td>
           <td>
-            <a href="${escapeHtml(item.publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.publicLink)}</a>
+            <a href="${escapeHtml(
+              item.publicLink
+            )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+              item.publicLink
+            )}</a>
             <div class="muted">${escapeHtml(item.url || "")}</div>
-            ${item.note ? `<div class="muted tiny">${escapeHtml(item.note)}</div>` : ""}
+            ${
+              item.note
+                ? `<div class="muted tiny">${escapeHtml(item.note)}</div>`
+                : ""
+            }
           </td>
           <td>${getStatusBadge(item)}</td>
           <td>${fmtExpire(item.expire)}</td>
           <td>${fmtDate(item.createdAt)}</td>
           <td>
             <div class="row-actions">
-              <button class="copy action-btn" data-action="copy" data-link="${escapeHtml(item.publicLink)}">Copy</button>
-              <button class="open action-btn" data-action="open" data-link="${escapeHtml(item.publicLink)}">Open</button>
-              <button class="action-btn" data-action="stats" data-slug="${escapeHtml(item.slug)}">Stats</button>
-              <button class="action-btn" data-action="geo" data-slug="${escapeHtml(item.slug)}">Geo</button>
-              <button class="delete action-btn" data-action="delete" data-slug="${escapeHtml(item.slug)}">Delete</button>
+              <button class="copy action-btn" data-action="copy" data-link="${escapeHtml(
+                item.publicLink
+              )}">Copy</button>
+              <button class="open action-btn" data-action="open" data-link="${escapeHtml(
+                item.publicLink
+              )}">Open</button>
+              <button class="purple-btn action-btn" data-action="qr" data-link="${escapeHtml(
+                item.publicLink
+              )}" data-slug="${escapeHtml(item.slug)}">QR</button>
+              <button class="action-btn" data-action="stats" data-slug="${escapeHtml(
+                item.slug
+              )}">Stats</button>
+              <button class="action-btn" data-action="geo" data-slug="${escapeHtml(
+                item.slug
+              )}">Geo</button>
+              <button class="delete action-btn" data-action="delete" data-slug="${escapeHtml(
+                item.slug
+              )}">Delete</button>
             </div>
           </td>
         </tr>
       `;
-    }).join("");
+          })
+          .join("");
 
-    document.querySelectorAll(".row-select").forEach(box => {
-      box.addEventListener("change", () => {
-        const key = box.dataset.key;
-        if (box.checked) selectedLinks.add(key);
-        else selectedLinks.delete(key);
+        document.querySelectorAll(".row-select").forEach((box) => {
+          box.addEventListener("change", () => {
+            const key = box.dataset.key;
+            if (box.checked) selectedLinks.add(key);
+            else selectedLinks.delete(key);
+            syncSelectAllState();
+          });
+        });
+
         syncSelectAllState();
-      });
-    });
+      }
 
-    syncSelectAllState();
-  }
+      function syncSelectAllState() {
+        const visible = [...document.querySelectorAll(".row-select")];
+        if (!visible.length) {
+          els.selectAllLinks.checked = false;
+          els.selectAllLinks.indeterminate = false;
+          return;
+        }
+        const checked = visible.filter((x) => x.checked).length;
+        els.selectAllLinks.checked = checked === visible.length;
+        els.selectAllLinks.indeterminate =
+          checked > 0 && checked < visible.length;
+      }
 
-  function syncSelectAllState() {
-    const visible = [...document.querySelectorAll(".row-select")];
-    if (!visible.length) {
-      els.selectAllLinks.checked = false;
-      els.selectAllLinks.indeterminate = false;
-      return;
-    }
-    const checked = visible.filter(x => x.checked).length;
-    els.selectAllLinks.checked = checked === visible.length;
-    els.selectAllLinks.indeterminate = checked > 0 && checked < visible.length;
-  }
+      function renderStats() {
+        els.totalLinks.textContent = linksStore.length;
+        const clicks = linksStore.reduce(
+          (sum, item) => sum + Number(item.clicks || 0),
+          0
+        );
+        els.totalClicks.textContent = clicks;
+        els.avgClicks.textContent = linksStore.length
+          ? (clicks / linksStore.length).toFixed(1)
+          : "0";
+        els.riskCount.textContent = linksStore.filter(
+          (x) => Number(x.maxRisk || 0) > 60
+        ).length;
+      }
 
-  function renderStats() {
-    els.totalLinks.textContent = linksStore.length;
-    const clicks = linksStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-    els.totalClicks.textContent = clicks;
-    els.avgClicks.textContent = linksStore.length ? (clicks / linksStore.length).toFixed(1) : "0";
-    els.riskCount.textContent = linksStore.filter(x => Number(x.maxRisk || 0) > 60).length;
-  }
-
-  function renderTopLinks() {
-    const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 5);
-    if (!top.length) {
-      els.topLinks.innerHTML = `<div class="muted">No Backend2 links yet.</div>`;
-      return;
-    }
-    els.topLinks.innerHTML = top.map((item, i) => `
+      function renderTopLinks() {
+        const top = [...linksStore]
+          .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+          .slice(0, 5);
+        if (!top.length) {
+          els.topLinks.innerHTML = `<div class="muted">No Backend2 links yet.</div>`;
+          return;
+        }
+        els.topLinks.innerHTML = top
+          .map(
+            (item, i) => `
       <div class="surface">
         <div><b>#${i + 1} ${escapeHtml(item.slug)}</b></div>
-        <div class="muted">Clicks: ${Number(item.clicks || 0)} • Score: ${scoreLink(item)}/100</div>
+        <div class="muted">Clicks: ${Number(
+          item.clicks || 0
+        )} • Score: ${scoreLink(item)}/100</div>
         <div class="muted">${detectFraud(item)}</div>
       </div>
-    `).join("");
-  }
+    `
+          )
+          .join("");
+      }
 
-  function drawMainChart() {
-    const canvas = $("chart");
-    if (!canvas) return;
-    if (chart) chart.destroy();
+      function drawMainChart() {
+        const canvas = $("chart");
+        if (!canvas) return;
+        if (chart) chart.destroy();
 
-    const top = [...linksStore].sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0)).slice(0, 10);
+        const top = [...linksStore]
+          .sort((a, b) => Number(b.clicks || 0) - Number(a.clicks || 0))
+          .slice(0, 10);
 
-    chart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: top.map(x => x.slug),
-        datasets: [{
-          label: "Clicks",
-          data: top.map(x => Number(x.clicks || 0)),
-          tension: 0.35
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: "#e2e8f0" } } },
-        scales: {
-          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+        chart = new Chart(canvas, {
+          type: "line",
+          data: {
+            labels: top.map((x) => x.slug),
+            datasets: [
+              {
+                label: "Clicks",
+                data: top.map((x) => Number(x.clicks || 0)),
+                tension: 0.35,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: "#e2e8f0" } } },
+            scales: {
+              x: {
+                ticks: { color: "#94a3b8" },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#94a3b8" },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+            },
+          },
+        });
+      }
+
+      async function loadHealth() {
+        const res = await safeFetchNoAuth(
+          `${normalizeApiUrl(PRIMARY_API)}/health`
+        );
+        els.healthBox.innerHTML = res.ok
+          ? `<span class="badge live">Online</span> <span class="muted">Backend2 responding</span>`
+          : `<span class="badge expired">Issue</span> <span class="muted">Health check failed</span>`;
+      }
+
+      async function loadLinks(showMessage = false) {
+        if (showMessage) setResult("Loading Backend2 links...", false);
+
+        const res = await safeFetch("/list", { method: "GET" });
+
+        if (!res.ok) {
+          linksStore = [];
+          renderStats();
+          renderTable();
+          renderTopLinks();
+          drawMainChart();
+          if (showMessage)
+            setResult(
+              res.data?.message || "Failed to load Backend2 links",
+              true
+            );
+          return;
+        }
+
+        const items = Array.isArray(res.data?.items) ? res.data.items : [];
+        linksStore = items.map(normalizeLinkItem);
+
+        renderStats();
+        renderTable();
+        renderTopLinks();
+        drawMainChart();
+
+        if (showMessage) {
+          const backendName =
+            res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
+          setResult(`Links loaded via ${backendName}`, false);
         }
       }
-    });
-  }
 
-  async function loadHealth() {
-    const res = await safeFetchNoAuth(`${normalizeApiUrl(PRIMARY_API)}/health`);
-    els.healthBox.innerHTML = res.ok
-      ? `<span class="badge live">Online</span> <span class="muted">Backend2 responding</span>`
-      : `<span class="badge expired">Issue</span> <span class="muted">Health check failed</span>`;
-  }
+      function getCreatePayload() {
+        const url = els.urlInput.value.trim();
+        const slug = els.slugInput.value.trim();
+        const expireHours = els.expireInput.value.trim();
+        const campaign = els.campaignInput.value.trim();
+        const note = els.noteInput.value.trim();
+        const riskMode = els.riskModeSelect.value || "standard";
 
-  async function loadLinks(showMessage = false) {
-    if (showMessage) setResult("Loading Backend2 links...", false);
+        if (!url) {
+          setResult("Enter URL", true);
+          return null;
+        }
 
-    const res = await safeFetch("/list", { method: "GET" });
+        const body = { url, riskMode };
+        if (slug) body.slug = slug;
+        if (campaign) body.campaign = campaign;
+        if (note) body.note = note;
 
-    if (!res.ok) {
-      linksStore = [];
-      renderStats();
-      renderTable();
-      renderTopLinks();
-      drawMainChart();
-      if (showMessage) setResult(res.data?.message || "Failed to load Backend2 links", true);
-      return;
-    }
+        if (expireHours) {
+          const hours = Number(expireHours);
+          if (!Number.isFinite(hours) || hours <= 0) {
+            setResult("Expire must be a positive number", true);
+            return null;
+          }
+          body.expire = Date.now() + hours * 60 * 60 * 1000;
+        }
 
-    const items = Array.isArray(res.data?.items) ? res.data.items : [];
-    linksStore = items.map(normalizeLinkItem);
-
-    renderStats();
-    renderTable();
-    renderTopLinks();
-    drawMainChart();
-
-    if (showMessage) {
-      const backendName = res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary";
-      setResult(`Links loaded via ${backendName}`, false);
-    }
-  }
-
-  function getCreatePayload() {
-    const url = els.urlInput.value.trim();
-    const slug = els.slugInput.value.trim();
-    const expireHours = els.expireInput.value.trim();
-    const campaign = els.campaignInput.value.trim();
-    const note = els.noteInput.value.trim();
-    const riskMode = els.riskModeSelect.value || "standard";
-
-    if (!url) {
-      setResult("Enter URL", true);
-      return null;
-    }
-
-    const body = { url, riskMode };
-    if (slug) body.slug = slug;
-    if (campaign) body.campaign = campaign;
-    if (note) body.note = note;
-
-    if (expireHours) {
-      const hours = Number(expireHours);
-      if (!Number.isFinite(hours) || hours <= 0) {
-        setResult("Expire must be a positive number", true);
-        return null;
-      }
-      body.expire = Date.now() + hours * 60 * 60 * 1000;
-    }
-
-    return body;
-  }
-
-  async function createLink() {
-    const body = getCreatePayload();
-    if (!body) return;
-
-    const btn = $("createBtn");
-    btn.disabled = true;
-    btn.textContent = "Creating...";
-
-    const res = await safeFetch("/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    btn.disabled = false;
-    btn.textContent = "Create Backend2 Link";
-
-    if (!res.ok) {
-      if (res.status === 402) {
-        setResult(res.data?.message || "Plan limit reached", true);
-        return;
-      }
-      setResult(res.data?.message || "Failed to create link", true);
-      return;
-    }
-
-    setResult(`Link created via ${res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary"}: ${ensureAbsoluteUrl(res.data?.shortLink || res.data?.link || "", PUBLIC_BASE) || "Success"}`, false);
-    els.urlInput.value = "";
-    els.slugInput.value = "";
-    els.expireInput.value = "";
-    els.campaignInput.value = "";
-    els.noteInput.value = "";
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
-
-  async function bulkCreate() {
-    const count = Number(els.bulkCountInput.value || 0);
-    const body = getCreatePayload();
-    if (!body) return;
-
-    if (!Number.isFinite(count) || count <= 0) {
-      setResult("Invalid bulk count", true);
-      return;
-    }
-
-    const btn = $("bulkCreateBtn");
-    btn.disabled = true;
-    btn.textContent = "Creating...";
-
-    let success = 0;
-
-    for (let i = 0; i < count; i++) {
-      const payload = { ...body };
-      if (!payload.slug) delete payload.slug;
-
-      const res = await safeFetch("/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        setResult(`Stopped at ${success}/${count}. ${res.data?.message || "Create failed"}`, true);
-        break;
+        return body;
       }
 
-      success++;
-      setResult(`Bulk creating links... ${success}/${count}`, false);
-    }
+      async function createLink() {
+        const body = getCreatePayload();
+        if (!body) return;
 
-    btn.disabled = false;
-    btn.textContent = "Bulk Create";
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
+        const btn = $("createBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating...";
 
-  async function deleteLink(slug) {
-    if (!confirm(`Delete ${slug}?`)) return;
+        const res = await safeFetch("/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
 
-    const res = await safeFetch("/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug })
-    });
+        btn.disabled = false;
+        btn.textContent = "Create Backend2 Link";
 
-    if (!res.ok) {
-      showToast(res.data?.message || "Delete failed");
-      return;
-    }
+        if (!res.ok) {
+          if (res.status === 402) {
+            setResult(res.data?.message || "Plan limit reached", true);
+            return;
+          }
+          setResult(res.data?.message || "Failed to create link", true);
+          return;
+        }
 
-    selectedLinks.delete(slug);
-    showToast("Deleted");
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
+        setResult(
+          `Link created via ${
+            res.backend === "legacy" ? "Legacy AWS" : "Backend2 Primary"
+          }: ${
+            ensureAbsoluteUrl(
+              res.data?.shortLink || res.data?.link || "",
+              PUBLIC_BASE
+            ) || "Success"
+          }`,
+          false
+        );
+        els.urlInput.value = "";
+        els.slugInput.value = "";
+        els.expireInput.value = "";
+        els.campaignInput.value = "";
+        els.noteInput.value = "";
+        await Promise.all([loadLinks(false), loadMe(false)]);
+      }
 
-  async function bulkDeleteSelected() {
-    const items = [...selectedLinks];
-    if (!items.length) return showToast("No selected items");
-    if (!confirm(`Delete ${items.length} selected links?`)) return;
+      async function bulkCreate() {
+        const count = Number(els.bulkCountInput.value || 0);
+        const body = getCreatePayload();
+        if (!body) return;
 
-    for (const slug of items) {
-      await deleteLink(slug);
-    }
+        if (!Number.isFinite(count) || count <= 0) {
+          setResult("Invalid bulk count", true);
+          return;
+        }
 
-    selectedLinks.clear();
-    renderTable();
-  }
+        const btn = $("bulkCreateBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating...";
 
-  async function copyLink(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast("Copied!");
-    } catch {
-      showToast("Copy failed");
-    }
-  }
+        let success = 0;
 
-  async function bulkCopySelected() {
-    const items = [...selectedLinks].map(slug => {
-      const item = linksStore.find(x => x.slug === slug);
-      return ensureAbsoluteUrl(item?.publicLink || buildPublicLink(slug), PUBLIC_BASE);
-    });
+        for (let i = 0; i < count; i++) {
+          const payload = { ...body };
+          if (!payload.slug) delete payload.slug;
 
-    if (!items.length) return showToast("No selected items");
-    await copyLink(items.join("\n"));
-  }
+          const res = await safeFetch("/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-  function openLink(link) {
-    const safe = ensureAbsoluteUrl(link, PUBLIC_BASE);
-    if (!safe) {
-      showToast("Invalid link");
-      return;
-    }
-    window.open(safe, "_blank", "noopener,noreferrer");
-  }
+          if (!res.ok) {
+            setResult(
+              `Stopped at ${success}/${count}. ${
+                res.data?.message || "Create failed"
+              }`,
+              true
+            );
+            break;
+          }
 
-  async function getGeo(ip) {
-    if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
-    try {
-      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-      const data = await res.json();
-      return {
-        country_name: data.country_name || "Unknown",
-        latitude: data.latitude || 20,
-        longitude: data.longitude || 0
-      };
-    } catch {
-      return { country_name: "Error", latitude: 20, longitude: 0 };
-    }
-  }
+          success++;
+          setResult(`Bulk creating links... ${success}/${count}`, false);
+        }
 
-  function buildStatsSummary(history) {
-    const total = history.length;
-    const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
-    const bots = history.filter(x => x.bot).length;
-    const vpns = history.filter(x => x.vpn).length;
-    const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
+        btn.disabled = false;
+        btn.textContent = "Bulk Create";
+        await Promise.all([loadLinks(false), loadMe(false)]);
+      }
 
-    return `
+      async function deleteLink(slug) {
+        if (!confirm(`Delete ${slug}?`)) return;
+
+        const res = await safeFetch("/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug }),
+        });
+
+        if (!res.ok) {
+          showToast(res.data?.message || "Delete failed");
+          return;
+        }
+
+        selectedLinks.delete(slug);
+        showToast("Deleted");
+        await Promise.all([loadLinks(false), loadMe(false)]);
+      }
+
+      async function bulkDeleteSelected() {
+        const items = [...selectedLinks];
+        if (!items.length) return showToast("No selected items");
+        if (!confirm(`Delete ${items.length} selected links?`)) return;
+
+        for (const slug of items) {
+          await deleteLink(slug);
+        }
+
+        selectedLinks.clear();
+        renderTable();
+      }
+
+      async function copyLink(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Copied!");
+        } catch {
+          showToast("Copy failed");
+        }
+      }
+
+      async function bulkCopySelected() {
+        const items = [...selectedLinks].map((slug) => {
+          const item = linksStore.find((x) => x.slug === slug);
+          return ensureAbsoluteUrl(
+            item?.publicLink || buildPublicLink(slug),
+            PUBLIC_BASE
+          );
+        });
+
+        if (!items.length) return showToast("No selected items");
+        await copyLink(items.join("\n"));
+      }
+
+      function openLink(link) {
+        const safe = ensureAbsoluteUrl(link, PUBLIC_BASE);
+        if (!safe) {
+          showToast("Invalid link");
+          return;
+        }
+        window.open(safe, "_blank", "noopener,noreferrer");
+      }
+
+      function getQrFilename(slug = "link") {
+        const safeSlug = String(slug || "link").replace(/[^a-z0-9-_]+/gi, "-");
+        return `${safeSlug || "link"}-qr.png`;
+      }
+
+      async function renderQrToCanvas(link, canvas) {
+        return QRCode.toCanvas(canvas, link, {
+          width: 260,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#ffffff",
+          },
+        });
+      }
+
+      async function showQR(link, slug = "") {
+        const safeLink = ensureAbsoluteUrl(link, PUBLIC_BASE);
+        if (!safeLink) return showToast("Invalid link");
+
+        currentQrLink = safeLink;
+        currentQrSlug = slug || "link";
+
+        els.qrLink.textContent = safeLink;
+        els.qrMetaDetails.innerHTML = `
+      <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
+      <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
+        safeLink
+      )}</div>
+      <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
+    `;
+
+        openModal(els.qrModal);
+
+        try {
+          await renderQrToCanvas(safeLink, els.qrCanvas);
+        } catch {
+          showToast("QR generation failed");
+        }
+      }
+
+      function downloadCurrentQR() {
+        if (!els.qrCanvas) return;
+        const link = document.createElement("a");
+        link.download = getQrFilename(currentQrSlug);
+        link.href = els.qrCanvas.toDataURL("image/png");
+        link.click();
+      }
+
+      async function showBulkQrSelected() {
+        const items = [...selectedLinks]
+          .map((slug) => linksStore.find((x) => x.slug === slug))
+          .filter(Boolean);
+
+        if (!items.length) {
+          showToast("No selected items");
+          return;
+        }
+
+        els.bulkQrList.innerHTML = items
+          .map(
+            (item, index) => `
+      <div class="qr-bulk-item">
+        <div>
+          <div><b>${escapeHtml(item.slug || "")}</b></div>
+          <div class="muted tiny">${escapeHtml(item.publicLink || "")}</div>
+        </div>
+        <div class="row-actions">
+          <canvas id="bulkQrCanvas-${index}" width="90" height="90" style="background:#fff;border-radius:10px;padding:4px;"></canvas>
+          <button class="purple-btn" type="button" data-download-bulk-qr="${index}" data-slug="${escapeHtml(
+              item.slug || "link"
+            )}">Download</button>
+        </div>
+      </div>
+    `
+          )
+          .join("");
+
+        openModal(els.bulkQrModal);
+
+        for (let i = 0; i < items.length; i++) {
+          const canvas = document.getElementById(`bulkQrCanvas-${i}`);
+          if (!canvas) continue;
+          try {
+            await QRCode.toCanvas(canvas, items[i].publicLink, {
+              width: 90,
+              margin: 1,
+              color: { dark: "#000000", light: "#ffffff" },
+            });
+          } catch {}
+        }
+
+        document.querySelectorAll("[data-download-bulk-qr]").forEach((btn) => {
+          btn.onclick = () => {
+            const idx = Number(btn.dataset.downloadBulkQr || 0);
+            const slug = btn.dataset.slug || "link";
+            const canvas = document.getElementById(`bulkQrCanvas-${idx}`);
+            if (!canvas) return;
+            const a = document.createElement("a");
+            a.download = getQrFilename(slug);
+            a.href = canvas.toDataURL("image/png");
+            a.click();
+          };
+        });
+      }
+
+      async function getGeo(ip) {
+        if (!ip || ip === "unknown")
+          return { country_name: "Unknown", latitude: 20, longitude: 0 };
+        try {
+          const res = await fetch(
+            `https://ipapi.co/${encodeURIComponent(ip)}/json/`
+          );
+          const data = await res.json();
+          return {
+            country_name: data.country_name || "Unknown",
+            latitude: data.latitude || 20,
+            longitude: data.longitude || 0,
+          };
+        } catch {
+          return { country_name: "Error", latitude: 20, longitude: 0 };
+        }
+      }
+
+      function buildStatsSummary(history) {
+        const total = history.length;
+        const uniqueIps = new Set(history.map((x) => x.ip || "unknown")).size;
+        const bots = history.filter((x) => x.bot).length;
+        const vpns = history.filter((x) => x.vpn).length;
+        const maxRisk = history.reduce(
+          (m, x) => Math.max(m, Number(x.risk || 0)),
+          0
+        );
+
+        return `
       <div class="stats-kpis">
         <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value">${total}</div></div>
         <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value">${uniqueIps}</div></div>
@@ -1526,43 +2143,54 @@
         <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value">${maxRisk}</div></div>
       </div>
     `;
-  }
+      }
 
-  async function showHistory(slug) {
-    openModal(els.statsModal);
-    els.statsContent.innerHTML = `<div class="muted">Loading stats...</div>`;
+      async function showHistory(slug) {
+        openModal(els.statsModal);
+        els.statsContent.innerHTML = `<div class="muted">Loading stats...</div>`;
 
-    const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
-    let history = Array.isArray(res.data?.history) ? res.data.history : [];
-    const link = linksStore.find(x => x.slug === slug);
+        const res = await safeFetch(
+          `/history?slug=${encodeURIComponent(slug)}`,
+          { method: "GET" }
+        );
+        let history = Array.isArray(res.data?.history) ? res.data.history : [];
+        const link = linksStore.find((x) => x.slug === slug);
 
-    if (!history.length && link && Number(link.clicks || 0) > 0) {
-      history = Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-        ip: "unknown",
-        time: Date.now() - (i * 30000),
-        risk: Number(link.maxRisk || 0),
-        vpn: false,
-        bot: false
-      }));
-    }
+        if (!history.length && link && Number(link.clicks || 0) > 0) {
+          history = Array.from({ length: Number(link.clicks || 0) }).map(
+            (_, i) => ({
+              ip: "unknown",
+              time: Date.now() - i * 30000,
+              risk: Number(link.maxRisk || 0),
+              vpn: false,
+              bot: false,
+            })
+          );
+        }
 
-    if (!history.length) {
-      els.statsContent.innerHTML = `<div class="muted">No clicks recorded for ${escapeHtml(slug)}.</div>`;
-      return;
-    }
+        if (!history.length) {
+          els.statsContent.innerHTML = `<div class="muted">No clicks recorded for ${escapeHtml(
+            slug
+          )}.</div>`;
+          return;
+        }
 
-    history = history.map(h => ({
-      ip: h.ip || "unknown",
-      time: Number(h.time || Date.now()),
-      risk: Number(h.risk || 0),
-      vpn: !!h.vpn,
-      bot: !!h.bot
-    })).sort((a, b) => a.time - b.time);
+        history = history
+          .map((h) => ({
+            ip: h.ip || "unknown",
+            time: Number(h.time || Date.now()),
+            risk: Number(h.risk || 0),
+            vpn: !!h.vpn,
+            bot: !!h.bot,
+          }))
+          .sort((a, b) => a.time - b.time);
 
-    els.statsContent.innerHTML = `
+        els.statsContent.innerHTML = `
       <div class="surface">
         <b>${escapeHtml(slug)}</b>
-        <div class="muted" style="margin-top:6px;">${escapeHtml(link?.publicLink || buildPublicLink(slug))}</div>
+        <div class="muted" style="margin-top:6px;">${escapeHtml(
+          link?.publicLink || buildPublicLink(slug)
+        )}</div>
       </div>
 
       ${buildStatsSummary(history)}
@@ -1578,56 +2206,74 @@
       </div>
     `;
 
-    const labels = history.map(x => new Date(x.time).toLocaleTimeString());
-    const clickData = history.map((_, i) => i + 1);
-    const riskData = history.map(x => Number(x.risk || 0));
+        const labels = history.map((x) =>
+          new Date(x.time).toLocaleTimeString()
+        );
+        const clickData = history.map((_, i) => i + 1);
+        const riskData = history.map((x) => Number(x.risk || 0));
 
-    if (statsChart) statsChart.destroy();
-    statsChart = new Chart($("statsChartCanvas"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          { label: "Clicks Timeline", data: clickData, tension: 0.35 },
-          { label: "Risk", data: riskData, tension: 0.35 }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: "#e2e8f0" } } },
-        scales: {
-          x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-          y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } }
+        if (statsChart) statsChart.destroy();
+        statsChart = new Chart($("statsChartCanvas"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "Clicks Timeline", data: clickData, tension: 0.35 },
+              { label: "Risk", data: riskData, tension: 0.35 },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: "#e2e8f0" } } },
+            scales: {
+              x: {
+                ticks: { color: "#94a3b8" },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#94a3b8" },
+                grid: { color: "rgba(148,163,184,0.12)" },
+              },
+            },
+          },
+        });
+
+        if (statsMap) {
+          statsMap.remove();
+          statsMap = null;
+        }
+        statsMap = L.map($("statsMapBox")).setView([20, 0], 2);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(statsMap);
+
+        let offset = 0;
+        for (const h of history) {
+          const geo = await getGeo(h.ip);
+          let lat = Number(geo.latitude || Math.random() * 140 - 70);
+          let lng = Number(geo.longitude || Math.random() * 360 - 180);
+          lat += offset * 0.22;
+          lng += offset * 0.22;
+          offset++;
+          L.circle([lat, lng], {
+            radius: 42000,
+            color: h.risk > 70 ? "#ef4444" : "#22c55e",
+          })
+            .addTo(statsMap)
+            .bindPopup(
+              `<b>${escapeHtml(
+                geo.country_name || "Unknown"
+              )}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(
+                h.risk || 0
+              )}`
+            );
         }
       }
-    });
 
-    if (statsMap) { statsMap.remove(); statsMap = null; }
-    statsMap = L.map($("statsMapBox")).setView([20, 0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(statsMap);
-
-    let offset = 0;
-    for (const h of history) {
-      const geo = await getGeo(h.ip);
-      let lat = Number(geo.latitude || (Math.random() * 140 - 70));
-      let lng = Number(geo.longitude || (Math.random() * 360 - 180));
-      lat += offset * 0.22;
-      lng += offset * 0.22;
-      offset++;
-      L.circle([lat, lng], {
-        radius: 42000,
-        color: h.risk > 70 ? "#ef4444" : "#22c55e"
-      }).addTo(statsMap).bindPopup(
-        `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-      );
-    }
-  }
-
-  async function showGeo(slug) {
-    openModal(els.geoModal);
-    els.geoContent.innerHTML = `
+      async function showGeo(slug) {
+        openModal(els.geoModal);
+        els.geoContent.innerHTML = `
       <div class="surface">
         <b>${escapeHtml(slug)}</b>
       </div>
@@ -1635,249 +2281,307 @@
       <div id="geoMapBox" class="map-box"></div>
     `;
 
-    const res = await safeFetch(`/history?slug=${encodeURIComponent(slug)}`, { method: "GET" });
-    const history = Array.isArray(res.data?.history) ? res.data.history : [];
+        const res = await safeFetch(
+          `/history?slug=${encodeURIComponent(slug)}`,
+          { method: "GET" }
+        );
+        const history = Array.isArray(res.data?.history)
+          ? res.data.history
+          : [];
 
-    if (geoMap) { geoMap.remove(); geoMap = null; }
-    geoMap = L.map($("geoMapBox")).setView([20, 0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(geoMap);
+        if (geoMap) {
+          geoMap.remove();
+          geoMap = null;
+        }
+        geoMap = L.map($("geoMapBox")).setView([20, 0], 2);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(geoMap);
 
-    if (!history.length) {
-      L.marker([20, 0]).addTo(geoMap).bindPopup("No data").openPopup();
-      return;
-    }
+        if (!history.length) {
+          L.marker([20, 0]).addTo(geoMap).bindPopup("No data").openPopup();
+          return;
+        }
 
-    let offset = 0;
-    for (const h of history) {
-      const geo = await getGeo(h.ip);
-      let lat = Number(geo.latitude || 20);
-      let lng = Number(geo.longitude || 0);
-      lat += offset * 0.24;
-      lng += offset * 0.24;
-      offset++;
-      L.circle([lat, lng], {
-        radius: 45000,
-        color: Number(h.risk || 0) > 70 ? "#ef4444" : "#22c55e"
-      }).addTo(geoMap).bindPopup(
-        `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
-      );
-    }
-  }
+        let offset = 0;
+        for (const h of history) {
+          const geo = await getGeo(h.ip);
+          let lat = Number(geo.latitude || 20);
+          let lng = Number(geo.longitude || 0);
+          lat += offset * 0.24;
+          lng += offset * 0.24;
+          offset++;
+          L.circle([lat, lng], {
+            radius: 45000,
+            color: Number(h.risk || 0) > 70 ? "#ef4444" : "#22c55e",
+          })
+            .addTo(geoMap)
+            .bindPopup(
+              `<b>${escapeHtml(
+                geo.country_name || "Unknown"
+              )}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(
+                h.risk || 0
+              )}`
+            );
+        }
+      }
 
-  function renderSecurityCenter() {
-    const risky = [...linksStore]
-      .filter(x => Number(x.maxRisk || 0) > 60)
-      .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
+      function renderSecurityCenter() {
+        const risky = [...linksStore]
+          .filter((x) => Number(x.maxRisk || 0) > 60)
+          .sort((a, b) => Number(b.maxRisk || 0) - Number(a.maxRisk || 0));
 
-    els.securityContent.innerHTML = `
+        els.securityContent.innerHTML = `
       <div class="surface">
         <div><b>Security overview</b></div>
-        <div class="muted" style="margin-top:8px;">${risky.length} links currently show elevated risk markers.</div>
+        <div class="muted" style="margin-top:8px;">${
+          risky.length
+        } links currently show elevated risk markers.</div>
       </div>
       <div style="margin-top:12px;">
         ${
           risky.length
-            ? risky.slice(0, 10).map(item => `
+            ? risky
+                .slice(0, 10)
+                .map(
+                  (item) => `
               <div class="surface" style="margin-bottom:10px;">
                 <div><b>${escapeHtml(item.slug)}</b></div>
-                <div class="muted">Clicks: ${Number(item.clicks || 0)} • Max risk: ${Number(item.maxRisk || 0)}</div>
+                <div class="muted">Clicks: ${Number(
+                  item.clicks || 0
+                )} • Max risk: ${Number(item.maxRisk || 0)}</div>
                 <div class="row-actions" style="margin-top:8px;">
-                  <button type="button" onclick="showHistory('${escapeForJs(item.slug)}')">Open Stats</button>
-                  <button class="delete" type="button" onclick="deleteLink('${escapeForJs(item.slug)}')">Delete</button>
+                  <button type="button" onclick="showHistory('${escapeForJs(
+                    item.slug
+                  )}')">Open Stats</button>
+                  <button class="purple-btn" type="button" onclick="showQR('${escapeForJs(
+                    item.publicLink
+                  )}','${escapeForJs(item.slug)}')">QR</button>
+                  <button class="delete" type="button" onclick="deleteLink('${escapeForJs(
+                    item.slug
+                  )}')">Delete</button>
                 </div>
               </div>
-            `).join("")
+            `
+                )
+                .join("")
             : `<div class="muted" style="margin-top:12px;">No elevated-risk links found.</div>`
         }
       </div>
     `;
-  }
-
-  async function processFile(file) {
-    if (!file) return setResult("Choose a CSV file first", true);
-
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (!lines.length) return setResult("CSV is empty", true);
-
-    let urls = [];
-    if (lines[0].toLowerCase().includes("url")) {
-      const header = lines[0].split(",").map(h => h.trim().toLowerCase());
-      const urlIndex = header.indexOf("url");
-      if (urlIndex >= 0) {
-        urls = lines.slice(1).map(line => (line.split(",")[urlIndex] || "").trim()).filter(Boolean);
-      }
-    } else {
-      urls = lines;
-    }
-
-    if (!urls.length) return setResult("No URLs found in file", true);
-
-    const btn = $("uploadCsvBtn");
-    btn.disabled = true;
-    btn.textContent = "Uploading...";
-
-    let okCount = 0;
-    for (const url of urls) {
-      const res = await safeFetch("/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, riskMode: "standard" })
-      });
-
-      if (!res.ok) {
-        setResult(`Stopped at ${okCount}/${urls.length}. ${res.data?.message || "Create failed"}`, true);
-        break;
       }
 
-      okCount++;
-      setResult(`Uploading links... ${okCount}/${urls.length}`, false);
-    }
+      async function processFile(file) {
+        if (!file) return setResult("Choose a CSV file first", true);
 
-    btn.disabled = false;
-    btn.textContent = "Upload CSV";
-    els.csvFileInput.value = "";
-    await Promise.all([loadLinks(false), loadMe(false)]);
-  }
+        const text = await file.text();
+        const lines = text
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+        if (!lines.length) return setResult("CSV is empty", true);
 
-  function wireDropZone() {
-    const zone = els.dropZone;
+        let urls = [];
+        if (lines[0].toLowerCase().includes("url")) {
+          const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
+          const urlIndex = header.indexOf("url");
+          if (urlIndex >= 0) {
+            urls = lines
+              .slice(1)
+              .map((line) => (line.split(",")[urlIndex] || "").trim())
+              .filter(Boolean);
+          }
+        } else {
+          urls = lines;
+        }
 
-    ["dragenter", "dragover"].forEach(evt => {
-      zone.addEventListener(evt, e => {
-        e.preventDefault();
-        zone.classList.add("dragover");
-      });
-    });
+        if (!urls.length) return setResult("No URLs found in file", true);
 
-    ["dragleave", "dragend", "drop"].forEach(evt => {
-      zone.addEventListener(evt, e => {
-        e.preventDefault();
-        zone.classList.remove("dragover");
-      });
-    });
+        const btn = $("uploadCsvBtn");
+        btn.disabled = true;
+        btn.textContent = "Uploading...";
 
-    zone.addEventListener("drop", async e => {
-      const file = e.dataTransfer?.files?.[0];
-      if (file) await processFile(file);
-    });
-  }
+        let okCount = 0;
+        for (const url of urls) {
+          const res = await safeFetch("/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url, riskMode: "standard" }),
+          });
 
-  function bindTableActions() {
-    els.tableBody.addEventListener("click", e => {
-      const btn = e.target.closest(".action-btn");
-      if (!btn) return;
-      const action = btn.dataset.action;
-      if (action === "copy") return copyLink(btn.dataset.link || "");
-      if (action === "open") return openLink(btn.dataset.link || "");
-      if (action === "stats") return showHistory(btn.dataset.slug || "");
-      if (action === "geo") return showGeo(btn.dataset.slug || "");
-      if (action === "delete") return deleteLink(btn.dataset.slug || "");
-    });
-  }
+          if (!res.ok) {
+            setResult(
+              `Stopped at ${okCount}/${urls.length}. ${
+                res.data?.message || "Create failed"
+              }`,
+              true
+            );
+            break;
+          }
 
-  function bindUI() {
-    $("refreshBtn").addEventListener("click", async () => {
-      await Promise.all([loadMe(true), loadLinks(true), loadHealth()]);
-    });
+          okCount++;
+          setResult(`Uploading links... ${okCount}/${urls.length}`, false);
+        }
 
-    $("createBtn").addEventListener("click", createLink);
-    $("bulkCreateBtn").addEventListener("click", bulkCreate);
-    $("uploadCsvBtn").addEventListener("click", () => processFile(els.csvFileInput.files?.[0]));
+        btn.disabled = false;
+        btn.textContent = "Upload CSV";
+        els.csvFileInput.value = "";
+        await Promise.all([loadLinks(false), loadMe(false)]);
+      }
 
-    $("bulkCopyBtn").addEventListener("click", bulkCopySelected);
-    $("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
-    $("refreshVisibleBtn").addEventListener("click", () => {
-      renderTable();
-      drawMainChart();
-    });
+      function wireDropZone() {
+        const zone = els.dropZone;
 
-    $("supportBtn").addEventListener("click", openSupportPanel);
-    $("closePanelBtn").addEventListener("click", closePanel);
+        ["dragenter", "dragover"].forEach((evt) => {
+          zone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            zone.classList.add("dragover");
+          });
+        });
 
-    $("openSecurityBtn").addEventListener("click", () => {
-      renderSecurityCenter();
-      openModal(els.securityModal);
-    });
-    $("closeSecurityModalBtn").addEventListener("click", closeSecurityModal);
+        ["dragleave", "dragend", "drop"].forEach((evt) => {
+          zone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            zone.classList.remove("dragover");
+          });
+        });
 
-    $("closeStatsModalBtn").addEventListener("click", closeStatsModal);
-    $("closeGeoModalBtn").addEventListener("click", closeGeoModal);
+        zone.addEventListener("drop", async (e) => {
+          const file = e.dataTransfer?.files?.[0];
+          if (file) await processFile(file);
+        });
+      }
 
-    els.overlay.addEventListener("click", () => {
-      closeStatsModal();
-      closeGeoModal();
-      closeSecurityModal();
-    });
+      function bindTableActions() {
+        els.tableBody.addEventListener("click", (e) => {
+          const btn = e.target.closest(".action-btn");
+          if (!btn) return;
+          const action = btn.dataset.action;
+          if (action === "copy") return copyLink(btn.dataset.link || "");
+          if (action === "open") return openLink(btn.dataset.link || "");
+          if (action === "qr")
+            return showQR(btn.dataset.link || "", btn.dataset.slug || "");
+          if (action === "stats") return showHistory(btn.dataset.slug || "");
+          if (action === "geo") return showGeo(btn.dataset.slug || "");
+          if (action === "delete") return deleteLink(btn.dataset.slug || "");
+        });
+      }
 
-    $("verifySessionBtn").addEventListener("click", verifySession);
+      function bindUI() {
+        $("refreshBtn").addEventListener("click", async () => {
+          await Promise.all([loadMe(true), loadLinks(true), loadHealth()]);
+        });
 
-    $("logoutBtn").addEventListener("click", logout);
-    $("backToDashboardBtn").addEventListener("click", () => {
-      window.location.href = "dashboard.html";
-    });
-    $("goLandingBtn").addEventListener("click", () => {
-      window.location.href = "landing.html";
-    });
-    $("goDomainsBtn").addEventListener("click", () => {
-      window.location.href = "domain-manager.html";
-    });
+        $("createBtn").addEventListener("click", createLink);
+        $("bulkCreateBtn").addEventListener("click", bulkCreate);
+        $("uploadCsvBtn").addEventListener("click", () =>
+          processFile(els.csvFileInput.files?.[0])
+        );
 
-    els.searchInput.addEventListener("input", () => {
-      renderTable();
-      drawMainChart();
-    });
-    els.statusFilter.addEventListener("change", () => {
-      renderTable();
-      drawMainChart();
-    });
-    els.sortFilter.addEventListener("change", () => {
-      renderTable();
-      drawMainChart();
-    });
+        $("bulkCopyBtn").addEventListener("click", bulkCopySelected);
+        $("bulkQrBtn").addEventListener("click", showBulkQrSelected);
+        $("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
+        $("refreshVisibleBtn").addEventListener("click", () => {
+          renderTable();
+          drawMainChart();
+        });
 
-    els.selectAllLinks.addEventListener("change", () => {
-      document.querySelectorAll(".row-select").forEach(box => {
-        box.checked = els.selectAllLinks.checked;
-        const key = box.dataset.key;
-        if (box.checked) selectedLinks.add(key);
-        else selectedLinks.delete(key);
-      });
-      syncSelectAllState();
-    });
-  }
+        $("supportBtn").addEventListener("click", openSupportPanel);
+        $("closePanelBtn").addEventListener("click", closePanel);
 
-  async function init() {
-    if (!ensureAuth()) return;
+        $("openSecurityBtn").addEventListener("click", () => {
+          renderSecurityCenter();
+          openModal(els.securityModal);
+        });
+        $("closeSecurityModalBtn").addEventListener(
+          "click",
+          closeSecurityModal
+        );
 
-    renderNotifications();
-    wireDropZone();
-    bindTableActions();
-    bindUI();
+        $("closeStatsModalBtn").addEventListener("click", closeStatsModal);
+        $("closeGeoModalBtn").addEventListener("click", closeGeoModal);
+        $("closeQrModalBtn").addEventListener("click", closeQrModal);
+        $("closeBulkQrModalBtn").addEventListener("click", closeBulkQrModal);
 
-    await Promise.all([
-      loadMe(false),
-      loadLinks(true),
-      loadHealth()
-    ]);
+        $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
+        $("copyQrLinkBtn").addEventListener("click", () =>
+          copyLink(currentQrLink)
+        );
+        $("openQrLinkBtn").addEventListener("click", () =>
+          openLink(currentQrLink)
+        );
 
-    clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => {
-      if (document.hidden) return;
-      loadMe(false);
-      loadLinks(false);
-      loadHealth();
-    }, 15000);
-  }
+        els.overlay.addEventListener("click", () => {
+          closeStatsModal();
+          closeGeoModal();
+          closeSecurityModal();
+          closeQrModal();
+          closeBulkQrModal();
+        });
 
-  window.copyLink = copyLink;
-  window.showHistory = showHistory;
-  window.showGeo = showGeo;
-  window.deleteLink = deleteLink;
+        $("verifySessionBtn").addEventListener("click", verifySession);
 
-  init();
-  </script>
-</body>
+        $("logoutBtn").addEventListener("click", logout);
+        $("backToDashboardBtn").addEventListener("click", () => {
+          window.location.href = "dashboard.html";
+        });
+        $("goLandingBtn").addEventListener("click", () => {
+          window.location.href = "landing.html";
+        });
+        $("goDomainsBtn").addEventListener("click", () => {
+          window.location.href = "domain-manager.html";
+        });
+
+        els.searchInput.addEventListener("input", () => {
+          renderTable();
+          drawMainChart();
+        });
+        els.statusFilter.addEventListener("change", () => {
+          renderTable();
+          drawMainChart();
+        });
+        els.sortFilter.addEventListener("change", () => {
+          renderTable();
+          drawMainChart();
+        });
+
+        els.selectAllLinks.addEventListener("change", () => {
+          document.querySelectorAll(".row-select").forEach((box) => {
+            box.checked = els.selectAllLinks.checked;
+            const key = box.dataset.key;
+            if (box.checked) selectedLinks.add(key);
+            else selectedLinks.delete(key);
+          });
+          syncSelectAllState();
+        });
+      }
+
+      async function init() {
+        if (!ensureAuth()) return;
+
+        renderNotifications();
+        wireDropZone();
+        bindTableActions();
+        bindUI();
+
+        await Promise.all([loadMe(false), loadLinks(true), loadHealth()]);
+
+        clearInterval(refreshTimer);
+        refreshTimer = setInterval(() => {
+          if (document.hidden) return;
+          loadMe(false);
+          loadLinks(false);
+          loadHealth();
+        }, 15000);
+      }
+
+      window.copyLink = copyLink;
+      window.showHistory = showHistory;
+      window.showGeo = showGeo;
+      window.deleteLink = deleteLink;
+      window.showQR = showQR;
+
+      init();
+    </script>
+  </body>
 </html>
