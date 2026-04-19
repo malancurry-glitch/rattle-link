@@ -25,26 +25,16 @@
         --purple: #a855f7;
         --border: rgba(0, 255, 255, 0.18);
         --radius: 18px;
-        --shadow: 0 0 14px rgba(0, 255, 255, 0.1),
-          inset 0 0 18px rgba(0, 255, 255, 0.03);
+        --shadow: 0 0 14px rgba(0, 255, 255, 0.1), inset 0 0 18px rgba(0, 255, 255, 0.03);
       }
 
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
 
       body {
         margin: 0;
         font-family: Inter, Arial, sans-serif;
-        background: radial-gradient(
-          circle at top,
-          #0f172a 0%,
-          var(--bg) 35%,
-          var(--bg2) 100%
-        );
+        background: radial-gradient(circle at top, #0f172a 0%, var(--bg) 35%, var(--bg2) 100%);
         color: var(--text);
         min-height: 100vh;
         position: relative;
@@ -54,11 +44,7 @@
         content: "";
         position: fixed;
         inset: 0;
-        background-image: linear-gradient(
-            rgba(0, 255, 255, 0.04) 1px,
-            transparent 1px
-          ),
-          linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
+        background-image: linear-gradient(rgba(0, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
         background-size: 38px 38px;
         pointer-events: none;
         z-index: 0;
@@ -127,31 +113,11 @@
         color: var(--cyan);
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px;
-      }
-      .grid-2 {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-      }
-      .grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-      }
-      .stats-kpis {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
-      }
-      .stats-layout {
-        display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
-        gap: 14px;
-      }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+      .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .stats-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+      .stats-layout { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; }
 
       .stat-card,
       .mini-box,
@@ -181,9 +147,7 @@
         line-height: 1.6;
       }
 
-      .surface {
-        background: rgba(15, 23, 42, 0.32);
-      }
+      .surface { background: rgba(15, 23, 42, 0.32); }
 
       input,
       select {
@@ -235,30 +199,12 @@
         box-shadow: none;
       }
 
-      .ghost-btn {
-        color: #cbd5e1;
-        border-color: #475569;
-      }
-      .blue-btn {
-        color: #93c5fd;
-        border-color: #3b82f6;
-      }
-      .green-btn {
-        color: #86efac;
-        border-color: #22c55e;
-      }
-      .yellow-btn {
-        color: #fde68a;
-        border-color: #f59e0b;
-      }
-      .purple-btn {
-        color: #e9d5ff;
-        border-color: #a855f7;
-      }
-      .danger-btn {
-        color: #fecaca;
-        border-color: #ef4444;
-      }
+      .ghost-btn { color: #cbd5e1; border-color: #475569; }
+      .blue-btn { color: #93c5fd; border-color: #3b82f6; }
+      .green-btn { color: #86efac; border-color: #22c55e; }
+      .yellow-btn { color: #fde68a; border-color: #f59e0b; }
+      .purple-btn { color: #e9d5ff; border-color: #a855f7; }
+      .danger-btn { color: #fecaca; border-color: #ef4444; }
 
       .badge,
       .pill {
@@ -270,23 +216,12 @@
         white-space: nowrap;
       }
 
-      .live {
-        color: var(--green);
-      }
-      .warn {
-        color: var(--yellow);
-      }
-      .danger {
-        color: var(--red);
-      }
-      .info {
-        color: var(--blue);
-      }
+      .live { color: var(--green); }
+      .warn { color: var(--yellow); }
+      .danger { color: var(--red); }
+      .info { color: var(--blue); }
 
-      .table-wrap {
-        width: 100%;
-        overflow: auto;
-      }
+      .table-wrap { width: 100%; overflow: auto; }
 
       table {
         width: 100%;
@@ -311,9 +246,7 @@
         z-index: 1;
       }
 
-      tr:hover {
-        background: rgba(2, 6, 23, 0.65);
-      }
+      tr:hover { background: rgba(2, 6, 23, 0.65); }
 
       .map-box {
         height: 380px;
@@ -336,12 +269,8 @@
         white-space: pre-wrap;
       }
 
-      .success {
-        color: var(--green);
-      }
-      .error {
-        color: var(--red);
-      }
+      .success { color: var(--green); }
+      .error { color: var(--red); }
 
       .toast {
         position: fixed;
@@ -368,15 +297,9 @@
       }
 
       @media (max-width: 760px) {
-        .container {
-          padding: 14px;
-        }
-        table {
-          min-width: 780px;
-        }
-        .top-actions {
-          width: 100%;
-        }
+        .container { padding: 14px; }
+        table { min-width: 780px; }
+        .top-actions { width: 100%; }
       }
     </style>
   </head>
@@ -386,22 +309,15 @@
         <div>
           <h1>📊 Analytics Center</h1>
           <div class="sub">
-            View click history, risk activity, geo locations, top IPs, and link
-            performance across Backend2 and AWS.
+            View click history, risk activity, geo locations, top IPs, and link performance across Backend2 and AWS.
           </div>
         </div>
 
         <div class="top-actions">
-          <button class="ghost-btn" type="button" onclick="goDashboard()">
-            ← Dashboard
-          </button>
+          <button class="ghost-btn" type="button" onclick="goDashboard()">← Dashboard</button>
           <button id="refreshBtn" type="button">Refresh</button>
-          <button id="openSelectedBtn" class="blue-btn" type="button">
-            Open Link
-          </button>
-          <button id="copySelectedBtn" class="green-btn" type="button">
-            Copy Link
-          </button>
+          <button id="openSelectedBtn" class="blue-btn" type="button">Open Link</button>
+          <button id="copySelectedBtn" class="green-btn" type="button">Copy Link</button>
           <button id="exportCsvBtn" type="button">Export CSV</button>
         </div>
       </div>
@@ -415,14 +331,8 @@
               <option value="primary">Backend2 only</option>
               <option value="legacy">AWS only</option>
             </select>
-            <input
-              id="searchInput"
-              placeholder="Search slug or URL..."
-              style="max-width: 320px"
-            />
-            <button id="reloadLinksBtn" class="ghost-btn" type="button">
-              Reload Links
-            </button>
+            <input id="searchInput" placeholder="Search slug or URL..." style="max-width: 320px" />
+            <button id="reloadLinksBtn" class="ghost-btn" type="button">Reload Links</button>
           </div>
         </div>
 
@@ -442,12 +352,8 @@
           <div>
             <div class="muted">Quick action</div>
             <div class="row-actions" style="margin-top: 8px">
-              <button id="loadAnalyticsBtn" class="purple-btn" type="button">
-                Load Analytics
-              </button>
-              <button id="loadGeoBtn" class="yellow-btn" type="button">
-                Geo Only
-              </button>
+              <button id="loadAnalyticsBtn" class="purple-btn" type="button">Load Analytics</button>
+              <button id="loadGeoBtn" class="yellow-btn" type="button">Geo Only</button>
             </div>
           </div>
         </div>
@@ -456,41 +362,17 @@
       </div>
 
       <div class="stats-kpis">
-        <div class="stats-kpi">
-          <div class="k-label">Total Clicks</div>
-          <div class="k-value" id="kpiTotalClicks">0</div>
-        </div>
-        <div class="stats-kpi">
-          <div class="k-label">Unique IPs</div>
-          <div class="k-value" id="kpiUniqueIps">0</div>
-        </div>
-        <div class="stats-kpi">
-          <div class="k-label">Bots</div>
-          <div class="k-value" id="kpiBots">0</div>
-        </div>
-        <div class="stats-kpi">
-          <div class="k-label">VPNs</div>
-          <div class="k-value" id="kpiVpns">0</div>
-        </div>
-        <div class="stats-kpi">
-          <div class="k-label">Max Risk</div>
-          <div class="k-value" id="kpiMaxRisk">0</div>
-        </div>
+        <div class="stats-kpi"><div class="k-label">Total Clicks</div><div class="k-value" id="kpiTotalClicks">0</div></div>
+        <div class="stats-kpi"><div class="k-label">Unique IPs</div><div class="k-value" id="kpiUniqueIps">0</div></div>
+        <div class="stats-kpi"><div class="k-label">Bots</div><div class="k-value" id="kpiBots">0</div></div>
+        <div class="stats-kpi"><div class="k-label">VPNs</div><div class="k-value" id="kpiVpns">0</div></div>
+        <div class="stats-kpi"><div class="k-label">Max Risk</div><div class="k-value" id="kpiMaxRisk">0</div></div>
       </div>
 
       <div class="grid-3">
-        <div class="card stat-card">
-          <div class="num" id="kpiLast24h">0</div>
-          <div class="label">Clicks Last 24 Hours</div>
-        </div>
-        <div class="card stat-card">
-          <div class="num" id="kpiSuspicious">0</div>
-          <div class="label">Suspicious Events</div>
-        </div>
-        <div class="card stat-card">
-          <div class="num" id="kpiLastClick">-</div>
-          <div class="label">Last Click Time</div>
-        </div>
+        <div class="card stat-card"><div class="num" id="kpiLast24h">0</div><div class="label">Clicks Last 24 Hours</div></div>
+        <div class="card stat-card"><div class="num" id="kpiSuspicious">0</div><div class="label">Suspicious Events</div></div>
+        <div class="card stat-card"><div class="num" id="kpiLastClick">-</div><div class="label">Last Click Time</div></div>
       </div>
 
       <div class="stats-layout">
@@ -506,9 +388,7 @@
           <div class="card">
             <div class="section-head">
               <h3>🌍 Geo Map</h3>
-              <button id="resetMapBtn" class="ghost-btn" type="button">
-                Reset Map
-              </button>
+              <button id="resetMapBtn" class="ghost-btn" type="button">Reset Map</button>
             </div>
             <div id="mapBox" class="map-box"></div>
           </div>
@@ -517,23 +397,17 @@
         <div>
           <div class="card">
             <h3>🧠 Link Summary</h3>
-            <div id="linkSummaryBox" class="surface">
-              <div class="muted">Select a link and load analytics.</div>
-            </div>
+            <div id="linkSummaryBox" class="surface"><div class="muted">Select a link and load analytics.</div></div>
           </div>
 
           <div class="card">
             <h3>🖥 Top IP Activity</h3>
-            <div id="topIpsList" class="list-box">
-              <div class="muted">No history loaded.</div>
-            </div>
+            <div id="topIpsList" class="list-box"><div class="muted">No history loaded.</div></div>
           </div>
 
           <div class="card">
             <h3>⚠️ High Risk Events</h3>
-            <div id="riskEventsList" class="list-box">
-              <div class="muted">No risk events loaded.</div>
-            </div>
+            <div id="riskEventsList" class="list-box"><div class="muted">No risk events loaded.</div></div>
           </div>
         </div>
       </div>
@@ -568,8 +442,7 @@
 
     <script>
       const PRIMARY_API = "https://api.rattleshortapi.it.com";
-      const LEGACY_API =
-        "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
+      const LEGACY_API = "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production";
 
       const AUTH_STORAGE_KEY = "rattle_token";
       const PRIMARY_AUTH_CANDIDATES = ["/auth/me", "/me"];
@@ -579,7 +452,7 @@
         "/list": ["/list"],
         "/history": ["/history"],
         "/health": ["/health", "/"],
-        "/": ["/", "/health"],
+        "/": ["/", "/health"]
       };
 
       let linksStore = [];
@@ -620,15 +493,11 @@
         kpiMaxRisk: $("kpiMaxRisk"),
         kpiLast24h: $("kpiLast24h"),
         kpiSuspicious: $("kpiSuspicious"),
-        kpiLastClick: $("kpiLastClick"),
+        kpiLastClick: $("kpiLastClick")
       };
 
       function getToken() {
-        return (
-          localStorage.getItem(AUTH_STORAGE_KEY) ||
-          localStorage.getItem("token") ||
-          ""
-        );
+        return localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("token") || "";
       }
 
       function ensureAuth() {
@@ -652,37 +521,17 @@
         return backend === "legacy" ? "AWS" : "Backend2";
       }
 
-      function primaryAppPath(path) {
-        const p = String(path || "").startsWith("/")
-          ? String(path)
-          : `/${path}`;
-        if (p.startsWith("/app/") || p === "/app") return p;
-        return `/app${p}`;
-      }
-
       function buildPrimaryCandidates(path) {
-        const p = String(path || "").startsWith("/")
-          ? String(path)
-          : `/${path}`;
-        if (p === "/auth/me" || p === "/me")
-          return PRIMARY_AUTH_CANDIDATES.slice();
-        if (p.startsWith("/auth/"))
-          return [p, p.replace(/^\/auth/, "")].filter(Boolean);
-        return Array.from(new Set([primaryAppPath(p), p]));
+        const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+        if (p === "/auth/me" || p === "/me") return PRIMARY_AUTH_CANDIDATES.slice();
+        if (p.startsWith("/auth/")) return [p, p.replace(/^\/auth/, "")].filter(Boolean);
+        return [p];
       }
 
       function buildLegacyCandidates(path) {
-        const p = String(path || "").startsWith("/")
-          ? String(path)
-          : `/${path}`;
+        const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
         if (LEGACY_ROUTE_MAP[p]) return LEGACY_ROUTE_MAP[p].slice();
-        return Array.from(
-          new Set(
-            [p, p.replace(/^\/app/, ""), p.replace(/^\/auth/, "")].filter(
-              Boolean
-            )
-          )
-        );
+        return Array.from(new Set([p, p.replace(/^\/auth/, "")].filter(Boolean)));
       }
 
       async function safeFetchRaw(base, path, options = {}) {
@@ -690,19 +539,11 @@
           const res = await fetch(base.replace(/\/+$/, "") + path, options);
           const raw = await res.text();
           let data = {};
-          try {
-            data = raw ? JSON.parse(raw) : {};
-          } catch {
-            data = { message: raw };
-          }
+          try { data = raw ? JSON.parse(raw) : {}; }
+          catch { data = { message: raw }; }
           return { ok: res.ok, status: res.status, data, path };
         } catch (e) {
-          return {
-            ok: false,
-            status: 0,
-            data: { message: e?.message || "Failed to fetch" },
-            path,
-          };
+          return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, path };
         }
       }
 
@@ -710,55 +551,27 @@
         const headers = { ...(options.headers || {}) };
         if (backend === "legacy") headers["x-rattle-fallback"] = "legacy";
 
-        const candidates =
-          backend === "legacy"
-            ? buildLegacyCandidates(path)
-            : buildPrimaryCandidates(path);
+        const candidates = backend === "legacy" ? buildLegacyCandidates(path) : buildPrimaryCandidates(path);
         const base = apiBaseForBackend(backend);
         let first401 = null;
         let last = null;
 
         for (const candidate of candidates) {
-          const res = await safeFetchRaw(base, candidate, {
-            ...options,
-            headers,
-          });
+          const res = await safeFetchRaw(base, candidate, { ...options, headers });
           last = res;
           if (res.ok) return { ...res, backend, resolvedPath: candidate };
-          if (res.status === 401 && !first401)
-            first401 = { ...res, backend, resolvedPath: candidate };
-          if (
-            res.status === 404 ||
-            res.status === 405 ||
-            res.status === 0 ||
-            res.status >= 500
-          )
-            continue;
+          if (res.status === 401 && !first401) first401 = { ...res, backend, resolvedPath: candidate };
+          if (res.status === 404 || res.status === 405 || res.status === 0 || res.status >= 500) continue;
           return { ...res, backend, resolvedPath: candidate };
         }
 
-        return (
-          first401 || {
-            ...(last || {
-              ok: false,
-              status: 0,
-              data: { message: "Failed to fetch" },
-            }),
-            backend,
-          }
-        );
+        return first401 || { ...(last || { ok: false, status: 0, data: { message: "Failed to fetch" } }), backend };
       }
 
-      async function authorizedFetch(
-        path,
-        options = {},
-        backend,
-        autoLogout = true
-      ) {
+      async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
         const headers = { ...authHeaders(), ...(options.headers || {}) };
         const method = String(options.method || "GET").toUpperCase();
-        if (method !== "GET" && !headers["Content-Type"])
-          headers["Content-Type"] = "application/json";
+        if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
         const res = await callBackend(backend, path, { ...options, headers });
 
         if (res.status === 401 && autoLogout) {
@@ -788,10 +601,7 @@
         els.toast.textContent = message;
         els.toast.style.display = "block";
         clearTimeout(window.__toastTimer);
-        window.__toastTimer = setTimeout(
-          () => (els.toast.style.display = "none"),
-          1800
-        );
+        window.__toastTimer = setTimeout(() => (els.toast.style.display = "none"), 1800);
       }
 
       function setResult(message, isError = false) {
@@ -801,8 +611,9 @@
       }
 
       function buildPublicLink(itemOrSlug, backend) {
-        const slug =
-          typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+        const slug = typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
+        const domain = typeof itemOrSlug === "object" ? String(itemOrSlug.domain || "").trim() : "";
+        if (domain) return `https://${domain}/${slug}`;
         return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
       }
 
@@ -817,8 +628,8 @@
           expire: item.expire ? Number(item.expire) : null,
           createdAt: Number(item.createdAt || item.created_at || 0),
           maxRisk: Number(item.maxRisk || item.max_risk || 0),
-          publicLink:
-            item.publicLink || item.link || buildPublicLink(item.slug, backend),
+          domain: String(item.domain || "").trim(),
+          publicLink: item.publicLink || item.link || buildPublicLink(item, backend)
         };
       }
 
@@ -828,15 +639,11 @@
         return linksStore.filter((item) => {
           const matchQuery =
             !q ||
-            String(item.slug || "")
-              .toLowerCase()
-              .includes(q) ||
-            String(item.url || "")
-              .toLowerCase()
-              .includes(q);
+            String(item.slug || "").toLowerCase().includes(q) ||
+            String(item.url || "").toLowerCase().includes(q) ||
+            String(item.domain || "").toLowerCase().includes(q);
 
-          const matchBackend =
-            backend === "all" ? true : item.backend === backend;
+          const matchBackend = backend === "all" ? true : item.backend === backend;
           return matchQuery && matchBackend;
         });
       }
@@ -844,21 +651,15 @@
       async function loadLinks(showMessage = false) {
         const [primaryRes, legacyRes] = await Promise.all([
           authorizedFetch("/list", { method: "GET" }, "primary", false),
-          authorizedFetch("/list", { method: "GET" }, "legacy", false),
+          authorizedFetch("/list", { method: "GET" }, "legacy", false)
         ]);
 
-        const primaryItems =
-          primaryRes.ok && Array.isArray(primaryRes.data?.items)
-            ? primaryRes.data.items
-            : [];
-        const legacyItems =
-          legacyRes.ok && Array.isArray(legacyRes.data?.items)
-            ? legacyRes.data.items
-            : [];
+        const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
+        const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
 
         linksStore = [
           ...primaryItems.map((item) => normalizeLinkItem(item, "primary")),
-          ...legacyItems.map((item) => normalizeLinkItem(item, "legacy")),
+          ...legacyItems.map((item) => normalizeLinkItem(item, "legacy"))
         ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
         renderLinkOptions();
@@ -879,18 +680,14 @@
 
         els.linkSelect.innerHTML = filtered
           .map((item) => {
-            const value = `${item.backend}::${item.slug}`;
-            return `<option value="${escapeHtml(value)}">${escapeHtml(
-              item.slug
-            )} • ${backendLabel(item.backend)} • ${
-              item.clicks
-            } clicks</option>`;
+            const value = `${item.backend}::${item.slug}::${encodeURIComponent(item.domain || "")}`;
+            const domainLabel = item.domain ? ` • ${item.domain}` : "";
+            return `<option value="${escapeHtml(value)}">${escapeHtml(item.slug)} • ${backendLabel(item.backend)}${escapeHtml(domainLabel)} • ${item.clicks} clicks</option>`;
           })
           .join("");
 
-        const currentValue = els.linkSelect.value;
-        if (!currentValue && filtered[0]) {
-          els.linkSelect.value = `${filtered[0].backend}::${filtered[0].slug}`;
+        if (!els.linkSelect.value && filtered[0]) {
+          els.linkSelect.value = `${filtered[0].backend}::${filtered[0].slug}::${encodeURIComponent(filtered[0].domain || "")}`;
         }
 
         syncSelectedInfo();
@@ -899,12 +696,9 @@
       function getSelectedLink() {
         const value = els.linkSelect.value;
         if (!value) return null;
-        const [backend, slug] = value.split("::");
-        return (
-          linksStore.find(
-            (item) => item.backend === backend && item.slug === slug
-          ) || null
-        );
+        const [backend, slug, encodedDomain] = value.split("::");
+        const domain = decodeURIComponent(encodedDomain || "");
+        return linksStore.find((item) => item.backend === backend && item.slug === slug && String(item.domain || "") === domain) || null;
       }
 
       function syncSelectedInfo() {
@@ -913,39 +707,28 @@
           els.selectedInfo.textContent = "No link selected.";
           return;
         }
+        const domainInfo = currentLink.domain ? ` • Domain: ${escapeHtml(currentLink.domain)}` : "";
         els.selectedInfo.innerHTML = `
-        <span class="pill info">${backendLabel(currentLink.backend)}</span>
-        <b>${escapeHtml(currentLink.slug)}</b>
-        • ${escapeHtml(currentLink.publicLink)}
-      `;
+          <span class="pill info">${backendLabel(currentLink.backend)}</span>
+          <b>${escapeHtml(currentLink.slug)}</b>
+          ${domainInfo}
+          • ${escapeHtml(currentLink.publicLink)}
+        `;
       }
 
       async function getGeo(ip) {
-        if (!ip || ip === "unknown")
-          return { country_name: "Unknown", latitude: 20, longitude: 0 };
+        if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
         try {
-          const res = await fetch(
-            `https://ipapi.co/${encodeURIComponent(ip)}/json/`
-          );
+          const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
           const data = await res.json();
           return {
             country_name: data.country_name || "Unknown",
             latitude: data.latitude || 20,
-            longitude: data.longitude || 0,
+            longitude: data.longitude || 0
           };
         } catch {
           return { country_name: "Unknown", latitude: 20, longitude: 0 };
         }
-      }
-
-      function buildHistoryFallback(link) {
-        return Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-          ip: "unknown",
-          time: Date.now() - i * 30000,
-          risk: Number(link.maxRisk || 0),
-          vpn: false,
-          bot: false,
-        }));
       }
 
       async function loadAnalytics(geoOnly = false) {
@@ -955,17 +738,12 @@
         currentLink = link;
         setResult(`Loading analytics for ${link.slug}...`);
 
-        const res = await authorizedFetch(
-          `/history?slug=${encodeURIComponent(link.slug)}`,
-          { method: "GET" },
-          link.backend,
-          false
-        );
-        let history = Array.isArray(res.data?.history) ? res.data.history : [];
+        const historyPath = link.domain
+          ? `/history?slug=${encodeURIComponent(link.slug)}&domain=${encodeURIComponent(link.domain)}`
+          : `/history?slug=${encodeURIComponent(link.slug)}`;
 
-        if (!history.length && Number(link.clicks || 0) > 0) {
-          history = buildHistoryFallback(link);
-        }
+        const res = await authorizedFetch(historyPath, { method: "GET" }, link.backend, false);
+        const history = Array.isArray(res.data?.history) ? res.data.history : [];
 
         currentHistory = history
           .map((h) => ({
@@ -973,7 +751,7 @@
             time: Number(h.time || Date.now()),
             risk: Number(h.risk || 0),
             vpn: !!h.vpn,
-            bot: !!h.bot,
+            bot: !!h.bot
           }))
           .sort((a, b) => a.time - b.time);
 
@@ -996,19 +774,10 @@
         const uniqueIps = new Set(history.map((x) => x.ip || "unknown")).size;
         const bots = history.filter((x) => x.bot).length;
         const vpns = history.filter((x) => x.vpn).length;
-        const maxRisk = history.reduce(
-          (m, x) => Math.max(m, Number(x.risk || 0)),
-          0
-        );
-        const lastClick = history.length
-          ? Math.max(...history.map((x) => Number(x.time || 0)))
-          : 0;
-        const last24h = history.filter(
-          (x) => Number(x.time || 0) >= Date.now() - 86400000
-        ).length;
-        const suspicious = history.filter(
-          (x) => Number(x.risk || 0) > 60 || x.bot || x.vpn
-        ).length;
+        const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
+        const lastClick = history.length ? Math.max(...history.map((x) => Number(x.time || 0))) : 0;
+        const last24h = history.filter((x) => Number(x.time || 0) >= Date.now() - 86400000).length;
+        const suspicious = history.filter((x) => Number(x.risk || 0) > 60 || x.bot || x.vpn).length;
 
         els.kpiTotalClicks.textContent = total;
         els.kpiUniqueIps.textContent = uniqueIps;
@@ -1017,26 +786,20 @@
         els.kpiMaxRisk.textContent = maxRisk;
         els.kpiLast24h.textContent = last24h;
         els.kpiSuspicious.textContent = suspicious;
-        els.kpiLastClick.textContent = lastClick
-          ? new Date(lastClick).toLocaleTimeString()
-          : "-";
-        els.timelineSummary.textContent = `${backendLabel(link.backend)} • ${
-          link.slug
-        } • ${total} records`;
+        els.kpiLastClick.textContent = lastClick ? new Date(lastClick).toLocaleTimeString() : "-";
+        els.timelineSummary.textContent = `${backendLabel(link.backend)} • ${link.slug} • ${total} records`;
 
-        const publicLink =
-          link.publicLink || buildPublicLink(link.slug, link.backend);
+        const publicLink = link.publicLink || buildPublicLink(link, link.backend);
         els.linkSummaryBox.innerHTML = `
-        <div><b>${escapeHtml(link.slug)}</b></div>
-        <div class="muted" style="margin-top:6px;">Backend: ${backendLabel(
-          link.backend
-        )}</div>
-        <div class="muted">Original URL: ${escapeHtml(link.url || "-")}</div>
-        <div class="muted">Public link: ${escapeHtml(publicLink)}</div>
-        <div class="muted">Created: ${fmtDate(link.createdAt)}</div>
-        <div class="muted">Current clicks: ${Number(link.clicks || 0)}</div>
-        <div class="muted">Current max risk: ${Number(link.maxRisk || 0)}</div>
-      `;
+          <div><b>${escapeHtml(link.slug)}</b></div>
+          <div class="muted" style="margin-top:6px;">Backend: ${backendLabel(link.backend)}</div>
+          <div class="muted">Domain: ${escapeHtml(link.domain || "Default")}</div>
+          <div class="muted">Original URL: ${escapeHtml(link.url || "-")}</div>
+          <div class="muted">Public link: ${escapeHtml(publicLink)}</div>
+          <div class="muted">Created: ${fmtDate(link.createdAt)}</div>
+          <div class="muted">Current clicks: ${Number(link.clicks || 0)}</div>
+          <div class="muted">Current max risk: ${Number(link.maxRisk || 0)}</div>
+        `;
       }
 
       function drawHistoryChart(history) {
@@ -1048,25 +811,19 @@
           historyChart = new Chart(canvas, {
             type: "line",
             data: { labels: [], datasets: [{ label: "No data", data: [] }] },
-            options: { responsive: true },
+            options: { responsive: true }
           });
           return;
         }
 
         const mode = els.chartModeSelect.value || "clicks";
-        const labels = history.map((h) =>
-          new Date(h.time).toLocaleTimeString()
-        );
+        const labels = history.map((h) => new Date(h.time).toLocaleTimeString());
         const clicksLine = history.map((_, i) => i + 1);
         const riskLine = history.map((h) => Number(h.risk || 0));
 
         const datasets = [];
         if (mode === "clicks" || mode === "both") {
-          datasets.push({
-            label: "Clicks Timeline",
-            data: clicksLine,
-            tension: 0.35,
-          });
+          datasets.push({ label: "Clicks Timeline", data: clicksLine, tension: 0.35 });
         }
         if (mode === "risk" || mode === "both") {
           datasets.push({ label: "Risk", data: riskLine, tension: 0.35 });
@@ -1081,15 +838,15 @@
             scales: {
               x: {
                 ticks: { color: "#94a3b8" },
-                grid: { color: "rgba(148,163,184,0.12)" },
+                grid: { color: "rgba(148,163,184,0.12)" }
               },
               y: {
                 beginAtZero: true,
                 ticks: { color: "#94a3b8" },
-                grid: { color: "rgba(148,163,184,0.12)" },
-              },
-            },
-          },
+                grid: { color: "rgba(148,163,184,0.12)" }
+              }
+            }
+          }
         });
       }
 
@@ -1097,8 +854,7 @@
         const stats = {};
         for (const h of history) {
           const ip = h.ip || "unknown";
-          if (!stats[ip])
-            stats[ip] = { count: 0, risk: 0, vpn: false, bot: false, last: 0 };
+          if (!stats[ip]) stats[ip] = { count: 0, risk: 0, vpn: false, bot: false, last: 0 };
           stats[ip].count++;
           stats[ip].risk = Math.max(stats[ip].risk, Number(h.risk || 0));
           stats[ip].vpn = stats[ip].vpn || !!h.vpn;
@@ -1117,27 +873,17 @@
 
         els.topIpsList.innerHTML = rows
           .slice(0, 20)
-          .map(
-            ([ip, data]) => `
-        <div class="activity-item">
-          <div><b>${escapeHtml(ip)}</b></div>
-          <div class="muted">Clicks: ${data.count} • Risk: ${data.risk}</div>
-          <div class="muted">Last: ${fmtDate(data.last)}</div>
-          <div style="margin-top:6px;">
-            ${
-              data.bot
-                ? `<span class="pill danger">Bot</span>`
-                : `<span class="pill live">Human-like</span>`
-            }
-            ${
-              data.vpn
-                ? `<span class="pill warn">VPN</span>`
-                : `<span class="pill info">No VPN</span>`
-            }
-          </div>
-        </div>
-      `
-          )
+          .map(([ip, data]) => `
+            <div class="activity-item">
+              <div><b>${escapeHtml(ip)}</b></div>
+              <div class="muted">Clicks: ${data.count} • Risk: ${data.risk}</div>
+              <div class="muted">Last: ${fmtDate(data.last)}</div>
+              <div style="margin-top:6px;">
+                ${data.bot ? `<span class="pill danger">Bot</span>` : `<span class="pill live">Human-like</span>`}
+                ${data.vpn ? `<span class="pill warn">VPN</span>` : `<span class="pill info">No VPN</span>`}
+              </div>
+            </div>
+          `)
           .join("");
       }
 
@@ -1153,24 +899,18 @@
 
         els.riskEventsList.innerHTML = risky
           .slice(0, 30)
-          .map(
-            (h, i) => `
-        <div class="risk-item">
-          <div><b>#${i + 1}</b> • ${escapeHtml(h.ip || "unknown")}</div>
-          <div class="muted">Time: ${fmtDate(h.time)}</div>
-          <div class="muted">Risk: ${Number(h.risk || 0)}</div>
-          <div style="margin-top:6px;">
-            ${h.bot ? `<span class="pill danger">Bot</span>` : ``}
-            ${h.vpn ? `<span class="pill warn">VPN</span>` : ``}
-            ${
-              Number(h.risk || 0) > 85
-                ? `<span class="pill danger">High Risk</span>`
-                : `<span class="pill warn">Suspicious</span>`
-            }
-          </div>
-        </div>
-      `
-          )
+          .map((h, i) => `
+            <div class="risk-item">
+              <div><b>#${i + 1}</b> • ${escapeHtml(h.ip || "unknown")}</div>
+              <div class="muted">Time: ${fmtDate(h.time)}</div>
+              <div class="muted">Risk: ${Number(h.risk || 0)}</div>
+              <div style="margin-top:6px;">
+                ${h.bot ? `<span class="pill danger">Bot</span>` : ``}
+                ${h.vpn ? `<span class="pill warn">VPN</span>` : ``}
+                ${Number(h.risk || 0) > 85 ? `<span class="pill danger">High Risk</span>` : `<span class="pill warn">Suspicious</span>`}
+              </div>
+            </div>
+          `)
           .join("");
       }
 
@@ -1185,38 +925,25 @@
         els.historyTable.innerHTML = history
           .slice()
           .reverse()
-          .map(
-            (h, idx) => `
-        <tr>
-          <td>${idx + 1}</td>
-          <td>${fmtDate(h.time)}</td>
-          <td>${escapeHtml(h.ip || "unknown")}</td>
-          <td>${Number(h.risk || 0)}</td>
-          <td>${
-            h.bot
-              ? '<span class="pill danger">Yes</span>'
-              : '<span class="pill live">No</span>'
-          }</td>
-          <td>${
-            h.vpn
-              ? '<span class="pill warn">Yes</span>'
-              : '<span class="pill live">No</span>'
-          }</td>
-          <td id="country-${idx}">Loading...</td>
-        </tr>
-      `
-          )
+          .map((h, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${fmtDate(h.time)}</td>
+              <td>${escapeHtml(h.ip || "unknown")}</td>
+              <td>${Number(h.risk || 0)}</td>
+              <td>${h.bot ? '<span class="pill danger">Yes</span>' : '<span class="pill live">No</span>'}</td>
+              <td>${h.vpn ? '<span class="pill warn">Yes</span>' : '<span class="pill live">No</span>'}</td>
+              <td id="country-${idx}">Loading...</td>
+            </tr>
+          `)
           .join("");
 
-        history
-          .slice()
-          .reverse()
-          .forEach(async (h, idx) => {
-            const cell = $(`country-${idx}`);
-            if (!cell) return;
-            const geo = await getGeo(h.ip);
-            cell.textContent = geo.country_name || "Unknown";
-          });
+        history.slice().reverse().forEach(async (h, idx) => {
+          const cell = $(`country-${idx}`);
+          if (!cell) return;
+          const geo = await getGeo(h.ip);
+          cell.textContent = geo.country_name || "Unknown";
+        });
       }
 
       async function renderGeoMap(history) {
@@ -1227,7 +954,7 @@
 
         geoMap = L.map(els.mapBox).setView([20, 0], 2);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "&copy; OpenStreetMap contributors",
+          attribution: "&copy; OpenStreetMap contributors"
         }).addTo(geoMap);
 
         if (!history.length) {
@@ -1246,15 +973,11 @@
 
           L.circle([lat, lng], {
             radius: 42000,
-            color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff",
+            color: Number(h.risk || 0) > 70 ? "#ef4444" : "#00ffff"
           })
             .addTo(geoMap)
             .bindPopup(
-              `<b>${escapeHtml(
-                geo.country_name || "Unknown"
-              )}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(
-                h.risk || 0
-              )}`
+              `<b>${escapeHtml(geo.country_name || "Unknown")}</b><br>${escapeHtml(h.ip || "unknown")}<br>Risk: ${Number(h.risk || 0)}`
             );
         }
       }
@@ -1267,9 +990,7 @@
         const link = getSelectedLink();
         if (!link) return showToast("No link selected");
         try {
-          await navigator.clipboard.writeText(
-            link.publicLink || buildPublicLink(link.slug, link.backend)
-          );
+          await navigator.clipboard.writeText(link.publicLink || buildPublicLink(link, link.backend));
           showToast("Copied!");
         } catch {
           showToast("Copy failed");
@@ -1279,11 +1000,7 @@
       function openSelectedLink() {
         const link = getSelectedLink();
         if (!link) return showToast("No link selected");
-        window.open(
-          link.publicLink || buildPublicLink(link.slug, link.backend),
-          "_blank",
-          "noopener,noreferrer"
-        );
+        window.open(link.publicLink || buildPublicLink(link, link.backend), "_blank", "noopener,noreferrer");
       }
 
       function exportHistoryCsv() {
@@ -1296,13 +1013,12 @@
               `"${String(h.ip || "").replaceAll('"', '""')}"`,
               `"${Number(h.risk || 0)}"`,
               `"${h.bot ? "yes" : "no"}"`,
-              `"${h.vpn ? "yes" : "no"}"`,
+              `"${h.vpn ? "yes" : "no"}"`
             ].join(",")
-          ),
+          )
         ];
-        const blob = new Blob([lines.join("\n")], {
-          type: "text/csv;charset=utf-8",
-        });
+        const blob = new Blob([lines.join("
+")], { type: "text/csv;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -1329,9 +1045,7 @@
           if (currentHistory.length) drawHistoryChart(currentHistory);
         });
 
-        els.loadAnalyticsBtn.addEventListener("click", () =>
-          loadAnalytics(false)
-        );
+        els.loadAnalyticsBtn.addEventListener("click", () => loadAnalytics(false));
         els.loadGeoBtn.addEventListener("click", () => loadAnalytics(true));
         els.copySelectedBtn.addEventListener("click", copySelectedLink);
         els.openSelectedBtn.addEventListener("click", openSelectedLink);
