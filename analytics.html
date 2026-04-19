@@ -113,7 +113,6 @@
     }
 
     .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
-    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
     .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
     .stats-kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
     .stats-layout{ display:grid; grid-template-columns:1.15fr .85fr; gap:14px; }
@@ -160,11 +159,6 @@
       font:inherit;
     }
 
-    input:focus, select:focus, textarea:focus{
-      box-shadow:0 0 12px rgba(0,255,255,.30);
-      border-color:rgba(0,255,255,.45);
-    }
-
     textarea{
       min-height:180px;
       resize:vertical;
@@ -196,19 +190,11 @@
       box-shadow:0 0 12px rgba(0,255,255,.26);
     }
 
-    button:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
-
     .ghost-btn{ color:#cbd5e1; border-color:#475569; }
     .blue-btn{ color:#93c5fd; border-color:#3b82f6; }
     .green-btn{ color:#86efac; border-color:#22c55e; }
     .yellow-btn{ color:#fde68a; border-color:#f59e0b; }
     .purple-btn{ color:#e9d5ff; border-color:#a855f7; }
-    .danger-btn{ color:#fecaca; border-color:#ef4444; }
 
     .badge, .pill{
       display:inline-block;
@@ -249,10 +235,6 @@
       background:#020617;
       color:var(--cyan);
       z-index:1;
-    }
-
-    tr:hover{
-      background:rgba(2,6,23,.65);
     }
 
     .map-box{
@@ -301,7 +283,7 @@
     }
 
     @media (max-width: 1200px){
-      .grid-3, .grid-2, .stats-kpis, .stats-layout{ grid-template-columns:1fr; }
+      .grid-3, .stats-kpis, .stats-layout{ grid-template-columns:1fr; }
     }
 
     @media (max-width: 760px){
@@ -461,16 +443,16 @@
     <div class="card">
       <div class="section-head">
         <h3>🛠 Debug Response</h3>
-        <div class="toolbar">
-          <button id="copyDebugBtn" class="ghost-btn" type="button">Copy Debug</button>
-        </div>
+        <button id="copyDebugBtn" class="ghost-btn" type="button">Copy Debug</button>
       </div>
+
       <div class="small-grid" style="margin-bottom:12px;">
         <div class="surface"><div class="muted">History status</div><div id="dbgStatus">-</div></div>
         <div class="surface"><div class="muted">History path</div><div id="dbgPath">-</div></div>
         <div class="surface"><div class="muted">Rows extracted</div><div id="dbgRows">0</div></div>
         <div class="surface"><div class="muted">Backend</div><div id="dbgBackend">-</div></div>
       </div>
+
       <textarea id="debugResponseBox" readonly placeholder="Raw response preview will appear here..."></textarea>
     </div>
 
@@ -493,26 +475,6 @@
       "/health": ["/health", "/"],
       "/": ["/", "/health"]
     };
-
-    const PRIMARY_HISTORY_CANDIDATES = [
-      "/history",
-      "/analytics/history",
-      "/app/history",
-      "/app/analytics/history",
-      "/click-history",
-      "/links/history",
-      "/links/analytics",
-      "/analytics"
-    ];
-
-    const LEGACY_HISTORY_CANDIDATES = [
-      "/history",
-      "/analytics/history",
-      "/click-history",
-      "/links/history",
-      "/links/analytics",
-      "/analytics"
-    ];
 
     let linksStore = [];
     let currentHistory = [];
@@ -937,51 +899,20 @@
       };
     }
 
-    function buildHistoryCandidates(link) {
+    function buildHistoryPath(link) {
       const slug = encodeURIComponent(String(link.slug || ""));
       const domain = String(link.domain || "").trim();
-      const bases = link.backend === "legacy" ? LEGACY_HISTORY_CANDIDATES : PRIMARY_HISTORY_CANDIDATES;
-      const candidates = [];
-
-      for (const base of bases) {
-        candidates.push(`${base}?slug=${slug}`);
-        if (domain) candidates.push(`${base}?slug=${slug}&domain=${encodeURIComponent(domain)}`);
-        candidates.push(`${base}/${slug}`);
-        if (domain) candidates.push(`${base}/${slug}?domain=${encodeURIComponent(domain)}`);
-      }
-
-      return Array.from(new Set(candidates));
+      if (domain) return `/history?slug=${slug}&domain=${encodeURIComponent(domain)}`;
+      return `/history?slug=${slug}`;
     }
 
     async function fetchHistoryForLink(link) {
-      const candidates = buildHistoryCandidates(link);
-      let lastRes = null;
-
-      for (const path of candidates) {
-        const res = await authorizedFetch(path, { method: "GET" }, link.backend, false);
-        lastRes = res;
-
-        if (res.ok) {
-          return {
-            ...res,
-            history: extractHistory(res.data),
-            attemptedPath: path
-          };
-        }
-
-        if (res.status !== 404) {
-          return {
-            ...res,
-            history: [],
-            attemptedPath: path
-          };
-        }
-      }
-
+      const path = buildHistoryPath(link);
+      const res = await authorizedFetch(path, { method: "GET" }, link.backend, false);
       return {
-        ...(lastRes || { ok: false, status: 404, data: {}, raw: "" }),
-        history: [],
-        attemptedPath: candidates[0] || "/history"
+        ...res,
+        history: extractHistory(res.data),
+        attemptedPath: path
       };
     }
 
@@ -1058,7 +989,7 @@
         slug: link.slug,
         domain: link.domain || "",
         backend: link.backend,
-        resolvedPath: res.resolvedPath || res.attemptedPath || "/history",
+        resolvedPath: res.resolvedPath || res.attemptedPath || buildHistoryPath(link),
         count: normalized.length,
         ok: res.ok,
         status: res.status
@@ -1087,7 +1018,7 @@
 
       if (res.status === 404) {
         setResult(
-          `No history endpoint or stored history was found for ${link.slug}${link.domain ? ` on ${link.domain}` : ""} in ${backendLabel(link.backend)}.`
+          `History route was not found for ${link.slug}${link.domain ? ` on ${link.domain}` : ""}.`
         );
         return;
       }
@@ -1156,10 +1087,7 @@
         historyChart = new Chart(canvas, {
           type: "line",
           data: { labels: [], datasets: [{ label: "No data", data: [] }] },
-          options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: "#e2e8f0" } } }
-          }
+          options: { responsive: true }
         });
         return;
       }
@@ -1300,7 +1228,6 @@
         const geo = await getGeo(h.ip);
         let lat = Number(geo.latitude || 20);
         let lng = Number(geo.longitude || 0);
-
         lat += offset * 0.22;
         lng += offset * 0.22;
         offset++;
