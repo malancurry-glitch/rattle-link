@@ -14,7 +14,6 @@
       --bg:#020617;
       --bg2:#000000;
       --card:rgba(2,6,23,.86);
-      --card2:rgba(15,23,42,.55);
       --text:#e2e8f0;
       --muted:#94a3b8;
       --cyan:#00ffff;
@@ -120,7 +119,6 @@
     .stats-layout{ display:grid; grid-template-columns:1.15fr .85fr; gap:14px; }
 
     .stat-card,
-    .mini-box,
     .stats-kpi,
     .surface,
     .activity-item,
@@ -151,7 +149,7 @@
       background:rgba(15,23,42,.32);
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
       padding:12px;
       border-radius:12px;
@@ -162,9 +160,17 @@
       font:inherit;
     }
 
-    input:focus, select:focus{
+    input:focus, select:focus, textarea:focus{
       box-shadow:0 0 12px rgba(0,255,255,.30);
       border-color:rgba(0,255,255,.45);
+    }
+
+    textarea{
+      min-height:180px;
+      resize:vertical;
+      white-space:pre;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px;
     }
 
     button, .btn{
@@ -286,6 +292,12 @@
       font-weight:700;
       box-shadow:0 0 16px rgba(0,255,255,.35);
       max-width:80vw;
+    }
+
+    .small-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:10px;
     }
 
     @media (max-width: 1200px){
@@ -446,6 +458,22 @@
       </div>
     </div>
 
+    <div class="card">
+      <div class="section-head">
+        <h3>🛠 Debug Response</h3>
+        <div class="toolbar">
+          <button id="copyDebugBtn" class="ghost-btn" type="button">Copy Debug</button>
+        </div>
+      </div>
+      <div class="small-grid" style="margin-bottom:12px;">
+        <div class="surface"><div class="muted">History status</div><div id="dbgStatus">-</div></div>
+        <div class="surface"><div class="muted">History path</div><div id="dbgPath">-</div></div>
+        <div class="surface"><div class="muted">Rows extracted</div><div id="dbgRows">0</div></div>
+        <div class="surface"><div class="muted">Backend</div><div id="dbgBackend">-</div></div>
+      </div>
+      <textarea id="debugResponseBox" readonly placeholder="Raw response preview will appear here..."></textarea>
+    </div>
+
     <div id="result" class="result"></div>
   </div>
 
@@ -472,14 +500,18 @@
       "/app/history",
       "/app/analytics/history",
       "/click-history",
-      "/links/history"
+      "/links/history",
+      "/links/analytics",
+      "/analytics"
     ];
 
     const LEGACY_HISTORY_CANDIDATES = [
       "/history",
       "/analytics/history",
       "/click-history",
-      "/links/history"
+      "/links/history",
+      "/links/analytics",
+      "/analytics"
     ];
 
     let linksStore = [];
@@ -488,6 +520,7 @@
     let historyChart = null;
     let geoMap = null;
     let lastHistoryMeta = null;
+    let lastRawHistoryPayload = "";
     const geoCache = new Map();
 
     const $ = (id) => document.getElementById(id);
@@ -522,7 +555,13 @@
       kpiMaxRisk: $("kpiMaxRisk"),
       kpiLast24h: $("kpiLast24h"),
       kpiSuspicious: $("kpiSuspicious"),
-      kpiLastClick: $("kpiLastClick")
+      kpiLastClick: $("kpiLastClick"),
+      dbgStatus: $("dbgStatus"),
+      dbgPath: $("dbgPath"),
+      dbgRows: $("dbgRows"),
+      dbgBackend: $("dbgBackend"),
+      debugResponseBox: $("debugResponseBox"),
+      copyDebugBtn: $("copyDebugBtn")
     };
 
     function getToken() {
@@ -973,8 +1012,18 @@
       }
     }
 
+    function updateDebugBox() {
+      els.dbgStatus.textContent = lastHistoryMeta ? String(lastHistoryMeta.status ?? "-") : "-";
+      els.dbgPath.textContent = lastHistoryMeta ? String(lastHistoryMeta.resolvedPath || "-") : "-";
+      els.dbgRows.textContent = lastHistoryMeta ? String(lastHistoryMeta.count || 0) : "0";
+      els.dbgBackend.textContent = lastHistoryMeta ? backendLabel(lastHistoryMeta.backend) : "-";
+      els.debugResponseBox.value = lastRawHistoryPayload || "";
+    }
+
     function clearAnalyticsUI() {
       currentHistory = [];
+      lastHistoryMeta = null;
+      lastRawHistoryPayload = "";
       els.kpiTotalClicks.textContent = "0";
       els.kpiUniqueIps.textContent = "0";
       els.kpiBots.textContent = "0";
@@ -989,6 +1038,7 @@
       els.riskEventsList.innerHTML = `<div class="muted">No elevated risk events.</div>`;
       els.historyTable.innerHTML = `<tr><td colspan="7" class="muted">No history loaded.</td></tr>`;
       els.historyCountText.textContent = "0 records";
+      updateDebugBox();
       drawHistoryChart([]);
       renderGeoMap([]).catch(() => {});
     }
@@ -1014,6 +1064,17 @@
         status: res.status
       };
 
+      const previewObj = {
+        ok: res.ok,
+        status: res.status,
+        attemptedPath: res.attemptedPath || "",
+        resolvedPath: res.resolvedPath || "",
+        extractedHistoryCount: extractedHistory.length,
+        data: res.data
+      };
+      lastRawHistoryPayload = JSON.stringify(previewObj, null, 2);
+      updateDebugBox();
+
       currentHistory = normalized;
       syncSelectedInfo();
       renderSummary(link, currentHistory);
@@ -1038,7 +1099,7 @@
 
       if (!currentHistory.length) {
         setResult(
-          `No history found for ${link.slug}${link.domain ? ` on ${link.domain}` : ""}. Click count may exist, but raw history was not returned.`
+          `No history found for ${link.slug}${link.domain ? ` on ${link.domain}` : ""}. The history request succeeded, but the backend returned zero rows.`
         );
         return;
       }
@@ -1274,6 +1335,15 @@
       window.open(link.publicLink || buildPublicLink(link, link.backend), "_blank", "noopener,noreferrer");
     }
 
+    async function copyDebugInfo() {
+      try {
+        await navigator.clipboard.writeText(els.debugResponseBox.value || "");
+        showToast("Debug copied!");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+
     function exportHistoryCsv() {
       if (!currentHistory.length) return showToast("No analytics loaded");
       const lines = [
@@ -1317,6 +1387,7 @@
       els.openSelectedBtn.addEventListener("click", openSelectedLink);
       els.exportCsvBtn.addEventListener("click", exportHistoryCsv);
       els.resetMapBtn.addEventListener("click", resetMapView);
+      els.copyDebugBtn.addEventListener("click", copyDebugInfo);
     }
 
     async function init() {
