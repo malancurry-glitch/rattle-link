@@ -803,11 +803,6 @@
       function buildPublicLink(itemOrSlug, backend) {
         const slug =
           typeof itemOrSlug === "object" ? itemOrSlug.slug : itemOrSlug;
-        const domain =
-          typeof itemOrSlug === "object"
-            ? String(itemOrSlug.domain || "").trim()
-            : "";
-        if (domain) return `https://${domain}/${slug}`;
         return `${apiBaseForBackend(backend).replace(/\/+$/, "")}/${slug}`;
       }
 
@@ -822,9 +817,8 @@
           expire: item.expire ? Number(item.expire) : null,
           createdAt: Number(item.createdAt || item.created_at || 0),
           maxRisk: Number(item.maxRisk || item.max_risk || 0),
-          domain: String(item.domain || "").trim(),
           publicLink:
-            item.publicLink || item.link || buildPublicLink(item, backend),
+            item.publicLink || item.link || buildPublicLink(item.slug, backend),
         };
       }
 
@@ -838,9 +832,6 @@
               .toLowerCase()
               .includes(q) ||
             String(item.url || "")
-              .toLowerCase()
-              .includes(q) ||
-            String(item.domain || "")
               .toLowerCase()
               .includes(q);
 
@@ -888,13 +879,10 @@
 
         els.linkSelect.innerHTML = filtered
           .map((item) => {
-            const value = `${item.backend}::${item.slug}::${encodeURIComponent(
-              item.domain || ""
-            )}`;
-            const domainLabel = item.domain ? ` • ${item.domain}` : "";
+            const value = `${item.backend}::${item.slug}`;
             return `<option value="${escapeHtml(value)}">${escapeHtml(
               item.slug
-            )} • ${backendLabel(item.backend)}${escapeHtml(domainLabel)} • ${
+            )} • ${backendLabel(item.backend)} • ${
               item.clicks
             } clicks</option>`;
           })
@@ -902,9 +890,7 @@
 
         const currentValue = els.linkSelect.value;
         if (!currentValue && filtered[0]) {
-          els.linkSelect.value = `${filtered[0].backend}::${
-            filtered[0].slug
-          }::${encodeURIComponent(filtered[0].domain || "")}`;
+          els.linkSelect.value = `${filtered[0].backend}::${filtered[0].slug}`;
         }
 
         syncSelectedInfo();
@@ -913,14 +899,10 @@
       function getSelectedLink() {
         const value = els.linkSelect.value;
         if (!value) return null;
-        const [backend, slug, encodedDomain] = value.split("::");
-        const domain = decodeURIComponent(encodedDomain || "");
+        const [backend, slug] = value.split("::");
         return (
           linksStore.find(
-            (item) =>
-              item.backend === backend &&
-              item.slug === slug &&
-              String(item.domain || "") === domain
+            (item) => item.backend === backend && item.slug === slug
           ) || null
         );
       }
@@ -931,13 +913,9 @@
           els.selectedInfo.textContent = "No link selected.";
           return;
         }
-        const domainInfo = currentLink.domain
-          ? ` • Domain: ${escapeHtml(currentLink.domain)}`
-          : "";
         els.selectedInfo.innerHTML = `
         <span class="pill info">${backendLabel(currentLink.backend)}</span>
         <b>${escapeHtml(currentLink.slug)}</b>
-        ${domainInfo}
         • ${escapeHtml(currentLink.publicLink)}
       `;
       }
@@ -960,6 +938,16 @@
         }
       }
 
+      function buildHistoryFallback(link) {
+        return Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
+          ip: "unknown",
+          time: Date.now() - i * 30000,
+          risk: Number(link.maxRisk || 0),
+          vpn: false,
+          bot: false,
+        }));
+      }
+
       async function loadAnalytics(geoOnly = false) {
         const link = getSelectedLink();
         if (!link) return setResult("Select a link first.", true);
@@ -967,21 +955,17 @@
         currentLink = link;
         setResult(`Loading analytics for ${link.slug}...`);
 
-        const historyUrl = link.domain
-          ? `/history?slug=${encodeURIComponent(
-              link.slug
-            )}&domain=${encodeURIComponent(link.domain)}`
-          : `/history?slug=${encodeURIComponent(link.slug)}`;
-
         const res = await authorizedFetch(
-          historyUrl,
+          `/history?slug=${encodeURIComponent(link.slug)}`,
           { method: "GET" },
           link.backend,
           false
         );
-        const history = Array.isArray(res.data?.history)
-          ? res.data.history
-          : [];
+        let history = Array.isArray(res.data?.history) ? res.data.history : [];
+
+        if (!history.length && Number(link.clicks || 0) > 0) {
+          history = buildHistoryFallback(link);
+        }
 
         currentHistory = history
           .map((h) => ({
@@ -1041,13 +1025,12 @@
         } • ${total} records`;
 
         const publicLink =
-          link.publicLink || buildPublicLink(link, link.backend);
+          link.publicLink || buildPublicLink(link.slug, link.backend);
         els.linkSummaryBox.innerHTML = `
         <div><b>${escapeHtml(link.slug)}</b></div>
         <div class="muted" style="margin-top:6px;">Backend: ${backendLabel(
           link.backend
         )}</div>
-        <div class="muted">Domain: ${escapeHtml(link.domain || "Default")}</div>
         <div class="muted">Original URL: ${escapeHtml(link.url || "-")}</div>
         <div class="muted">Public link: ${escapeHtml(publicLink)}</div>
         <div class="muted">Created: ${fmtDate(link.createdAt)}</div>
@@ -1285,7 +1268,7 @@
         if (!link) return showToast("No link selected");
         try {
           await navigator.clipboard.writeText(
-            link.publicLink || buildPublicLink(link, link.backend)
+            link.publicLink || buildPublicLink(link.slug, link.backend)
           );
           showToast("Copied!");
         } catch {
@@ -1297,7 +1280,7 @@
         const link = getSelectedLink();
         if (!link) return showToast("No link selected");
         window.open(
-          link.publicLink || buildPublicLink(link, link.backend),
+          link.publicLink || buildPublicLink(link.slug, link.backend),
           "_blank",
           "noopener,noreferrer"
         );
