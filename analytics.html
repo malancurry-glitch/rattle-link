@@ -471,6 +471,8 @@
     let currentLink = null;
     let historyChart = null;
     let geoMap = null;
+    const geoCache = new Map();
+    let lastHistoryMeta = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -558,9 +560,9 @@
         let data = {};
         try { data = raw ? JSON.parse(raw) : {}; }
         catch { data = { message: raw }; }
-        return { ok: res.ok, status: res.status, data, path };
+        return { ok: res.ok, status: res.status, data, raw, path };
       } catch (e) {
-        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, path };
+        return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "", path };
       }
     }
 
@@ -582,7 +584,7 @@
         return { ...res, backend, resolvedPath: candidate };
       }
 
-      return first401 || { ...(last || { ok:false, status:0, data:{ message:"Failed to fetch" } }), backend };
+      return first401 || { ...(last || { ok:false, status:0, data:{ message:"Failed to fetch" }, raw:"" }), backend };
     }
 
     async function authorizedFetch(path, options = {}, backend, autoLogout = true) {
@@ -609,7 +611,7 @@
     }
 
     function fmtDate(ts) {
-      const n = Number(ts || 0);
+      const n = normalizeTimestamp(ts);
       return n ? new Date(n).toLocaleString() : "-";
     }
 
@@ -641,9 +643,125 @@
         clicks: Number(item.clicks || 0),
         paused: !!item.paused,
         expire: item.expire ? Number(item.expire) : null,
-        createdAt: Number(item.createdAt || item.created_at || 0),
+        createdAt: normalizeTimestamp(item.createdAt || item.created_at || item.created || 0),
         maxRisk: Number(item.maxRisk || item.max_risk || 0),
-        publicLink: item.publicLink || item.link || buildPublicLink(item.slug, backend)
+        publicLink: item.publicLink || item.link || item.shortUrl || buildPublicLink(item.slug, backend)
+      };
+    }
+
+    function normalizeTimestamp(value) {
+      if (value == null || value === "") return 0;
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return 0;
+
+        if (/^\d+$/.test(trimmed)) {
+          const num = Number(trimmed);
+          if (!Number.isFinite(num)) return 0;
+          return num < 1e12 ? num * 1000 : num;
+        }
+
+        const parsed = Date.parse(trimmed);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      if (typeof value === "number") {
+        if (!Number.isFinite(value) || value <= 0) return 0;
+        return value < 1e12 ? value * 1000 : value;
+      }
+
+      return 0;
+    }
+
+    function extractListItems(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.links)) return data.links;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.results)) return data.results;
+      return [];
+    }
+
+    function extractHistory(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.history)) return data.history;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.records)) return data.records;
+      if (Array.isArray(data?.clicks)) return data.clicks;
+      if (Array.isArray(data?.events)) return data.events;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.rows)) return data.rows;
+      return [];
+    }
+
+    function normalizeIp(raw) {
+      const ip = String(raw || "").trim();
+      if (!ip) return "unknown";
+      if (ip === "::1" || ip === "127.0.0.1" || ip === "::ffff:127.0.0.1") return "localhost";
+      return ip;
+    }
+
+    function pickHistoryIp(h) {
+      return normalizeIp(
+        h?.ip ??
+        h?.clientIp ??
+        h?.sourceIp ??
+        h?.visitorIp ??
+        h?.remoteIp ??
+        h?.remote_addr ??
+        h?.address ??
+        h?.requestIp ??
+        h?.viewerIp ??
+        "unknown"
+      );
+    }
+
+    function pickHistoryTime(h) {
+      return normalizeTimestamp(
+        h?.time ??
+        h?.timestamp ??
+        h?.createdAt ??
+        h?.created_at ??
+        h?.date ??
+        h?.clickedAt ??
+        h?.ts ??
+        0
+      );
+    }
+
+    function pickHistoryRisk(h) {
+      return Number(
+        h?.risk ??
+        h?.riskScore ??
+        h?.maxRisk ??
+        h?.score ??
+        0
+      ) || 0;
+    }
+
+    function pickHistoryBool(h, keys) {
+      for (const key of keys) {
+        const value = h?.[key];
+        if (typeof value === "boolean") return value;
+        if (typeof value === "number") return value > 0;
+        if (typeof value === "string") {
+          const v = value.trim().toLowerCase();
+          if (["true","1","yes","y"].includes(v)) return true;
+          if (["false","0","no","n"].includes(v)) return false;
+        }
+      }
+      return false;
+    }
+
+    function normalizeHistoryRecord(h) {
+      return {
+        raw: h,
+        ip: pickHistoryIp(h),
+        time: pickHistoryTime(h) || Date.now(),
+        risk: pickHistoryRisk(h),
+        vpn: pickHistoryBool(h, ["vpn", "isVpn", "proxy", "isProxy"]),
+        bot: pickHistoryBool(h, ["bot", "isBot", "automated", "crawler"])
       };
     }
 
@@ -667,8 +785,8 @@
         authorizedFetch("/list", { method:"GET" }, "legacy", false)
       ]);
 
-      const primaryItems = primaryRes.ok && Array.isArray(primaryRes.data?.items) ? primaryRes.data.items : [];
-      const legacyItems = legacyRes.ok && Array.isArray(legacyRes.data?.items) ? legacyRes.data.items : [];
+      const primaryItems = primaryRes.ok ? extractListItems(primaryRes.data) : [];
+      const legacyItems = legacyRes.ok ? extractListItems(legacyRes.data) : [];
 
       linksStore = [
         ...primaryItems.map(item => normalizeLinkItem(item, "primary")),
@@ -684,6 +802,8 @@
 
     function renderLinkOptions() {
       const filtered = getFilteredLinks();
+      const previousValue = els.linkSelect.value;
+
       if (!filtered.length) {
         els.linkSelect.innerHTML = `<option value="">No links found</option>`;
         els.selectedInfo.textContent = "No matching links.";
@@ -696,8 +816,10 @@
         return `<option value="${escapeHtml(value)}">${escapeHtml(item.slug)} • ${backendLabel(item.backend)} • ${item.clicks} clicks</option>`;
       }).join("");
 
-      const currentValue = els.linkSelect.value;
-      if (!currentValue && filtered[0]) {
+      const stillExists = filtered.some(item => `${item.backend}::${item.slug}` === previousValue);
+      if (stillExists) {
+        els.linkSelect.value = previousValue;
+      } else if (filtered[0]) {
         els.linkSelect.value = `${filtered[0].backend}::${filtered[0].slug}`;
       }
 
@@ -717,36 +839,76 @@
         els.selectedInfo.textContent = "No link selected.";
         return;
       }
+
+      const diagnostics = lastHistoryMeta && lastHistoryMeta.slug === currentLink.slug && lastHistoryMeta.backend === currentLink.backend
+        ? `<br><span class="muted">History endpoint: ${escapeHtml(lastHistoryMeta.resolvedPath || "/history")} • Records returned: ${Number(lastHistoryMeta.count || 0)}</span>`
+        : "";
+
       els.selectedInfo.innerHTML = `
         <span class="pill info">${backendLabel(currentLink.backend)}</span>
         <b>${escapeHtml(currentLink.slug)}</b>
         • ${escapeHtml(currentLink.publicLink)}
+        ${diagnostics}
       `;
     }
 
+    function isPrivateLikeIp(ip) {
+      const value = String(ip || "").trim().toLowerCase();
+      if (!value || value === "unknown" || value === "localhost") return true;
+      if (value === "::1" || value === "127.0.0.1" || value === "::ffff:127.0.0.1") return true;
+      if (value.startsWith("10.")) return true;
+      if (value.startsWith("192.168.")) return true;
+      if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(value)) return true;
+      if (value.startsWith("fc") || value.startsWith("fd")) return true;
+      if (value.startsWith("fe80:")) return true;
+      return false;
+    }
+
     async function getGeo(ip) {
-      if (!ip || ip === "unknown") return { country_name: "Unknown", latitude: 20, longitude: 0 };
+      const normalizedIp = normalizeIp(ip);
+      if (geoCache.has(normalizedIp)) return geoCache.get(normalizedIp);
+
+      if (!normalizedIp || normalizedIp === "unknown" || isPrivateLikeIp(normalizedIp)) {
+        const fallback = { country_name: "Unknown", latitude: 20, longitude: 0 };
+        geoCache.set(normalizedIp, fallback);
+        return fallback;
+      }
+
       try {
-        const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(normalizedIp)}/json/`);
         const data = await res.json();
-        return {
-          country_name: data.country_name || "Unknown",
-          latitude: data.latitude || 20,
-          longitude: data.longitude || 0
+        const geo = {
+          country_name: data.country_name || data.country || "Unknown",
+          latitude: Number(data.latitude || 20),
+          longitude: Number(data.longitude || 0)
         };
+        geoCache.set(normalizedIp, geo);
+        return geo;
       } catch {
-        return { country_name: "Unknown", latitude: 20, longitude: 0 };
+        const fallback = { country_name: "Unknown", latitude: 20, longitude: 0 };
+        geoCache.set(normalizedIp, fallback);
+        return fallback;
       }
     }
 
-    function buildHistoryFallback(link) {
-      return Array.from({ length: Number(link.clicks || 0) }).map((_, i) => ({
-        ip: "unknown",
-        time: Date.now() - (i * 30000),
-        risk: Number(link.maxRisk || 0),
-        vpn: false,
-        bot: false
-      }));
+    function clearAnalyticsUI() {
+      currentHistory = [];
+      els.kpiTotalClicks.textContent = "0";
+      els.kpiUniqueIps.textContent = "0";
+      els.kpiBots.textContent = "0";
+      els.kpiVpns.textContent = "0";
+      els.kpiMaxRisk.textContent = "0";
+      els.kpiLast24h.textContent = "0";
+      els.kpiSuspicious.textContent = "0";
+      els.kpiLastClick.textContent = "-";
+      els.timelineSummary.textContent = "No data loaded.";
+      els.linkSummaryBox.innerHTML = `<div class="muted">No analytics loaded.</div>`;
+      els.topIpsList.innerHTML = `<div class="muted">No click activity.</div>`;
+      els.riskEventsList.innerHTML = `<div class="muted">No elevated risk events.</div>`;
+      els.historyTable.innerHTML = `<tr><td colspan="7" class="muted">No history loaded.</td></tr>`;
+      els.historyCountText.textContent = "0 records";
+      drawHistoryChart([]);
+      renderGeoMap([]).catch(() => {});
     }
 
     async function loadAnalytics(geoOnly = false) {
@@ -756,37 +918,54 @@
       currentLink = link;
       setResult(`Loading analytics for ${link.slug}...`);
 
-      const res = await authorizedFetch(`/history?slug=${encodeURIComponent(link.slug)}`, { method:"GET" }, link.backend, false);
-      let history = Array.isArray(res.data?.history) ? res.data.history : [];
+      const res = await authorizedFetch(
+        `/history?slug=${encodeURIComponent(link.slug)}`,
+        { method:"GET" },
+        link.backend,
+        false
+      );
 
-      if (!history.length && Number(link.clicks || 0) > 0) {
-        history = buildHistoryFallback(link);
-      }
+      const extractedHistory = res.ok ? extractHistory(res.data) : [];
+      const normalized = extractedHistory.map(normalizeHistoryRecord).sort((a,b) => a.time - b.time);
 
-      currentHistory = history.map(h => ({
-        ip: h.ip || "unknown",
-        time: Number(h.time || Date.now()),
-        risk: Number(h.risk || 0),
-        vpn: !!h.vpn,
-        bot: !!h.bot
-      })).sort((a,b) => a.time - b.time);
+      lastHistoryMeta = {
+        slug: link.slug,
+        backend: link.backend,
+        resolvedPath: res.resolvedPath || "/history",
+        count: normalized.length,
+        ok: res.ok,
+        status: res.status
+      };
 
+      currentHistory = normalized;
+      syncSelectedInfo();
       renderSummary(link, currentHistory);
       renderTopIps(currentHistory);
       renderRiskEvents(currentHistory);
       renderHistoryTable(currentHistory);
+
       if (!geoOnly) drawHistoryChart(currentHistory);
       await renderGeoMap(currentHistory);
 
-      setResult(currentHistory.length
-        ? `Loaded ${currentHistory.length} history records for ${link.slug}.`
-        : `No history found for ${link.slug}.`
-      );
+      if (!res.ok) {
+        setResult(`History request failed for ${link.slug}. Status: ${res.status}.`, true);
+        return;
+      }
+
+      if (!currentHistory.length) {
+        setResult(
+          `No stored history records found for ${link.slug}. Click count may exist, but raw history was not returned by ${backendLabel(link.backend)}.`
+        );
+        return;
+      }
+
+      setResult(`Loaded ${currentHistory.length} history records for ${link.slug}.`);
     }
 
     function renderSummary(link, history) {
       const total = history.length;
-      const uniqueIps = new Set(history.map(x => x.ip || "unknown")).size;
+      const realIps = history.map(x => x.ip).filter(ip => ip && ip !== "unknown");
+      const uniqueIps = new Set(realIps).size;
       const bots = history.filter(x => x.bot).length;
       const vpns = history.filter(x => x.vpn).length;
       const maxRisk = history.reduce((m, x) => Math.max(m, Number(x.risk || 0)), 0);
@@ -805,6 +984,9 @@
       els.timelineSummary.textContent = `${backendLabel(link.backend)} • ${link.slug} • ${total} records`;
 
       const publicLink = link.publicLink || buildPublicLink(link.slug, link.backend);
+      const unknownCount = history.filter(x => x.ip === "unknown").length;
+      const localhostCount = history.filter(x => x.ip === "localhost").length;
+
       els.linkSummaryBox.innerHTML = `
         <div><b>${escapeHtml(link.slug)}</b></div>
         <div class="muted" style="margin-top:6px;">Backend: ${backendLabel(link.backend)}</div>
@@ -813,6 +995,9 @@
         <div class="muted">Created: ${fmtDate(link.createdAt)}</div>
         <div class="muted">Current clicks: ${Number(link.clicks || 0)}</div>
         <div class="muted">Current max risk: ${Number(link.maxRisk || 0)}</div>
+        <div class="muted">Records returned by history API: ${history.length}</div>
+        <div class="muted">Unknown IP rows: ${unknownCount}</div>
+        <div class="muted">Localhost/private rows: ${localhostCount}</div>
       `;
     }
 
@@ -825,7 +1010,10 @@
         historyChart = new Chart(canvas, {
           type: "line",
           data: { labels: [], datasets: [{ label: "No data", data: [] }] },
-          options: { responsive: true }
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: "#e2e8f0" } } }
+          }
         });
         return;
       }
@@ -923,7 +1111,9 @@
         return;
       }
 
-      els.historyTable.innerHTML = history.slice().reverse().map((h, idx) => `
+      const reversed = history.slice().reverse();
+
+      els.historyTable.innerHTML = reversed.map((h, idx) => `
         <tr>
           <td>${idx + 1}</td>
           <td>${fmtDate(h.time)}</td>
@@ -935,7 +1125,7 @@
         </tr>
       `).join("");
 
-      history.slice().reverse().forEach(async (h, idx) => {
+      reversed.forEach(async (h, idx) => {
         const cell = $(`country-${idx}`);
         if (!cell) return;
         const geo = await getGeo(h.ip);
@@ -964,6 +1154,7 @@
         const geo = await getGeo(h.ip);
         let lat = Number(geo.latitude || 20);
         let lng = Number(geo.longitude || 0);
+
         lat += offset * 0.22;
         lng += offset * 0.22;
         offset++;
@@ -1034,7 +1225,7 @@
       els.backendFilter.addEventListener("change", renderLinkOptions);
       els.linkSelect.addEventListener("change", syncSelectedInfo);
       els.chartModeSelect.addEventListener("change", () => {
-        if (currentHistory.length) drawHistoryChart(currentHistory);
+        drawHistoryChart(currentHistory);
       });
 
       els.loadAnalyticsBtn.addEventListener("click", () => loadAnalytics(false));
@@ -1048,6 +1239,7 @@
     async function init() {
       if (!ensureAuth()) return;
       bindUI();
+      clearAnalyticsUI();
       await loadLinks(true);
       if (getSelectedLink()) {
         await loadAnalytics(false);
