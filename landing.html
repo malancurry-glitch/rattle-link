@@ -718,11 +718,43 @@
         const ogDescription = landingOgDescription.value.trim();
         const ogImage = landingOgImage.value.trim();
         const canonicalUrl = landingCanonicalUrl.value.trim();
-        if (!slug) { setResult("Landing slug is required", true); return null; }
-        if (hasCustomHtml && !advSlug) { setResult("Advanced HTML slug is required when using custom HTML", true); setTab("tab-advanced"); return null; }
-        if (!title && !html.trim()) { setResult("Landing title or custom HTML is required", true); return null; }
-        return { slug, advancedSlug: hasCustomHtml ? advSlug : "", domain, title, subtitle, description, image, theme, buttons, ctaLabel, ctaUrl, footer, landingHtml: html, landingCss: hasCustomHtml ? "" : css, landingJs: hasCustomHtml ? "" : js, metaTitle, metaDescription, ogTitle, ogDescription, ogImage, canonicalUrl };
-      }
+       if (!slug) {
+  setResult("Landing slug is required", true);
+  return null;
+}
+
+if (hasCustomHtml && advSlug) {
+  landingSlug.value = advSlug;
+}
+
+if (!title && !html.trim()) {
+  setResult("Landing title or custom HTML is required", true);
+  return null;
+}
+
+return {
+  slug,
+  advancedSlug: hasCustomHtml && advSlug ? advSlug : "",
+  domain,
+  title,
+  subtitle,
+  description,
+  image,
+  theme,
+  buttons,
+  ctaLabel,
+  ctaUrl,
+  footer,
+  landingHtml: html,
+  landingCss: hasCustomHtml ? "" : css,
+  landingJs: hasCustomHtml ? "" : js,
+  metaTitle,
+  metaDescription,
+  ogTitle,
+  ogDescription,
+  ogImage,
+  canonicalUrl
+};
 
       function getGeneratedPreviewHtml() {
         const data = collectDraft();
