@@ -1986,186 +1986,54 @@
   const data = collectDraft();
 
   const title = escapeHtml(data.title || data.slug || "Landing Page");
-  const subtitle = escapeHtml(data.subtitle || "");
   const description = escapeHtml(data.description || "");
-  const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
   const theme = escapeHtml(data.theme || "#00ffff");
-  const ctaLabel = escapeHtml(data.ctaLabel || "");
-  const ctaUrl = data.ctaUrl || "";
-  const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-  const metaTitle = escapeHtml(data.metaTitle || data.title || "Landing Page");
-  const metaDescription = escapeHtml(data.metaDescription || data.description || "");
-  const ogTitle = escapeHtml(data.ogTitle || data.metaTitle || data.title || "Landing Page");
-  const ogDescription = escapeHtml(data.ogDescription || data.metaDescription || data.description || "");
-  const ogImage = data.ogImage && /^https?:\/\//i.test(data.ogImage) ? escapeHtml(data.ogImage) : "";
-  const canonicalUrl = data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl) ? escapeHtml(data.canonicalUrl) : "";
-  const customHtml = String(data.landingHtml || "").trim();
+  const buttons = getLandingButtons();
   const customCss = String(data.landingCss || "");
   const customJs = String(data.landingJs || "");
-  const buttons = getLandingButtons();
-
-  const bgCssMap = {
-    radial: "background:radial-gradient(circle at top,#0f172a,#000);",
-    solid: "background:#020617;",
-    mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;",
-    sunset: "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);",
-  };
-
-  const cardCssMap = {
-    glass: "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);",
-    solid: "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);",
-    outline: "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);",
-  };
-
-  const buttonRadiusMap = {
-    rounded: "14px",
-    pill: "999px",
-    sharp: "8px",
-  };
-
-  // If user provided full custom HTML, inject Turnstile above links
-  if (customHtml) {
-  const captchaBox = `
-<div style="display:flex;justify-content:center;margin:18px 0;">
-  <div class="cf-turnstile"
-       data-sitekey="${TURNSTILE_SITE_KEY}"
-       data-callback="rattleTurnstileDone"></div>
-</div>`;
-
-  const injectedScript = `
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-<script>
-function rattleTurnstileDone(){
-  document.querySelectorAll("a").forEach(a=>{
-    a.classList.add("ready");
-    a.style.pointerEvents="auto";
-    a.style.opacity="1";
-  });
-}
-<\/script>`;
-
-  return customHtml.replace(
-    "</body>",
-    `${captchaBox}${injectedScript}</body>`
-  );
-}
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>${metaTitle}</title>
-<meta name="description" content="${metaDescription}" />
-<meta property="og:title" content="${ogTitle}" />
-<meta property="og:description" content="${ogDescription}" />
-<meta property="og:type" content="website" />
-${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ""}
-${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}" />` : ""}
+<title>${title}</title>
 <style>
-:root{
-  --theme:${theme};
-  --bg:#020617;
-  --card:#0f172a;
-  --text:#e2e8f0;
-  --muted:#94a3b8;
-  --btn-radius:${buttonRadiusMap[data.buttonStyle] || "14px"};
-}
-*{box-sizing:border-box}
 body{
   margin:0;
   min-height:100vh;
-  font-family:Inter,Arial,sans-serif;
-  ${bgCssMap[data.bgStyle] || bgCssMap.radial}
-  color:var(--text);
+  font-family:Arial,sans-serif;
+  background:#020617;
+  color:#e2e8f0;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:24px;
 }
-.wrap{
-  width:100%;
-  max-width:900px;
-}
 .card{
-  width:min(620px,100%);
-  margin:0 auto;
-  ${cardCssMap[data.cardStyle] || cardCssMap.glass}
+  max-width:620px;
+  width:100%;
+  text-align:center;
+  background:#0f172a;
   border-radius:24px;
   padding:32px;
-  text-align:center;
 }
-.avatar{
-  width:120px;
-  height:120px;
-  margin:0 auto 18px;
-  border-radius:999px;
-  overflow:hidden;
-  border:3px solid var(--theme);
-  background:#111827;
-  box-shadow:0 0 18px rgba(0,255,255,.18);
-}
-.avatar img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-.eyebrow{
-  display:inline-block;
-  margin:0 0 12px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.10);
-  color:var(--muted);
-  font-size:12px;
-}
-h1{
-  margin:0 0 10px;
-  color:var(--theme);
-  font-size:34px;
-  line-height:1.2;
-}
-p.desc{
-  margin:0 0 22px;
-  color:var(--muted);
-  line-height:1.8;
-  font-size:15px;
-}
-.links{
-  display:grid;
-  gap:12px;
-  margin-top:20px;
-}
-a.btn{
+h1{color:${theme}}
+p{color:#94a3b8}
+.links{display:grid;gap:12px;margin-top:20px}
+.btn{
   display:block;
   padding:14px 16px;
-  border-radius:var(--btn-radius);
-  text-decoration:none;
-  font-weight:700;
-  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
   background:#111827;
-  color:var(--text);
-  transition:.18s ease;
+  color:#e2e8f0;
+  text-decoration:none;
   opacity:.45;
   pointer-events:none;
 }
-a.btn.ready{
+.btn.ready{
   opacity:1;
   pointer-events:auto;
-}
-a.btn:hover{
-  transform:translateY(-1px);
-  border-color:var(--theme);
-}
-a.cta{
-  background:var(--theme);
-  color:#000;
-}
-.footer{
-  margin-top:22px;
-  color:var(--muted);
-  font-size:12px;
 }
 .turnstile-box{
   display:flex;
@@ -2176,43 +2044,35 @@ ${customCss}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      ${
-        image
-          ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>`
-          : ""
-      }
-      ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
-      <h1>${title}</h1>
-      ${description ? `<p class="desc">${description}</p>` : ""}
-      <div class="turnstile-box">
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAADbpOXO7tc1b28dg" data-callback="rattleTurnstileDone"></div>
-      </div>
-      <div class="links">
-        ${buttons
-          .map(
-            (btn) => `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
-          )
-          .join("")}
-        ${
-          ctaLabel && ctaUrl
-            ? `<a class="btn cta locked-link" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
-            : ""
-        }
-      </div>
-      <div class="footer">${footer}</div>
+  <div class="card">
+    <h1>${title}</h1>
+    ${description ? `<p>${description}</p>` : ""}
+
+    <div class="turnstile-box">
+      <div class="cf-turnstile"
+        data-sitekey="${TURNSTILE_SITE_KEY}"
+        data-callback="rattleTurnstileDone"></div>
+    </div>
+
+    <div class="links">
+      ${buttons.map(btn => `
+        <a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">
+          ${escapeHtml(btn.label || "")}
+        </a>
+      `).join("")}
     </div>
   </div>
+
   ${customJs ? `<script>${customJs}<\/script>` : ""}
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer><\/script>
   <script>
     function rattleTurnstileDone(){
-      document.querySelectorAll(".locked-link").forEach(a=>{
+      document.querySelectorAll(".locked-link").forEach(function(a){
         a.classList.add("ready");
       });
     }
-  </script>
+  <\/script>
 </body>
 </html>`;
 }
