@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rattle Link Pro Landing Builder</title>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
     <style>
       :root {
         --bg: #020617;
@@ -23,96 +25,702 @@
         --purple: #a855f7;
         --blue: #3b82f6;
         --border: rgba(0, 255, 255, 0.18);
-        --shadow: 0 0 18px rgba(0, 255, 255, 0.1), inset 0 0 14px rgba(0, 255, 255, 0.03);
+        --shadow: 0 0 18px rgba(0, 255, 255, 0.1),
+          inset 0 0 14px rgba(0, 255, 255, 0.03);
         --radius: 18px;
         --radius-sm: 12px;
       }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; min-height: 100%; font-family: Inter, Arial, sans-serif; background: radial-gradient(circle at top, #081225 0%, #020617 38%, #000 100%); color: var(--text); }
-      body::before { content: ""; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,.04) 1px, transparent 1px); background-size: 38px 38px; pointer-events: none; z-index: 0; }
-      .container { position: relative; z-index: 1; max-width: 1650px; margin: 0 auto; padding: 20px; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-      .header h1 { margin: 0 0 6px; color: var(--cyan); text-shadow: 0 0 12px rgba(0,255,255,.42); font-size: 32px; letter-spacing: .3px; }
-      .sub { color: var(--muted); font-size: 13px; line-height: 1.7; max-width: 820px; }
-      .top-actions, .toolbar, .tabs, .builder-actions, .actions, .qr-actions, .form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-      .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 11px; border: 1px solid currentColor; line-height: 1; white-space: nowrap; }
-      .live { color: var(--green); } .pending { color: var(--yellow); } .danger { color: var(--red); } .cyan { color: var(--cyan2); }
-      .card { background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(14px); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; box-shadow: var(--shadow); }
-      .card.alt { background: var(--panel2); }
-      .card h2, .card h3, .card h4 { margin: 0 0 12px; color: var(--cyan); }
-      .main-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 18px; align-items: start; }
-      .sub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-      .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-      .muted { color: var(--muted); font-size: 12px; line-height: 1.6; }
-      .tiny { font-size: 11px; }
-      .notice, .success-box, .danger-box, .info-box { padding: 12px; border-radius: 14px; margin-bottom: 12px; line-height: 1.6; font-size: 13px; }
-      .notice { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25); color: #fcd34d; }
-      .success-box { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25); color: #86efac; }
-      .danger-box { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
-      .info-box { background: rgba(15,23,42,.46); border: 1px solid rgba(0,255,255,.12); color: var(--text); }
-      .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
-      .stat-card { text-align: center; padding: 16px; border-radius: 16px; background: rgba(15,23,42,.55); border: 1px solid rgba(0,255,255,.12); }
-      .stat-card h3 { margin: 0 0 8px; font-size: 28px; color: var(--cyan); }
-      .stat-card p { margin: 0; font-size: 12px; color: var(--muted); }
-      .form-row { gap: 10px; margin-bottom: 10px; align-items: flex-start; }
-      .field { flex: 1 1 220px; }
-      .field.wide { flex: 1 1 100%; }
-      .field label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
-      input, select, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,255,255,.22); background: #000; color: var(--cyan); outline: none; font: inherit; }
-      textarea { min-height: 110px; resize: vertical; }
-      input::placeholder, textarea::placeholder { color: var(--muted); }
-      input:focus, select:focus, textarea:focus { box-shadow: 0 0 12px rgba(0,255,255,.32); border-color: rgba(0,255,255,.4); }
-      button, .btn { padding: 11px 14px; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 700; background: #020617; color: var(--cyan); border: 1px solid rgba(0,255,255,.28); transition: .18s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
-      button:hover, .btn:hover { color: #fff; border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,255,255,.34), 0 0 24px rgba(0,255,255,.15); transform: translateY(-1px); }
-      button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
-      .backend2-btn { background: #0f172a; color: #22c55e; border-color: #22c55e; }
-      .pink-btn { background: var(--pink); color: #fff; border-color: var(--pink); }
-      .purple-btn { background: var(--purple); color: #fff; border-color: var(--purple); }
-      .success-btn { background: var(--green); color: #000; border-color: var(--green); }
-      .danger-btn { background: var(--red); color: #fff; border-color: var(--red); }
-      .ghost-btn { color: #cbd5e1; border-color: #475569; }
-      .warn-btn { color: #f59e0b; border-color: #f59e0b; }
-      .copy { color: var(--green); border-color: var(--green); }
-      .open { color: var(--blue); border-color: var(--blue); }
-      .tab-btn.active, .device-btn.active { background: rgba(0,255,255,.1); border-color: var(--cyan); color: #fff; }
-      .tab-panel { display: none; }
-      .tab-panel.active { display: block; }
-      .button-list { display: grid; gap: 10px; margin-top: 10px; }
-      .button-item { padding: 12px; border-radius: 14px; background: rgba(15,23,42,.42); border: 1px solid rgba(0,255,255,.12); }
-      .button-item-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-      .preview-shell { background: linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.92)); border: 1px solid rgba(0,255,255,.16); border-radius: 18px; overflow: hidden; }
-      .preview-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(0,255,255,.12); background: rgba(0,0,0,.32); }
-      .device-switch { display: flex; gap: 6px; flex-wrap: wrap; }
-      .landing-preview { min-height: 220px; padding: 14px; }
-      .landing-preview iframe { width: 100%; height: 720px; border: 0; background: #fff; display: block; border-radius: 14px; }
-      .device-mobile iframe { max-width: 390px; margin: 0 auto; display: block; }
-      .device-tablet iframe { max-width: 820px; margin: 0 auto; display: block; }
-      .device-desktop iframe { max-width: 100%; }
-      .table-wrap { overflow: auto; width: 100%; }
-      table { width: 100%; border-collapse: collapse; min-width: 1320px; }
-      th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; vertical-align: top; font-size: 13px; }
-      th { color: var(--cyan); font-weight: 700; }
-      tr:hover { background: #020617; }
-      .table-title { font-weight: 700; margin-bottom: 4px; }
-      .result { margin-top: 10px; font-size: 13px; min-height: 20px; line-height: 1.5; white-space: pre-wrap; }
-      .success { color: var(--green); } .error { color: var(--red); }
-      .empty { padding: 18px; text-align: center; color: var(--muted); border: 1px dashed rgba(0,255,255,.18); border-radius: 12px; }
-      .template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-      .template-card { padding: 12px; border-radius: 14px; border: 1px solid rgba(0,255,255,.14); background: rgba(15,23,42,.45); cursor: pointer; transition: .18s ease; }
-      .template-card:hover { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,255,255,.18); transform: translateY(-1px); }
-      .template-card h4 { margin: 0 0 8px; font-size: 14px; color: var(--cyan2); }
-      .template-card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
-      .seo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .qr-shell { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
-      .qr-preview { border: 1px solid rgba(0,255,255,.14); border-radius: 18px; padding: 18px; background: rgba(15,23,42,.45); display: flex; flex-direction: column; align-items: center; gap: 14px; }
-      .qr-canvas-wrap { width: 280px; height: 280px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 10px; }
-      .qr-canvas-wrap canvas, .qr-canvas-wrap img { max-width: 100%; max-height: 100%; display: block; }
-      .qr-meta { word-break: break-all; text-align: center; }
-      .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: none; z-index: 1000; }
-      .modal { position: fixed; z-index: 1001; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(980px, 95vw); max-height: 90vh; overflow: auto; display: none; border-radius: 18px; padding: 18px; background: #000; border: 1px solid rgba(0,255,255,.24); box-shadow: 0 0 40px rgba(0,255,255,.12); }
-      .toast { position: fixed; bottom: 20px; right: 20px; background: var(--cyan); color: #000; padding: 12px 14px; border-radius: 10px; display: none; z-index: 2000; font-weight: 700; box-shadow: 0 0 15px rgba(0,255,255,.4); max-width: 80vw; }
-      .sticky-tools { position: sticky; top: 12px; z-index: 10; }
-      @media (max-width: 1320px) { .main-grid, .sub-grid, .template-grid, .seo-grid, .stat-grid, .qr-shell { grid-template-columns: 1fr; } .sticky-tools { position: static; } }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: Inter, Arial, sans-serif;
+        background: radial-gradient(
+          circle at top,
+          #081225 0%,
+          #020617 38%,
+          #000000 100%
+        );
+        color: var(--text);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(0, 255, 255, 0.04) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 38px 38px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1650px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+
+      .header h1 {
+        margin: 0 0 6px;
+        color: var(--cyan);
+        text-shadow: 0 0 12px rgba(0, 255, 255, 0.42);
+        font-size: 32px;
+        letter-spacing: 0.3px;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+        max-width: 820px;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        border: 1px solid currentColor;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .live {
+        color: var(--green);
+      }
+      .pending {
+        color: var(--yellow);
+      }
+      .danger {
+        color: var(--red);
+      }
+      .cyan {
+        color: var(--cyan2);
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        backdrop-filter: blur(14px);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 18px;
+        box-shadow: var(--shadow);
+      }
+
+      .card.alt {
+        background: var(--panel2);
+      }
+
+      .card h2,
+      .card h3,
+      .card h4 {
+        margin: 0 0 12px;
+        color: var(--cyan);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .sub-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .small {
+        font-size: 12px;
+      }
+
+      .tiny {
+        font-size: 11px;
+      }
+
+      .notice,
+      .success-box,
+      .danger-box,
+      .info-box {
+        padding: 12px;
+        border-radius: 14px;
+        margin-bottom: 12px;
+        line-height: 1.6;
+        font-size: 13px;
+      }
+
+      .notice {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        color: #fcd34d;
+      }
+
+      .success-box {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        color: #86efac;
+      }
+
+      .danger-box {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #fca5a5;
+      }
+
+      .info-box {
+        background: rgba(15, 23, 42, 0.46);
+        border: 1px solid rgba(0, 255, 255, 0.12);
+        color: var(--text);
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .stat-card {
+        text-align: center;
+        padding: 16px;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(0, 255, 255, 0.12);
+      }
+
+      .stat-card h3 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        color: var(--cyan);
+      }
+
+      .stat-card p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .form-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .field {
+        flex: 1 1 220px;
+      }
+
+      .field.wide {
+        flex: 1 1 100%;
+      }
+
+      .field.third {
+        flex: 1 1 calc(33.333% - 10px);
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 255, 255, 0.22);
+        background: #000;
+        color: var(--cyan);
+        outline: none;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--muted);
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        box-shadow: 0 0 12px rgba(0, 255, 255, 0.32);
+        border-color: rgba(0, 255, 255, 0.4);
+      }
+
+      button,
+      .btn {
+        padding: 11px 14px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        background: #020617;
+        color: var(--cyan);
+        border: 1px solid rgba(0, 255, 255, 0.28);
+        transition: 0.18s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      button:hover,
+      .btn:hover {
+        color: #fff;
+        border-color: var(--cyan);
+        box-shadow: 0 0 12px rgba(0, 255, 255, 0.34),
+          0 0 24px rgba(0, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .backend2-btn {
+        background: #0f172a;
+        color: #22c55e;
+        border-color: #22c55e;
+      }
+
+      .pink-btn {
+        background: var(--pink);
+        color: #fff;
+        border-color: var(--pink);
+      }
+
+      .purple-btn {
+        background: var(--purple);
+        color: #fff;
+        border-color: var(--purple);
+      }
+
+      .success-btn {
+        background: var(--green);
+        color: #000;
+        border-color: var(--green);
+      }
+
+      .danger-btn {
+        background: var(--red);
+        color: #fff;
+        border-color: var(--red);
+      }
+
+      .ghost-btn {
+        color: #cbd5e1;
+        border-color: #475569;
+      }
+
+      .warn-btn {
+        color: #f59e0b;
+        border-color: #f59e0b;
+      }
+
+      .copy {
+        color: var(--green);
+        border-color: var(--green);
+      }
+
+      .open {
+        color: var(--blue);
+        border-color: var(--blue);
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .tab-btn.active {
+        background: rgba(0, 255, 255, 0.1);
+        border-color: var(--cyan);
+        color: #fff;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .builder-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .button-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .button-item {
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.42);
+        border: 1px solid rgba(0, 255, 255, 0.12);
+      }
+
+      .button-item-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+
+      .preview-shell {
+        background: linear-gradient(
+          180deg,
+          rgba(15, 23, 42, 0.86),
+          rgba(2, 6, 23, 0.92)
+        );
+        border: 1px solid rgba(0, 255, 255, 0.16);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+
+      .preview-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.32);
+      }
+
+      .device-switch {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .device-btn.active {
+        background: rgba(0, 255, 255, 0.1);
+        border-color: var(--cyan);
+        color: #fff;
+      }
+
+      .landing-preview {
+        min-height: 220px;
+        padding: 14px;
+      }
+
+      .landing-preview iframe {
+        width: 100%;
+        height: 720px;
+        border: 0;
+        background: #fff;
+        display: block;
+        border-radius: 14px;
+      }
+
+      .device-mobile iframe {
+        max-width: 390px;
+        margin: 0 auto;
+        display: block;
+      }
+      .device-tablet iframe {
+        max-width: 820px;
+        margin: 0 auto;
+        display: block;
+      }
+      .device-desktop iframe {
+        max-width: 100%;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        width: 100%;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1320px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #334155;
+        text-align: left;
+        vertical-align: top;
+        font-size: 13px;
+      }
+
+      th {
+        color: var(--cyan);
+        font-weight: 700;
+      }
+
+      tr:hover {
+        background: #020617;
+      }
+
+      .table-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .result {
+        margin-top: 10px;
+        font-size: 13px;
+        min-height: 20px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .success {
+        color: var(--green);
+      }
+      .error {
+        color: var(--red);
+      }
+
+      .empty {
+        padding: 18px;
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed rgba(0, 255, 255, 0.18);
+        border-radius: 12px;
+      }
+
+      .template-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .template-card {
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 255, 255, 0.14);
+        background: rgba(15, 23, 42, 0.45);
+        cursor: pointer;
+        transition: 0.18s ease;
+      }
+
+      .template-card:hover {
+        border-color: var(--cyan);
+        box-shadow: 0 0 12px rgba(0, 255, 255, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .template-card h4 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: var(--cyan2);
+      }
+
+      .template-card p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .seo-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .qr-shell {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .qr-preview {
+        border: 1px solid rgba(0, 255, 255, 0.14);
+        border-radius: 18px;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .qr-canvas-wrap {
+        width: 280px;
+        height: 280px;
+        border-radius: 16px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+
+      .qr-canvas-wrap canvas,
+      .qr-canvas-wrap img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+
+      .qr-meta {
+        word-break: break-all;
+        text-align: center;
+      }
+
+      .qr-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: none;
+        z-index: 1000;
+      }
+
+      .modal {
+        position: fixed;
+        z-index: 1001;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(980px, 95vw);
+        max-height: 90vh;
+        overflow: auto;
+        display: none;
+        border-radius: 18px;
+        padding: 18px;
+        background: #000;
+        border: 1px solid rgba(0, 255, 255, 0.24);
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.12);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--cyan);
+        color: #000;
+        padding: 12px 14px;
+        border-radius: 10px;
+        display: none;
+        z-index: 2000;
+        font-weight: 700;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        max-width: 80vw;
+      }
+
+      .sticky-tools {
+        position: sticky;
+        top: 12px;
+        z-index: 10;
+      }
+
+      @media (max-width: 1320px) {
+        .main-grid,
+        .sub-grid,
+        .template-grid,
+        .seo-grid,
+        .stat-grid,
+        .qr-shell {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -120,113 +728,378 @@
       <div class="header">
         <div>
           <h1>🚀 Pro Landing Builder</h1>
-          <div class="sub">Backend2 only • Build branded landing pages faster • Live preview • Templates • Button manager • SEO fields • Verified custom domains • Full CRUD</div>
+          <div class="sub">
+            Backend2 only • Build branded landing pages faster • Live preview •
+            Templates • Button manager • SEO fields • Verified custom domains •
+            Full CRUD
+          </div>
         </div>
+
         <div class="top-actions">
           <span class="badge live">Backend2 Only</span>
-          <span class="badge cyan" id="primaryDomainBadge">Primary: loading...</span>
+          <span class="badge cyan" id="primaryDomainBadge"
+            >Primary: loading...</span
+          >
           <a class="btn ghost-btn" href="dashboard.html">Back to Dashboard</a>
-          <button id="autosaveBtn" type="button" class="ghost-btn">Autosave: On</button>
+          <button id="autosaveBtn" type="button" class="ghost-btn">
+            Autosave: On
+          </button>
           <button id="refreshBtn" type="button">Refresh</button>
         </div>
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><h3 id="totalLandings">0</h3><p>Total Landing Pages</p></div>
-        <div class="stat-card"><h3 id="totalLandingClicks">0</h3><p>Total Clicks</p></div>
-        <div class="stat-card"><h3 id="verifiedDomainsCount">0</h3><p>Verified Domains</p></div>
-        <div class="stat-card"><h3 id="activeLandings">0</h3><p>Active Landings</p></div>
-        <div class="stat-card"><h3 id="draftState">Draft</h3><p id="draftStateText">Not saved yet</p></div>
+        <div class="stat-card">
+          <h3 id="totalLandings">0</h3>
+          <p>Total Landing Pages</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="totalLandingClicks">0</h3>
+          <p>Total Clicks</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="verifiedDomainsCount">0</h3>
+          <p>Verified Domains</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="activeLandings">0</h3>
+          <p>Active Landings</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="draftState">Draft</h3>
+          <p id="draftStateText">Not saved yet</p>
+        </div>
       </div>
 
       <div class="main-grid">
         <div>
           <div class="card sticky-tools">
             <div class="section-head">
-              <div><h2>🎨 Builder Studio</h2><div class="muted">Use tabs below to build a polished landing page.</div></div>
+              <div>
+                <h2>🎨 Builder Studio</h2>
+                <div class="muted">
+                  Use tabs below to build a polished landing page.
+                </div>
+              </div>
               <div class="builder-actions">
-                <button id="clearBtn" type="button" class="warn-btn">Clear</button>
-                <button id="previewBtn" type="button" class="ghost-btn">Preview</button>
-                <button id="createBtn" type="button" class="pink-btn">Create Landing</button>
-                <button id="updateBtn" type="button" class="backend2-btn">Update Landing</button>
+                <button id="clearBtn" type="button" class="warn-btn">
+                  Clear
+                </button>
+                <button id="previewBtn" type="button" class="ghost-btn">
+                  Preview
+                </button>
+                <button id="createBtn" type="button" class="pink-btn">
+                  Create Landing
+                </button>
+                <button id="updateBtn" type="button" class="backend2-btn">
+                  Update Landing
+                </button>
               </div>
             </div>
 
-            <div class="notice">This page uses only Backend2 endpoints. Verified custom domains load automatically from your Backend2 account.</div>
+            <div class="notice">
+              This page uses only Backend2 endpoints. Verified custom domains
+              load automatically from your Backend2 account.
+            </div>
 
             <div class="tabs">
-              <button type="button" class="tab-btn active" data-tab="tab-basics">Basics</button>
-              <button type="button" class="tab-btn" data-tab="tab-content">Content</button>
-              <button type="button" class="tab-btn" data-tab="tab-buttons">Buttons</button>
-              <button type="button" class="tab-btn" data-tab="tab-seo">SEO</button>
-              <button type="button" class="tab-btn" data-tab="tab-advanced">Advanced</button>
-              <button type="button" class="tab-btn" data-tab="tab-templates">Templates</button>
+              <button
+                type="button"
+                class="tab-btn active"
+                data-tab="tab-basics"
+              >
+                Basics
+              </button>
+              <button type="button" class="tab-btn" data-tab="tab-content">
+                Content
+              </button>
+              <button type="button" class="tab-btn" data-tab="tab-buttons">
+                Buttons
+              </button>
+              <button type="button" class="tab-btn" data-tab="tab-seo">
+                SEO
+              </button>
+              <button type="button" class="tab-btn" data-tab="tab-advanced">
+                Advanced
+              </button>
+              <button type="button" class="tab-btn" data-tab="tab-templates">
+                Templates
+              </button>
             </div>
 
             <div id="tab-basics" class="tab-panel active">
               <div class="form-row">
-                <div class="field"><label for="landingSlug">Landing slug</label><input id="landingSlug" placeholder="my-landing-page" /></div>
-                <div class="field"><label for="landingDomain">Landing domain</label><select id="landingDomain"><option value="">Default domain</option></select><button id="setPrimaryDomainBtn" type="button" class="success-btn" style="margin-top:8px;width:100%">Set as Primary</button></div>
-                <div class="field"><label for="landingTheme">Theme color</label><input id="landingTheme" placeholder="#00ffff" value="#00ffff" /></div>
+                <div class="field">
+                  <label for="landingSlug">Landing slug</label>
+                  <input id="landingSlug" placeholder="my-landing-page" />
+                </div>
+                <div class="field">
+                  <label for="landingDomain">Landing domain</label>
+                  <select id="landingDomain">
+                    <option value="">Default domain</option>
+                  </select>
+                  <button
+                    id="setPrimaryDomainBtn"
+                    type="button"
+                    class="success-btn"
+                    style="margin-top: 8px; width: 100%"
+                  >
+                    Set as Primary
+                  </button>
+                </div>
+                <div class="field">
+                  <label for="landingTheme">Theme color</label>
+                  <input
+                    id="landingTheme"
+                    placeholder="#00ffff"
+                    value="#00ffff"
+                  />
+                </div>
               </div>
+
               <div class="form-row">
-                <div class="field"><label for="landingTitle">Landing title</label><input id="landingTitle" placeholder="Your main headline" /></div>
-                <div class="field"><label for="landingSubtitle">Subtitle / eyebrow</label><input id="landingSubtitle" placeholder="Creator • Brand • Product" /></div>
+                <div class="field">
+                  <label for="landingTitle">Landing title</label>
+                  <input id="landingTitle" placeholder="Your main headline" />
+                </div>
+                <div class="field">
+                  <label for="landingSubtitle">Subtitle / eyebrow</label>
+                  <input
+                    id="landingSubtitle"
+                    placeholder="Creator • Brand • Product"
+                  />
+                </div>
               </div>
-              <div class="form-row"><div class="field wide"><label for="landingDescription">Description</label><textarea id="landingDescription" placeholder="Short paragraph that explains who you are, what you offer, or what visitors should do next."></textarea></div></div>
-              <div class="form-row"><div class="field"><label for="landingImage">Avatar / cover image URL</label><input id="landingImage" placeholder="https://..." /></div><div class="field"><label for="landingFooter">Footer</label><input id="landingFooter" placeholder="Powered by Rattle Link" /></div></div>
+
+              <div class="form-row">
+                <div class="field wide">
+                  <label for="landingDescription">Description</label>
+                  <textarea
+                    id="landingDescription"
+                    placeholder="Short paragraph that explains who you are, what you offer, or what visitors should do next."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="landingImage">Avatar / cover image URL</label>
+                  <input id="landingImage" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="landingFooter">Footer</label>
+                  <input
+                    id="landingFooter"
+                    placeholder="Powered by Rattle Link"
+                  />
+                </div>
+              </div>
             </div>
 
             <div id="tab-content" class="tab-panel">
-              <div class="form-row"><div class="field"><label for="landingCtaLabel">Primary CTA label</label><input id="landingCtaLabel" placeholder="Visit Now" /></div><div class="field"><label for="landingCtaUrl">Primary CTA URL</label><input id="landingCtaUrl" placeholder="https://..." /></div></div>
               <div class="form-row">
-                <div class="field"><label for="bgStyle">Background style</label><select id="bgStyle"><option value="radial">Radial Dark</option><option value="solid">Solid Dark</option><option value="mesh">Mesh Glow</option><option value="sunset">Sunset Neon</option></select></div>
-                <div class="field"><label for="cardStyle">Card style</label><select id="cardStyle"><option value="glass">Glass</option><option value="solid">Solid</option><option value="outline">Outline</option></select></div>
-                <div class="field"><label for="buttonStyle">Button style</label><select id="buttonStyle"><option value="rounded">Rounded</option><option value="pill">Pill</option><option value="sharp">Sharp</option></select></div>
+                <div class="field">
+                  <label for="landingCtaLabel">Primary CTA label</label>
+                  <input id="landingCtaLabel" placeholder="Visit Now" />
+                </div>
+                <div class="field">
+                  <label for="landingCtaUrl">Primary CTA URL</label>
+                  <input id="landingCtaUrl" placeholder="https://..." />
+                </div>
               </div>
-              <div class="info-box"><b>Tip</b><div class="muted" style="margin-top:6px">Keep the title short, description clear, and CTA strong.</div></div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="bgStyle">Background style</label>
+                  <select id="bgStyle">
+                    <option value="radial">Radial Dark</option>
+                    <option value="solid">Solid Dark</option>
+                    <option value="mesh">Mesh Glow</option>
+                    <option value="sunset">Sunset Neon</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="cardStyle">Card style</label>
+                  <select id="cardStyle">
+                    <option value="glass">Glass</option>
+                    <option value="solid">Solid</option>
+                    <option value="outline">Outline</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="buttonStyle">Button style</label>
+                  <select id="buttonStyle">
+                    <option value="rounded">Rounded</option>
+                    <option value="pill">Pill</option>
+                    <option value="sharp">Sharp</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="info-box">
+                <b>Tip</b>
+                <div class="muted" style="margin-top: 6px">
+                  Keep the title short, description clear, and CTA strong. Your
+                  first screen should tell visitors exactly what to do.
+                </div>
+              </div>
             </div>
 
             <div id="tab-buttons" class="tab-panel">
-              <div class="section-head"><h3>🔗 Button Manager</h3><button id="addButtonBtn" type="button" class="success-btn">Add Button</button></div>
-              <div class="muted" style="margin-bottom:10px">Add as many button links as you want.</div>
-              <div class="form-row"><div class="field"><label for="landingButtonLabel1">Quick Button 1 Label</label><input id="landingButtonLabel1" placeholder="Instagram" /></div><div class="field"><label for="landingButtonUrl1">Quick Button 1 URL</label><input id="landingButtonUrl1" placeholder="https://..." /></div></div>
-              <div class="form-row"><div class="field"><label for="landingButtonLabel2">Quick Button 2 Label</label><input id="landingButtonLabel2" placeholder="Website" /></div><div class="field"><label for="landingButtonUrl2">Quick Button 2 URL</label><input id="landingButtonUrl2" placeholder="https://..." /></div></div>
+              <div class="section-head">
+                <h3>🔗 Button Manager</h3>
+                <button id="addButtonBtn" type="button" class="success-btn">
+                  Add Button
+                </button>
+              </div>
+
+              <div class="muted" style="margin-bottom: 10px">
+                Add as many button links as you want. First two are optional
+                quick fields below for speed.
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="landingButtonLabel1">Quick Button 1 Label</label>
+                  <input id="landingButtonLabel1" placeholder="Instagram" />
+                </div>
+                <div class="field">
+                  <label for="landingButtonUrl1">Quick Button 1 URL</label>
+                  <input id="landingButtonUrl1" placeholder="https://..." />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="landingButtonLabel2">Quick Button 2 Label</label>
+                  <input id="landingButtonLabel2" placeholder="Website" />
+                </div>
+                <div class="field">
+                  <label for="landingButtonUrl2">Quick Button 2 URL</label>
+                  <input id="landingButtonUrl2" placeholder="https://..." />
+                </div>
+              </div>
+
               <div id="dynamicButtons" class="button-list"></div>
             </div>
 
             <div id="tab-seo" class="tab-panel">
-              <div class="seo-grid"><div class="field"><label for="landingMetaTitle">Meta title</label><input id="landingMetaTitle" placeholder="SEO title" /></div><div class="field"><label for="landingOgTitle">Open Graph title</label><input id="landingOgTitle" placeholder="Social share title" /></div></div>
-              <div class="seo-grid"><div class="field wide"><label for="landingMetaDescription">Meta description</label><textarea id="landingMetaDescription" placeholder="SEO description"></textarea></div><div class="field wide"><label for="landingOgDescription">Open Graph description</label><textarea id="landingOgDescription" placeholder="Social share description"></textarea></div></div>
-              <div class="form-row"><div class="field"><label for="landingOgImage">Open Graph image URL</label><input id="landingOgImage" placeholder="https://..." /></div><div class="field"><label for="landingCanonicalUrl">Canonical URL</label><input id="landingCanonicalUrl" placeholder="Optional canonical URL" /></div></div>
+              <div class="seo-grid">
+                <div class="field">
+                  <label for="landingMetaTitle">Meta title</label>
+                  <input id="landingMetaTitle" placeholder="SEO title" />
+                </div>
+                <div class="field">
+                  <label for="landingOgTitle">Open Graph title</label>
+                  <input id="landingOgTitle" placeholder="Social share title" />
+                </div>
+              </div>
+
+              <div class="seo-grid">
+                <div class="field wide">
+                  <label for="landingMetaDescription">Meta description</label>
+                  <textarea
+                    id="landingMetaDescription"
+                    placeholder="SEO description"
+                  ></textarea>
+                </div>
+                <div class="field wide">
+                  <label for="landingOgDescription"
+                    >Open Graph description</label
+                  >
+                  <textarea
+                    id="landingOgDescription"
+                    placeholder="Social share description"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label for="landingOgImage">Open Graph image URL</label>
+                  <input id="landingOgImage" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="landingCanonicalUrl">Canonical URL</label>
+                  <input
+                    id="landingCanonicalUrl"
+                    placeholder="Optional canonical URL"
+                  />
+                </div>
+              </div>
             </div>
 
             <div id="tab-advanced" class="tab-panel">
-              <div class="success-box">
-                <b>Advanced HTML slug fix:</b> When you paste custom HTML and enter an Advanced HTML slug, this slug is sent as <code>advancedSlug</code>. Your backend will save it as the real public slug, so your custom domain opens the pasted HTML directly.
-              </div>
               <div class="form-row">
                 <div class="field wide">
-                  <label for="advancedSlug">Advanced HTML slug</label>
-                  <input id="advancedSlug" placeholder="custom-html-page" />
-                  <div class="muted" style="margin-top:6px">Example: if domain is yourdomain.com and slug is custom-html-page, link becomes https://yourdomain.com/custom-html-page</div>
+                  <label for="landingHtml">Custom HTML override</label>
+                  <textarea
+                    id="landingHtml"
+                    placeholder="Optional full HTML override"
+                  ></textarea>
                 </div>
               </div>
-              <div class="form-row"><div class="field wide"><label for="landingHtml">Custom HTML override</label><textarea id="landingHtml" placeholder="Optional full HTML override"></textarea></div></div>
-              <div class="form-row"><div class="field wide"><label for="landingCss">Custom CSS</label><textarea id="landingCss" placeholder="Optional CSS"></textarea></div></div>
-              <div class="form-row"><div class="field wide"><label for="landingJs">Custom JavaScript</label><textarea id="landingJs" placeholder="Optional JS"></textarea></div></div>
-              <div class="danger-box">Custom HTML/CSS/JS gives full control, but can break your page if malformed.</div>
+
+              <div class="form-row">
+                <div class="field wide">
+                  <label for="landingCss">Custom CSS</label>
+                  <textarea
+                    id="landingCss"
+                    placeholder="Optional CSS"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field wide">
+                  <label for="landingJs">Custom JavaScript</label>
+                  <textarea id="landingJs" placeholder="Optional JS"></textarea>
+                </div>
+              </div>
+
+              <div class="danger-box">
+                Custom HTML/CSS/JS gives full control, but can break your page
+                if malformed.
+              </div>
             </div>
 
             <div id="tab-templates" class="tab-panel">
-              <div class="muted" style="margin-bottom:10px">Click a template to instantly populate the builder.</div>
+              <div class="muted" style="margin-bottom: 10px">
+                Click a template to instantly populate the builder.
+              </div>
+
               <div class="template-grid">
-                <div class="template-card" data-template="creator"><h4>Creator Profile</h4><p>Good for influencers, personal brands, and social links.</p></div>
-                <div class="template-card" data-template="product"><h4>Product Launch</h4><p>Best for a product, tool, or startup with one main CTA.</p></div>
-                <div class="template-card" data-template="agency"><h4>Agency / Services</h4><p>Use for agencies, freelancers, and client booking funnels.</p></div>
-                <div class="template-card" data-template="music"><h4>Music / Artist</h4><p>Perfect for songs, Spotify, YouTube, and fan actions.</p></div>
-                <div class="template-card" data-template="event"><h4>Event / Ticket</h4><p>Great for webinars, events, countdown campaigns, and RSVP links.</p></div>
-                <div class="template-card" data-template="minimal"><h4>Minimal Bio Link</h4><p>Simple clean page with a title and link stack.</p></div>
+                <div class="template-card" data-template="creator">
+                  <h4>Creator Profile</h4>
+                  <p>
+                    Good for influencers, personal brands, and social links.
+                  </p>
+                </div>
+                <div class="template-card" data-template="product">
+                  <h4>Product Launch</h4>
+                  <p>Best for a product, tool, or startup with one main CTA.</p>
+                </div>
+                <div class="template-card" data-template="agency">
+                  <h4>Agency / Services</h4>
+                  <p>
+                    Use for agencies, freelancers, and client booking funnels.
+                  </p>
+                </div>
+                <div class="template-card" data-template="music">
+                  <h4>Music / Artist</h4>
+                  <p>Perfect for songs, Spotify, YouTube, and fan actions.</p>
+                </div>
+                <div class="template-card" data-template="event">
+                  <h4>Event / Ticket</h4>
+                  <p>
+                    Great for webinars, events, countdown campaigns, and RSVP
+                    links.
+                  </p>
+                </div>
+                <div class="template-card" data-template="minimal">
+                  <h4>Minimal Bio Link</h4>
+                  <p>Simple clean page with a title and link stack.</p>
+                </div>
               </div>
             </div>
 
@@ -237,38 +1110,157 @@
         <div>
           <div class="card preview-shell">
             <div class="preview-topbar">
-              <div><h2 style="margin:0;color:var(--cyan)">👀 Live Preview</h2><div class="muted">Build visually before saving.</div></div>
-              <div class="toolbar"><div class="device-switch"><button id="desktopViewBtn" type="button" class="device-btn active">Desktop</button><button id="tabletViewBtn" type="button" class="device-btn">Tablet</button><button id="mobileViewBtn" type="button" class="device-btn">Mobile</button></div><button id="openPreviewBtn" type="button" class="open">Open Preview</button></div>
+              <div>
+                <h2 style="margin: 0; color: var(--cyan)">👀 Live Preview</h2>
+                <div class="muted">Build visually before saving.</div>
+              </div>
+
+              <div class="toolbar">
+                <div class="device-switch">
+                  <button
+                    id="desktopViewBtn"
+                    type="button"
+                    class="device-btn active"
+                  >
+                    Desktop
+                  </button>
+                  <button id="tabletViewBtn" type="button" class="device-btn">
+                    Tablet
+                  </button>
+                  <button id="mobileViewBtn" type="button" class="device-btn">
+                    Mobile
+                  </button>
+                </div>
+                <button id="openPreviewBtn" type="button" class="open">
+                  Open Preview
+                </button>
+              </div>
             </div>
-            <div id="previewWrap" class="landing-preview device-desktop"><iframe id="landingPreviewFrame" title="Landing Preview"></iframe></div>
+
+            <div id="previewWrap" class="landing-preview device-desktop">
+              <iframe id="landingPreviewFrame" title="Landing Preview"></iframe>
+            </div>
           </div>
+
           <div class="sub-grid">
-            <div class="card alt"><h3>📦 Quick Presets</h3><div class="toolbar"><button id="presetNeonBtn" type="button" class="ghost-btn">Neon</button><button id="presetBlueBtn" type="button" class="ghost-btn">Blue</button><button id="presetPinkBtn" type="button" class="ghost-btn">Pink</button><button id="presetGreenBtn" type="button" class="ghost-btn">Green</button></div></div>
-            <div class="card alt"><h3>📝 Builder Status</h3><div class="muted" id="builderStatus">Ready. Start filling the form and the preview will update automatically.</div></div>
+            <div class="card alt">
+              <h3>📦 Quick Presets</h3>
+              <div class="toolbar">
+                <button id="presetNeonBtn" type="button" class="ghost-btn">
+                  Neon
+                </button>
+                <button id="presetBlueBtn" type="button" class="ghost-btn">
+                  Blue
+                </button>
+                <button id="presetPinkBtn" type="button" class="ghost-btn">
+                  Pink
+                </button>
+                <button id="presetGreenBtn" type="button" class="ghost-btn">
+                  Green
+                </button>
+              </div>
+            </div>
+
+            <div class="card alt">
+              <h3>📝 Builder Status</h3>
+              <div class="muted" id="builderStatus">
+                Ready. Start filling the form and the preview will update
+                automatically.
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="section-head"><h2>🗂 Your Landing Pages</h2><div class="toolbar"><select id="domainFilter" style="max-width:220px"><option value="all">All domains</option></select><select id="statusFilter" style="max-width:180px"><option value="all">All statuses</option><option value="live">Live</option><option value="paused">Paused</option></select><input id="searchInput" placeholder="Search slug, title, URL or domain..." style="max-width:360px" /></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Slug</th><th>Domain</th><th>Title</th><th>Clicks</th><th>Public Link</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="landingTable"></tbody></table></div>
+        <div class="section-head">
+          <h2>🗂 Your Landing Pages</h2>
+          <div class="toolbar">
+            <select id="domainFilter" style="max-width: 220px">
+              <option value="all">All domains</option>
+            </select>
+            <select id="statusFilter" style="max-width: 180px">
+              <option value="all">All statuses</option>
+              <option value="live">Live</option>
+              <option value="paused">Paused</option>
+            </select>
+            <input
+              id="searchInput"
+              placeholder="Search slug, title, URL or domain..."
+              style="max-width: 360px"
+            />
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Slug</th>
+                <th>Domain</th>
+                <th>Title</th>
+                <th>Clicks</th>
+                <th>Public Link</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="landingTable"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <div id="overlay" class="overlay"></div>
+
     <div id="qrModal" class="modal">
-      <div class="section-head"><h3>📱 QR Code</h3><button id="closeQrModalBtn" type="button">Close</button></div>
+      <div class="section-head">
+        <h3>📱 QR Code</h3>
+        <button id="closeQrModalBtn" type="button">Close</button>
+      </div>
       <div class="qr-shell">
-        <div class="qr-preview"><div class="qr-canvas-wrap"><canvas id="qrCanvas"></canvas></div><div id="qrLink" class="qr-meta muted"></div><div id="qrImageUrl" class="qr-meta muted tiny"></div><div class="qr-actions"><button id="downloadQrBtn" class="purple-btn" type="button">Download QR</button><button id="openQrImageBtn" class="ghost-btn" type="button">Open QR URL</button><button id="copyQrUrlBtn" class="ghost-btn" type="button">Copy QR URL</button><button id="copyQrLinkBtn" class="copy" type="button">Copy Link</button><button id="openQrLinkBtn" class="open" type="button">Open Link</button></div></div>
-        <div class="surface"><h4 style="margin-top:0">QR Details</h4><div class="muted">Use this QR code for ads, flyers, posters, packaging, or direct mobile traffic.</div><div style="margin-top:14px" id="qrMetaDetails"></div></div>
+        <div class="qr-preview">
+          <div class="qr-canvas-wrap">
+            <canvas id="qrCanvas"></canvas>
+          </div>
+          <div id="qrLink" class="qr-meta muted"></div>
+          <div id="qrImageUrl" class="qr-meta muted tiny"></div>
+          <div class="qr-actions">
+            <button id="downloadQrBtn" class="purple-btn" type="button">
+              Download QR
+            </button>
+            <button id="openQrImageBtn" class="ghost-btn" type="button">
+              Open QR URL
+            </button>
+            <button id="copyQrUrlBtn" class="ghost-btn" type="button">
+              Copy QR URL
+            </button>
+            <button id="copyQrLinkBtn" class="copy" type="button">
+              Copy Link
+            </button>
+            <button id="openQrLinkBtn" class="open" type="button">
+              Open Link
+            </button>
+          </div>
+        </div>
+        <div class="surface">
+          <h4 style="margin-top: 0">QR Details</h4>
+          <div class="muted">
+            Use this QR code for ads, flyers, posters, packaging, or direct
+            mobile traffic. The same landing link works when scanned.
+          </div>
+          <div style="margin-top: 14px" id="qrMetaDetails"></div>
+        </div>
       </div>
     </div>
+
     <div class="toast" id="toast">Copied!</div>
 
     <script>
       const PRIMARY_API = "https://api.rattleshortapi.it.com";
       const PUBLIC_HOST = "https://rattleshortapi.it.com";
-      const AUTOSAVE_KEY = "rattle_landing_builder_draft_v3_advanced_slug";
+      const AUTOSAVE_KEY = "rattle_landing_builder_draft_v2";
 
       let landingStore = [];
       let domainsStore = [];
@@ -290,12 +1282,16 @@
       const qrLink = document.getElementById("qrLink");
       const qrImageUrl = document.getElementById("qrImageUrl");
       const qrMetaDetails = document.getElementById("qrMetaDetails");
+
       const totalLandings = document.getElementById("totalLandings");
       const totalLandingClicks = document.getElementById("totalLandingClicks");
-      const verifiedDomainsCount = document.getElementById("verifiedDomainsCount");
+      const verifiedDomainsCount = document.getElementById(
+        "verifiedDomainsCount"
+      );
       const activeLandings = document.getElementById("activeLandings");
       const draftState = document.getElementById("draftState");
       const draftStateText = document.getElementById("draftStateText");
+
       const refreshBtn = document.getElementById("refreshBtn");
       const clearBtn = document.getElementById("clearBtn");
       const previewBtn = document.getElementById("previewBtn");
@@ -303,11 +1299,12 @@
       const updateBtn = document.getElementById("updateBtn");
       const openPreviewBtn = document.getElementById("openPreviewBtn");
       const autosaveBtn = document.getElementById("autosaveBtn");
+
       const desktopViewBtn = document.getElementById("desktopViewBtn");
       const tabletViewBtn = document.getElementById("tabletViewBtn");
       const mobileViewBtn = document.getElementById("mobileViewBtn");
+
       const landingSlug = document.getElementById("landingSlug");
-      const advancedSlug = document.getElementById("advancedSlug");
       const landingDomain = document.getElementById("landingDomain");
       const landingTitle = document.getElementById("landingTitle");
       const landingSubtitle = document.getElementById("landingSubtitle");
@@ -317,30 +1314,46 @@
       const landingCtaLabel = document.getElementById("landingCtaLabel");
       const landingCtaUrl = document.getElementById("landingCtaUrl");
       const landingFooter = document.getElementById("landingFooter");
-      const landingButtonLabel1 = document.getElementById("landingButtonLabel1");
+      const landingButtonLabel1 = document.getElementById(
+        "landingButtonLabel1"
+      );
       const landingButtonUrl1 = document.getElementById("landingButtonUrl1");
-      const landingButtonLabel2 = document.getElementById("landingButtonLabel2");
+      const landingButtonLabel2 = document.getElementById(
+        "landingButtonLabel2"
+      );
       const landingButtonUrl2 = document.getElementById("landingButtonUrl2");
       const landingMetaTitle = document.getElementById("landingMetaTitle");
-      const landingMetaDescription = document.getElementById("landingMetaDescription");
+      const landingMetaDescription = document.getElementById(
+        "landingMetaDescription"
+      );
       const landingHtml = document.getElementById("landingHtml");
       const landingCss = document.getElementById("landingCss");
       const landingJs = document.getElementById("landingJs");
       const landingOgTitle = document.getElementById("landingOgTitle");
-      const landingOgDescription = document.getElementById("landingOgDescription");
+      const landingOgDescription = document.getElementById(
+        "landingOgDescription"
+      );
       const landingOgImage = document.getElementById("landingOgImage");
-      const landingCanonicalUrl = document.getElementById("landingCanonicalUrl");
+      const landingCanonicalUrl = document.getElementById(
+        "landingCanonicalUrl"
+      );
       const bgStyle = document.getElementById("bgStyle");
       const cardStyle = document.getElementById("cardStyle");
       const buttonStyle = document.getElementById("buttonStyle");
-      const landingPreviewFrame = document.getElementById("landingPreviewFrame");
+      const landingPreviewFrame = document.getElementById(
+        "landingPreviewFrame"
+      );
       const dynamicButtons = document.getElementById("dynamicButtons");
+
       const addButtonBtn = document.getElementById("addButtonBtn");
       const presetNeonBtn = document.getElementById("presetNeonBtn");
       const presetBlueBtn = document.getElementById("presetBlueBtn");
       const presetPinkBtn = document.getElementById("presetPinkBtn");
       const presetGreenBtn = document.getElementById("presetGreenBtn");
-      const setPrimaryDomainBtn = document.getElementById("setPrimaryDomainBtn");
+      const setPrimaryDomainBtn = document.getElementById(
+        "setPrimaryDomainBtn"
+      );
+
       const formResult = document.getElementById("formResult");
       const landingTable = document.getElementById("landingTable");
       const searchInput = document.getElementById("searchInput");
@@ -348,12 +1361,17 @@
       const statusFilter = document.getElementById("statusFilter");
 
       function authHeaders() {
-        const token = localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
+        const token =
+          localStorage.getItem("rattle_token") ||
+          localStorage.getItem("token") ||
+          "";
         return token ? { Authorization: `Bearer ${token}` } : {};
       }
 
       function ensureAuth() {
-        const token = localStorage.getItem("rattle_token") || localStorage.getItem("token");
+        const token =
+          localStorage.getItem("rattle_token") || localStorage.getItem("token");
+
         if (!token) {
           alert("Missing login token. Please log in again.");
           window.location.href = "index.html";
@@ -363,34 +1381,28 @@
       }
 
       function normalizeDomain(value) {
-        return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
-      }
-
-      function normalizeSlugClient(value) {
-        return String(value || "").trim().toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
-      }
-
-      function getEffectiveSlug() {
-        const hasCustomHtml = String(landingHtml.value || "").trim().length > 0;
-        const adv = normalizeSlugClient(advancedSlug.value);
-        const basic = normalizeSlugClient(landingSlug.value);
-        return hasCustomHtml && adv ? adv : basic;
-      }
-
-      function syncAdvancedSlugToBasicIfNeeded() {
-        const hasCustomHtml = String(landingHtml.value || "").trim().length > 0;
-        const adv = normalizeSlugClient(advancedSlug.value);
-        if (hasCustomHtml && adv) {
-          landingSlug.value = adv;
-        }
+        return String(value || "")
+          .trim()
+          .toLowerCase()
+          .replace(/^https?:\/\//i, "")
+          .replace(/\/+$/g, "");
       }
 
       function escapeHtml(str) {
-        return String(str ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+        return String(str ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
       }
 
       function escapeForJs(str) {
-        return String(str ?? "").replaceAll("\\", "\\\\").replaceAll("'", "\\'").replaceAll("\n", "\\n").replaceAll("\r", "");
+        return String(str ?? "")
+          .replaceAll("\\", "\\\\")
+          .replaceAll("'", "\\'")
+          .replaceAll("\n", "\\n")
+          .replaceAll("\r", "");
       }
 
       function fmtDate(ts) {
@@ -401,7 +1413,8 @@
 
       function setBusy(button, busy, text = "") {
         if (!button) return;
-        if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+        if (!button.dataset.originalText)
+          button.dataset.originalText = button.textContent;
         button.disabled = !!busy;
         button.textContent = busy ? text : button.dataset.originalText;
       }
@@ -410,7 +1423,9 @@
         toast.textContent = message;
         toast.style.display = "block";
         clearTimeout(window.__toastTimer);
-        window.__toastTimer = setTimeout(() => { toast.style.display = "none"; }, 1800);
+        window.__toastTimer = setTimeout(() => {
+          toast.style.display = "none";
+        }, 1800);
       }
 
       function setResult(message, isError = false) {
@@ -418,51 +1433,124 @@
         formResult.className = "result " + (isError ? "error" : "success");
       }
 
-      function setBuilderStatus(message) { builderStatus.textContent = message; }
-      function setDraftIndicator(label, text) { draftState.textContent = label; draftStateText.textContent = text; }
-      function openModal(modal) { overlay.style.display = "block"; modal.style.display = "block"; }
-      function closeModal(modal) { modal.style.display = "none"; syncOverlay(); }
-      function syncOverlay() { overlay.style.display = [qrModal].some((m) => m.style.display === "block") ? "block" : "none"; }
+      function setBuilderStatus(message) {
+        builderStatus.textContent = message;
+      }
+
+      function setDraftIndicator(label, text) {
+        draftState.textContent = label;
+        draftStateText.textContent = text;
+      }
+
+      function openModal(modal) {
+        overlay.style.display = "block";
+        modal.style.display = "block";
+      }
+
+      function closeModal(modal) {
+        modal.style.display = "none";
+        syncOverlay();
+      }
+
+      function syncOverlay() {
+        const anyOpen = [qrModal].some((m) => m.style.display === "block");
+        overlay.style.display = anyOpen ? "block" : "none";
+      }
 
       function buildQrImageUrl(link, size = 280) {
-        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(String(link || "").trim())}`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+          String(link || "").trim()
+        )}`;
       }
 
       function getQrFilename(slug = "landing") {
-        const safeSlug = String(slug || "landing").replace(/[^a-z0-9-_]+/gi, "-");
+        const safeSlug = String(slug || "landing").replace(
+          /[^a-z0-9-_]+/gi,
+          "-"
+        );
         return `${safeSlug || "landing"}-qr.png`;
       }
 
       async function renderQrToCanvas(link, canvas) {
-        return QRCode.toCanvas(canvas, link, { width: 260, margin: 2, color: { dark: "#000000", light: "#ffffff" } });
+        return QRCode.toCanvas(canvas, link, {
+          width: 260,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#ffffff",
+          },
+        });
       }
 
       async function showQR(link, slug = "") {
         const safeLink = String(link || "").trim();
         if (!safeLink) return showToast("Invalid link");
+
         currentQrLink = safeLink;
         currentQrSlug = slug || "landing";
         currentQrImageUrl = buildQrImageUrl(safeLink, 280);
+
         qrLink.textContent = safeLink;
-        qrImageUrl.innerHTML = `<a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>`;
-        qrMetaDetails.innerHTML = `<div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div><div class="muted" style="margin-top:8px"><b>Destination:</b> ${escapeHtml(safeLink)}</div><div class="muted" style="margin-top:8px"><b>QR image URL:</b><br><a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a></div><div class="muted" style="margin-top:8px"><b>Download:</b> PNG</div>`;
+        qrImageUrl.innerHTML = `
+        <a href="${escapeHtml(
+          currentQrImageUrl
+        )}" target="_blank" rel="noopener noreferrer">
+          ${escapeHtml(currentQrImageUrl)}
+        </a>
+      `;
+        qrMetaDetails.innerHTML = `
+        <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
+        <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
+          safeLink
+        )}</div>
+        <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
+          <a href="${escapeHtml(
+            currentQrImageUrl
+          )}" target="_blank" rel="noopener noreferrer">
+            ${escapeHtml(currentQrImageUrl)}
+          </a>
+        </div>
+        <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
+      `;
+
         openModal(qrModal);
-        try { await renderQrToCanvas(safeLink, qrCanvas); } catch { showToast("QR generation failed"); }
+
+        try {
+          await renderQrToCanvas(safeLink, qrCanvas);
+        } catch {
+          showToast("QR generation failed");
+        }
       }
 
       function downloadCurrentQR() {
+        if (currentQrImageUrl) {
+          const link = document.createElement("a");
+          link.download = getQrFilename(currentQrSlug);
+          link.href = currentQrImageUrl;
+          link.click();
+          return;
+        }
+
+        if (!qrCanvas) return;
         const link = document.createElement("a");
         link.download = getQrFilename(currentQrSlug);
-        link.href = currentQrImageUrl || qrCanvas.toDataURL("image/png");
+        link.href = qrCanvas.toDataURL("image/png");
         link.click();
       }
 
       async function safeFetchRaw(path, options = {}) {
         try {
-          const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
+          const res = await fetch(
+            PRIMARY_API.replace(/\/+$/, "") + path,
+            options
+          );
           const raw = await res.text();
           let data = {};
-          try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
+          try {
+            data = raw ? JSON.parse(raw) : {};
+          } catch {
+            data = { message: raw };
+          }
           if (res.status === 401) {
             localStorage.removeItem("token");
             localStorage.removeItem("role");
@@ -472,15 +1560,30 @@
           }
           return { ok: res.ok, status: res.status, data, raw };
         } catch (e) {
-          return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
+          return {
+            ok: false,
+            status: 0,
+            data: { message: e?.message || "Failed to fetch" },
+            raw: "",
+          };
         }
       }
 
       async function authorizedFetch(path, options = {}) {
         const method = String(options.method || "GET").toUpperCase();
-        const headers = { ...authHeaders(), ...(options.headers || {}) };
-        if (method !== "GET" && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-        return safeFetchRaw(path, { ...options, headers });
+        const headers = {
+          ...authHeaders(),
+          ...(options.headers || {}),
+        };
+
+        if (method !== "GET" && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        return safeFetchRaw(path, {
+          ...options,
+          headers,
+        });
       }
 
       function buildPublicLink(item) {
@@ -493,103 +1596,198 @@
 
       function normalizeLandingItem(item) {
         let parsedButtons = [];
+
         try {
-          if (Array.isArray(item.landingButtons)) parsedButtons = item.landingButtons;
-          else if (Array.isArray(item.buttons)) parsedButtons = item.buttons;
-          else if (Array.isArray(item.landing_buttons)) parsedButtons = item.landing_buttons;
-          else if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
+          if (Array.isArray(item.landingButtons)) {
+            parsedButtons = item.landingButtons;
+          } else if (Array.isArray(item.buttons)) {
+            parsedButtons = item.buttons;
+          } else if (Array.isArray(item.landing_buttons)) {
+            parsedButtons = item.landing_buttons;
+          } else if (
+            typeof item.landing_buttons === "string" &&
+            item.landing_buttons.trim()
+          ) {
             const parsed = JSON.parse(item.landing_buttons);
             parsedButtons = Array.isArray(parsed) ? parsed : [];
           }
-        } catch { parsedButtons = []; }
+        } catch {
+          parsedButtons = [];
+        }
+
         return {
           ...item,
           backend: "primary",
           slug: item.slug || "",
-          advancedSlug: item.advancedSlug || item.advanced_slug || "",
           url: item.url || "",
           clicks: Number(item.clicks || 0),
           paused: !!item.paused,
           expire: item.expire ? Number(item.expire) : null,
           createdAt: Number(item.createdAt || item.created_at || 0),
           domain: normalizeDomain(item.domain || ""),
-          linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
-          landingTitle: item.landingTitle || item.landing_title || item.title || "",
-          landingDescription: item.landingDescription || item.landing_description || item.description || "",
-          landingImage: item.landingImage || item.landing_image || item.image || "",
-          landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
+          linkType: String(
+            item.linkType || item.link_type || "redirect"
+          ).toLowerCase(),
+
+          landingTitle:
+            item.landingTitle || item.landing_title || item.title || "",
+          landingDescription:
+            item.landingDescription ||
+            item.landing_description ||
+            item.description ||
+            "",
+          landingImage:
+            item.landingImage || item.landing_image || item.image || "",
+          landingTheme:
+            item.landingTheme || item.landing_theme || item.theme || "#00ffff",
           landingButtons: parsedButtons,
-          landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
-          landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
-          landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
+          landingCtaLabel:
+            item.landingCtaLabel ||
+            item.landing_cta_label ||
+            item.ctaLabel ||
+            "",
+          landingCtaUrl:
+            item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+          landingFooter:
+            item.landingFooter || item.landing_footer || item.footer || "",
           landingHtml: item.landingHtml || item.landing_html || "",
           landingCss: item.landingCss || item.landing_css || "",
           landingJs: item.landingJs || item.landing_js || "",
           metaTitle: item.metaTitle || item.landing_meta_title || "",
-          metaDescription: item.metaDescription || item.landing_meta_description || "",
+          metaDescription:
+            item.metaDescription || item.landing_meta_description || "",
+
           subtitle: item.subtitle || "",
           ogTitle: item.ogTitle || "",
           ogDescription: item.ogDescription || "",
           ogImage: item.ogImage || "",
-          canonicalUrl: item.canonicalUrl || ""
+          canonicalUrl: item.canonicalUrl || "",
         };
       }
 
       function updatePreviewDevice(device) {
-        previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
+        previewWrap.classList.remove(
+          "device-desktop",
+          "device-tablet",
+          "device-mobile"
+        );
         previewWrap.classList.add(`device-${device}`);
-        [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) => btn.classList.remove("active"));
+
+        [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
+          btn.classList.remove("active")
+        );
         if (device === "desktop") desktopViewBtn.classList.add("active");
         if (device === "tablet") tabletViewBtn.classList.add("active");
         if (device === "mobile") mobileViewBtn.classList.add("active");
       }
 
       function setTab(tabId) {
-        document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
-        document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === tabId));
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === tabId);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === tabId);
+        });
       }
 
       function getDynamicButtons() {
-        return dynamicButtonsStore.map((btn, index) => {
-          const labelEl = document.getElementById(`dynBtnLabel_${index}`);
-          const urlEl = document.getElementById(`dynBtnUrl_${index}`);
-          return { label: String(labelEl?.value || "").trim(), url: String(urlEl?.value || "").trim() };
-        }).filter((btn) => btn.label && btn.url);
+        return dynamicButtonsStore
+          .map((btn, index) => {
+            const labelEl = document.getElementById(`dynBtnLabel_${index}`);
+            const urlEl = document.getElementById(`dynBtnUrl_${index}`);
+            return {
+              label: String(labelEl?.value || "").trim(),
+              url: String(urlEl?.value || "").trim(),
+            };
+          })
+          .filter((btn) => btn.label && btn.url);
       }
 
-      function addDynamicButton(label = "", url = "") { dynamicButtonsStore.push({ label, url }); renderDynamicButtons(); }
-      function removeDynamicButton(index) { dynamicButtonsStore.splice(index, 1); renderDynamicButtons(); triggerAutosave(); renderPreview(); }
+      function addDynamicButton(label = "", url = "") {
+        dynamicButtonsStore.push({ label, url });
+        renderDynamicButtons();
+      }
+
+      function removeDynamicButton(index) {
+        dynamicButtonsStore.splice(index, 1);
+        renderDynamicButtons();
+        triggerAutosave();
+        renderPreview();
+      }
 
       function renderDynamicButtons() {
         if (!dynamicButtonsStore.length) {
           dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
           return;
         }
-        dynamicButtons.innerHTML = dynamicButtonsStore.map((btn, index) => `
-          <div class="button-item">
-            <div class="button-item-head"><div><b>Extra Button ${index + 1}</b></div><button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button></div>
-            <div class="form-row"><div class="field"><label for="dynBtnLabel_${index}">Label</label><input id="dynBtnLabel_${index}" value="${escapeHtml(btn.label || "")}" placeholder="Button label" /></div><div class="field"><label for="dynBtnUrl_${index}">URL</label><input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." /></div></div>
+
+        dynamicButtons.innerHTML = dynamicButtonsStore
+          .map(
+            (btn, index) => `
+        <div class="button-item">
+          <div class="button-item-head">
+            <div><b>Extra Button ${index + 1}</b></div>
+            <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
           </div>
-        `).join("");
-        dynamicButtons.querySelectorAll("input").forEach((input) => input.addEventListener("input", () => { triggerAutosave(); renderPreview(); }));
+          <div class="form-row">
+            <div class="field">
+              <label for="dynBtnLabel_${index}">Label</label>
+              <input id="dynBtnLabel_${index}" value="${escapeHtml(
+              btn.label || ""
+            )}" placeholder="Button label" />
+            </div>
+            <div class="field">
+              <label for="dynBtnUrl_${index}">URL</label>
+              <input id="dynBtnUrl_${index}" value="${escapeHtml(
+              btn.url || ""
+            )}" placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+
+        dynamicButtons.querySelectorAll("input").forEach((el) => {
+          el.addEventListener("input", () => {
+            triggerAutosave();
+            renderPreview();
+          });
+        });
       }
 
       function getLandingButtons() {
         const buttons = [];
+
         const b1Label = landingButtonLabel1.value.trim();
         const b1Url = landingButtonUrl1.value.trim();
         if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
+
         const b2Label = landingButtonLabel2.value.trim();
         const b2Url = landingButtonUrl2.value.trim();
         if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
+
         return buttons.concat(getDynamicButtons());
       }
 
       async function setPrimaryDomain() {
         const domain = normalizeDomain(landingDomain.value);
-        if (!domain) return showToast("Select a domain first");
-        const res = await authorizedFetch("/domains/set-primary", { method: "POST", body: JSON.stringify({ domain }) });
-        if (!res.ok) return showToast(res.data?.message || "Failed to set primary");
+
+        if (!domain) {
+          showToast("Select a domain first");
+          return;
+        }
+
+        const res = await authorizedFetch("/domains/set-primary", {
+          method: "POST",
+          body: JSON.stringify({ domain }),
+        });
+
+        if (!res.ok) {
+          showToast(res.data?.message || "Failed to set primary");
+          return;
+        }
+
         showToast("Primary domain updated");
         await loadDomains();
       }
@@ -597,7 +1795,6 @@
       function collectDraft() {
         return {
           slug: landingSlug.value.trim(),
-          advancedSlug: advancedSlug.value.trim(),
           domain: normalizeDomain(landingDomain.value),
           title: landingTitle.value.trim(),
           subtitle: landingSubtitle.value.trim(),
@@ -607,8 +1804,14 @@
           ctaLabel: landingCtaLabel.value.trim(),
           ctaUrl: landingCtaUrl.value.trim(),
           footer: landingFooter.value.trim(),
-          buttonsQuick1: { label: landingButtonLabel1.value.trim(), url: landingButtonUrl1.value.trim() },
-          buttonsQuick2: { label: landingButtonLabel2.value.trim(), url: landingButtonUrl2.value.trim() },
+          buttonsQuick1: {
+            label: landingButtonLabel1.value.trim(),
+            url: landingButtonUrl1.value.trim(),
+          },
+          buttonsQuick2: {
+            label: landingButtonLabel2.value.trim(),
+            url: landingButtonUrl2.value.trim(),
+          },
           extraButtons: getDynamicButtons(),
           metaTitle: landingMetaTitle.value.trim(),
           metaDescription: landingMetaDescription.value.trim(),
@@ -621,15 +1824,24 @@
           landingJs: landingJs.value,
           bgStyle: bgStyle.value,
           cardStyle: cardStyle.value,
-          buttonStyle: buttonStyle.value
+          buttonStyle: buttonStyle.value,
         };
       }
 
       function saveDraft() {
         if (!autosaveEnabled) return;
         try {
-          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: Date.now(), data: collectDraft() }));
-          setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
+          localStorage.setItem(
+            AUTOSAVE_KEY,
+            JSON.stringify({
+              savedAt: Date.now(),
+              data: collectDraft(),
+            })
+          );
+          setDraftIndicator(
+            "Draft",
+            `Saved ${new Date().toLocaleTimeString()}`
+          );
         } catch {}
       }
 
@@ -640,8 +1852,8 @@
           const parsed = JSON.parse(raw);
           const d = parsed?.data;
           if (!d) return false;
+
           landingSlug.value = d.slug || "";
-          advancedSlug.value = d.advancedSlug || "";
           restoredDraftDomain = d.domain || "";
           landingTitle.value = d.title || "";
           landingSubtitle.value = d.subtitle || "";
@@ -667,144 +1879,320 @@
           bgStyle.value = d.bgStyle || "radial";
           cardStyle.value = d.cardStyle || "glass";
           buttonStyle.value = d.buttonStyle || "rounded";
-          dynamicButtonsStore = Array.isArray(d.extraButtons) ? d.extraButtons.slice(0, 20) : [];
+
+          dynamicButtonsStore = Array.isArray(d.extraButtons)
+            ? d.extraButtons.slice(0, 20)
+            : [];
           renderDynamicButtons();
-          const when = parsed?.savedAt ? new Date(parsed.savedAt).toLocaleString() : "previous session";
+
+          const when = parsed?.savedAt
+            ? new Date(parsed.savedAt).toLocaleString()
+            : "previous session";
           setDraftIndicator("Draft", `Restored from ${when}`);
           return true;
-        } catch { return false; }
-      }
-
-      function clearSavedDraft() { localStorage.removeItem(AUTOSAVE_KEY); setDraftIndicator("Draft", "Cleared"); }
-      function triggerAutosave() { if (!autosaveEnabled) return; clearTimeout(window.__builderAutosaveTimer); window.__builderAutosaveTimer = setTimeout(saveDraft, 300); }
-
-      function injectCustomAssetsIntoHtml(html, css, js) {
-        let out = String(html || "").trim();
-        const customCss = String(css || "").trim();
-        const customJs = String(js || "").trim();
-        if (!out) return "";
-        const styleTag = customCss ? `<style>\n${customCss}\n</style>` : "";
-        const scriptTag = customJs ? `<script>\n${customJs}\n<\/script>` : "";
-        if (/<!doctype|<html[\s>]/i.test(out)) {
-          if (styleTag) out = /<\/head>/i.test(out) ? out.replace(/<\/head>/i, `${styleTag}\n</head>`) : `${styleTag}\n${out}`;
-          if (scriptTag) out = /<\/body>/i.test(out) ? out.replace(/<\/body>/i, `${scriptTag}\n</body>`) : `${out}\n${scriptTag}`;
-          return out;
+        } catch {
+          return false;
         }
-        return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(landingTitle.value || advancedSlug.value || landingSlug.value || "Landing Page")}</title>${styleTag}</head><body>${out}${scriptTag}</body></html>`;
       }
 
-      ```js
-function getPayload() {
-  const rawHtml = landingHtml.value;
-  const hasCustomHtml = String(rawHtml || "").trim().length > 0;
+      function clearSavedDraft() {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        setDraftIndicator("Draft", "Cleared");
+      }
 
-  const basicSlug = normalizeSlugClient(landingSlug.value);
-  const advSlug = normalizeSlugClient(advancedSlug.value);
+      function triggerAutosave() {
+        if (!autosaveEnabled) return;
+        clearTimeout(window.__builderAutosaveTimer);
+        window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
+      }
 
-  const slug = hasCustomHtml && advSlug ? advSlug : basicSlug;
+      function getPayload() {
+        const slug = landingSlug.value.trim();
+        const domain = normalizeDomain(landingDomain.value);
+        const title = landingTitle.value.trim();
+        const subtitle = landingSubtitle.value.trim();
+        const description = landingDescription.value.trim();
+        const image = landingImage.value.trim();
+        const theme = landingTheme.value.trim() || "#00ffff";
+        const ctaLabel = landingCtaLabel.value.trim();
+        const ctaUrl = landingCtaUrl.value.trim();
+        const footer = landingFooter.value.trim();
+        const buttons = getLandingButtons();
+        const html = landingHtml.value;
+        const css = landingCss.value;
+        const js = landingJs.value;
+        const metaTitle = landingMetaTitle.value.trim();
+        const metaDescription = landingMetaDescription.value.trim();
+        const ogTitle = landingOgTitle.value.trim();
+        const ogDescription = landingOgDescription.value.trim();
+        const ogImage = landingOgImage.value.trim();
+        const canonicalUrl = landingCanonicalUrl.value.trim();
 
-  const domain = normalizeDomain(landingDomain.value);
-  const title = landingTitle.value.trim();
-  const subtitle = landingSubtitle.value.trim();
-  const description = landingDescription.value.trim();
-  const image = landingImage.value.trim();
-  const theme = landingTheme.value.trim() || "#00ffff";
+        if (!slug) {
+          setResult("Landing slug is required", true);
+          return null;
+        }
 
-  const ctaLabel = landingCtaLabel.value.trim();
-  const ctaUrl = landingCtaUrl.value.trim();
-  const footer = landingFooter.value.trim();
+        if (!title && !html.trim()) {
+          setResult("Landing title or custom HTML is required", true);
+          return null;
+        }
 
-  const buttons = getLandingButtons();
+        return {
+          slug,
+          domain,
+          title,
+          subtitle,
+          description,
+          image,
+          theme,
+          buttons,
+          ctaLabel,
+          ctaUrl,
+          footer,
+          landingHtml: html,
+          landingCss: css,
+          landingJs: js,
+          metaTitle,
+          metaDescription,
+          ogTitle,
+          ogDescription,
+          ogImage,
+          canonicalUrl,
+        };
+      }
 
-  const css = landingCss.value;
-  const js = landingJs.value;
-
-  const html = hasCustomHtml
-    ? injectCustomAssetsIntoHtml(rawHtml, css, js)
-    : "";
-
-  const metaTitle = landingMetaTitle.value.trim();
-  const metaDescription = landingMetaDescription.value.trim();
-  const ogTitle = landingOgTitle.value.trim();
-  const ogDescription = landingOgDescription.value.trim();
-  const ogImage = landingOgImage.value.trim();
-  const canonicalUrl = landingCanonicalUrl.value.trim();
-
-  if (!slug) {
-    setResult("Landing slug is required", true);
-    return null;
-  }
-
-  if (!title && !hasCustomHtml) {
-    setResult("Landing title is required for normal builder pages", true);
-    setTab("tab-basics");
-    return null;
-  }
-
-  if (hasCustomHtml && advSlug) {
-    landingSlug.value = advSlug;
-  }
-
-  return {
-    slug,
-    advancedSlug: hasCustomHtml && advSlug ? advSlug : "",
-    domain,
-    title: title || slug,
-    subtitle,
-    description,
-    image,
-    theme,
-    buttons,
-    ctaLabel,
-    ctaUrl,
-    footer,
-    landingHtml: html,
-    landingCss: hasCustomHtml ? "" : css,
-    landingJs: hasCustomHtml ? "" : js,
-    metaTitle,
-    metaDescription,
-    ogTitle,
-    ogDescription,
-    ogImage,
-    canonicalUrl
-  };
-}
       function getGeneratedPreviewHtml() {
         const data = collectDraft();
-        const customHtml = String(data.landingHtml || "").trim();
-        const customCss = String(data.landingCss || "");
-        const customJs = String(data.landingJs || "");
-        if (customHtml) return injectCustomAssetsIntoHtml(customHtml, customCss, customJs);
+
         const title = escapeHtml(data.title || data.slug || "Landing Page");
         const subtitle = escapeHtml(data.subtitle || "");
         const description = escapeHtml(data.description || "");
-        const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
+        const image =
+          data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
         const theme = escapeHtml(data.theme || "#00ffff");
         const ctaLabel = escapeHtml(data.ctaLabel || "");
         const ctaUrl = data.ctaUrl || "";
         const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-        const metaTitle = escapeHtml(data.metaTitle || data.title || "Landing Page");
-        const metaDescription = escapeHtml(data.metaDescription || data.description || "");
-        const ogTitle = escapeHtml(data.ogTitle || data.metaTitle || data.title || "Landing Page");
-        const ogDescription = escapeHtml(data.ogDescription || data.metaDescription || data.description || "");
-        const ogImage = data.ogImage && /^https?:\/\//i.test(data.ogImage) ? escapeHtml(data.ogImage) : "";
-        const canonicalUrl = data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl) ? escapeHtml(data.canonicalUrl) : "";
+        const metaTitle = escapeHtml(
+          data.metaTitle || data.title || "Landing Page"
+        );
+        const metaDescription = escapeHtml(
+          data.metaDescription || data.description || ""
+        );
+        const ogTitle = escapeHtml(
+          data.ogTitle || data.metaTitle || data.title || "Landing Page"
+        );
+        const ogDescription = escapeHtml(
+          data.ogDescription || data.metaDescription || data.description || ""
+        );
+        const ogImage =
+          data.ogImage && /^https?:\/\//i.test(data.ogImage)
+            ? escapeHtml(data.ogImage)
+            : "";
+        const canonicalUrl =
+          data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl)
+            ? escapeHtml(data.canonicalUrl)
+            : "";
+        const customHtml = String(data.landingHtml || "").trim();
+        const customCss = String(data.landingCss || "");
+        const customJs = String(data.landingJs || "");
         const buttons = getLandingButtons();
-        const bgCssMap = { radial: "background:radial-gradient(circle at top,#0f172a,#000);", solid: "background:#020617;", mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;", sunset: "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);" };
-        const cardCssMap = { glass: "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);", solid: "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);", outline: "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);" };
-        const buttonRadiusMap = { rounded: "14px", pill: "999px", sharp: "8px" };
-        return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${metaTitle}</title><meta name="description" content="${metaDescription}" /><meta property="og:title" content="${ogTitle}" /><meta property="og:description" content="${ogDescription}" /><meta property="og:type" content="website" />${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ""}${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}" />` : ""}<style>:root{--theme:${theme};--bg:#020617;--card:#0f172a;--text:#e2e8f0;--muted:#94a3b8;--btn-radius:${buttonRadiusMap[data.buttonStyle] || "14px"}}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;${bgCssMap[data.bgStyle] || bgCssMap.radial}color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}.wrap{width:100%;max-width:900px}.card{width:min(620px,100%);margin:0 auto;${cardCssMap[data.cardStyle] || cardCssMap.glass}border-radius:24px;padding:32px;text-align:center}.avatar{width:120px;height:120px;margin:0 auto 18px;border-radius:999px;overflow:hidden;border:3px solid var(--theme);background:#111827;box-shadow:0 0 18px rgba(0,255,255,.18)}.avatar img{width:100%;height:100%;object-fit:cover;display:block}.eyebrow{display:inline-block;margin:0 0 12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.10);color:var(--muted);font-size:12px}h1{margin:0 0 10px;color:var(--theme);font-size:34px;line-height:1.2}p.desc{margin:0 0 22px;color:var(--muted);line-height:1.8;font-size:15px}.links{display:grid;gap:12px;margin-top:20px}a.btn{display:block;padding:14px 16px;border-radius:var(--btn-radius);text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.08);background:#111827;color:var(--text);transition:.18s ease}a.btn:hover{transform:translateY(-1px);border-color:var(--theme)}a.cta{background:var(--theme);color:#000}.footer{margin-top:22px;color:var(--muted);font-size:12px}</style></head><body><div class="wrap"><div class="card">${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}<h1>${title}</h1>${description ? `<p class="desc">${description}</p>` : ""}<div class="links">${buttons.map((btn) => `<a class="btn" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`).join("")}${ctaLabel && ctaUrl ? `<a class="btn cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>` : ""}</div><div class="footer">${footer}</div></div></div></body></html>`;
+
+        const bgCssMap = {
+          radial: "background:radial-gradient(circle at top,#0f172a,#000);",
+          solid: "background:#020617;",
+          mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;",
+          sunset:
+            "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);",
+        };
+
+        const cardCssMap = {
+          glass:
+            "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);",
+          solid:
+            "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);",
+          outline:
+            "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);",
+        };
+
+        const buttonRadiusMap = {
+          rounded: "14px",
+          pill: "999px",
+          sharp: "8px",
+        };
+
+        if (customHtml) return customHtml;
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${metaTitle}</title>
+<meta name="description" content="${metaDescription}" />
+<meta property="og:title" content="${ogTitle}" />
+<meta property="og:description" content="${ogDescription}" />
+<meta property="og:type" content="website" />
+${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ""}
+${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}" />` : ""}
+<style>
+:root{
+  --theme:${theme};
+  --bg:#020617;
+  --card:#0f172a;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --btn-radius:${buttonRadiusMap[data.buttonStyle] || "14px"};
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,Arial,sans-serif;
+  ${bgCssMap[data.bgStyle] || bgCssMap.radial}
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.wrap{
+  width:100%;
+  max-width:900px;
+}
+.card{
+  width:min(620px,100%);
+  margin:0 auto;
+  ${cardCssMap[data.cardStyle] || cardCssMap.glass}
+  border-radius:24px;
+  padding:32px;
+  text-align:center;
+}
+.avatar{
+  width:120px;
+  height:120px;
+  margin:0 auto 18px;
+  border-radius:999px;
+  overflow:hidden;
+  border:3px solid var(--theme);
+  background:#111827;
+  box-shadow:0 0 18px rgba(0,255,255,.18);
+}
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.eyebrow{
+  display:inline-block;
+  margin:0 0 12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  color:var(--muted);
+  font-size:12px;
+}
+h1{
+  margin:0 0 10px;
+  color:var(--theme);
+  font-size:34px;
+  line-height:1.2;
+}
+p.desc{
+  margin:0 0 22px;
+  color:var(--muted);
+  line-height:1.8;
+  font-size:15px;
+}
+.links{
+  display:grid;
+  gap:12px;
+  margin-top:20px;
+}
+a.btn{
+  display:block;
+  padding:14px 16px;
+  border-radius:var(--btn-radius);
+  text-decoration:none;
+  font-weight:700;
+  border:1px solid rgba(255,255,255,.08);
+  background:#111827;
+  color:var(--text);
+  transition:.18s ease;
+}
+a.btn:hover{
+  transform:translateY(-1px);
+  border-color:var(--theme);
+}
+a.cta{
+  background:var(--theme);
+  color:#000;
+}
+.footer{
+  margin-top:22px;
+  color:var(--muted);
+  font-size:12px;
+}
+${customCss}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      ${
+        image
+          ? `<div class="avatar"><img src="${escapeHtml(
+              image
+            )}" alt="avatar" /></div>`
+          : ""
+      }
+      ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
+      <h1>${title}</h1>
+      ${description ? `<p class="desc">${description}</p>` : ""}
+      <div class="links">
+        ${buttons
+          .map(
+            (btn) => `
+          <a class="btn" href="${escapeHtml(
+            btn.url || "#"
+          )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+              btn.label || ""
+            )}</a>
+        `
+          )
+          .join("")}
+        ${
+          ctaLabel && ctaUrl
+            ? `
+          <a class="btn cta" href="${escapeHtml(
+            ctaUrl
+          )}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>
+        `
+            : ""
+        }
+      </div>
+      <div class="footer">${footer}</div>
+    </div>
+  </div>
+  ${customJs ? `<script>${customJs}<\/script>` : ""}
+</body>
+</html>`;
       }
 
       function renderPreview() {
-        landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
+        const payload = getPayload();
+        if (!payload) return;
+
+        const html = getGeneratedPreviewHtml();
+        landingPreviewFrame.srcdoc = html;
         setResult("Preview updated", false);
         setBuilderStatus("Preview rendered successfully.");
       }
 
       function clearForm() {
         landingSlug.value = "";
-        advancedSlug.value = "";
         landingDomain.value = "";
         landingTitle.value = "";
         landingSubtitle.value = "";
@@ -841,7 +2229,6 @@ function getPayload() {
 
       function fillForm(item) {
         landingSlug.value = item.slug || "";
-        advancedSlug.value = item.landingHtml ? item.slug || item.advancedSlug || "" : item.advancedSlug || "";
         landingDomain.value = item.domain || "";
         landingTitle.value = item.landingTitle || "";
         landingSubtitle.value = item.subtitle || "";
@@ -863,13 +2250,21 @@ function getPayload() {
         bgStyle.value = item.bgStyle || "radial";
         cardStyle.value = item.cardStyle || "glass";
         buttonStyle.value = item.buttonStyle || "rounded";
-        const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
+
+        const buttons = Array.isArray(item.landingButtons)
+          ? item.landingButtons
+          : [];
         landingButtonLabel1.value = buttons[0]?.label || "";
         landingButtonUrl1.value = buttons[0]?.url || "";
         landingButtonLabel2.value = buttons[1]?.label || "";
         landingButtonUrl2.value = buttons[1]?.url || "";
-        dynamicButtonsStore = buttons.slice(2).map((btn) => ({ label: btn.label || "", url: btn.url || "" }));
+
+        dynamicButtonsStore = buttons.slice(2).map((btn) => ({
+          label: btn.label || "",
+          url: btn.url || "",
+        }));
         renderDynamicButtons();
+
         renderPreview();
         saveDraft();
         showToast("Landing loaded");
@@ -879,111 +2274,317 @@ function getPayload() {
       async function createLanding() {
         const payload = getPayload();
         if (!payload) return;
+
         setBusy(createBtn, true, "Creating...");
-        const res = await authorizedFetch("/landing/create", { method: "POST", body: JSON.stringify(payload) });
+
+        const res = await authorizedFetch("/landing/create", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
         setBusy(createBtn, false);
-        if (!res.ok) { setResult(res.data?.message || "Landing create failed", true); setBuilderStatus("Create failed."); return; }
-        const publicLink = res.data?.link || res.data?.publicLink || buildPublicLink({ slug: res.data?.slug || payload.slug, domain: payload.domain });
-        const finalSlug = res.data?.slug || payload.slug;
-        landingSlug.value = finalSlug;
+
+        if (!res.ok) {
+          setResult(res.data?.message || "Landing create failed", true);
+          setBuilderStatus("Create failed.");
+          return;
+        }
+
+        const publicLink =
+          res.data?.link ||
+          res.data?.publicLink ||
+          buildPublicLink({
+            slug: payload.slug,
+            domain: payload.domain,
+          });
+
         setResult(`Landing created: ${publicLink}`, false);
         setBuilderStatus("Landing created successfully.");
         saveDraft();
         await loadAll(false);
-        showQR(publicLink, finalSlug);
+        showQR(publicLink, payload.slug);
       }
 
       async function updateLanding() {
         const payload = getPayload();
         if (!payload) return;
+
         setBusy(updateBtn, true, "Updating...");
-        const res = await authorizedFetch("/landing/update", { method: "POST", body: JSON.stringify(payload) });
+
+        const res = await authorizedFetch("/landing/update", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
         setBusy(updateBtn, false);
-        if (!res.ok) { setResult(res.data?.message || "Landing update failed", true); setBuilderStatus("Update failed."); return; }
-        const finalSlug = res.data?.slug || payload.slug;
-        landingSlug.value = finalSlug;
-        const publicLink = res.data?.publicLink || buildPublicLink({ slug: finalSlug, domain: payload.domain });
-        setResult(`Landing updated: ${publicLink}`, false);
+
+        if (!res.ok) {
+          setResult(res.data?.message || "Landing update failed", true);
+          setBuilderStatus("Update failed.");
+          return;
+        }
+
+        const publicLink = buildPublicLink({
+          slug: payload.slug,
+          domain: payload.domain,
+        });
+
+        setResult("Landing updated", false);
         setBuilderStatus("Landing updated successfully.");
         saveDraft();
         await loadAll(false);
-        showQR(publicLink, finalSlug);
+        showQR(publicLink, payload.slug);
       }
 
       async function deleteLanding(slug, domain = "") {
-        if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) return;
-        const res = await authorizedFetch("/landing/delete", { method: "POST", body: JSON.stringify({ slug, domain }) });
-        if (!res.ok) return showToast(res.data?.message || "Delete failed");
+        if (
+          !confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)
+        )
+          return;
+
+        const res = await authorizedFetch("/landing/delete", {
+          method: "POST",
+          body: JSON.stringify({ slug, domain }),
+        });
+
+        if (!res.ok) {
+          showToast(res.data?.message || "Delete failed");
+          return;
+        }
+
         showToast("Landing deleted");
         await loadAll(false);
       }
 
-      async function copyText(text) { try { await navigator.clipboard.writeText(text); showToast("Copied!"); } catch { showToast("Copy failed"); } }
-      function openLink(url) { window.open(url, "_blank", "noopener,noreferrer"); }
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Copied!");
+        } catch {
+          showToast("Copy failed");
+        }
+      }
+
+      function openLink(url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
 
       async function loadDomains() {
         const res = await authorizedFetch("/domains/me", { method: "GET" });
-        if (!res.ok) { domainsStore = []; renderDomainSelectors(); return; }
-        const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
-        domainsStore = domains.map((d) => ({ ...d, domain: normalizeDomain(d.domain || ""), status: String(d.status || "pending").toLowerCase(), isPrimary: !!(d.isPrimary || d.is_primary), createdAt: Number(d.createdAt || d.created_at || 0) })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+        if (!res.ok) {
+          domainsStore = [];
+          renderDomainSelectors();
+          return;
+        }
+
+        const domains = Array.isArray(res.data?.domains)
+          ? res.data.domains
+          : [];
+        domainsStore = domains
+          .map((d) => ({
+            ...d,
+            domain: normalizeDomain(d.domain || ""),
+            status: String(d.status || "pending").toLowerCase(),
+            isPrimary: !!(d.isPrimary || d.is_primary),
+            createdAt: Number(d.createdAt || d.created_at || 0),
+          }))
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
         renderDomainSelectors();
       }
 
       function renderDomainSelectors() {
-        const verifiedDomains = domainsStore.filter((d) => d.status === "verified");
+        const verifiedDomains = domainsStore.filter(
+          (d) => d.status === "verified"
+        );
         const primary = verifiedDomains.find((d) => d.isPrimary);
+
         const selectedDomain = restoredDraftDomain || landingDomain.value;
         const selectedFilter = domainFilter.value;
-        landingDomain.innerHTML = ['<option value="">Default domain</option>'].concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`)).join("");
-        domainFilter.innerHTML = ['<option value="all">All domains</option>'].concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`)).join("");
-        landingDomain.value = [...landingDomain.options].some((o) => o.value === selectedDomain) ? selectedDomain : "";
+
+        landingDomain.innerHTML = ['<option value="">Default domain</option>']
+          .concat(
+            verifiedDomains.map(
+              (d) =>
+                `<option value="${escapeHtml(d.domain)}">${escapeHtml(
+                  d.domain
+                )}${d.isPrimary ? " (Primary)" : ""}</option>`
+            )
+          )
+          .join("");
+
+        domainFilter.innerHTML = ['<option value="all">All domains</option>']
+          .concat(
+            verifiedDomains.map(
+              (d) =>
+                `<option value="${escapeHtml(d.domain)}">${escapeHtml(
+                  d.domain
+                )}</option>`
+            )
+          )
+          .join("");
+
+        if (
+          [...landingDomain.options].some((o) => o.value === selectedDomain)
+        ) {
+          landingDomain.value = selectedDomain;
+        } else {
+          landingDomain.value = "";
+        }
         restoredDraftDomain = "";
-        if ([...domainFilter.options].some((o) => o.value === selectedFilter)) domainFilter.value = selectedFilter;
+
+        if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
+          domainFilter.value = selectedFilter;
+        }
+
         verifiedDomainsCount.textContent = verifiedDomains.length;
-        primaryDomainBadge.textContent = primary ? `Primary: ${primary.domain}` : "Primary: none";
+        primaryDomainBadge.textContent = primary
+          ? `Primary: ${primary.domain}`
+          : "Primary: none";
       }
 
       async function loadLandings() {
         const res = await authorizedFetch("/list", { method: "GET" });
-        if (!res.ok) { landingStore = []; renderLandingTable(); updateStats(); return; }
+
+        if (!res.ok) {
+          landingStore = [];
+          renderLandingTable();
+          updateStats();
+          return;
+        }
+
         const items = Array.isArray(res.data?.items) ? res.data.items : [];
-        landingStore = items.map(normalizeLandingItem).filter((item) => item.linkType === "landing").sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+        landingStore = items
+          .map(normalizeLandingItem)
+          .filter((item) => item.linkType === "landing")
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
         renderLandingTable();
         updateStats();
       }
 
       function updateStats() {
         totalLandings.textContent = landingStore.length;
-        totalLandingClicks.textContent = landingStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
-        activeLandings.textContent = landingStore.filter((item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())).length;
+        totalLandingClicks.textContent = landingStore.reduce(
+          (sum, item) => sum + Number(item.clicks || 0),
+          0
+        );
+        activeLandings.textContent = landingStore.filter(
+          (item) =>
+            !item.paused && (!item.expire || Number(item.expire) > Date.now())
+        ).length;
       }
 
       function renderLandingTable() {
         const q = (searchInput.value || "").trim().toLowerCase();
         const domainOnly = domainFilter.value || "all";
         const statusOnly = statusFilter.value || "all";
+
         const filtered = landingStore.filter((item) => {
           const slug = String(item.slug || "").toLowerCase();
           const title = String(item.landingTitle || "").toLowerCase();
           const url = String(item.url || "").toLowerCase();
           const domain = String(item.domain || "").toLowerCase();
+
           const isPaused = !!item.paused;
-          const statusMatch = statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
-          const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
-          const queryMatch = !q || slug.includes(q) || title.includes(q) || url.includes(q) || domain.includes(q);
+          const statusMatch =
+            statusOnly === "all"
+              ? true
+              : statusOnly === "paused"
+              ? isPaused
+              : !isPaused;
+
+          const domainMatch =
+            domainOnly === "all" ? true : domain === domainOnly;
+          const queryMatch =
+            !q ||
+            slug.includes(q) ||
+            title.includes(q) ||
+            url.includes(q) ||
+            domain.includes(q);
+
           return domainMatch && queryMatch && statusMatch;
         });
-        if (!filtered.length) { landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`; return; }
-        landingTable.innerHTML = filtered.map((item) => {
-          const publicLink = buildPublicLink(item);
-          const statusHtml = item.paused ? `<span class="badge pending">Paused</span>` : `<span class="badge live">Live</span>`;
-          return `<tr><td><b>${escapeHtml(item.slug)}</b></td><td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td><td><div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}</td><td>${Number(item.clicks || 0)}</td><td><a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a></td><td>${statusHtml}</td><td>${fmtDate(item.createdAt)}</td><td><div class="actions"><button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button><button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy</button><button type="button" class="purple-btn" onclick="showQR('${escapeForJs(publicLink)}','${escapeForJs(item.slug)}')">QR</button><button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open</button><button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button></div></td></tr>`;
-        }).join("");
+
+        if (!filtered.length) {
+          landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
+          return;
+        }
+
+        landingTable.innerHTML = filtered
+          .map((item) => {
+            const publicLink = buildPublicLink(item);
+            const statusHtml = item.paused
+              ? `<span class="badge pending">Paused</span>`
+              : `<span class="badge live">Live</span>`;
+
+            return `
+          <tr>
+            <td><b>${escapeHtml(item.slug)}</b></td>
+            <td>${
+              item.domain
+                ? escapeHtml(item.domain)
+                : '<span class="muted">Default</span>'
+            }</td>
+            <td>
+              <div class="table-title">${escapeHtml(
+                item.landingTitle || "-"
+              )}</div>
+              ${
+                item.landingDescription
+                  ? `<div class="muted">${escapeHtml(
+                      item.landingDescription
+                    )}</div>`
+                  : ""
+              }
+            </td>
+            <td>${Number(item.clicks || 0)}</td>
+            <td>
+              <a href="${escapeHtml(
+                publicLink
+              )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+              publicLink
+            )}</a>
+            </td>
+            <td>${statusHtml}</td>
+            <td>${fmtDate(item.createdAt)}</td>
+            <td>
+              <div class="actions">
+                <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(
+                  item.slug
+                )}','${escapeForJs(item.domain || "")}')">Edit</button>
+                <button type="button" class="copy" onclick="copyText('${escapeForJs(
+                  publicLink
+                )}')">Copy</button>
+                <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(
+                  publicLink
+                )}','${escapeForJs(item.slug)}')">QR</button>
+                <button type="button" class="open" onclick="openLink('${escapeForJs(
+                  publicLink
+                )}')">Open</button>
+                <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(
+                  item.slug
+                )}','${escapeForJs(item.domain || "")}')">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
       }
 
       function editLandingByKey(slug, domain) {
-        const item = landingStore.find((x) => String(x.slug || "") === String(slug || "") && normalizeDomain(x.domain || "") === normalizeDomain(domain || ""));
-        if (!item) return showToast("Landing not found");
+        const item = landingStore.find(
+          (x) =>
+            String(x.slug || "") === String(slug || "") &&
+            normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+        );
+
+        if (!item) {
+          showToast("Landing not found");
+          return;
+        }
+
         fillForm(item);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -995,19 +2596,108 @@ function getPayload() {
         if (showMessage) showToast("Landing data refreshed");
       }
 
-      function applyThemePreset(hex) { landingTheme.value = hex; renderPreview(); triggerAutosave(); }
+      function applyThemePreset(hex) {
+        landingTheme.value = hex;
+        renderPreview();
+        triggerAutosave();
+      }
 
       function applyTemplate(name) {
         const templates = {
-          creator: { title: "Your Name", subtitle: "Creator • Content • Socials", description: "Welcome to my official link page. Find my latest content, socials, and favorite links below.", ctaLabel: "Watch Latest Video", ctaUrl: "https://youtube.com/", footer: "Thanks for visiting", theme: "#00ffff", buttons: [{ label: "Instagram", url: "https://instagram.com/" }, { label: "TikTok", url: "https://tiktok.com/" }, { label: "X / Twitter", url: "https://x.com/" }] },
-          product: { title: "Launch Your Product Faster", subtitle: "New release", description: "Discover our new product built to help teams move faster, work smarter, and grow revenue.", ctaLabel: "Start Free Trial", ctaUrl: "https://example.com/signup", footer: "Built with Rattle Link", theme: "#3b82f6", buttons: [{ label: "See Features", url: "https://example.com/features" }, { label: "Pricing", url: "https://example.com/pricing" }, { label: "Book Demo", url: "https://example.com/demo" }] },
-          agency: { title: "We Build Brands That Convert", subtitle: "Agency • Design • Growth", description: "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.", ctaLabel: "Book a Call", ctaUrl: "https://calendly.com/", footer: "Agency inquiries welcome", theme: "#a855f7", buttons: [{ label: "Portfolio", url: "https://example.com/portfolio" }, { label: "Testimonials", url: "https://example.com/reviews" }, { label: "Services", url: "https://example.com/services" }] },
-          music: { title: "New Single Out Now", subtitle: "Artist • Music • Streaming", description: "Stream my latest release, watch the music video, and follow me everywhere.", ctaLabel: "Listen Now", ctaUrl: "https://spotify.com/", footer: "Thank you for the support", theme: "#ec4899", buttons: [{ label: "Spotify", url: "https://spotify.com/" }, { label: "Apple Music", url: "https://music.apple.com/" }, { label: "YouTube", url: "https://youtube.com/" }] },
-          event: { title: "Join Our Live Event", subtitle: "Limited seats", description: "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.", ctaLabel: "Reserve My Spot", ctaUrl: "https://eventbrite.com/", footer: "See you there", theme: "#f59e0b", buttons: [{ label: "Agenda", url: "https://example.com/agenda" }, { label: "Speakers", url: "https://example.com/speakers" }, { label: "Venue", url: "https://example.com/location" }] },
-          minimal: { title: "My Links", subtitle: "", description: "Everything important in one place.", ctaLabel: "", ctaUrl: "", footer: "Powered by Rattle Link", theme: "#22c55e", buttons: [{ label: "Website", url: "https://example.com/" }, { label: "Instagram", url: "https://instagram.com/" }, { label: "Contact", url: "mailto:hello@example.com" }] }
+          creator: {
+            title: "Your Name",
+            subtitle: "Creator • Content • Socials",
+            description:
+              "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+            ctaLabel: "Watch Latest Video",
+            ctaUrl: "https://youtube.com/",
+            footer: "Thanks for visiting",
+            theme: "#00ffff",
+            buttons: [
+              { label: "Instagram", url: "https://instagram.com/" },
+              { label: "TikTok", url: "https://tiktok.com/" },
+              { label: "X / Twitter", url: "https://x.com/" },
+            ],
+          },
+          product: {
+            title: "Launch Your Product Faster",
+            subtitle: "New release",
+            description:
+              "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+            ctaLabel: "Start Free Trial",
+            ctaUrl: "https://example.com/signup",
+            footer: "Built with Rattle Link",
+            theme: "#3b82f6",
+            buttons: [
+              { label: "See Features", url: "https://example.com/features" },
+              { label: "Pricing", url: "https://example.com/pricing" },
+              { label: "Book Demo", url: "https://example.com/demo" },
+            ],
+          },
+          agency: {
+            title: "We Build Brands That Convert",
+            subtitle: "Agency • Design • Growth",
+            description:
+              "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
+            ctaLabel: "Book a Call",
+            ctaUrl: "https://calendly.com/",
+            footer: "Agency inquiries welcome",
+            theme: "#a855f7",
+            buttons: [
+              { label: "Portfolio", url: "https://example.com/portfolio" },
+              { label: "Testimonials", url: "https://example.com/reviews" },
+              { label: "Services", url: "https://example.com/services" },
+            ],
+          },
+          music: {
+            title: "New Single Out Now",
+            subtitle: "Artist • Music • Streaming",
+            description:
+              "Stream my latest release, watch the music video, and follow me everywhere.",
+            ctaLabel: "Listen Now",
+            ctaUrl: "https://spotify.com/",
+            footer: "Thank you for the support",
+            theme: "#ec4899",
+            buttons: [
+              { label: "Spotify", url: "https://spotify.com/" },
+              { label: "Apple Music", url: "https://music.apple.com/" },
+              { label: "YouTube", url: "https://youtube.com/" },
+            ],
+          },
+          event: {
+            title: "Join Our Live Event",
+            subtitle: "Limited seats",
+            description:
+              "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
+            ctaLabel: "Reserve My Spot",
+            ctaUrl: "https://eventbrite.com/",
+            footer: "See you there",
+            theme: "#f59e0b",
+            buttons: [
+              { label: "Agenda", url: "https://example.com/agenda" },
+              { label: "Speakers", url: "https://example.com/speakers" },
+              { label: "Venue", url: "https://example.com/location" },
+            ],
+          },
+          minimal: {
+            title: "My Links",
+            subtitle: "",
+            description: "Everything important in one place.",
+            ctaLabel: "",
+            ctaUrl: "",
+            footer: "Powered by Rattle Link",
+            theme: "#22c55e",
+            buttons: [
+              { label: "Website", url: "https://example.com/" },
+              { label: "Instagram", url: "https://instagram.com/" },
+              { label: "Contact", url: "mailto:hello@example.com" },
+            ],
+          },
         };
+
         const t = templates[name];
         if (!t) return;
+
         landingTitle.value = t.title || "";
         landingSubtitle.value = t.subtitle || "";
         landingDescription.value = t.description || "";
@@ -1027,9 +2717,49 @@ function getPayload() {
       }
 
       function attachLivePreview() {
-        [landingSlug, advancedSlug, landingDomain, landingTitle, landingSubtitle, landingDescription, landingImage, landingTheme, landingCtaLabel, landingCtaUrl, landingFooter, landingButtonLabel1, landingButtonUrl1, landingButtonLabel2, landingButtonUrl2, landingMetaTitle, landingMetaDescription, landingOgTitle, landingOgDescription, landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs, bgStyle, cardStyle, buttonStyle].forEach((input) => {
-          input.addEventListener("input", () => { clearTimeout(window.__landingPreviewTimer); window.__landingPreviewTimer = setTimeout(() => { try { renderPreview(); triggerAutosave(); } catch {} }, 220); });
-          input.addEventListener("change", () => { try { renderPreview(); triggerAutosave(); } catch {} });
+        [
+          landingSlug,
+          landingDomain,
+          landingTitle,
+          landingSubtitle,
+          landingDescription,
+          landingImage,
+          landingTheme,
+          landingCtaLabel,
+          landingCtaUrl,
+          landingFooter,
+          landingButtonLabel1,
+          landingButtonUrl1,
+          landingButtonLabel2,
+          landingButtonUrl2,
+          landingMetaTitle,
+          landingMetaDescription,
+          landingOgTitle,
+          landingOgDescription,
+          landingOgImage,
+          landingCanonicalUrl,
+          landingHtml,
+          landingCss,
+          landingJs,
+          bgStyle,
+          cardStyle,
+          buttonStyle,
+        ].forEach((el) => {
+          el.addEventListener("input", () => {
+            clearTimeout(window.__landingPreviewTimer);
+            window.__landingPreviewTimer = setTimeout(() => {
+              try {
+                renderPreview();
+                triggerAutosave();
+              } catch {}
+            }, 220);
+          });
+          el.addEventListener("change", () => {
+            try {
+              renderPreview();
+              triggerAutosave();
+            } catch {}
+          });
         });
       }
 
@@ -1039,30 +2769,95 @@ function getPayload() {
         previewBtn.addEventListener("click", renderPreview);
         createBtn.addEventListener("click", createLanding);
         updateBtn.addEventListener("click", updateLanding);
-        autosaveBtn.addEventListener("click", () => { autosaveEnabled = !autosaveEnabled; autosaveBtn.textContent = `Autosave: ${autosaveEnabled ? "On" : "Off"}`; if (autosaveEnabled) saveDraft(); });
-        openPreviewBtn.addEventListener("click", () => { const html = landingPreviewFrame.srcdoc || ""; if (!html) renderPreview(); const win = window.open("", "_blank"); if (win) { win.document.open(); win.document.write(landingPreviewFrame.srcdoc || ""); win.document.close(); } });
-        desktopViewBtn.addEventListener("click", () => updatePreviewDevice("desktop"));
-        tabletViewBtn.addEventListener("click", () => updatePreviewDevice("tablet"));
-        mobileViewBtn.addEventListener("click", () => updatePreviewDevice("mobile"));
+
+        autosaveBtn.addEventListener("click", () => {
+          autosaveEnabled = !autosaveEnabled;
+          autosaveBtn.textContent = `Autosave: ${
+            autosaveEnabled ? "On" : "Off"
+          }`;
+          if (autosaveEnabled) saveDraft();
+        });
+
+        openPreviewBtn.addEventListener("click", () => {
+          const html = landingPreviewFrame.srcdoc || "";
+          if (!html) renderPreview();
+          const win = window.open("", "_blank");
+          if (win) {
+            win.document.open();
+            win.document.write(landingPreviewFrame.srcdoc || "");
+            win.document.close();
+          }
+        });
+
+        desktopViewBtn.addEventListener("click", () =>
+          updatePreviewDevice("desktop")
+        );
+        tabletViewBtn.addEventListener("click", () =>
+          updatePreviewDevice("tablet")
+        );
+        mobileViewBtn.addEventListener("click", () =>
+          updatePreviewDevice("mobile")
+        );
+
         searchInput.addEventListener("input", renderLandingTable);
         domainFilter.addEventListener("change", renderLandingTable);
         statusFilter.addEventListener("change", renderLandingTable);
+
         addButtonBtn.addEventListener("click", () => addDynamicButton());
-        presetNeonBtn.addEventListener("click", () => applyThemePreset("#00ffff"));
-        presetBlueBtn.addEventListener("click", () => applyThemePreset("#3b82f6"));
-        presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
-        presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
-        document.querySelectorAll(".tab-btn").forEach((btn) => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+
+        presetNeonBtn.addEventListener("click", () =>
+          applyThemePreset("#00ffff")
+        );
+        presetBlueBtn.addEventListener("click", () =>
+          applyThemePreset("#3b82f6")
+        );
+        presetPinkBtn.addEventListener("click", () =>
+          applyThemePreset("#ec4899")
+        );
+        presetGreenBtn.addEventListener("click", () =>
+          applyThemePreset("#22c55e")
+        );
+
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          btn.addEventListener("click", () => setTab(btn.dataset.tab));
+        });
+
         setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
-        document.querySelectorAll(".template-card").forEach((card) => card.addEventListener("click", () => applyTemplate(card.dataset.template)));
-        [landingSlug, landingTitle, landingDescription, advancedSlug].forEach((input) => { input.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview(); }); });
-        document.getElementById("closeQrModalBtn").addEventListener("click", () => closeModal(qrModal));
-        document.getElementById("downloadQrBtn").addEventListener("click", downloadCurrentQR);
-        document.getElementById("copyQrUrlBtn").addEventListener("click", () => copyText(currentQrImageUrl));
-        document.getElementById("openQrImageBtn").addEventListener("click", () => openLink(currentQrImageUrl));
-        document.getElementById("copyQrLinkBtn").addEventListener("click", () => copyText(currentQrLink));
-        document.getElementById("openQrLinkBtn").addEventListener("click", () => openLink(currentQrLink));
-        overlay.addEventListener("click", () => closeModal(qrModal));
+
+        document.querySelectorAll(".template-card").forEach((card) => {
+          card.addEventListener("click", () =>
+            applyTemplate(card.dataset.template)
+          );
+        });
+
+        [landingSlug, landingTitle, landingDescription].forEach((el) => {
+          el.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
+          });
+        });
+
+        document
+          .getElementById("closeQrModalBtn")
+          .addEventListener("click", () => closeModal(qrModal));
+        document
+          .getElementById("downloadQrBtn")
+          .addEventListener("click", downloadCurrentQR);
+        document
+          .getElementById("copyQrUrlBtn")
+          .addEventListener("click", () => copyText(currentQrImageUrl));
+        document
+          .getElementById("openQrImageBtn")
+          .addEventListener("click", () => openLink(currentQrImageUrl));
+        document
+          .getElementById("copyQrLinkBtn")
+          .addEventListener("click", () => copyText(currentQrLink));
+        document
+          .getElementById("openQrLinkBtn")
+          .addEventListener("click", () => openLink(currentQrLink));
+
+        overlay.addEventListener("click", () => {
+          closeModal(qrModal);
+        });
       }
 
       window.copyText = copyText;
@@ -1081,11 +2876,18 @@ function getPayload() {
         await loadAll(false);
         renderPreview();
         updatePreviewDevice("desktop");
+
         clearInterval(refreshTimer);
-        refreshTimer = setInterval(() => { if (document.hidden) return; loadAll(false); }, 20000);
+        refreshTimer = setInterval(() => {
+          if (document.hidden) return;
+          loadAll(false);
+        }, 20000);
       })();
 
-      window.addEventListener("beforeunload", () => { clearInterval(refreshTimer); if (autosaveEnabled) saveDraft(); });
+      window.addEventListener("beforeunload", () => {
+        clearInterval(refreshTimer);
+        if (autosaveEnabled) saveDraft();
+      });
     </script>
   </body>
 </html>
