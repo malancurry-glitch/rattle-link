@@ -1930,30 +1930,14 @@
   const slug = landingSlug.value.trim();
   const domain = normalizeDomain(landingDomain.value);
   const title = landingTitle.value.trim();
-  const subtitle = landingSubtitle.value.trim();
-  const description = landingDescription.value.trim();
-  const image = landingImage.value.trim();
-  const theme = landingTheme.value.trim() || "#00ffff";
-  const ctaLabel = landingCtaLabel.value.trim();
-  const ctaUrl = landingCtaUrl.value.trim();
-  const footer = landingFooter.value.trim();
-  const buttons = getLandingButtons();
-  const html = landingHtml.value;
-  const css = landingCss.value;
-  const js = landingJs.value;
-  const metaTitle = landingMetaTitle.value.trim();
-  const metaDescription = landingMetaDescription.value.trim();
-  const ogTitle = landingOgTitle.value.trim();
-  const ogDescription = landingOgDescription.value.trim();
-  const ogImage = landingOgImage.value.trim();
-  const canonicalUrl = landingCanonicalUrl.value.trim();
+  const html = landingHtml.value.trim();
 
   if (!slug) {
     setResult("Landing slug is required", true);
     return null;
   }
 
-  if (!title && !html.trim()) {
+  if (!title && !html) {
     setResult("Landing title or custom HTML is required", true);
     return null;
   }
@@ -1962,23 +1946,25 @@
     slug,
     domain,
     title,
-    subtitle,
-    description,
-    image,
-    theme,
-    buttons,
-    ctaLabel,
-    ctaUrl,
-    footer,
-    landingHtml: getGeneratedPreviewHtml(),
-    landingCss: css,
-    landingJs: js,
-    metaTitle,
-    metaDescription,
-    ogTitle,
-    ogDescription,
-    ogImage,
-    canonicalUrl,
+    subtitle: landingSubtitle.value.trim(),
+    description: landingDescription.value.trim(),
+    image: landingImage.value.trim(),
+    theme: landingTheme.value.trim() || "#00ffff",
+    buttons: getLandingButtons(),
+    ctaLabel: landingCtaLabel.value.trim(),
+    ctaUrl: landingCtaUrl.value.trim(),
+    footer: landingFooter.value.trim(),
+
+    landingHtml: html || getGeneratedPreviewHtml(),
+
+    landingCss: landingCss.value,
+    landingJs: landingJs.value,
+    metaTitle: landingMetaTitle.value.trim(),
+    metaDescription: landingMetaDescription.value.trim(),
+    ogTitle: landingOgTitle.value.trim(),
+    ogDescription: landingOgDescription.value.trim(),
+    ogImage: landingOgImage.value.trim(),
+    canonicalUrl: landingCanonicalUrl.value.trim(),
   };
 }
 
