@@ -848,33 +848,50 @@
 
             <div id="tab-basics" class="tab-panel active">
               <div class="form-row">
-                <div class="field">
-                  <label for="landingSlug">Landing slug</label>
-                  <input id="landingSlug" placeholder="my-landing-page" />
-                </div>
-                <div class="field">
-                  <label for="landingDomain">Landing domain</label>
-                  <select id="landingDomain">
-                    <option value="">Default domain</option>
-                  </select>
-                  <button
-                    id="setPrimaryDomainBtn"
-                    type="button"
-                    class="success-btn"
-                    style="margin-top: 8px; width: 100%"
-                  >
-                    Set as Primary
-                  </button>
-                </div>
-                <div class="field">
-                  <label for="landingTheme">Theme color</label>
-                  <input
-                    id="landingTheme"
-                    placeholder="#00ffff"
-                    value="#00ffff"
-                  />
-                </div>
-              </div>
+  <div class="field">
+    <label for="landingSlug">Landing slug</label>
+    <input
+      id="landingSlug"
+      placeholder="my-landing-page"
+    />
+  </div>
+
+  <div class="field">
+    <label for="advancedSlug">Advanced Alias Path</label>
+    <input
+      id="advancedSlug"
+      placeholder="leave blank for automatic alias"
+    />
+    <div class="muted">
+      Optional hidden alias URL path.
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="landingDomain">Landing domain</label>
+    <select id="landingDomain">
+      <option value="">Default domain</option>
+    </select>
+
+    <button
+      id="setPrimaryDomainBtn"
+      type="button"
+      class="success-btn"
+      style="margin-top:8px;width:100%;"
+    >
+      Set as Primary
+    </button>
+  </div>
+
+  <div class="field">
+    <label for="landingTheme">Theme color</label>
+    <input
+      id="landingTheme"
+      placeholder="#00ffff"
+      value="#00ffff"
+    />
+  </div>
+</div>
 
               <div class="form-row">
                 <div class="field">
@@ -1215,7 +1232,7 @@
           <table>
             <thead>
               <tr>
-                <th>Slug</th>
+                <th>Slug / Alias</th>
                 <th>Domain</th>
                 <th>Title</th>
                 <th>Clicks</th>
@@ -1325,6 +1342,7 @@
       const mobileViewBtn = document.getElementById("mobileViewBtn");
 
       const landingSlug = document.getElementById("landingSlug");
+      const advancedSlug = document.getElementById("advancedSlug");
       const landingDomain = document.getElementById("landingDomain");
       const landingTitle = document.getElementById("landingTitle");
       const landingSubtitle = document.getElementById("landingSubtitle");
@@ -1613,6 +1631,18 @@
         if (domain) return `https://${domain}/${slug}`;
         return `${PUBLIC_HOST.replace(/\/+$/, "")}/${slug}`;
       }
+      
+      function buildAliasLink(item) {
+  const alias = String(item.advancedSlug || "").trim();
+  if (!alias) return "";
+
+  const domain = normalizeDomain(item.domain || "");
+  if (domain) {
+    return `https://${domain}/${alias}`;
+  }
+
+  return `${PUBLIC_HOST}/${alias}`;
+}
 
       function normalizeLandingItem(item) {
         let parsedButtons = [];
@@ -1639,6 +1669,7 @@
           ...item,
           backend: "primary",
           slug: item.slug || "",
+          advancedSlug: item.advancedSlug || item.aliasSlug || item.alias_slug || "",
           url: item.url || "",
           clicks: Number(item.clicks || 0),
           paused: !!item.paused,
@@ -1815,6 +1846,7 @@
       function collectDraft() {
         return {
           slug: landingSlug.value.trim(),
+          advancedSlug: advancedSlug.value.trim(),
           domain: normalizeDomain(landingDomain.value),
           title: landingTitle.value.trim(),
           subtitle: landingSubtitle.value.trim(),
@@ -1874,6 +1906,7 @@
           if (!d) return false;
 
           landingSlug.value = d.slug || "";
+          advancedSlug.value = d.advancedSlug || "";
           restoredDraftDomain = d.domain || "";
           landingTitle.value = d.title || "";
           landingSubtitle.value = d.subtitle || "";
@@ -1959,6 +1992,7 @@
 
     landingCss: landingCss.value,
     landingJs: landingJs.value,
+    advancedSlug: advancedSlug.value.trim(),
     metaTitle: landingMetaTitle.value.trim(),
     metaDescription: landingMetaDescription.value.trim(),
     ogTitle: landingOgTitle.value.trim(),
@@ -2082,6 +2116,7 @@ ${customCss}
 
       function clearForm() {
         landingSlug.value = "";
+        advancedSlug.value = "";
         landingDomain.value = "";
         landingTitle.value = "";
         landingSubtitle.value = "";
@@ -2118,6 +2153,7 @@ ${customCss}
 
       function fillForm(item) {
         landingSlug.value = item.slug || "";
+        advancedSlug.value = item.advancedSlug || item.aliasSlug || "";
         landingDomain.value = item.domain || "";
         landingTitle.value = item.landingTitle || "";
         landingSubtitle.value = item.subtitle || "";
@@ -2403,30 +2439,47 @@ ${customCss}
         landingTable.innerHTML = filtered
           .map((item) => {
             const publicLink = buildPublicLink(item);
+            const aliasLink = buildAliasLink(item); // <-- here
             const statusHtml = item.paused
               ? `<span class="badge pending">Paused</span>`
               : `<span class="badge live">Live</span>`;
 
             return `
-          <tr>
-            <td><b>${escapeHtml(item.slug)}</b></td>
-            <td>${
-              item.domain
-                ? escapeHtml(item.domain)
-                : '<span class="muted">Default</span>'
-            }</td>
-            <td>
-              <div class="table-title">${escapeHtml(
-                item.landingTitle || "-"
-              )}</div>
-              ${
-                item.landingDescription
-                  ? `<div class="muted">${escapeHtml(
-                      item.landingDescription
-                    )}</div>`
-                  : ""
-              }
-            </td>
+<tr>
+  <td>
+  <b>${escapeHtml(item.slug)}</b>
+  ${
+    aliasLink
+      ? `<div class="muted">
+           Alias:
+           <a href="${escapeHtml(aliasLink)}" target="_blank">
+             ${escapeHtml(item.advancedSlug)}
+           </a>
+         </div>`
+      : ""
+  }
+</td>
+
+  <td>
+    ${
+      item.domain
+        ? escapeHtml(item.domain)
+        : '<span class="muted">Default</span>'
+    }
+  </td>
+
+  <td>
+    <div class="table-title">${escapeHtml(
+      item.landingTitle || "-"
+    )}</div>
+    ${
+      item.landingDescription
+        ? `<div class="muted">${escapeHtml(
+            item.landingDescription
+          )}</div>`
+        : ""
+    }
+  </td>
             <td>${Number(item.clicks || 0)}</td>
             <td>
               <a href="${escapeHtml(
@@ -2608,6 +2661,7 @@ ${customCss}
       function attachLivePreview() {
         [
           landingSlug,
+          advancedSlug,
           landingDomain,
           landingTitle,
           landingSubtitle,
