@@ -1294,733 +1294,834 @@
     <div class="toast" id="toast">Copied!</div>
 
 <script>
-  const PRIMARY_API = "https://api.rattleshortapi.it.com";
-  const PUBLIC_HOST = "https://rattleshortapi.it.com";
-  const AUTOSAVE_KEY = "rattle_landing_builder_draft_v4";
-  const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
+const PRIMARY_API = "https://api.rattleshortapi.it.com";
+const PUBLIC_HOST = "https://rattleshortapi.it.com";
+const AUTOSAVE_KEY = "rattle_landing_builder_draft_v5";
+const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
-  let landingStore = [];
-  let domainsStore = [];
-  let refreshTimer = null;
-  let autosaveEnabled = true;
-  let dynamicButtonsStore = [];
-  let restoredDraftDomain = "";
-  let currentQrLink = "";
-  let currentQrSlug = "";
-  let currentQrImageUrl = "";
+let landingStore = [];
+let domainsStore = [];
+let refreshTimer = null;
+let autosaveEnabled = true;
+let dynamicButtonsStore = [];
+let restoredDraftDomain = "";
+let currentQrLink = "";
+let currentQrSlug = "";
+let currentQrImageUrl = "";
 
-  const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-  const toast = $("toast");
-  const previewWrap = $("previewWrap");
-  const primaryDomainBadge = $("primaryDomainBadge");
-  const builderStatus = $("builderStatus");
-  const overlay = $("overlay");
-  const qrModal = $("qrModal");
-  const qrCanvas = $("qrCanvas");
-  const qrLink = $("qrLink");
-  const qrImageUrl = $("qrImageUrl");
-  const qrMetaDetails = $("qrMetaDetails");
+const toast = $("toast");
+const previewWrap = $("previewWrap");
+const primaryDomainBadge = $("primaryDomainBadge");
+const builderStatus = $("builderStatus");
+const overlay = $("overlay");
+const qrModal = $("qrModal");
+const qrCanvas = $("qrCanvas");
+const qrLink = $("qrLink");
+const qrImageUrl = $("qrImageUrl");
+const qrMetaDetails = $("qrMetaDetails");
 
-  const totalLandings = $("totalLandings");
-  const totalLandingClicks = $("totalLandingClicks");
-  const verifiedDomainsCount = $("verifiedDomainsCount");
-  const activeLandings = $("activeLandings");
-  const draftState = $("draftState");
-  const draftStateText = $("draftStateText");
+const totalLandings = $("totalLandings");
+const totalLandingClicks = $("totalLandingClicks");
+const verifiedDomainsCount = $("verifiedDomainsCount");
+const activeLandings = $("activeLandings");
+const draftState = $("draftState");
+const draftStateText = $("draftStateText");
 
-  const refreshBtn = $("refreshBtn");
-  const clearBtn = $("clearBtn");
-  const previewBtn = $("previewBtn");
-  const createBtn = $("createBtn");
-  const updateBtn = $("updateBtn");
-  const openPreviewBtn = $("openPreviewBtn");
-  const autosaveBtn = $("autosaveBtn");
+const refreshBtn = $("refreshBtn");
+const clearBtn = $("clearBtn");
+const previewBtn = $("previewBtn");
+const createBtn = $("createBtn");
+const updateBtn = $("updateBtn");
+const openPreviewBtn = $("openPreviewBtn");
+const autosaveBtn = $("autosaveBtn");
 
-  const desktopViewBtn = $("desktopViewBtn");
-  const tabletViewBtn = $("tabletViewBtn");
-  const mobileViewBtn = $("mobileViewBtn");
+const desktopViewBtn = $("desktopViewBtn");
+const tabletViewBtn = $("tabletViewBtn");
+const mobileViewBtn = $("mobileViewBtn");
 
-  const landingSlug = $("landingSlug");
-  const advancedSlug = $("advancedSlug");
-  const landingDomain = $("landingDomain");
-  const landingTitle = $("landingTitle");
-  const landingSubtitle = $("landingSubtitle");
-  const landingDescription = $("landingDescription");
-  const landingImage = $("landingImage");
-  const landingTheme = $("landingTheme");
-  const landingCtaLabel = $("landingCtaLabel");
-  const landingCtaUrl = $("landingCtaUrl");
-  const landingFooter = $("landingFooter");
-  const landingButtonLabel1 = $("landingButtonLabel1");
-  const landingButtonUrl1 = $("landingButtonUrl1");
-  const landingButtonLabel2 = $("landingButtonLabel2");
-  const landingButtonUrl2 = $("landingButtonUrl2");
-  const landingMetaTitle = $("landingMetaTitle");
-  const landingMetaDescription = $("landingMetaDescription");
-  const landingHtml = $("landingHtml");
-  const landingCss = $("landingCss");
-  const landingJs = $("landingJs");
-  const landingOgTitle = $("landingOgTitle");
-  const landingOgDescription = $("landingOgDescription");
-  const landingOgImage = $("landingOgImage");
-  const landingCanonicalUrl = $("landingCanonicalUrl");
-  const bgStyle = $("bgStyle");
-  const cardStyle = $("cardStyle");
-  const buttonStyle = $("buttonStyle");
-  const landingPreviewFrame = $("landingPreviewFrame");
-  const dynamicButtons = $("dynamicButtons");
+const landingSlug = $("landingSlug");
+const advancedSlug = $("advancedSlug");
+const landingDomain = $("landingDomain");
+const landingTitle = $("landingTitle");
+const landingSubtitle = $("landingSubtitle");
+const landingDescription = $("landingDescription");
+const landingImage = $("landingImage");
+const landingTheme = $("landingTheme");
+const landingCtaLabel = $("landingCtaLabel");
+const landingCtaUrl = $("landingCtaUrl");
+const landingFooter = $("landingFooter");
+const landingButtonLabel1 = $("landingButtonLabel1");
+const landingButtonUrl1 = $("landingButtonUrl1");
+const landingButtonLabel2 = $("landingButtonLabel2");
+const landingButtonUrl2 = $("landingButtonUrl2");
+const landingMetaTitle = $("landingMetaTitle");
+const landingMetaDescription = $("landingMetaDescription");
+const landingHtml = $("landingHtml");
+const landingCss = $("landingCss");
+const landingJs = $("landingJs");
+const landingOgTitle = $("landingOgTitle");
+const landingOgDescription = $("landingOgDescription");
+const landingOgImage = $("landingOgImage");
+const landingCanonicalUrl = $("landingCanonicalUrl");
+const bgStyle = $("bgStyle");
+const cardStyle = $("cardStyle");
+const buttonStyle = $("buttonStyle");
+const landingPreviewFrame = $("landingPreviewFrame");
+const dynamicButtons = $("dynamicButtons");
 
-  const addButtonBtn = $("addButtonBtn");
-  const presetNeonBtn = $("presetNeonBtn");
-  const presetBlueBtn = $("presetBlueBtn");
-  const presetPinkBtn = $("presetPinkBtn");
-  const presetGreenBtn = $("presetGreenBtn");
-  const setPrimaryDomainBtn = $("setPrimaryDomainBtn");
+const addButtonBtn = $("addButtonBtn");
+const presetNeonBtn = $("presetNeonBtn");
+const presetBlueBtn = $("presetBlueBtn");
+const presetPinkBtn = $("presetPinkBtn");
+const presetGreenBtn = $("presetGreenBtn");
+const setPrimaryDomainBtn = $("setPrimaryDomainBtn");
 
-  const formResult = $("formResult");
-  const landingTable = $("landingTable");
-  const searchInput = $("searchInput");
-  const domainFilter = $("domainFilter");
-  const statusFilter = $("statusFilter");
+const formResult = $("formResult");
+const landingTable = $("landingTable");
+const searchInput = $("searchInput");
+const domainFilter = $("domainFilter");
+const statusFilter = $("statusFilter");
 
-  function normalizeDomain(value) {
-    return String(value || "")
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//i, "")
-      .replace(/\/+$/g, "");
+function normalizeDomain(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/g, "");
+}
+
+function normalizePath(value) {
+  return String(value || "").trim().replace(/^\/+|\/+$/g, "");
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeForJs(str) {
+  return String(str ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "");
+}
+
+function authHeaders() {
+  const token =
+    localStorage.getItem("rattle_token") ||
+    localStorage.getItem("token") ||
+    "";
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function ensureAuth() {
+  const token =
+    localStorage.getItem("rattle_token") || localStorage.getItem("token");
+
+  if (!token) {
+    alert("Missing login token. Please log in again.");
+    window.location.href = "index.html";
+    return false;
   }
 
-  function normalizePath(value) {
-    return String(value || "").trim().replace(/^\/+|\/+$/g, "");
+  return true;
+}
+
+function fmtDate(ts) {
+  const n = Number(ts || 0);
+  if (!n) return "-";
+  return new Date(n).toLocaleString();
+}
+
+function setBusy(button, busy, text = "") {
+  if (!button) return;
+  if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
+  button.disabled = !!busy;
+  button.textContent = busy ? text : button.dataset.originalText;
+}
+
+function showToast(message = "Copied!") {
+  toast.textContent = message;
+  toast.style.display = "block";
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
+    toast.style.display = "none";
+  }, 1800);
+}
+
+function setResult(message, isError = false) {
+  formResult.textContent = message;
+  formResult.className = "result " + (isError ? "error" : "success");
+}
+
+function setBuilderStatus(message) {
+  builderStatus.textContent = message;
+}
+
+function setDraftIndicator(label, text) {
+  draftState.textContent = label;
+  draftStateText.textContent = text;
+}
+
+function openModal(modal) {
+  overlay.style.display = "block";
+  modal.style.display = "block";
+}
+
+function closeModal(modal) {
+  modal.style.display = "none";
+  syncOverlay();
+}
+
+function syncOverlay() {
+  const anyOpen = [qrModal].some((m) => m.style.display === "block");
+  overlay.style.display = anyOpen ? "block" : "none";
+}
+
+function buildQrImageUrl(link, size = 280) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+    String(link || "").trim()
+  )}`;
+}
+
+function getQrFilename(slug = "landing") {
+  const safeSlug = String(slug || "landing").replace(/[^a-z0-9-_]+/gi, "-");
+  return `${safeSlug || "landing"}-qr.png`;
+}
+
+async function renderQrToCanvas(link, canvas) {
+  if (!window.QRCode) throw new Error("QRCode library unavailable");
+  return QRCode.toCanvas(canvas, link, {
+    width: 260,
+    margin: 2,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+}
+
+async function showQR(link, slug = "") {
+  const safeLink = String(link || "").trim();
+  if (!safeLink || safeLink === "#") return showToast("Invalid link");
+
+  currentQrLink = safeLink;
+  currentQrSlug = slug || "landing";
+  currentQrImageUrl = buildQrImageUrl(safeLink, 280);
+
+  qrLink.textContent = safeLink;
+  qrImageUrl.innerHTML = `<a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>`;
+
+  qrMetaDetails.innerHTML = `
+    <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
+    <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(safeLink)}</div>
+    <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
+      <a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>
+    </div>
+    <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
+  `;
+
+  openModal(qrModal);
+
+  try {
+    await renderQrToCanvas(safeLink, qrCanvas);
+  } catch {
+    showToast("QR generation failed");
   }
+}
 
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function escapeForJs(str) {
-    return String(str ?? "")
-      .replaceAll("\\", "\\\\")
-      .replaceAll("'", "\\'")
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "");
-  }
-
-  function authHeaders() {
-    const token =
-      localStorage.getItem("rattle_token") ||
-      localStorage.getItem("token") ||
-      "";
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  function ensureAuth() {
-    const token =
-      localStorage.getItem("rattle_token") || localStorage.getItem("token");
-
-    if (!token) {
-      alert("Missing login token. Please log in again.");
-      window.location.href = "index.html";
-      return false;
-    }
-
-    return true;
-  }
-
-  function fmtDate(ts) {
-    const n = Number(ts || 0);
-    if (!n) return "-";
-    return new Date(n).toLocaleString();
-  }
-
-  function setBusy(button, busy, text = "") {
-    if (!button) return;
-    if (!button.dataset.originalText) {
-      button.dataset.originalText = button.textContent;
-    }
-    button.disabled = !!busy;
-    button.textContent = busy ? text : button.dataset.originalText;
-  }
-
-  function showToast(message = "Copied!") {
-    toast.textContent = message;
-    toast.style.display = "block";
-    clearTimeout(window.__toastTimer);
-    window.__toastTimer = setTimeout(() => {
-      toast.style.display = "none";
-    }, 1800);
-  }
-
-  function setResult(message, isError = false) {
-    formResult.textContent = message;
-    formResult.className = "result " + (isError ? "error" : "success");
-  }
-
-  function setBuilderStatus(message) {
-    builderStatus.textContent = message;
-  }
-
-  function setDraftIndicator(label, text) {
-    draftState.textContent = label;
-    draftStateText.textContent = text;
-  }
-
-  function openModal(modal) {
-    overlay.style.display = "block";
-    modal.style.display = "block";
-  }
-
-  function closeModal(modal) {
-    modal.style.display = "none";
-    syncOverlay();
-  }
-
-  function syncOverlay() {
-    const anyOpen = [qrModal].some((m) => m.style.display === "block");
-    overlay.style.display = anyOpen ? "block" : "none";
-  }
-
-  function buildQrImageUrl(link, size = 280) {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-      String(link || "").trim()
-    )}`;
-  }
-
-  function getQrFilename(slug = "landing") {
-    const safeSlug = String(slug || "landing").replace(/[^a-z0-9-_]+/gi, "-");
-    return `${safeSlug || "landing"}-qr.png`;
-  }
-
-  async function renderQrToCanvas(link, canvas) {
-    if (!window.QRCode) throw new Error("QRCode library unavailable");
-    return QRCode.toCanvas(canvas, link, {
-      width: 260,
-      margin: 2,
-      color: { dark: "#000000", light: "#ffffff" },
-    });
-  }
-
-  async function showQR(link, slug = "") {
-    const safeLink = String(link || "").trim();
-    if (!safeLink || safeLink === "#") return showToast("Invalid link");
-
-    currentQrLink = safeLink;
-    currentQrSlug = slug || "landing";
-    currentQrImageUrl = buildQrImageUrl(safeLink, 280);
-
-    qrLink.textContent = safeLink;
-    qrImageUrl.innerHTML = `<a href="${escapeHtml(
-      currentQrImageUrl
-    )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-      currentQrImageUrl
-    )}</a>`;
-
-    qrMetaDetails.innerHTML = `
-      <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
-      <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
-        safeLink
-      )}</div>
-      <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
-        <a href="${escapeHtml(
-          currentQrImageUrl
-        )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-      currentQrImageUrl
-    )}</a>
-      </div>
-      <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
-    `;
-
-    openModal(qrModal);
-
-    try {
-      await renderQrToCanvas(safeLink, qrCanvas);
-    } catch {
-      showToast("QR generation failed");
-    }
-  }
-
-  function downloadCurrentQR() {
-    if (currentQrImageUrl) {
-      const link = document.createElement("a");
-      link.download = getQrFilename(currentQrSlug);
-      link.href = currentQrImageUrl;
-      link.click();
-      return;
-    }
-
-    if (!qrCanvas) return;
+function downloadCurrentQR() {
+  if (currentQrImageUrl) {
     const link = document.createElement("a");
     link.download = getQrFilename(currentQrSlug);
-    link.href = qrCanvas.toDataURL("image/png");
+    link.href = currentQrImageUrl;
     link.click();
+    return;
   }
 
-  async function safeFetchRaw(path, options = {}) {
+  if (!qrCanvas) return;
+  const link = document.createElement("a");
+  link.download = getQrFilename(currentQrSlug);
+  link.href = qrCanvas.toDataURL("image/png");
+  link.click();
+}
+
+async function safeFetchRaw(path, options = {}) {
+  try {
+    const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
+    const raw = await res.text();
+
+    let data = {};
     try {
-      const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
-      const raw = await res.text();
-
-      let data = {};
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = { message: raw };
-      }
-
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("rattle_token");
-        localStorage.removeItem("rattle_role");
-        window.location.href = "index.html";
-      }
-
-      return { ok: res.ok, status: res.status, data, raw };
-    } catch (e) {
-      return {
-        ok: false,
-        status: 0,
-        data: { message: e?.message || "Failed to fetch" },
-        raw: "",
-      };
-    }
-  }
-
-  async function authorizedFetch(path, options = {}) {
-    const method = String(options.method || "GET").toUpperCase();
-    const headers = {
-      ...authHeaders(),
-      ...(options.headers || {}),
-    };
-
-    if (method !== "GET" && !headers["Content-Type"]) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    return safeFetchRaw(path, { ...options, headers });
-  }
-
-  function buildPublicLink(item) {
-    const slug = normalizePath(item.slug || "");
-    const domain = normalizeDomain(item.domain || "");
-    if (!slug) return "#";
-    const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
-    return `${base}/${slug}`;
-  }
-
-  function buildAliasLink(item) {
-    const alias = normalizePath(
-      item.aliasPath ||
-        item.alias_path ||
-        item.landing_alias_path ||
-        item.advancedSlug ||
-        ""
-    );
-
-    if (!alias) return "";
-
-    const domain = normalizeDomain(item.domain || "");
-    const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
-    return `${base}/${alias}`;
-  }
-
-  function normalizeLandingItem(item) {
-    let parsedButtons = [];
-
-    try {
-      if (Array.isArray(item.landingButtons)) {
-        parsedButtons = item.landingButtons;
-      } else if (Array.isArray(item.buttons)) {
-        parsedButtons = item.buttons;
-      } else if (Array.isArray(item.landing_buttons)) {
-        parsedButtons = item.landing_buttons;
-      } else if (
-        typeof item.landing_buttons === "string" &&
-        item.landing_buttons.trim()
-      ) {
-        const parsed = JSON.parse(item.landing_buttons);
-        parsedButtons = Array.isArray(parsed) ? parsed : [];
-      }
+      data = raw ? JSON.parse(raw) : {};
     } catch {
-      parsedButtons = [];
+      data = { message: raw };
     }
 
-    const aliasPath =
-      item.aliasPath ||
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("rattle_token");
+      localStorage.removeItem("rattle_role");
+      window.location.href = "index.html";
+    }
+
+    return { ok: res.ok, status: res.status, data, raw };
+  } catch (e) {
+    return {
+      ok: false,
+      status: 0,
+      data: { message: e?.message || "Failed to fetch" },
+      raw: "",
+    };
+  }
+}
+
+async function authorizedFetch(path, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  const headers = {
+    ...authHeaders(),
+    ...(options.headers || {}),
+  };
+
+  if (method !== "GET" && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return safeFetchRaw(path, { ...options, headers });
+}
+
+function buildPublicLink(item) {
+  const slug = normalizePath(item.slug || "");
+  const domain = normalizeDomain(item.domain || "");
+  if (!slug) return "#";
+  const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
+  return `${base}/${slug}`;
+}
+
+function buildAliasLink(item) {
+  const alias = normalizePath(
+    item.aliasPath ||
       item.alias_path ||
       item.landing_alias_path ||
       item.advancedSlug ||
-      "";
+      ""
+  );
 
-    return {
-      ...item,
-      backend: "primary",
-      slug: item.slug || "",
-      aliasPath,
-      url: item.url || "",
-      clicks: Number(item.clicks || 0),
-      paused: !!item.paused,
-      expire: item.expire ? Number(item.expire) : null,
-      createdAt: Number(item.createdAt || item.created_at || 0),
-      domain: normalizeDomain(item.domain || ""),
-      linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
+  if (!alias) return "";
 
-      landingTitle: item.landingTitle || item.landing_title || item.title || "",
-      landingDescription:
-        item.landingDescription ||
-        item.landing_description ||
-        item.description ||
-        "",
-      landingImage: item.landingImage || item.landing_image || item.image || "",
-      landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
-      landingButtons: parsedButtons,
-      landingCtaLabel:
-        item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
-      landingCtaUrl:
-        item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
-      landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
-      landingHtml: item.landingHtml || item.landing_html || "",
-      landingCss: item.landingCss || item.landing_css || "",
-      landingJs: item.landingJs || item.landing_js || "",
-      metaTitle: item.metaTitle || item.landing_meta_title || "",
-      metaDescription: item.metaDescription || item.landing_meta_description || "",
+  const domain = normalizeDomain(item.domain || "");
+  const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
+  return `${base}/${alias}`;
+}
 
-      subtitle: item.subtitle || "",
-      ogTitle: item.ogTitle || "",
-      ogDescription: item.ogDescription || "",
-      ogImage: item.ogImage || "",
-      canonicalUrl: item.canonicalUrl || "",
-    };
-  }
+function normalizeLandingItem(item) {
+  let parsedButtons = [];
 
-  function updatePreviewDevice(device) {
-    previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
-    previewWrap.classList.add(`device-${device}`);
-
-    [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
-      btn.classList.remove("active")
-    );
-
-    if (device === "desktop") desktopViewBtn.classList.add("active");
-    if (device === "tablet") tabletViewBtn.classList.add("active");
-    if (device === "mobile") mobileViewBtn.classList.add("active");
-  }
-
-  function setTab(tabId) {
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.tab === tabId);
-    });
-    document.querySelectorAll(".tab-panel").forEach((panel) => {
-      panel.classList.toggle("active", panel.id === tabId);
-    });
-  }
-
-  function getDynamicButtons() {
-    return dynamicButtonsStore
-      .map((btn, index) => {
-        const labelEl = $(`dynBtnLabel_${index}`);
-        const urlEl = $(`dynBtnUrl_${index}`);
-        return {
-          label: String(labelEl?.value || "").trim(),
-          url: String(urlEl?.value || "").trim(),
-        };
-      })
-      .filter((btn) => btn.label && btn.url);
-  }
-
-  function addDynamicButton(label = "", url = "") {
-    dynamicButtonsStore.push({ label, url });
-    renderDynamicButtons();
-    triggerAutosave();
-    renderPreview();
-  }
-
-  function removeDynamicButton(index) {
-    dynamicButtonsStore.splice(index, 1);
-    renderDynamicButtons();
-    triggerAutosave();
-    renderPreview();
-  }
-
-  function renderDynamicButtons() {
-    if (!dynamicButtonsStore.length) {
-      dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
-      return;
+  try {
+    if (Array.isArray(item.landingButtons)) parsedButtons = item.landingButtons;
+    else if (Array.isArray(item.buttons)) parsedButtons = item.buttons;
+    else if (Array.isArray(item.landing_buttons)) parsedButtons = item.landing_buttons;
+    else if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
+      const parsed = JSON.parse(item.landing_buttons);
+      parsedButtons = Array.isArray(parsed) ? parsed : [];
     }
+  } catch {
+    parsedButtons = [];
+  }
 
-    dynamicButtons.innerHTML = dynamicButtonsStore
-      .map(
-        (btn, index) => `
-        <div class="button-item">
-          <div class="button-item-head">
-            <div><b>Extra Button ${index + 1}</b></div>
-            <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
+  const aliasPath =
+    item.aliasPath ||
+    item.alias_path ||
+    item.landing_alias_path ||
+    item.advancedSlug ||
+    "";
+
+  return {
+    ...item,
+    slug: item.slug || "",
+    aliasPath,
+    url: item.url || "",
+    clicks: Number(item.clicks || 0),
+    paused: !!item.paused,
+    expire: item.expire ? Number(item.expire) : null,
+    createdAt: Number(item.createdAt || item.created_at || 0),
+    domain: normalizeDomain(item.domain || ""),
+    linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
+    landingTitle: item.landingTitle || item.landing_title || item.title || "",
+    landingDescription:
+      item.landingDescription ||
+      item.landing_description ||
+      item.description ||
+      "",
+    landingImage: item.landingImage || item.landing_image || item.image || "",
+    landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
+    landingButtons: parsedButtons,
+    landingCtaLabel:
+      item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
+    landingCtaUrl:
+      item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+    landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
+    landingHtml: item.landingHtml || item.landing_html || "",
+    landingCss: item.landingCss || item.landing_css || "",
+    landingJs: item.landingJs || item.landing_js || "",
+    metaTitle: item.metaTitle || item.landing_meta_title || "",
+    metaDescription: item.metaDescription || item.landing_meta_description || "",
+    subtitle: item.subtitle || "",
+    ogTitle: item.ogTitle || "",
+    ogDescription: item.ogDescription || "",
+    ogImage: item.ogImage || "",
+    canonicalUrl: item.canonicalUrl || "",
+  };
+}
+
+function extractListItems(data) {
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.links)) return data.links;
+  if (Array.isArray(data?.redirects)) return data.redirects;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data)) return data;
+  return [];
+}
+
+async function loadLandings() {
+  const res = await authorizedFetch("/list", { method: "GET" });
+
+  if (!res.ok) {
+    landingStore = [];
+    landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">Failed to load landing pages: ${escapeHtml(res.data?.message || "Check /list endpoint")}</div></td></tr>`;
+    updateStats();
+    return;
+  }
+
+  const items = extractListItems(res.data);
+
+  landingStore = items
+    .map(normalizeLandingItem)
+    .filter((item) => item.linkType === "landing")
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+  renderLandingTable();
+  updateStats();
+}
+
+function updateStats() {
+  totalLandings.textContent = landingStore.length;
+  totalLandingClicks.textContent = landingStore.reduce(
+    (sum, item) => sum + Number(item.clicks || 0),
+    0
+  );
+  activeLandings.textContent = landingStore.filter(
+    (item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())
+  ).length;
+}
+
+function renderLandingTable() {
+  const q = (searchInput.value || "").trim().toLowerCase();
+  const domainOnly = domainFilter.value || "all";
+  const statusOnly = statusFilter.value || "all";
+
+  const filtered = landingStore.filter((item) => {
+    const slug = String(item.slug || "").toLowerCase();
+    const title = String(item.landingTitle || "").toLowerCase();
+    const url = String(item.url || "").toLowerCase();
+    const domain = String(item.domain || "").toLowerCase();
+    const alias = String(item.aliasPath || "").toLowerCase();
+
+    const isPaused = !!item.paused;
+    const statusMatch =
+      statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
+
+    const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
+    const queryMatch =
+      !q ||
+      slug.includes(q) ||
+      alias.includes(q) ||
+      title.includes(q) ||
+      url.includes(q) ||
+      domain.includes(q);
+
+    return domainMatch && queryMatch && statusMatch;
+  });
+
+  if (!filtered.length) {
+    landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
+    return;
+  }
+
+  landingTable.innerHTML = filtered
+    .map((item) => {
+      const publicLink = buildPublicLink(item);
+      const aliasLink = buildAliasLink(item);
+      const aliasText = normalizePath(item.aliasPath || "");
+      const statusHtml = item.paused
+        ? `<span class="badge pending">Paused</span>`
+        : `<span class="badge live">Live</span>`;
+
+      return `
+<tr>
+  <td>
+    <div class="table-title">${escapeHtml(item.slug)}</div>
+    ${
+      aliasText
+        ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
+        : `<div class="muted">Alias: auto generated</div>`
+    }
+  </td>
+  <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
+  <td>
+    <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
+    ${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}
+  </td>
+  <td>${Number(item.clicks || 0)}</td>
+  <td>
+    <div style="display:grid;gap:8px;min-width:320px;">
+      <div>
+        <b class="small">Public Link</b>
+        <div class="muted" style="word-break:break-all;">
+          <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
+        </div>
+      </div>
+      ${
+        aliasLink
+          ? `<div>
+              <b class="small">Alias Link</b>
+              <div class="muted" style="word-break:break-all;">
+                <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(aliasLink)}</a>
+              </div>
+            </div>`
+          : `<div class="muted">Alias link will appear after create.</div>`
+      }
+    </div>
+  </td>
+  <td>${statusHtml}</td>
+  <td>${fmtDate(item.createdAt)}</td>
+  <td>
+    <div class="actions">
+      <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
+      <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy Public</button>
+      ${aliasLink ? `<button type="button" class="copy" onclick="copyText('${escapeForJs(aliasLink)}')">Copy Alias</button>` : ""}
+      <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(publicLink)}','${escapeForJs(item.slug)}')">QR Public</button>
+      ${aliasLink ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(aliasLink)}','${escapeForJs(item.slug)}-alias')">QR Alias</button>` : ""}
+      <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open Public</button>
+      ${aliasLink ? `<button type="button" class="open" onclick="openLink('${escapeForJs(aliasLink)}')">Open Alias</button>` : ""}
+      <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
+    </div>
+  </td>
+</tr>`;
+    })
+    .join("");
+}
+
+function updatePreviewDevice(device) {
+  previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
+  previewWrap.classList.add(`device-${device}`);
+
+  [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
+    btn.classList.remove("active")
+  );
+
+  if (device === "desktop") desktopViewBtn.classList.add("active");
+  if (device === "tablet") tabletViewBtn.classList.add("active");
+  if (device === "mobile") mobileViewBtn.classList.add("active");
+}
+
+function setTab(tabId) {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".tab-panel").forEach((panel) => {
+    panel.classList.toggle("active", panel.id === tabId);
+  });
+}
+
+function getDynamicButtons() {
+  return dynamicButtonsStore
+    .map((btn, index) => {
+      const labelEl = $(`dynBtnLabel_${index}`);
+      const urlEl = $(`dynBtnUrl_${index}`);
+      return {
+        label: String(labelEl?.value || "").trim(),
+        url: String(urlEl?.value || "").trim(),
+      };
+    })
+    .filter((btn) => btn.label && btn.url);
+}
+
+function addDynamicButton(label = "", url = "") {
+  dynamicButtonsStore.push({ label, url });
+  renderDynamicButtons();
+  triggerAutosave();
+  renderPreview();
+}
+
+function removeDynamicButton(index) {
+  dynamicButtonsStore.splice(index, 1);
+  renderDynamicButtons();
+  triggerAutosave();
+  renderPreview();
+}
+
+function renderDynamicButtons() {
+  if (!dynamicButtonsStore.length) {
+    dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
+    return;
+  }
+
+  dynamicButtons.innerHTML = dynamicButtonsStore
+    .map(
+      (btn, index) => `
+      <div class="button-item">
+        <div class="button-item-head">
+          <div><b>Extra Button ${index + 1}</b></div>
+          <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="dynBtnLabel_${index}">Label</label>
+            <input id="dynBtnLabel_${index}" value="${escapeHtml(btn.label || "")}" placeholder="Button label" />
           </div>
-          <div class="form-row">
-            <div class="field">
-              <label for="dynBtnLabel_${index}">Label</label>
-              <input id="dynBtnLabel_${index}" value="${escapeHtml(
-          btn.label || ""
-        )}" placeholder="Button label" />
-            </div>
-            <div class="field">
-              <label for="dynBtnUrl_${index}">URL</label>
-              <input id="dynBtnUrl_${index}" value="${escapeHtml(
-          btn.url || ""
-        )}" placeholder="https://..." />
-            </div>
+          <div class="field">
+            <label for="dynBtnUrl_${index}">URL</label>
+            <input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." />
           </div>
         </div>
-      `
-      )
-      .join("");
+      </div>`
+    )
+    .join("");
 
-    dynamicButtons.querySelectorAll("input").forEach((el) => {
-      el.addEventListener("input", () => {
-        triggerAutosave();
-        renderPreview();
-      });
+  dynamicButtons.querySelectorAll("input").forEach((el) => {
+    el.addEventListener("input", () => {
+      triggerAutosave();
+      renderPreview();
     });
+  });
+}
+
+function getLandingButtons() {
+  const buttons = [];
+
+  const b1Label = landingButtonLabel1.value.trim();
+  const b1Url = landingButtonUrl1.value.trim();
+  if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
+
+  const b2Label = landingButtonLabel2.value.trim();
+  const b2Url = landingButtonUrl2.value.trim();
+  if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
+
+  return buttons.concat(getDynamicButtons());
+}
+
+async function setPrimaryDomain() {
+  const domain = normalizeDomain(landingDomain.value);
+
+  if (!domain) {
+    showToast("Select a domain first");
+    return;
   }
 
-  function getLandingButtons() {
-    const buttons = [];
+  const res = await authorizedFetch("/domains/set-primary", {
+    method: "POST",
+    body: JSON.stringify({ domain }),
+  });
 
-    const b1Label = landingButtonLabel1.value.trim();
-    const b1Url = landingButtonUrl1.value.trim();
-    if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
-
-    const b2Label = landingButtonLabel2.value.trim();
-    const b2Url = landingButtonUrl2.value.trim();
-    if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
-
-    return buttons.concat(getDynamicButtons());
+  if (!res.ok) {
+    showToast(res.data?.message || "Failed to set primary");
+    return;
   }
 
-  async function setPrimaryDomain() {
-    const domain = normalizeDomain(landingDomain.value);
+  showToast("Primary domain updated");
+  await loadDomains();
+}
 
-    if (!domain) {
-      showToast("Select a domain first");
-      return;
-    }
+function collectDraft() {
+  return {
+    slug: landingSlug.value.trim(),
+    aliasPath: advancedSlug.value.trim(),
+    domain: normalizeDomain(landingDomain.value),
+    title: landingTitle.value.trim(),
+    subtitle: landingSubtitle.value.trim(),
+    description: landingDescription.value,
+    image: landingImage.value.trim(),
+    theme: landingTheme.value.trim() || "#00ffff",
+    ctaLabel: landingCtaLabel.value.trim(),
+    ctaUrl: landingCtaUrl.value.trim(),
+    footer: landingFooter.value.trim(),
+    buttonsQuick1: {
+      label: landingButtonLabel1.value.trim(),
+      url: landingButtonUrl1.value.trim(),
+    },
+    buttonsQuick2: {
+      label: landingButtonLabel2.value.trim(),
+      url: landingButtonUrl2.value.trim(),
+    },
+    extraButtons: getDynamicButtons(),
+    metaTitle: landingMetaTitle.value.trim(),
+    metaDescription: landingMetaDescription.value.trim(),
+    ogTitle: landingOgTitle.value.trim(),
+    ogDescription: landingOgDescription.value.trim(),
+    ogImage: landingOgImage.value.trim(),
+    canonicalUrl: landingCanonicalUrl.value.trim(),
+    landingHtml: landingHtml.value,
+    landingCss: landingCss.value,
+    landingJs: landingJs.value,
+    bgStyle: bgStyle.value,
+    cardStyle: cardStyle.value,
+    buttonStyle: buttonStyle.value,
+  };
+}
 
-    const res = await authorizedFetch("/domains/set-primary", {
-      method: "POST",
-      body: JSON.stringify({ domain }),
-    });
+function saveDraft() {
+  if (!autosaveEnabled) return;
 
-    if (!res.ok) {
-      showToast(res.data?.message || "Failed to set primary");
-      return;
-    }
+  try {
+    localStorage.setItem(
+      AUTOSAVE_KEY,
+      JSON.stringify({ savedAt: Date.now(), data: collectDraft() })
+    );
+    setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
+  } catch {}
+}
 
-    showToast("Primary domain updated");
-    await loadDomains();
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return false;
+
+    const parsed = JSON.parse(raw);
+    const d = parsed?.data;
+    if (!d) return false;
+
+    landingSlug.value = d.slug || "";
+    advancedSlug.value = d.aliasPath || d.advancedSlug || "";
+    restoredDraftDomain = d.domain || "";
+    landingTitle.value = d.title || "";
+    landingSubtitle.value = d.subtitle || "";
+    landingDescription.value = d.description || "";
+    landingImage.value = d.image || "";
+    landingTheme.value = d.theme || "#00ffff";
+    landingCtaLabel.value = d.ctaLabel || "";
+    landingCtaUrl.value = d.ctaUrl || "";
+    landingFooter.value = d.footer || "";
+    landingButtonLabel1.value = d.buttonsQuick1?.label || "";
+    landingButtonUrl1.value = d.buttonsQuick1?.url || "";
+    landingButtonLabel2.value = d.buttonsQuick2?.label || "";
+    landingButtonUrl2.value = d.buttonsQuick2?.url || "";
+    landingMetaTitle.value = d.metaTitle || "";
+    landingMetaDescription.value = d.metaDescription || "";
+    landingOgTitle.value = d.ogTitle || "";
+    landingOgDescription.value = d.ogDescription || "";
+    landingOgImage.value = d.ogImage || "";
+    landingCanonicalUrl.value = d.canonicalUrl || "";
+    landingHtml.value = d.landingHtml || "";
+    landingCss.value = d.landingCss || "";
+    landingJs.value = d.landingJs || "";
+    bgStyle.value = d.bgStyle || "radial";
+    cardStyle.value = d.cardStyle || "glass";
+    buttonStyle.value = d.buttonStyle || "rounded";
+
+    dynamicButtonsStore = Array.isArray(d.extraButtons)
+      ? d.extraButtons.slice(0, 20)
+      : [];
+
+    renderDynamicButtons();
+
+    const when = parsed?.savedAt
+      ? new Date(parsed.savedAt).toLocaleString()
+      : "previous session";
+
+    setDraftIndicator("Draft", `Restored from ${when}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearSavedDraft() {
+  localStorage.removeItem(AUTOSAVE_KEY);
+  setDraftIndicator("Draft", "Cleared");
+}
+
+function triggerAutosave() {
+  if (!autosaveEnabled) return;
+  clearTimeout(window.__builderAutosaveTimer);
+  window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
+}
+
+function getPayload({ requireSlug = false } = {}) {
+  const slug = normalizePath(landingSlug.value);
+  const domain = normalizeDomain(landingDomain.value);
+  const title = landingTitle.value.trim();
+  const customHtml = landingHtml.value.trim();
+
+  if (requireSlug && !slug) {
+    setResult("Landing slug is required for update", true);
+    return null;
   }
 
-  function collectDraft() {
-    return {
-      slug: landingSlug.value.trim(),
-      aliasPath: advancedSlug.value.trim(),
-      domain: normalizeDomain(landingDomain.value),
-      title: landingTitle.value.trim(),
-      subtitle: landingSubtitle.value.trim(),
-      description: landingDescription.value,
-      image: landingImage.value.trim(),
-      theme: landingTheme.value.trim() || "#00ffff",
-      ctaLabel: landingCtaLabel.value.trim(),
-      ctaUrl: landingCtaUrl.value.trim(),
-      footer: landingFooter.value.trim(),
-      buttonsQuick1: {
-        label: landingButtonLabel1.value.trim(),
-        url: landingButtonUrl1.value.trim(),
-      },
-      buttonsQuick2: {
-        label: landingButtonLabel2.value.trim(),
-        url: landingButtonUrl2.value.trim(),
-      },
-      extraButtons: getDynamicButtons(),
-      metaTitle: landingMetaTitle.value.trim(),
-      metaDescription: landingMetaDescription.value.trim(),
-      ogTitle: landingOgTitle.value.trim(),
-      ogDescription: landingOgDescription.value.trim(),
-      ogImage: landingOgImage.value.trim(),
-      canonicalUrl: landingCanonicalUrl.value.trim(),
-      landingHtml: landingHtml.value,
-      landingCss: landingCss.value,
-      landingJs: landingJs.value,
-      bgStyle: bgStyle.value,
-      cardStyle: cardStyle.value,
-      buttonStyle: buttonStyle.value,
-    };
+  if (!title && !customHtml) {
+    setResult("Landing title or custom HTML is required", true);
+    return null;
   }
 
-  function saveDraft() {
-    if (!autosaveEnabled) return;
+  const payload = {
+    domain,
+    title,
+    subtitle: landingSubtitle.value.trim(),
+    description: landingDescription.value.trim(),
+    image: landingImage.value.trim(),
+    theme: landingTheme.value.trim() || "#00ffff",
+    buttons: getLandingButtons(),
+    ctaLabel: landingCtaLabel.value.trim(),
+    ctaUrl: landingCtaUrl.value.trim(),
+    footer: landingFooter.value.trim(),
+    landingHtml: customHtml || "",
+    landingCss: landingCss.value,
+    landingJs: landingJs.value,
+    metaTitle: landingMetaTitle.value.trim(),
+    metaDescription: landingMetaDescription.value.trim(),
+    ogTitle: landingOgTitle.value.trim(),
+    ogDescription: landingOgDescription.value.trim(),
+    ogImage: landingOgImage.value.trim(),
+    canonicalUrl: landingCanonicalUrl.value.trim(),
+  };
 
-    try {
-      localStorage.setItem(
-        AUTOSAVE_KEY,
-        JSON.stringify({ savedAt: Date.now(), data: collectDraft() })
-      );
-      setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
-    } catch {}
-  }
+  if (slug) payload.slug = slug;
 
-  function loadDraft() {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (!raw) return false;
+  return payload;
+}
 
-      const parsed = JSON.parse(raw);
-      const d = parsed?.data;
-      if (!d) return false;
+function getGeneratedPreviewHtml() {
+  const data = collectDraft();
 
-      landingSlug.value = d.slug || "";
-      advancedSlug.value = d.aliasPath || d.advancedSlug || "";
-      restoredDraftDomain = d.domain || "";
-      landingTitle.value = d.title || "";
-      landingSubtitle.value = d.subtitle || "";
-      landingDescription.value = d.description || "";
-      landingImage.value = d.image || "";
-      landingTheme.value = d.theme || "#00ffff";
-      landingCtaLabel.value = d.ctaLabel || "";
-      landingCtaUrl.value = d.ctaUrl || "";
-      landingFooter.value = d.footer || "";
-      landingButtonLabel1.value = d.buttonsQuick1?.label || "";
-      landingButtonUrl1.value = d.buttonsQuick1?.url || "";
-      landingButtonLabel2.value = d.buttonsQuick2?.label || "";
-      landingButtonUrl2.value = d.buttonsQuick2?.url || "";
-      landingMetaTitle.value = d.metaTitle || "";
-      landingMetaDescription.value = d.metaDescription || "";
-      landingOgTitle.value = d.ogTitle || "";
-      landingOgDescription.value = d.ogDescription || "";
-      landingOgImage.value = d.ogImage || "";
-      landingCanonicalUrl.value = d.canonicalUrl || "";
-      landingHtml.value = d.landingHtml || "";
-      landingCss.value = d.landingCss || "";
-      landingJs.value = d.landingJs || "";
-      bgStyle.value = d.bgStyle || "radial";
-      cardStyle.value = d.cardStyle || "glass";
-      buttonStyle.value = d.buttonStyle || "rounded";
+  const title = escapeHtml(data.title || data.slug || "Landing Page");
+  const subtitle = escapeHtml(data.subtitle || "");
+  const description = escapeHtml(data.description || "");
+  const theme = escapeHtml(data.theme || "#00ffff");
+  const image = String(data.image || "").trim();
+  const footer = escapeHtml(data.footer || "Powered by Rattle Link");
+  const ctaLabel = escapeHtml(data.ctaLabel || "");
+  const ctaUrl = String(data.ctaUrl || "").trim();
+  const buttons = getLandingButtons();
+  const customCss = String(data.landingCss || "");
+  const customJs = String(data.landingJs || "");
 
-      dynamicButtonsStore = Array.isArray(d.extraButtons)
-        ? d.extraButtons.slice(0, 20)
-        : [];
+  const buttonsHtml = buttons
+    .map(
+      (btn) => `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
+    )
+    .join("");
 
-      renderDynamicButtons();
+  const ctaHtml =
+    ctaLabel && ctaUrl
+      ? `<a class="btn cta locked-link" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
+      : "";
 
-      const when = parsed?.savedAt
-        ? new Date(parsed.savedAt).toLocaleString()
-        : "previous session";
-
-      setDraftIndicator("Draft", `Restored from ${when}`);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function clearSavedDraft() {
-    localStorage.removeItem(AUTOSAVE_KEY);
-    setDraftIndicator("Draft", "Cleared");
-  }
-
-  function triggerAutosave() {
-    if (!autosaveEnabled) return;
-
-    clearTimeout(window.__builderAutosaveTimer);
-    window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
-  }
-
-  function getPayload({ requireSlug = false } = {}) {
-    const slug = normalizePath(landingSlug.value);
-    const domain = normalizeDomain(landingDomain.value);
-    const title = landingTitle.value.trim();
-    const customHtml = landingHtml.value.trim();
-
-    if (requireSlug && !slug) {
-      setResult("Landing slug is required for update", true);
-      return null;
-    }
-
-    if (!title && !customHtml) {
-      setResult("Landing title or custom HTML is required", true);
-      return null;
-    }
-
-    const payload = {
-      domain,
-      title,
-      subtitle: landingSubtitle.value.trim(),
-      description: landingDescription.value.trim(),
-      image: landingImage.value.trim(),
-      theme: landingTheme.value.trim() || "#00ffff",
-      buttons: getLandingButtons(),
-      ctaLabel: landingCtaLabel.value.trim(),
-      ctaUrl: landingCtaUrl.value.trim(),
-      footer: landingFooter.value.trim(),
-
-      landingHtml: customHtml || "",
-      landingCss: landingCss.value,
-      landingJs: landingJs.value,
-
-      metaTitle: landingMetaTitle.value.trim(),
-      metaDescription: landingMetaDescription.value.trim(),
-      ogTitle: landingOgTitle.value.trim(),
-      ogDescription: landingOgDescription.value.trim(),
-      ogImage: landingOgImage.value.trim(),
-      canonicalUrl: landingCanonicalUrl.value.trim(),
-    };
-
-    if (slug) payload.slug = slug;
-
-    return payload;
-  }
-
-  function getGeneratedPreviewHtml() {
-    const data = collectDraft();
-
-    const title = escapeHtml(data.title || data.slug || "Landing Page");
-    const subtitle = escapeHtml(data.subtitle || "");
-    const description = escapeHtml(data.description || "");
-    const theme = escapeHtml(data.theme || "#00ffff");
-    const image = String(data.image || "").trim();
-    const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-    const ctaLabel = escapeHtml(data.ctaLabel || "");
-    const ctaUrl = String(data.ctaUrl || "").trim();
-    const buttons = getLandingButtons();
-    const customCss = String(data.landingCss || "");
-    const customJs = String(data.landingJs || "");
-
-    const buttonsHtml = buttons
-      .map(
-        (btn) => `
-          <a class="btn locked-link" href="${escapeHtml(
-            btn.url || "#"
-          )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-          btn.label || ""
-        )}</a>
-        `
-      )
-      .join("");
-
-    const ctaHtml =
-      ctaLabel && ctaUrl
-        ? `<a class="btn cta locked-link" href="${escapeHtml(
-            ctaUrl
-          )}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
-        : "";
-
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -2028,102 +2129,35 @@
 <title>${title}</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:Arial,sans-serif;
-  background:#020617;
-  color:#e2e8f0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-}
-.card{
-  max-width:620px;
-  width:100%;
-  text-align:center;
-  background:#0f172a;
-  border-radius:24px;
-  padding:32px;
-  border:1px solid rgba(255,255,255,.1);
-}
-.avatar{
-  width:120px;
-  height:120px;
-  margin:0 auto 18px;
-  border-radius:999px;
-  overflow:hidden;
-  border:3px solid ${theme};
-}
-.avatar img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
+body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#020617;color:#e2e8f0;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{max-width:620px;width:100%;text-align:center;background:#0f172a;border-radius:24px;padding:32px;border:1px solid rgba(255,255,255,.1)}
+.avatar{width:120px;height:120px;margin:0 auto 18px;border-radius:999px;overflow:hidden;border:3px solid ${theme}}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
 h1{color:${theme};margin:0 0 8px}
 .eyebrow{color:#67e8f9;margin:0 0 10px;font-size:13px}
 p{color:#94a3b8;line-height:1.7}
 .links{display:grid;gap:12px;margin-top:20px}
-.btn{
-  display:block;
-  padding:14px 16px;
-  border-radius:14px;
-  background:#111827;
-  color:#e2e8f0;
-  text-decoration:none;
-  opacity:.45;
-  pointer-events:none;
-  border:1px solid rgba(255,255,255,.08);
-}
-.btn.ready{
-  opacity:1;
-  pointer-events:auto;
-}
-.cta{
-  background:${theme};
-  color:#020617;
-  font-weight:800;
-}
-.turnstile-box{
-  display:flex;
-  justify-content:center;
-  margin:18px 0;
-}
-.footer{
-  margin-top:22px;
-  color:#94a3b8;
-  font-size:12px;
-}
+.btn{display:block;padding:14px 16px;border-radius:14px;background:#111827;color:#e2e8f0;text-decoration:none;opacity:.45;pointer-events:none;border:1px solid rgba(255,255,255,.08)}
+.btn.ready{opacity:1;pointer-events:auto}
+.cta{background:${theme};color:#020617;font-weight:800}
+.turnstile-box{display:flex;justify-content:center;margin:18px 0}
+.footer{margin-top:22px;color:#94a3b8;font-size:12px}
 ${customCss}
 </style>
 </head>
 <body>
   <div class="card">
-    ${
-      image
-        ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>`
-        : ""
-    }
+    ${image ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>` : ""}
     <h1>${title}</h1>
     ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
     ${description ? `<p>${description}</p>` : ""}
-
     <div class="links">${buttonsHtml}${ctaHtml}</div>
-
     <div class="turnstile-box">
-      <div class="cf-turnstile"
-        data-sitekey="${TURNSTILE_SITE_KEY}"
-        data-theme="dark"
-        data-callback="rattleTurnstileDone"></div>
+      <div class="cf-turnstile" data-sitekey="${TURNSTILE_SITE_KEY}" data-theme="dark" data-callback="rattleTurnstileDone"></div>
     </div>
-
     <div class="footer">${footer}</div>
   </div>
-
   ${customJs ? `<script>${customJs}<\/script>` : ""}
-
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer><\/script>
   <script>
     function rattleTurnstileDone(){
@@ -2134,745 +2168,557 @@ ${customCss}
   <\/script>
 </body>
 </html>`;
+}
+
+function renderPreview() {
+  const customHtml = landingHtml.value.trim();
+
+  if (customHtml) {
+    landingPreviewFrame.srcdoc = customHtml;
+    setResult("Custom HTML preview updated", false);
+    setBuilderStatus("Custom HTML rendered in preview.");
+    return;
   }
 
-  function renderPreview() {
-    const customHtml = landingHtml.value.trim();
+  landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
+  setResult("Preview updated", false);
+  setBuilderStatus("Preview rendered successfully.");
+}
 
-    if (customHtml) {
-      landingPreviewFrame.srcdoc = customHtml;
-      setResult("Custom HTML preview updated", false);
-      setBuilderStatus("Custom HTML rendered in preview.");
-      return;
-    }
+function clearForm() {
+  landingSlug.value = "";
+  advancedSlug.value = "";
+  landingDomain.value = "";
+  landingTitle.value = "";
+  landingSubtitle.value = "";
+  landingDescription.value = "";
+  landingImage.value = "";
+  landingTheme.value = "#00ffff";
+  landingCtaLabel.value = "";
+  landingCtaUrl.value = "";
+  landingFooter.value = "";
+  landingButtonLabel1.value = "";
+  landingButtonUrl1.value = "";
+  landingButtonLabel2.value = "";
+  landingButtonUrl2.value = "";
+  landingMetaTitle.value = "";
+  landingMetaDescription.value = "";
+  landingOgTitle.value = "";
+  landingOgDescription.value = "";
+  landingOgImage.value = "";
+  landingCanonicalUrl.value = "";
+  landingHtml.value = "";
+  landingCss.value = "";
+  landingJs.value = "";
+  bgStyle.value = "radial";
+  cardStyle.value = "glass";
+  buttonStyle.value = "rounded";
+  dynamicButtonsStore = [];
+  restoredDraftDomain = "";
+  renderDynamicButtons();
+  landingPreviewFrame.srcdoc = "";
+  setResult("Form cleared", false);
+  setBuilderStatus("Builder reset.");
+  clearSavedDraft();
+}
 
-    landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
-    setResult("Preview updated", false);
-    setBuilderStatus("Preview rendered successfully.");
+function fillForm(item) {
+  landingSlug.value = item.slug || "";
+  advancedSlug.value = item.aliasPath || "";
+  landingDomain.value = item.domain || "";
+  landingTitle.value = item.landingTitle || "";
+  landingSubtitle.value = item.subtitle || "";
+  landingDescription.value = item.landingDescription || "";
+  landingImage.value = item.landingImage || "";
+  landingTheme.value = item.landingTheme || "#00ffff";
+  landingCtaLabel.value = item.landingCtaLabel || "";
+  landingCtaUrl.value = item.landingCtaUrl || "";
+  landingFooter.value = item.landingFooter || "";
+  landingMetaTitle.value = item.metaTitle || "";
+  landingMetaDescription.value = item.metaDescription || "";
+  landingOgTitle.value = item.ogTitle || "";
+  landingOgDescription.value = item.ogDescription || "";
+  landingOgImage.value = item.ogImage || "";
+  landingCanonicalUrl.value = item.canonicalUrl || "";
+  landingHtml.value = item.landingHtml || "";
+  landingCss.value = item.landingCss || "";
+  landingJs.value = item.landingJs || "";
+  bgStyle.value = item.bgStyle || "radial";
+  cardStyle.value = item.cardStyle || "glass";
+  buttonStyle.value = item.buttonStyle || "rounded";
+
+  const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
+  landingButtonLabel1.value = buttons[0]?.label || "";
+  landingButtonUrl1.value = buttons[0]?.url || "";
+  landingButtonLabel2.value = buttons[1]?.label || "";
+  landingButtonUrl2.value = buttons[1]?.url || "";
+
+  dynamicButtonsStore = buttons.slice(2).map((btn) => ({
+    label: btn.label || "",
+    url: btn.url || "",
+  }));
+
+  renderDynamicButtons();
+  renderPreview();
+  saveDraft();
+  showToast("Landing loaded");
+  setBuilderStatus("Landing loaded into builder.");
+}
+
+async function createLanding() {
+  const payload = getPayload({ requireSlug: false });
+  if (!payload) return;
+
+  setBusy(createBtn, true, "Creating...");
+
+  const res = await authorizedFetch("/landing/create", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  setBusy(createBtn, false);
+
+  if (!res.ok) {
+    setResult(res.data?.message || "Landing create failed", true);
+    setBuilderStatus("Create failed.");
+    return;
   }
 
-  function clearForm() {
-    landingSlug.value = "";
-    advancedSlug.value = "";
-    landingDomain.value = "";
-    landingTitle.value = "";
-    landingSubtitle.value = "";
-    landingDescription.value = "";
-    landingImage.value = "";
-    landingTheme.value = "#00ffff";
-    landingCtaLabel.value = "";
-    landingCtaUrl.value = "";
-    landingFooter.value = "";
-    landingButtonLabel1.value = "";
-    landingButtonUrl1.value = "";
-    landingButtonLabel2.value = "";
-    landingButtonUrl2.value = "";
-    landingMetaTitle.value = "";
-    landingMetaDescription.value = "";
-    landingOgTitle.value = "";
-    landingOgDescription.value = "";
-    landingOgImage.value = "";
-    landingCanonicalUrl.value = "";
-    landingHtml.value = "";
-    landingCss.value = "";
-    landingJs.value = "";
-    bgStyle.value = "radial";
-    cardStyle.value = "glass";
-    buttonStyle.value = "rounded";
-    dynamicButtonsStore = [];
-    restoredDraftDomain = "";
-    renderDynamicButtons();
-    landingPreviewFrame.srcdoc = "";
-    setResult("Form cleared", false);
-    setBuilderStatus("Builder reset.");
-    clearSavedDraft();
+  const publicLink = res.data?.publicLink || buildPublicLink(res.data || payload);
+  const aliasLink = res.data?.aliasLink || "";
+
+  if (res.data?.slug) landingSlug.value = res.data.slug;
+  if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
+
+  setResult(
+    `Landing created:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
+    false
+  );
+
+  setBuilderStatus("Landing created successfully.");
+  saveDraft();
+  await loadAll(false);
+  showQR(publicLink, res.data?.slug || payload.slug || "landing");
+}
+
+async function updateLanding() {
+  const payload = getPayload({ requireSlug: true });
+  if (!payload) return;
+
+  setBusy(updateBtn, true, "Updating...");
+
+  const res = await authorizedFetch("/landing/update", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  setBusy(updateBtn, false);
+
+  if (!res.ok) {
+    setResult(res.data?.message || "Landing update failed", true);
+    setBuilderStatus("Update failed.");
+    return;
   }
 
-  function fillForm(item) {
-    landingSlug.value = item.slug || "";
-    advancedSlug.value = item.aliasPath || "";
-    landingDomain.value = item.domain || "";
-    landingTitle.value = item.landingTitle || "";
-    landingSubtitle.value = item.subtitle || "";
-    landingDescription.value = item.landingDescription || "";
-    landingImage.value = item.landingImage || "";
-    landingTheme.value = item.landingTheme || "#00ffff";
-    landingCtaLabel.value = item.landingCtaLabel || "";
-    landingCtaUrl.value = item.landingCtaUrl || "";
-    landingFooter.value = item.landingFooter || "";
-    landingMetaTitle.value = item.metaTitle || "";
-    landingMetaDescription.value = item.metaDescription || "";
-    landingOgTitle.value = item.ogTitle || "";
-    landingOgDescription.value = item.ogDescription || "";
-    landingOgImage.value = item.ogImage || "";
-    landingCanonicalUrl.value = item.canonicalUrl || "";
-    landingHtml.value = item.landingHtml || "";
-    landingCss.value = item.landingCss || "";
-    landingJs.value = item.landingJs || "";
-    bgStyle.value = item.bgStyle || "radial";
-    cardStyle.value = item.cardStyle || "glass";
-    buttonStyle.value = item.buttonStyle || "rounded";
+  const publicLink = res.data?.publicLink || buildPublicLink(payload);
+  const aliasLink = res.data?.aliasLink || "";
 
-    const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
-    landingButtonLabel1.value = buttons[0]?.label || "";
-    landingButtonUrl1.value = buttons[0]?.url || "";
-    landingButtonLabel2.value = buttons[1]?.label || "";
-    landingButtonUrl2.value = buttons[1]?.url || "";
+  if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-    dynamicButtonsStore = buttons.slice(2).map((btn) => ({
-      label: btn.label || "",
-      url: btn.url || "",
-    }));
+  setResult(
+    `Landing updated:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
+    false
+  );
 
-    renderDynamicButtons();
-    renderPreview();
-    saveDraft();
-    showToast("Landing loaded");
-    setBuilderStatus("Landing loaded into builder.");
+  setBuilderStatus("Landing updated successfully.");
+  saveDraft();
+  await loadAll(false);
+  showQR(publicLink, payload.slug);
+}
+
+async function deleteLanding(slug, domain = "") {
+  if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) return;
+
+  const res = await authorizedFetch("/landing/delete", {
+    method: "POST",
+    body: JSON.stringify({ slug, domain }),
+  });
+
+  if (!res.ok) {
+    showToast(res.data?.message || "Delete failed");
+    return;
   }
 
-  async function createLanding() {
-    const payload = getPayload({ requireSlug: false });
-    if (!payload) return;
+  showToast("Landing deleted");
+  await loadAll(false);
+}
 
-    setBusy(createBtn, true, "Creating...");
-
-    const res = await authorizedFetch("/landing/create", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    setBusy(createBtn, false);
-
-    if (!res.ok) {
-      setResult(res.data?.message || "Landing create failed", true);
-      setBuilderStatus("Create failed.");
-      return;
-    }
-
-    const publicLink = res.data?.publicLink || buildPublicLink(res.data || payload);
-    const aliasLink = res.data?.aliasLink || "";
-
-    if (res.data?.slug) landingSlug.value = res.data.slug;
-    if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
-
-    setResult(
-      `Landing created:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
-      false
-    );
-
-    setBuilderStatus("Landing created successfully.");
-    saveDraft();
-    await loadAll(false);
-    showQR(publicLink, res.data?.slug || payload.slug || "landing");
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Copied!");
+  } catch {
+    showToast("Copy failed");
   }
+}
 
-  async function updateLanding() {
-    const payload = getPayload({ requireSlug: true });
-    if (!payload) return;
+function openLink(url) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
-    setBusy(updateBtn, true, "Updating...");
+async function loadDomains() {
+  const res = await authorizedFetch("/domains/me", { method: "GET" });
 
-    const res = await authorizedFetch("/landing/update", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    setBusy(updateBtn, false);
-
-    if (!res.ok) {
-      setResult(res.data?.message || "Landing update failed", true);
-      setBuilderStatus("Update failed.");
-      return;
-    }
-
-    const publicLink = res.data?.publicLink || buildPublicLink(payload);
-    const aliasLink = res.data?.aliasLink || "";
-
-    if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
-
-    setResult(
-      `Landing updated:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
-      false
-    );
-
-    setBuilderStatus("Landing updated successfully.");
-    saveDraft();
-    await loadAll(false);
-    showQR(publicLink, payload.slug);
-  }
-
-  async function deleteLanding(slug, domain = "") {
-    if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) {
-      return;
-    }
-
-    const res = await authorizedFetch("/landing/delete", {
-      method: "POST",
-      body: JSON.stringify({ slug, domain }),
-    });
-
-    if (!res.ok) {
-      showToast(res.data?.message || "Delete failed");
-      return;
-    }
-
-    showToast("Landing deleted");
-    await loadAll(false);
-  }
-
-  async function copyText(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast("Copied!");
-    } catch {
-      showToast("Copy failed");
-    }
-  }
-
-  function openLink(url) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  async function loadDomains() {
-    const res = await authorizedFetch("/domains/me", { method: "GET" });
-
-    if (!res.ok) {
-      domainsStore = [];
-      renderDomainSelectors();
-      return;
-    }
-
-    const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
-
-    domainsStore = domains
-      .map((d) => ({
-        ...d,
-        domain: normalizeDomain(d.domain || ""),
-        status: String(d.status || "pending").toLowerCase(),
-        isPrimary: !!(d.isPrimary || d.is_primary),
-        createdAt: Number(d.createdAt || d.created_at || 0),
-      }))
-      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-
+  if (!res.ok) {
+    domainsStore = [];
     renderDomainSelectors();
+    return;
   }
 
-  function renderDomainSelectors() {
-    const verifiedDomains = domainsStore.filter((d) => d.status === "verified");
-    const primary = verifiedDomains.find((d) => d.isPrimary);
+  const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
 
-    const selectedDomain = restoredDraftDomain || landingDomain.value;
-    const selectedFilter = domainFilter.value;
+  domainsStore = domains
+    .map((d) => ({
+      ...d,
+      domain: normalizeDomain(d.domain || ""),
+      status: String(d.status || "pending").toLowerCase(),
+      isPrimary: !!(d.isPrimary || d.is_primary),
+      createdAt: Number(d.createdAt || d.created_at || 0),
+    }))
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
-    landingDomain.innerHTML = ['<option value="">Default domain</option>']
-      .concat(
-        verifiedDomains.map(
-          (d) =>
-            `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${
-              d.isPrimary ? " (Primary)" : ""
-            }</option>`
-        )
+  renderDomainSelectors();
+}
+
+function renderDomainSelectors() {
+  const verifiedDomains = domainsStore.filter((d) => d.status === "verified");
+  const primary = verifiedDomains.find((d) => d.isPrimary);
+
+  const selectedDomain = restoredDraftDomain || landingDomain.value;
+  const selectedFilter = domainFilter.value;
+
+  landingDomain.innerHTML = ['<option value="">Default domain</option>']
+    .concat(
+      verifiedDomains.map(
+        (d) =>
+          `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${
+            d.isPrimary ? " (Primary)" : ""
+          }</option>`
       )
-      .join("");
+    )
+    .join("");
 
-    domainFilter.innerHTML = ['<option value="all">All domains</option>']
-      .concat(
-        verifiedDomains.map(
-          (d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
-        )
+  domainFilter.innerHTML = ['<option value="all">All domains</option>']
+    .concat(
+      verifiedDomains.map(
+        (d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
       )
-      .join("");
+    )
+    .join("");
 
-    if ([...landingDomain.options].some((o) => o.value === selectedDomain)) {
-      landingDomain.value = selectedDomain;
-    } else {
-      landingDomain.value = "";
-    }
-
-    restoredDraftDomain = "";
-
-    if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
-      domainFilter.value = selectedFilter;
-    }
-
-    verifiedDomainsCount.textContent = verifiedDomains.length;
-    primaryDomainBadge.textContent = primary
-      ? `Primary: ${primary.domain}`
-      : "Primary: none";
+  if ([...landingDomain.options].some((o) => o.value === selectedDomain)) {
+    landingDomain.value = selectedDomain;
+  } else {
+    landingDomain.value = "";
   }
 
-  async function loadLandings() {
-    const res = await authorizedFetch("/list", { method: "GET" });
+  restoredDraftDomain = "";
 
-    if (!res.ok) {
-      landingStore = [];
-      renderLandingTable();
-      updateStats();
-      return;
-    }
-
-    const items = Array.isArray(res.data?.items) ? res.data.items : [];
-
-    landingStore = items
-      .map(normalizeLandingItem)
-      .filter((item) => item.linkType === "landing")
-      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-
-    renderLandingTable();
-    updateStats();
+  if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
+    domainFilter.value = selectedFilter;
   }
 
-  function updateStats() {
-    totalLandings.textContent = landingStore.length;
-    totalLandingClicks.textContent = landingStore.reduce(
-      (sum, item) => sum + Number(item.clicks || 0),
-      0
-    );
-    activeLandings.textContent = landingStore.filter(
-      (item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())
-    ).length;
+  verifiedDomainsCount.textContent = verifiedDomains.length;
+  primaryDomainBadge.textContent = primary ? `Primary: ${primary.domain}` : "Primary: none";
+}
+
+function editLandingByKey(slug, domain) {
+  const item = landingStore.find(
+    (x) =>
+      String(x.slug || "") === String(slug || "") &&
+      normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+  );
+
+  if (!item) {
+    showToast("Landing not found");
+    return;
   }
 
-  function renderLandingTable() {
-    const q = (searchInput.value || "").trim().toLowerCase();
-    const domainOnly = domainFilter.value || "all";
-    const statusOnly = statusFilter.value || "all";
+  fillForm(item);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
-    const filtered = landingStore.filter((item) => {
-      const slug = String(item.slug || "").toLowerCase();
-      const title = String(item.landingTitle || "").toLowerCase();
-      const url = String(item.url || "").toLowerCase();
-      const domain = String(item.domain || "").toLowerCase();
-      const alias = String(item.aliasPath || "").toLowerCase();
+async function loadAll(showMessage = false) {
+  setBusy(refreshBtn, true, "Loading...");
+  await Promise.all([loadDomains(), loadLandings()]);
+  setBusy(refreshBtn, false);
+  if (showMessage) showToast("Landing data refreshed");
+}
 
-      const isPaused = !!item.paused;
-      const statusMatch =
-        statusOnly === "all"
-          ? true
-          : statusOnly === "paused"
-          ? isPaused
-          : !isPaused;
+function applyThemePreset(hex) {
+  landingTheme.value = hex;
+  renderPreview();
+  triggerAutosave();
+}
 
-      const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
-      const queryMatch =
-        !q ||
-        slug.includes(q) ||
-        alias.includes(q) ||
-        title.includes(q) ||
-        url.includes(q) ||
-        domain.includes(q);
+function applyTemplate(name) {
+  const templates = {
+    creator: {
+      title: "Your Name",
+      subtitle: "Creator • Content • Socials",
+      description:
+        "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+      ctaLabel: "Watch Latest Video",
+      ctaUrl: "https://youtube.com/",
+      footer: "Thanks for visiting",
+      theme: "#00ffff",
+      buttons: [
+        { label: "Instagram", url: "https://instagram.com/" },
+        { label: "TikTok", url: "https://tiktok.com/" },
+        { label: "X / Twitter", url: "https://x.com/" },
+      ],
+    },
+    product: {
+      title: "Launch Your Product Faster",
+      subtitle: "New release",
+      description:
+        "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+      ctaLabel: "Start Free Trial",
+      ctaUrl: "https://example.com/signup",
+      footer: "Built with Rattle Link",
+      theme: "#3b82f6",
+      buttons: [
+        { label: "See Features", url: "https://example.com/features" },
+        { label: "Pricing", url: "https://example.com/pricing" },
+        { label: "Book Demo", url: "https://example.com/demo" },
+      ],
+    },
+    agency: {
+      title: "We Build Brands That Convert",
+      subtitle: "Agency • Design • Growth",
+      description:
+        "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
+      ctaLabel: "Book a Call",
+      ctaUrl: "https://calendly.com/",
+      footer: "Agency inquiries welcome",
+      theme: "#a855f7",
+      buttons: [
+        { label: "Portfolio", url: "https://example.com/portfolio" },
+        { label: "Testimonials", url: "https://example.com/reviews" },
+        { label: "Services", url: "https://example.com/services" },
+      ],
+    },
+    music: {
+      title: "New Single Out Now",
+      subtitle: "Artist • Music • Streaming",
+      description:
+        "Stream my latest release, watch the music video, and follow me everywhere.",
+      ctaLabel: "Listen Now",
+      ctaUrl: "https://spotify.com/",
+      footer: "Thank you for the support",
+      theme: "#ec4899",
+      buttons: [
+        { label: "Spotify", url: "https://spotify.com/" },
+        { label: "Apple Music", url: "https://music.apple.com/" },
+        { label: "YouTube", url: "https://youtube.com/" },
+      ],
+    },
+    event: {
+      title: "Join Our Live Event",
+      subtitle: "Limited seats",
+      description:
+        "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
+      ctaLabel: "Reserve My Spot",
+      ctaUrl: "https://eventbrite.com/",
+      footer: "See you there",
+      theme: "#f59e0b",
+      buttons: [
+        { label: "Agenda", url: "https://example.com/agenda" },
+        { label: "Speakers", url: "https://example.com/speakers" },
+        { label: "Venue", url: "https://example.com/location" },
+      ],
+    },
+    minimal: {
+      title: "My Links",
+      subtitle: "",
+      description: "Everything important in one place.",
+      ctaLabel: "",
+      ctaUrl: "",
+      footer: "Powered by Rattle Link",
+      theme: "#22c55e",
+      buttons: [
+        { label: "Website", url: "https://example.com/" },
+        { label: "Instagram", url: "https://instagram.com/" },
+        { label: "Contact", url: "mailto:hello@example.com" },
+      ],
+    },
+  };
 
-      return domainMatch && queryMatch && statusMatch;
-    });
+  const t = templates[name];
+  if (!t) return;
 
-    if (!filtered.length) {
-      landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
-      return;
-    }
+  landingTitle.value = t.title || "";
+  landingSubtitle.value = t.subtitle || "";
+  landingDescription.value = t.description || "";
+  landingCtaLabel.value = t.ctaLabel || "";
+  landingCtaUrl.value = t.ctaUrl || "";
+  landingFooter.value = t.footer || "";
+  landingTheme.value = t.theme || "#00ffff";
+  landingButtonLabel1.value = t.buttons[0]?.label || "";
+  landingButtonUrl1.value = t.buttons[0]?.url || "";
+  landingButtonLabel2.value = t.buttons[1]?.label || "";
+  landingButtonUrl2.value = t.buttons[1]?.url || "";
+  dynamicButtonsStore = t.buttons.slice(2);
 
-    landingTable.innerHTML = filtered
-      .map((item) => {
-        const publicLink = buildPublicLink(item);
-        const aliasLink = buildAliasLink(item);
-        const aliasText = normalizePath(item.aliasPath || "");
-        const statusHtml = item.paused
-          ? `<span class="badge pending">Paused</span>`
-          : `<span class="badge live">Live</span>`;
+  renderDynamicButtons();
+  renderPreview();
+  triggerAutosave();
+  showToast(`Template loaded: ${name}`);
+}
 
-        return `
-<tr>
-  <td>
-    <div class="table-title">${escapeHtml(item.slug)}</div>
-    ${
-      aliasLink
-        ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
-        : `<div class="muted">Alias: auto generated</div>`
-    }
-  </td>
-
-  <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
-
-  <td>
-    <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
-    ${
-      item.landingDescription
-        ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>`
-        : ""
-    }
-  </td>
-
-  <td>${Number(item.clicks || 0)}</td>
-
-  <td>
-    <div style="display:grid;gap:8px;min-width:320px;">
-      <div>
-        <b class="small">Public Link</b>
-        <div class="muted" style="word-break:break-all;">
-          <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-          publicLink
-        )}</a>
-        </div>
-      </div>
-
-      ${
-        aliasLink
-          ? `<div>
-              <b class="small">Alias Link</b>
-              <div class="muted" style="word-break:break-all;">
-                <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-              aliasLink
-            )}</a>
-              </div>
-            </div>`
-          : `<div class="muted">Alias link will appear after create.</div>`
-      }
-    </div>
-  </td>
-
-  <td>${statusHtml}</td>
-  <td>${fmtDate(item.createdAt)}</td>
-
-  <td>
-    <div class="actions">
-      <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(
-        item.slug
-      )}','${escapeForJs(item.domain || "")}')">Edit</button>
-
-      <button type="button" class="copy" onclick="copyText('${escapeForJs(
-        publicLink
-      )}')">Copy Public</button>
-
-      ${
-        aliasLink
-          ? `<button type="button" class="copy" onclick="copyText('${escapeForJs(
-              aliasLink
-            )}')">Copy Alias</button>`
-          : ""
-      }
-
-      <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(
-        publicLink
-      )}','${escapeForJs(item.slug)}')">QR Public</button>
-
-      ${
-        aliasLink
-          ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(
-              aliasLink
-            )}','${escapeForJs(item.slug)}-alias')">QR Alias</button>`
-          : ""
-      }
-
-      <button type="button" class="open" onclick="openLink('${escapeForJs(
-        publicLink
-      )}')">Open Public</button>
-
-      ${
-        aliasLink
-          ? `<button type="button" class="open" onclick="openLink('${escapeForJs(
-              aliasLink
-            )}')">Open Alias</button>`
-          : ""
-      }
-
-      <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(
-        item.slug
-      )}','${escapeForJs(item.domain || "")}')">Delete</button>
-    </div>
-  </td>
-</tr>
-        `;
-      })
-      .join("");
-  }
-
-  function editLandingByKey(slug, domain) {
-    const item = landingStore.find(
-      (x) =>
-        String(x.slug || "") === String(slug || "") &&
-        normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
-    );
-
-    if (!item) {
-      showToast("Landing not found");
-      return;
-    }
-
-    fillForm(item);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function loadAll(showMessage = false) {
-    setBusy(refreshBtn, true, "Loading...");
-    await Promise.all([loadDomains(), loadLandings()]);
-    setBusy(refreshBtn, false);
-    if (showMessage) showToast("Landing data refreshed");
-  }
-
-  function applyThemePreset(hex) {
-    landingTheme.value = hex;
-    renderPreview();
-    triggerAutosave();
-  }
-
-  function applyTemplate(name) {
-    const templates = {
-      creator: {
-        title: "Your Name",
-        subtitle: "Creator • Content • Socials",
-        description:
-          "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
-        ctaLabel: "Watch Latest Video",
-        ctaUrl: "https://youtube.com/",
-        footer: "Thanks for visiting",
-        theme: "#00ffff",
-        buttons: [
-          { label: "Instagram", url: "https://instagram.com/" },
-          { label: "TikTok", url: "https://tiktok.com/" },
-          { label: "X / Twitter", url: "https://x.com/" },
-        ],
-      },
-      product: {
-        title: "Launch Your Product Faster",
-        subtitle: "New release",
-        description:
-          "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
-        ctaLabel: "Start Free Trial",
-        ctaUrl: "https://example.com/signup",
-        footer: "Built with Rattle Link",
-        theme: "#3b82f6",
-        buttons: [
-          { label: "See Features", url: "https://example.com/features" },
-          { label: "Pricing", url: "https://example.com/pricing" },
-          { label: "Book Demo", url: "https://example.com/demo" },
-        ],
-      },
-      agency: {
-        title: "We Build Brands That Convert",
-        subtitle: "Agency • Design • Growth",
-        description:
-          "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
-        ctaLabel: "Book a Call",
-        ctaUrl: "https://calendly.com/",
-        footer: "Agency inquiries welcome",
-        theme: "#a855f7",
-        buttons: [
-          { label: "Portfolio", url: "https://example.com/portfolio" },
-          { label: "Testimonials", url: "https://example.com/reviews" },
-          { label: "Services", url: "https://example.com/services" },
-        ],
-      },
-      music: {
-        title: "New Single Out Now",
-        subtitle: "Artist • Music • Streaming",
-        description:
-          "Stream my latest release, watch the music video, and follow me everywhere.",
-        ctaLabel: "Listen Now",
-        ctaUrl: "https://spotify.com/",
-        footer: "Thank you for the support",
-        theme: "#ec4899",
-        buttons: [
-          { label: "Spotify", url: "https://spotify.com/" },
-          { label: "Apple Music", url: "https://music.apple.com/" },
-          { label: "YouTube", url: "https://youtube.com/" },
-        ],
-      },
-      event: {
-        title: "Join Our Live Event",
-        subtitle: "Limited seats",
-        description:
-          "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
-        ctaLabel: "Reserve My Spot",
-        ctaUrl: "https://eventbrite.com/",
-        footer: "See you there",
-        theme: "#f59e0b",
-        buttons: [
-          { label: "Agenda", url: "https://example.com/agenda" },
-          { label: "Speakers", url: "https://example.com/speakers" },
-          { label: "Venue", url: "https://example.com/location" },
-        ],
-      },
-      minimal: {
-        title: "My Links",
-        subtitle: "",
-        description: "Everything important in one place.",
-        ctaLabel: "",
-        ctaUrl: "",
-        footer: "Powered by Rattle Link",
-        theme: "#22c55e",
-        buttons: [
-          { label: "Website", url: "https://example.com/" },
-          { label: "Instagram", url: "https://instagram.com/" },
-          { label: "Contact", url: "mailto:hello@example.com" },
-        ],
-      },
-    };
-
-    const t = templates[name];
-    if (!t) return;
-
-    landingTitle.value = t.title || "";
-    landingSubtitle.value = t.subtitle || "";
-    landingDescription.value = t.description || "";
-    landingCtaLabel.value = t.ctaLabel || "";
-    landingCtaUrl.value = t.ctaUrl || "";
-    landingFooter.value = t.footer || "";
-    landingTheme.value = t.theme || "#00ffff";
-    landingButtonLabel1.value = t.buttons[0]?.label || "";
-    landingButtonUrl1.value = t.buttons[0]?.url || "";
-    landingButtonLabel2.value = t.buttons[1]?.label || "";
-    landingButtonUrl2.value = t.buttons[1]?.url || "";
-    dynamicButtonsStore = t.buttons.slice(2);
-
-    renderDynamicButtons();
-    renderPreview();
-    triggerAutosave();
-    showToast(`Template loaded: ${name}`);
-  }
-
-  function attachLivePreview() {
-    [
-      landingSlug,
-      advancedSlug,
-      landingDomain,
-      landingTitle,
-      landingSubtitle,
-      landingDescription,
-      landingImage,
-      landingTheme,
-      landingCtaLabel,
-      landingCtaUrl,
-      landingFooter,
-      landingButtonLabel1,
-      landingButtonUrl1,
-      landingButtonLabel2,
-      landingButtonUrl2,
-      landingMetaTitle,
-      landingMetaDescription,
-      landingOgTitle,
-      landingOgDescription,
-      landingOgImage,
-      landingCanonicalUrl,
-      landingHtml,
-      landingCss,
-      landingJs,
-      bgStyle,
-      cardStyle,
-      buttonStyle,
-    ].forEach((el) => {
-      el.addEventListener("input", () => {
-        clearTimeout(window.__landingPreviewTimer);
-        window.__landingPreviewTimer = setTimeout(() => {
-          try {
-            renderPreview();
-            triggerAutosave();
-          } catch {}
-        }, 220);
-      });
-
-      el.addEventListener("change", () => {
+function attachLivePreview() {
+  [
+    landingSlug,
+    advancedSlug,
+    landingDomain,
+    landingTitle,
+    landingSubtitle,
+    landingDescription,
+    landingImage,
+    landingTheme,
+    landingCtaLabel,
+    landingCtaUrl,
+    landingFooter,
+    landingButtonLabel1,
+    landingButtonUrl1,
+    landingButtonLabel2,
+    landingButtonUrl2,
+    landingMetaTitle,
+    landingMetaDescription,
+    landingOgTitle,
+    landingOgDescription,
+    landingOgImage,
+    landingCanonicalUrl,
+    landingHtml,
+    landingCss,
+    landingJs,
+    bgStyle,
+    cardStyle,
+    buttonStyle,
+  ].forEach((el) => {
+    el.addEventListener("input", () => {
+      clearTimeout(window.__landingPreviewTimer);
+      window.__landingPreviewTimer = setTimeout(() => {
         try {
           renderPreview();
           triggerAutosave();
         } catch {}
-      });
-    });
-  }
-
-  function setupEvents() {
-    refreshBtn.addEventListener("click", () => loadAll(true));
-    clearBtn.addEventListener("click", clearForm);
-    previewBtn.addEventListener("click", renderPreview);
-    createBtn.addEventListener("click", createLanding);
-    updateBtn.addEventListener("click", updateLanding);
-
-    autosaveBtn.addEventListener("click", () => {
-      autosaveEnabled = !autosaveEnabled;
-      autosaveBtn.textContent = `Autosave: ${autosaveEnabled ? "On" : "Off"}`;
-      if (autosaveEnabled) saveDraft();
+      }, 220);
     });
 
-    openPreviewBtn.addEventListener("click", () => {
-      if (!landingPreviewFrame.srcdoc) renderPreview();
-
-      const win = window.open("", "_blank");
-      if (win) {
-        win.document.open();
-        win.document.write(landingPreviewFrame.srcdoc || "");
-        win.document.close();
-      }
+    el.addEventListener("change", () => {
+      try {
+        renderPreview();
+        triggerAutosave();
+      } catch {}
     });
+  });
+}
 
-    desktopViewBtn.addEventListener("click", () => updatePreviewDevice("desktop"));
-    tabletViewBtn.addEventListener("click", () => updatePreviewDevice("tablet"));
-    mobileViewBtn.addEventListener("click", () => updatePreviewDevice("mobile"));
+function setupEvents() {
+  refreshBtn.addEventListener("click", () => loadAll(true));
+  clearBtn.addEventListener("click", clearForm);
+  previewBtn.addEventListener("click", renderPreview);
+  createBtn.addEventListener("click", createLanding);
+  updateBtn.addEventListener("click", updateLanding);
 
-    searchInput.addEventListener("input", renderLandingTable);
-    domainFilter.addEventListener("change", renderLandingTable);
-    statusFilter.addEventListener("change", renderLandingTable);
-
-    addButtonBtn.addEventListener("click", () => addDynamicButton());
-
-    presetNeonBtn.addEventListener("click", () => applyThemePreset("#00ffff"));
-    presetBlueBtn.addEventListener("click", () => applyThemePreset("#3b82f6"));
-    presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
-    presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
-
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => setTab(btn.dataset.tab));
-    });
-
-    setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
-
-    document.querySelectorAll(".template-card").forEach((card) => {
-      card.addEventListener("click", () => applyTemplate(card.dataset.template));
-    });
-
-    [landingSlug, landingTitle, landingDescription].forEach((el) => {
-      el.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
-      });
-    });
-
-    $("closeQrModalBtn").addEventListener("click", () => closeModal(qrModal));
-    $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
-    $("copyQrUrlBtn").addEventListener("click", () => copyText(currentQrImageUrl));
-    $("openQrImageBtn").addEventListener("click", () => openLink(currentQrImageUrl));
-    $("copyQrLinkBtn").addEventListener("click", () => copyText(currentQrLink));
-    $("openQrLinkBtn").addEventListener("click", () => openLink(currentQrLink));
-
-    overlay.addEventListener("click", () => closeModal(qrModal));
-  }
-
-  window.copyText = copyText;
-  window.openLink = openLink;
-  window.deleteLanding = deleteLanding;
-  window.editLandingByKey = editLandingByKey;
-  window.removeDynamicButton = removeDynamicButton;
-  window.showQR = showQR;
-
-  (async function init() {
-    if (!ensureAuth()) return;
-
-    setupEvents();
-    attachLivePreview();
-    renderDynamicButtons();
-    loadDraft();
-    await loadAll(false);
-    renderPreview();
-    updatePreviewDevice("desktop");
-
-    clearInterval(refreshTimer);
-    refreshTimer = setInterval(() => {
-      if (document.hidden) return;
-      loadAll(false);
-    }, 20000);
-  })();
-
-  window.addEventListener("beforeunload", () => {
-    clearInterval(refreshTimer);
+  autosaveBtn.addEventListener("click", () => {
+    autosaveEnabled = !autosaveEnabled;
+    autosaveBtn.textContent = `Autosave: ${autosaveEnabled ? "On" : "Off"}`;
     if (autosaveEnabled) saveDraft();
   });
+
+  openPreviewBtn.addEventListener("click", () => {
+    if (!landingPreviewFrame.srcdoc) renderPreview();
+
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.open();
+      win.document.write(landingPreviewFrame.srcdoc || "");
+      win.document.close();
+    }
+  });
+
+  desktopViewBtn.addEventListener("click", () => updatePreviewDevice("desktop"));
+  tabletViewBtn.addEventListener("click", () => updatePreviewDevice("tablet"));
+  mobileViewBtn.addEventListener("click", () => updatePreviewDevice("mobile"));
+
+  searchInput.addEventListener("input", renderLandingTable);
+  domainFilter.addEventListener("change", renderLandingTable);
+  statusFilter.addEventListener("change", renderLandingTable);
+
+  addButtonBtn.addEventListener("click", () => addDynamicButton());
+
+  presetNeonBtn.addEventListener("click", () => applyThemePreset("#00ffff"));
+  presetBlueBtn.addEventListener("click", () => applyThemePreset("#3b82f6"));
+  presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
+  presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
+
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setTab(btn.dataset.tab));
+  });
+
+  setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
+
+  document.querySelectorAll(".template-card").forEach((card) => {
+    card.addEventListener("click", () => applyTemplate(card.dataset.template));
+  });
+
+  [landingSlug, landingTitle, landingDescription].forEach((el) => {
+    el.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
+    });
+  });
+
+  $("closeQrModalBtn").addEventListener("click", () => closeModal(qrModal));
+  $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
+  $("copyQrUrlBtn").addEventListener("click", () => copyText(currentQrImageUrl));
+  $("openQrImageBtn").addEventListener("click", () => openLink(currentQrImageUrl));
+  $("copyQrLinkBtn").addEventListener("click", () => copyText(currentQrLink));
+  $("openQrLinkBtn").addEventListener("click", () => openLink(currentQrLink));
+
+  overlay.addEventListener("click", () => closeModal(qrModal));
+}
+
+window.copyText = copyText;
+window.openLink = openLink;
+window.deleteLanding = deleteLanding;
+window.editLandingByKey = editLandingByKey;
+window.removeDynamicButton = removeDynamicButton;
+window.showQR = showQR;
+
+(async function init() {
+  if (!ensureAuth()) return;
+
+  setupEvents();
+  attachLivePreview();
+  renderDynamicButtons();
+  loadDraft();
+  await loadAll(false);
+  renderPreview();
+  updatePreviewDevice("desktop");
+
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    if (document.hidden) return;
+    loadAll(false);
+  }, 20000);
+})();
+
+window.addEventListener("beforeunload", () => {
+  clearInterval(refreshTimer);
+  if (autosaveEnabled) saveDraft();
+});
 </script>
   </body>
 </html>
