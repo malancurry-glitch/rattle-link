@@ -26,7 +26,7 @@ const PRIMARY_API = normalizeBaseUrl(process.env.PRIMARY_API || "https://api.rat
 const API_BASE = normalizeBaseUrl(
   process.env.API_BASE || "https://suvegwrmzl.execute-api.us-east-2.amazonaws.com/production"
 );
-const FRONTEND_BASE = normalizeBaseUrl(process.env.FRONTEND_BASE || "https://rattle-link.vercel.app");
+const FRONTEND_BASE = normalizeBaseUrl(process.env.FRONTEND_BASE || "https://www.rattleshortit.it.com");
 const WS_ENDPOINT = String(
   process.env.WS_ENDPOINT || "https://zzqva6jif7.execute-api.us-east-2.amazonaws.com/production"
 ).trim();
