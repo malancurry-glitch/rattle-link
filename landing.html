@@ -693,11 +693,15 @@
         return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(landingTitle.value || advancedSlug.value || landingSlug.value || "Landing Page")}</title>${styleTag}</head><body>${out}${scriptTag}</body></html>`;
       }
 
-      function getPayload() {
-  syncAdvancedSlugToBasicIfNeeded();
+      ```js
+function getPayload() {
+  const rawHtml = landingHtml.value;
+  const hasCustomHtml = String(rawHtml || "").trim().length > 0;
 
-  const slug = getEffectiveSlug();
+  const basicSlug = normalizeSlugClient(landingSlug.value);
   const advSlug = normalizeSlugClient(advancedSlug.value);
+
+  const slug = hasCustomHtml && advSlug ? advSlug : basicSlug;
 
   const domain = normalizeDomain(landingDomain.value);
   const title = landingTitle.value.trim();
@@ -712,15 +716,12 @@
 
   const buttons = getLandingButtons();
 
-  const rawHtml = landingHtml.value;
   const css = landingCss.value;
   const js = landingJs.value;
 
-  const hasCustomHtml = String(rawHtml || "").trim().length > 0;
-
   const html = hasCustomHtml
     ? injectCustomAssetsIntoHtml(rawHtml, css, js)
-    : rawHtml;
+    : "";
 
   const metaTitle = landingMetaTitle.value.trim();
   const metaDescription = landingMetaDescription.value.trim();
@@ -734,20 +735,21 @@
     return null;
   }
 
-  if (hasCustomHtml && advSlug) {
-    landingSlug.value = advSlug;
+  if (!title && !hasCustomHtml) {
+    setResult("Landing title is required for normal builder pages", true);
+    setTab("tab-basics");
+    return null;
   }
 
-  if (!title && !html.trim()) {
-    setResult("Landing title or custom HTML is required", true);
-    return null;
+  if (hasCustomHtml && advSlug) {
+    landingSlug.value = advSlug;
   }
 
   return {
     slug,
     advancedSlug: hasCustomHtml && advSlug ? advSlug : "",
     domain,
-    title,
+    title: title || slug,
     subtitle,
     description,
     image,
@@ -767,7 +769,6 @@
     canonicalUrl
   };
 }
-
       function getGeneratedPreviewHtml() {
         const data = collectDraft();
         const customHtml = String(data.landingHtml || "").trim();
