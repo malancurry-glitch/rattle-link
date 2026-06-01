@@ -690,6 +690,25 @@
         box-shadow: 0 0 40px rgba(0, 255, 255, 0.12);
       }
 
+      .turnstile-box{
+  display:flex;
+  justify-content:center;
+  margin:18px 0;
+}
+.locked-link{
+  opacity:.45;
+  pointer-events:none;
+}
+.locked-link.ready{
+  opacity:1;
+  pointer-events:auto;
+}
+.verify-note{
+  margin:14px 0 6px;
+  color:var(--muted);
+  font-size:12px;
+}
+
       .toast {
         position: fixed;
         bottom: 20px;
@@ -1299,6 +1318,7 @@
       const updateBtn = document.getElementById("updateBtn");
       const openPreviewBtn = document.getElementById("openPreviewBtn");
       const autosaveBtn = document.getElementById("autosaveBtn");
+      const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
       const desktopViewBtn = document.getElementById("desktopViewBtn");
       const tabletViewBtn = document.getElementById("tabletViewBtn");
@@ -1907,124 +1927,130 @@
       }
 
       function getPayload() {
-        const slug = landingSlug.value.trim();
-        const domain = normalizeDomain(landingDomain.value);
-        const title = landingTitle.value.trim();
-        const subtitle = landingSubtitle.value.trim();
-        const description = landingDescription.value.trim();
-        const image = landingImage.value.trim();
-        const theme = landingTheme.value.trim() || "#00ffff";
-        const ctaLabel = landingCtaLabel.value.trim();
-        const ctaUrl = landingCtaUrl.value.trim();
-        const footer = landingFooter.value.trim();
-        const buttons = getLandingButtons();
-        const html = landingHtml.value;
-        const css = landingCss.value;
-        const js = landingJs.value;
-        const metaTitle = landingMetaTitle.value.trim();
-        const metaDescription = landingMetaDescription.value.trim();
-        const ogTitle = landingOgTitle.value.trim();
-        const ogDescription = landingOgDescription.value.trim();
-        const ogImage = landingOgImage.value.trim();
-        const canonicalUrl = landingCanonicalUrl.value.trim();
+  const slug = landingSlug.value.trim();
+  const domain = normalizeDomain(landingDomain.value);
+  const title = landingTitle.value.trim();
+  const subtitle = landingSubtitle.value.trim();
+  const description = landingDescription.value.trim();
+  const image = landingImage.value.trim();
+  const theme = landingTheme.value.trim() || "#00ffff";
+  const ctaLabel = landingCtaLabel.value.trim();
+  const ctaUrl = landingCtaUrl.value.trim();
+  const footer = landingFooter.value.trim();
+  const buttons = getLandingButtons();
+  const html = landingHtml.value;
+  const css = landingCss.value;
+  const js = landingJs.value;
+  const metaTitle = landingMetaTitle.value.trim();
+  const metaDescription = landingMetaDescription.value.trim();
+  const ogTitle = landingOgTitle.value.trim();
+  const ogDescription = landingOgDescription.value.trim();
+  const ogImage = landingOgImage.value.trim();
+  const canonicalUrl = landingCanonicalUrl.value.trim();
 
-        if (!slug) {
-          setResult("Landing slug is required", true);
-          return null;
-        }
+  if (!slug) {
+    setResult("Landing slug is required", true);
+    return null;
+  }
 
-        if (!title && !html.trim()) {
-          setResult("Landing title or custom HTML is required", true);
-          return null;
-        }
+  if (!title && !html.trim()) {
+    setResult("Landing title or custom HTML is required", true);
+    return null;
+  }
 
-        return {
-          slug,
-          domain,
-          title,
-          subtitle,
-          description,
-          image,
-          theme,
-          buttons,
-          ctaLabel,
-          ctaUrl,
-          footer,
-          landingHtml: html,
-          landingCss: css,
-          landingJs: js,
-          metaTitle,
-          metaDescription,
-          ogTitle,
-          ogDescription,
-          ogImage,
-          canonicalUrl,
-        };
-      }
+  return {
+    slug,
+    domain,
+    title,
+    subtitle,
+    description,
+    image,
+    theme,
+    buttons,
+    ctaLabel,
+    ctaUrl,
+    footer,
+    landingHtml: html.trim() ? html : getGeneratedPreviewHtml(),
+    landingCss: css,
+    landingJs: js,
+    metaTitle,
+    metaDescription,
+    ogTitle,
+    ogDescription,
+    ogImage,
+    canonicalUrl,
+  };
+}
 
       function getGeneratedPreviewHtml() {
-        const data = collectDraft();
+  const data = collectDraft();
 
-        const title = escapeHtml(data.title || data.slug || "Landing Page");
-        const subtitle = escapeHtml(data.subtitle || "");
-        const description = escapeHtml(data.description || "");
-        const image =
-          data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
-        const theme = escapeHtml(data.theme || "#00ffff");
-        const ctaLabel = escapeHtml(data.ctaLabel || "");
-        const ctaUrl = data.ctaUrl || "";
-        const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-        const metaTitle = escapeHtml(
-          data.metaTitle || data.title || "Landing Page"
-        );
-        const metaDescription = escapeHtml(
-          data.metaDescription || data.description || ""
-        );
-        const ogTitle = escapeHtml(
-          data.ogTitle || data.metaTitle || data.title || "Landing Page"
-        );
-        const ogDescription = escapeHtml(
-          data.ogDescription || data.metaDescription || data.description || ""
-        );
-        const ogImage =
-          data.ogImage && /^https?:\/\//i.test(data.ogImage)
-            ? escapeHtml(data.ogImage)
-            : "";
-        const canonicalUrl =
-          data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl)
-            ? escapeHtml(data.canonicalUrl)
-            : "";
-        const customHtml = String(data.landingHtml || "").trim();
-        const customCss = String(data.landingCss || "");
-        const customJs = String(data.landingJs || "");
-        const buttons = getLandingButtons();
+  const title = escapeHtml(data.title || data.slug || "Landing Page");
+  const subtitle = escapeHtml(data.subtitle || "");
+  const description = escapeHtml(data.description || "");
+  const image = data.image && /^https?:\/\//i.test(data.image) ? data.image : "";
+  const theme = escapeHtml(data.theme || "#00ffff");
+  const ctaLabel = escapeHtml(data.ctaLabel || "");
+  const ctaUrl = data.ctaUrl || "";
+  const footer = escapeHtml(data.footer || "Powered by Rattle Link");
+  const metaTitle = escapeHtml(data.metaTitle || data.title || "Landing Page");
+  const metaDescription = escapeHtml(data.metaDescription || data.description || "");
+  const ogTitle = escapeHtml(data.ogTitle || data.metaTitle || data.title || "Landing Page");
+  const ogDescription = escapeHtml(data.ogDescription || data.metaDescription || data.description || "");
+  const ogImage = data.ogImage && /^https?:\/\//i.test(data.ogImage) ? escapeHtml(data.ogImage) : "";
+  const canonicalUrl = data.canonicalUrl && /^https?:\/\//i.test(data.canonicalUrl) ? escapeHtml(data.canonicalUrl) : "";
+  const customHtml = String(data.landingHtml || "").trim();
+  const customCss = String(data.landingCss || "");
+  const customJs = String(data.landingJs || "");
+  const buttons = getLandingButtons();
 
-        const bgCssMap = {
-          radial: "background:radial-gradient(circle at top,#0f172a,#000);",
-          solid: "background:#020617;",
-          mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;",
-          sunset:
-            "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);",
-        };
+  const bgCssMap = {
+    radial: "background:radial-gradient(circle at top,#0f172a,#000);",
+    solid: "background:#020617;",
+    mesh: "background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.16),transparent 30%),radial-gradient(circle at 80% 20%,rgba(168,85,247,.18),transparent 30%),radial-gradient(circle at 50% 100%,rgba(59,130,246,.18),transparent 30%),#020617;",
+    sunset: "background:radial-gradient(circle at top,rgba(236,72,153,.20),transparent 28%),radial-gradient(circle at 80% 0%,rgba(245,158,11,.15),transparent 24%),linear-gradient(180deg,#0f172a,#000);",
+  };
 
-        const cardCssMap = {
-          glass:
-            "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);",
-          solid:
-            "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);",
-          outline:
-            "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);",
-        };
+  const cardCssMap = {
+    glass: "background:rgba(15,23,42,.84);border:1px solid rgba(255,255,255,.08);box-shadow:0 0 30px rgba(0,0,0,.35);",
+    solid: "background:#0f172a;border:1px solid rgba(255,255,255,.10);box-shadow:0 0 30px rgba(0,0,0,.35);",
+    outline: "background:rgba(2,6,23,.74);border:1px solid var(--theme);box-shadow:0 0 30px rgba(0,255,255,.08);",
+  };
 
-        const buttonRadiusMap = {
-          rounded: "14px",
-          pill: "999px",
-          sharp: "8px",
-        };
+  const buttonRadiusMap = {
+    rounded: "14px",
+    pill: "999px",
+    sharp: "8px",
+  };
 
-        if (customHtml) return customHtml;
+  // If user provided full custom HTML, inject Turnstile above links
+  if (customHtml) {
+  const captchaBox = `
+<div style="display:flex;justify-content:center;margin:18px 0;">
+  <div class="cf-turnstile"
+       data-sitekey="${TURNSTILE_SITE_KEY}"
+       data-callback="rattleTurnstileDone"></div>
+</div>`;
 
-        return `<!DOCTYPE html>
+  const injectedScript = `
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+function rattleTurnstileDone(){
+  document.querySelectorAll("a").forEach(a=>{
+    a.classList.add("ready");
+    a.style.pointerEvents="auto";
+    a.style.opacity="1";
+  });
+}
+<\/script>`;
+
+  return customHtml.replace(
+    "</body>",
+    `${captchaBox}${injectedScript}</body>`
+  );
+}
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -2121,6 +2147,12 @@ a.btn{
   background:#111827;
   color:var(--text);
   transition:.18s ease;
+  opacity:.45;
+  pointer-events:none;
+}
+a.btn.ready{
+  opacity:1;
+  pointer-events:auto;
 }
 a.btn:hover{
   transform:translateY(-1px);
@@ -2135,6 +2167,11 @@ a.cta{
   color:var(--muted);
   font-size:12px;
 }
+.turnstile-box{
+  display:flex;
+  justify-content:center;
+  margin:18px 0;
+}
 ${customCss}
 </style>
 </head>
@@ -2143,33 +2180,24 @@ ${customCss}
     <div class="card">
       ${
         image
-          ? `<div class="avatar"><img src="${escapeHtml(
-              image
-            )}" alt="avatar" /></div>`
+          ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>`
           : ""
       }
       ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
       <h1>${title}</h1>
       ${description ? `<p class="desc">${description}</p>` : ""}
+      <div class="turnstile-box">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADbpOXO7tc1b28dg" data-callback="rattleTurnstileDone"></div>
+      </div>
       <div class="links">
         ${buttons
           .map(
-            (btn) => `
-          <a class="btn" href="${escapeHtml(
-            btn.url || "#"
-          )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-              btn.label || ""
-            )}</a>
-        `
+            (btn) => `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
           )
           .join("")}
         ${
           ctaLabel && ctaUrl
-            ? `
-          <a class="btn cta" href="${escapeHtml(
-            ctaUrl
-          )}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>
-        `
+            ? `<a class="btn cta locked-link" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
             : ""
         }
       </div>
@@ -2177,9 +2205,17 @@ ${customCss}
     </div>
   </div>
   ${customJs ? `<script>${customJs}<\/script>` : ""}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script>
+    function rattleTurnstileDone(){
+      document.querySelectorAll(".locked-link").forEach(a=>{
+        a.classList.add("ready");
+      });
+    }
+  </script>
 </body>
 </html>`;
-      }
+}
 
       function renderPreview() {
         const payload = getPayload();
