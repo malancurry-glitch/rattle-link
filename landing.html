@@ -857,15 +857,15 @@
   </div>
 
   <div class="field">
-    <label for="advancedSlug">Advanced Alias Path</label>
-    <input
-      id="advancedSlug"
-      placeholder="leave blank for automatic alias"
-    />
-    <div class="muted">
-      Optional hidden alias URL path.
-    </div>
+  <label for="advancedSlug">Alias Path</label>
+  <input
+    id="advancedSlug"
+    placeholder="Leave blank for automatic alias generation"
+  />
+  <div class="muted">
+    Optional. If empty, Backend2 automatically creates a secure alias path.
   </div>
+</div>
 
   <div class="field">
     <label for="landingDomain">Landing domain</label>
@@ -1293,488 +1293,472 @@
 
     <div class="toast" id="toast">Copied!</div>
 
-    <script>
-      const PRIMARY_API = "https://api.rattleshortapi.it.com";
-      const PUBLIC_HOST = "https://rattleshortapi.it.com";
-      const AUTOSAVE_KEY = "rattle_landing_builder_draft_v2";
+    ```html
+<script>
+  const PRIMARY_API = "https://api.rattleshortapi.it.com";
+  const PUBLIC_HOST = "https://rattleshortapi.it.com";
+  const AUTOSAVE_KEY = "rattle_landing_builder_draft_v3";
+  const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
-      let landingStore = [];
-      let domainsStore = [];
-      let refreshTimer = null;
-      let autosaveEnabled = true;
-      let dynamicButtonsStore = [];
-      let restoredDraftDomain = "";
-      let currentQrLink = "";
-      let currentQrSlug = "";
-      let currentQrImageUrl = "";
+  let landingStore = [];
+  let domainsStore = [];
+  let refreshTimer = null;
+  let autosaveEnabled = true;
+  let dynamicButtonsStore = [];
+  let restoredDraftDomain = "";
+  let currentQrLink = "";
+  let currentQrSlug = "";
+  let currentQrImageUrl = "";
 
-      const toast = document.getElementById("toast");
-      const previewWrap = document.getElementById("previewWrap");
-      const primaryDomainBadge = document.getElementById("primaryDomainBadge");
-      const builderStatus = document.getElementById("builderStatus");
-      const overlay = document.getElementById("overlay");
-      const qrModal = document.getElementById("qrModal");
-      const qrCanvas = document.getElementById("qrCanvas");
-      const qrLink = document.getElementById("qrLink");
-      const qrImageUrl = document.getElementById("qrImageUrl");
-      const qrMetaDetails = document.getElementById("qrMetaDetails");
+  const $ = (id) => document.getElementById(id);
 
-      const totalLandings = document.getElementById("totalLandings");
-      const totalLandingClicks = document.getElementById("totalLandingClicks");
-      const verifiedDomainsCount = document.getElementById(
-        "verifiedDomainsCount"
-      );
-      const activeLandings = document.getElementById("activeLandings");
-      const draftState = document.getElementById("draftState");
-      const draftStateText = document.getElementById("draftStateText");
+  const toast = $("toast");
+  const previewWrap = $("previewWrap");
+  const primaryDomainBadge = $("primaryDomainBadge");
+  const builderStatus = $("builderStatus");
+  const overlay = $("overlay");
+  const qrModal = $("qrModal");
+  const qrCanvas = $("qrCanvas");
+  const qrLink = $("qrLink");
+  const qrImageUrl = $("qrImageUrl");
+  const qrMetaDetails = $("qrMetaDetails");
 
-      const refreshBtn = document.getElementById("refreshBtn");
-      const clearBtn = document.getElementById("clearBtn");
-      const previewBtn = document.getElementById("previewBtn");
-      const createBtn = document.getElementById("createBtn");
-      const updateBtn = document.getElementById("updateBtn");
-      const openPreviewBtn = document.getElementById("openPreviewBtn");
-      const autosaveBtn = document.getElementById("autosaveBtn");
-      const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
+  const totalLandings = $("totalLandings");
+  const totalLandingClicks = $("totalLandingClicks");
+  const verifiedDomainsCount = $("verifiedDomainsCount");
+  const activeLandings = $("activeLandings");
+  const draftState = $("draftState");
+  const draftStateText = $("draftStateText");
 
-      const desktopViewBtn = document.getElementById("desktopViewBtn");
-      const tabletViewBtn = document.getElementById("tabletViewBtn");
-      const mobileViewBtn = document.getElementById("mobileViewBtn");
+  const refreshBtn = $("refreshBtn");
+  const clearBtn = $("clearBtn");
+  const previewBtn = $("previewBtn");
+  const createBtn = $("createBtn");
+  const updateBtn = $("updateBtn");
+  const openPreviewBtn = $("openPreviewBtn");
+  const autosaveBtn = $("autosaveBtn");
 
-      const landingSlug = document.getElementById("landingSlug");
-      const advancedSlug = document.getElementById("advancedSlug");
-      const landingDomain = document.getElementById("landingDomain");
-      const landingTitle = document.getElementById("landingTitle");
-      const landingSubtitle = document.getElementById("landingSubtitle");
-      const landingDescription = document.getElementById("landingDescription");
-      const landingImage = document.getElementById("landingImage");
-      const landingTheme = document.getElementById("landingTheme");
-      const landingCtaLabel = document.getElementById("landingCtaLabel");
-      const landingCtaUrl = document.getElementById("landingCtaUrl");
-      const landingFooter = document.getElementById("landingFooter");
-      const landingButtonLabel1 = document.getElementById(
-        "landingButtonLabel1"
-      );
-      const landingButtonUrl1 = document.getElementById("landingButtonUrl1");
-      const landingButtonLabel2 = document.getElementById(
-        "landingButtonLabel2"
-      );
-      const landingButtonUrl2 = document.getElementById("landingButtonUrl2");
-      const landingMetaTitle = document.getElementById("landingMetaTitle");
-      const landingMetaDescription = document.getElementById(
-        "landingMetaDescription"
-      );
-      const landingHtml = document.getElementById("landingHtml");
-      const landingCss = document.getElementById("landingCss");
-      const landingJs = document.getElementById("landingJs");
-      const landingOgTitle = document.getElementById("landingOgTitle");
-      const landingOgDescription = document.getElementById(
-        "landingOgDescription"
-      );
-      const landingOgImage = document.getElementById("landingOgImage");
-      const landingCanonicalUrl = document.getElementById(
-        "landingCanonicalUrl"
-      );
-      const bgStyle = document.getElementById("bgStyle");
-      const cardStyle = document.getElementById("cardStyle");
-      const buttonStyle = document.getElementById("buttonStyle");
-      const landingPreviewFrame = document.getElementById(
-        "landingPreviewFrame"
-      );
-      const dynamicButtons = document.getElementById("dynamicButtons");
+  const desktopViewBtn = $("desktopViewBtn");
+  const tabletViewBtn = $("tabletViewBtn");
+  const mobileViewBtn = $("mobileViewBtn");
 
-      const addButtonBtn = document.getElementById("addButtonBtn");
-      const presetNeonBtn = document.getElementById("presetNeonBtn");
-      const presetBlueBtn = document.getElementById("presetBlueBtn");
-      const presetPinkBtn = document.getElementById("presetPinkBtn");
-      const presetGreenBtn = document.getElementById("presetGreenBtn");
-      const setPrimaryDomainBtn = document.getElementById(
-        "setPrimaryDomainBtn"
-      );
+  const landingSlug = $("landingSlug");
+  const advancedSlug = $("advancedSlug");
+  const landingDomain = $("landingDomain");
+  const landingTitle = $("landingTitle");
+  const landingSubtitle = $("landingSubtitle");
+  const landingDescription = $("landingDescription");
+  const landingImage = $("landingImage");
+  const landingTheme = $("landingTheme");
+  const landingCtaLabel = $("landingCtaLabel");
+  const landingCtaUrl = $("landingCtaUrl");
+  const landingFooter = $("landingFooter");
+  const landingButtonLabel1 = $("landingButtonLabel1");
+  const landingButtonUrl1 = $("landingButtonUrl1");
+  const landingButtonLabel2 = $("landingButtonLabel2");
+  const landingButtonUrl2 = $("landingButtonUrl2");
+  const landingMetaTitle = $("landingMetaTitle");
+  const landingMetaDescription = $("landingMetaDescription");
+  const landingHtml = $("landingHtml");
+  const landingCss = $("landingCss");
+  const landingJs = $("landingJs");
+  const landingOgTitle = $("landingOgTitle");
+  const landingOgDescription = $("landingOgDescription");
+  const landingOgImage = $("landingOgImage");
+  const landingCanonicalUrl = $("landingCanonicalUrl");
+  const bgStyle = $("bgStyle");
+  const cardStyle = $("cardStyle");
+  const buttonStyle = $("buttonStyle");
+  const landingPreviewFrame = $("landingPreviewFrame");
+  const dynamicButtons = $("dynamicButtons");
 
-      const formResult = document.getElementById("formResult");
-      const landingTable = document.getElementById("landingTable");
-      const searchInput = document.getElementById("searchInput");
-      const domainFilter = document.getElementById("domainFilter");
-      const statusFilter = document.getElementById("statusFilter");
+  const addButtonBtn = $("addButtonBtn");
+  const presetNeonBtn = $("presetNeonBtn");
+  const presetBlueBtn = $("presetBlueBtn");
+  const presetPinkBtn = $("presetPinkBtn");
+  const presetGreenBtn = $("presetGreenBtn");
+  const setPrimaryDomainBtn = $("setPrimaryDomainBtn");
 
-      function authHeaders() {
-        const token =
-          localStorage.getItem("rattle_token") ||
-          localStorage.getItem("token") ||
-          "";
-        return token ? { Authorization: `Bearer ${token}` } : {};
-      }
+  const formResult = $("formResult");
+  const landingTable = $("landingTable");
+  const searchInput = $("searchInput");
+  const domainFilter = $("domainFilter");
+  const statusFilter = $("statusFilter");
 
-      function ensureAuth() {
-        const token =
-          localStorage.getItem("rattle_token") || localStorage.getItem("token");
-
-        if (!token) {
-          alert("Missing login token. Please log in again.");
-          window.location.href = "index.html";
-          return false;
-        }
-        return true;
-      }
-
-      function normalizeDomain(value) {
-        return String(value || "")
-          .trim()
-          .toLowerCase()
-          .replace(/^https?:\/\//i, "")
-          .replace(/\/+$/g, "");
-      }
-
-      function escapeHtml(str) {
-        return String(str ?? "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#39;");
-      }
-
-      function escapeForJs(str) {
-        return String(str ?? "")
-          .replaceAll("\\", "\\\\")
-          .replaceAll("'", "\\'")
-          .replaceAll("\n", "\\n")
-          .replaceAll("\r", "");
-      }
-
-      function fmtDate(ts) {
-        const n = Number(ts || 0);
-        if (!n) return "-";
-        return new Date(n).toLocaleString();
-      }
-
-      function setBusy(button, busy, text = "") {
-        if (!button) return;
-        if (!button.dataset.originalText)
-          button.dataset.originalText = button.textContent;
-        button.disabled = !!busy;
-        button.textContent = busy ? text : button.dataset.originalText;
-      }
-
-      function showToast(message = "Copied!") {
-        toast.textContent = message;
-        toast.style.display = "block";
-        clearTimeout(window.__toastTimer);
-        window.__toastTimer = setTimeout(() => {
-          toast.style.display = "none";
-        }, 1800);
-      }
-
-      function setResult(message, isError = false) {
-        formResult.textContent = message;
-        formResult.className = "result " + (isError ? "error" : "success");
-      }
-
-      function setBuilderStatus(message) {
-        builderStatus.textContent = message;
-      }
-
-      function setDraftIndicator(label, text) {
-        draftState.textContent = label;
-        draftStateText.textContent = text;
-      }
-
-      function openModal(modal) {
-        overlay.style.display = "block";
-        modal.style.display = "block";
-      }
-
-      function closeModal(modal) {
-        modal.style.display = "none";
-        syncOverlay();
-      }
-
-      function syncOverlay() {
-        const anyOpen = [qrModal].some((m) => m.style.display === "block");
-        overlay.style.display = anyOpen ? "block" : "none";
-      }
-
-      function buildQrImageUrl(link, size = 280) {
-        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-          String(link || "").trim()
-        )}`;
-      }
-
-      function getQrFilename(slug = "landing") {
-        const safeSlug = String(slug || "landing").replace(
-          /[^a-z0-9-_]+/gi,
-          "-"
-        );
-        return `${safeSlug || "landing"}-qr.png`;
-      }
-
-      async function renderQrToCanvas(link, canvas) {
-        return QRCode.toCanvas(canvas, link, {
-          width: 260,
-          margin: 2,
-          color: {
-            dark: "#000000",
-            light: "#ffffff",
-          },
-        });
-      }
-
-      async function showQR(link, slug = "") {
-        const safeLink = String(link || "").trim();
-        if (!safeLink) return showToast("Invalid link");
-
-        currentQrLink = safeLink;
-        currentQrSlug = slug || "landing";
-        currentQrImageUrl = buildQrImageUrl(safeLink, 280);
-
-        qrLink.textContent = safeLink;
-        qrImageUrl.innerHTML = `
-        <a href="${escapeHtml(
-          currentQrImageUrl
-        )}" target="_blank" rel="noopener noreferrer">
-          ${escapeHtml(currentQrImageUrl)}
-        </a>
-      `;
-        qrMetaDetails.innerHTML = `
-        <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
-        <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
-          safeLink
-        )}</div>
-        <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
-          <a href="${escapeHtml(
-            currentQrImageUrl
-          )}" target="_blank" rel="noopener noreferrer">
-            ${escapeHtml(currentQrImageUrl)}
-          </a>
-        </div>
-        <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
-      `;
-
-        openModal(qrModal);
-
-        try {
-          await renderQrToCanvas(safeLink, qrCanvas);
-        } catch {
-          showToast("QR generation failed");
-        }
-      }
-
-      function downloadCurrentQR() {
-        if (currentQrImageUrl) {
-          const link = document.createElement("a");
-          link.download = getQrFilename(currentQrSlug);
-          link.href = currentQrImageUrl;
-          link.click();
-          return;
-        }
-
-        if (!qrCanvas) return;
-        const link = document.createElement("a");
-        link.download = getQrFilename(currentQrSlug);
-        link.href = qrCanvas.toDataURL("image/png");
-        link.click();
-      }
-
-      async function safeFetchRaw(path, options = {}) {
-        try {
-          const res = await fetch(
-            PRIMARY_API.replace(/\/+$/, "") + path,
-            options
-          );
-          const raw = await res.text();
-          let data = {};
-          try {
-            data = raw ? JSON.parse(raw) : {};
-          } catch {
-            data = { message: raw };
-          }
-          if (res.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            localStorage.removeItem("rattle_token");
-            localStorage.removeItem("rattle_role");
-            window.location.href = "index.html";
-          }
-          return { ok: res.ok, status: res.status, data, raw };
-        } catch (e) {
-          return {
-            ok: false,
-            status: 0,
-            data: { message: e?.message || "Failed to fetch" },
-            raw: "",
-          };
-        }
-      }
-
-      async function authorizedFetch(path, options = {}) {
-        const method = String(options.method || "GET").toUpperCase();
-        const headers = {
-          ...authHeaders(),
-          ...(options.headers || {}),
-        };
-
-        if (method !== "GET" && !headers["Content-Type"]) {
-          headers["Content-Type"] = "application/json";
-        }
-
-        return safeFetchRaw(path, {
-          ...options,
-          headers,
-        });
-      }
-
-      function buildPublicLink(item) {
-        const slug = String(item.slug || "").trim();
-        const domain = normalizeDomain(item.domain || "");
-        if (!slug) return "#";
-        if (domain) return `https://${domain}/${slug}`;
-        return `${PUBLIC_HOST.replace(/\/+$/, "")}/${slug}`;
-      }
-
-      function buildAliasLink(item) {
-  const alias = String(item.advancedSlug || "").trim();
-  if (!alias) return "";
-
-  const domain = normalizeDomain(item.domain || "");
-  if (domain) {
-    return `https://${domain}/${alias}`;
+  function normalizeDomain(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/+$/g, "");
   }
 
-  return `${PUBLIC_HOST}/${alias}`;
-}
+  function normalizePath(value) {
+    return String(value || "").trim().replace(/^\/+|\/+$/g, "");
+  }
 
-      function normalizeLandingItem(item) {
-        let parsedButtons = [];
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
 
-        try {
-          if (Array.isArray(item.landingButtons)) {
-            parsedButtons = item.landingButtons;
-          } else if (Array.isArray(item.buttons)) {
-            parsedButtons = item.buttons;
-          } else if (Array.isArray(item.landing_buttons)) {
-            parsedButtons = item.landing_buttons;
-          } else if (
-            typeof item.landing_buttons === "string" &&
-            item.landing_buttons.trim()
-          ) {
-            const parsed = JSON.parse(item.landing_buttons);
-            parsedButtons = Array.isArray(parsed) ? parsed : [];
-          }
-        } catch {
-          parsedButtons = [];
-        }
+  function escapeForJs(str) {
+    return String(str ?? "")
+      .replaceAll("\\", "\\\\")
+      .replaceAll("'", "\\'")
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "");
+  }
 
+  function authHeaders() {
+    const token =
+      localStorage.getItem("rattle_token") ||
+      localStorage.getItem("token") ||
+      "";
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function ensureAuth() {
+    const token =
+      localStorage.getItem("rattle_token") || localStorage.getItem("token");
+
+    if (!token) {
+      alert("Missing login token. Please log in again.");
+      window.location.href = "index.html";
+      return false;
+    }
+
+    return true;
+  }
+
+  function fmtDate(ts) {
+    const n = Number(ts || 0);
+    if (!n) return "-";
+    return new Date(n).toLocaleString();
+  }
+
+  function setBusy(button, busy, text = "") {
+    if (!button) return;
+    if (!button.dataset.originalText) {
+      button.dataset.originalText = button.textContent;
+    }
+    button.disabled = !!busy;
+    button.textContent = busy ? text : button.dataset.originalText;
+  }
+
+  function showToast(message = "Copied!") {
+    toast.textContent = message;
+    toast.style.display = "block";
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => {
+      toast.style.display = "none";
+    }, 1800);
+  }
+
+  function setResult(message, isError = false) {
+    formResult.textContent = message;
+    formResult.className = "result " + (isError ? "error" : "success");
+  }
+
+  function setBuilderStatus(message) {
+    builderStatus.textContent = message;
+  }
+
+  function setDraftIndicator(label, text) {
+    draftState.textContent = label;
+    draftStateText.textContent = text;
+  }
+
+  function openModal(modal) {
+    overlay.style.display = "block";
+    modal.style.display = "block";
+  }
+
+  function closeModal(modal) {
+    modal.style.display = "none";
+    syncOverlay();
+  }
+
+  function syncOverlay() {
+    const anyOpen = [qrModal].some((m) => m.style.display === "block");
+    overlay.style.display = anyOpen ? "block" : "none";
+  }
+
+  function buildQrImageUrl(link, size = 280) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+      String(link || "").trim()
+    )}`;
+  }
+
+  function getQrFilename(slug = "landing") {
+    const safeSlug = String(slug || "landing").replace(/[^a-z0-9-_]+/gi, "-");
+    return `${safeSlug || "landing"}-qr.png`;
+  }
+
+  async function renderQrToCanvas(link, canvas) {
+    if (!window.QRCode) throw new Error("QRCode library unavailable");
+    return QRCode.toCanvas(canvas, link, {
+      width: 260,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+  }
+
+  async function showQR(link, slug = "") {
+    const safeLink = String(link || "").trim();
+    if (!safeLink || safeLink === "#") return showToast("Invalid link");
+
+    currentQrLink = safeLink;
+    currentQrSlug = slug || "landing";
+    currentQrImageUrl = buildQrImageUrl(safeLink, 280);
+
+    qrLink.textContent = safeLink;
+    qrImageUrl.innerHTML = `<a href="${escapeHtml(
+      currentQrImageUrl
+    )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+      currentQrImageUrl
+    )}</a>`;
+
+    qrMetaDetails.innerHTML = `
+      <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
+      <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
+        safeLink
+      )}</div>
+      <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
+        <a href="${escapeHtml(
+          currentQrImageUrl
+        )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+      currentQrImageUrl
+    )}</a>
+      </div>
+      <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
+    `;
+
+    openModal(qrModal);
+
+    try {
+      await renderQrToCanvas(safeLink, qrCanvas);
+    } catch {
+      showToast("QR generation failed");
+    }
+  }
+
+  function downloadCurrentQR() {
+    if (currentQrImageUrl) {
+      const link = document.createElement("a");
+      link.download = getQrFilename(currentQrSlug);
+      link.href = currentQrImageUrl;
+      link.click();
+      return;
+    }
+
+    if (!qrCanvas) return;
+    const link = document.createElement("a");
+    link.download = getQrFilename(currentQrSlug);
+    link.href = qrCanvas.toDataURL("image/png");
+    link.click();
+  }
+
+  async function safeFetchRaw(path, options = {}) {
+    try {
+      const res = await fetch(PRIMARY_API.replace(/\/+$/, "") + path, options);
+      const raw = await res.text();
+
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { message: raw };
+      }
+
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("rattle_token");
+        localStorage.removeItem("rattle_role");
+        window.location.href = "index.html";
+      }
+
+      return { ok: res.ok, status: res.status, data, raw };
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: { message: e?.message || "Failed to fetch" },
+        raw: "",
+      };
+    }
+  }
+
+  async function authorizedFetch(path, options = {}) {
+    const method = String(options.method || "GET").toUpperCase();
+    const headers = {
+      ...authHeaders(),
+      ...(options.headers || {}),
+    };
+
+    if (method !== "GET" && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return safeFetchRaw(path, { ...options, headers });
+  }
+
+  function buildPublicLink(item) {
+    const slug = normalizePath(item.slug || "");
+    const domain = normalizeDomain(item.domain || "");
+    if (!slug) return "#";
+    const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
+    return `${base}/${slug}`;
+  }
+
+  function buildAliasLink(item) {
+    const alias = normalizePath(
+      item.aliasPath ||
+        item.alias_path ||
+        item.landing_alias_path ||
+        item.advancedSlug ||
+        ""
+    );
+
+    if (!alias) return "";
+
+    const domain = normalizeDomain(item.domain || "");
+    const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
+    return `${base}/${alias}`;
+  }
+
+  function normalizeLandingItem(item) {
+    let parsedButtons = [];
+
+    try {
+      if (Array.isArray(item.landingButtons)) {
+        parsedButtons = item.landingButtons;
+      } else if (Array.isArray(item.buttons)) {
+        parsedButtons = item.buttons;
+      } else if (Array.isArray(item.landing_buttons)) {
+        parsedButtons = item.landing_buttons;
+      } else if (
+        typeof item.landing_buttons === "string" &&
+        item.landing_buttons.trim()
+      ) {
+        const parsed = JSON.parse(item.landing_buttons);
+        parsedButtons = Array.isArray(parsed) ? parsed : [];
+      }
+    } catch {
+      parsedButtons = [];
+    }
+
+    const aliasPath =
+      item.aliasPath ||
+      item.alias_path ||
+      item.landing_alias_path ||
+      item.advancedSlug ||
+      "";
+
+    return {
+      ...item,
+      backend: "primary",
+      slug: item.slug || "",
+      aliasPath,
+      url: item.url || "",
+      clicks: Number(item.clicks || 0),
+      paused: !!item.paused,
+      expire: item.expire ? Number(item.expire) : null,
+      createdAt: Number(item.createdAt || item.created_at || 0),
+      domain: normalizeDomain(item.domain || ""),
+      linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
+
+      landingTitle: item.landingTitle || item.landing_title || item.title || "",
+      landingDescription:
+        item.landingDescription ||
+        item.landing_description ||
+        item.description ||
+        "",
+      landingImage: item.landingImage || item.landing_image || item.image || "",
+      landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
+      landingButtons: parsedButtons,
+      landingCtaLabel:
+        item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
+      landingCtaUrl:
+        item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+      landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
+      landingHtml: item.landingHtml || item.landing_html || "",
+      landingCss: item.landingCss || item.landing_css || "",
+      landingJs: item.landingJs || item.landing_js || "",
+      metaTitle: item.metaTitle || item.landing_meta_title || "",
+      metaDescription: item.metaDescription || item.landing_meta_description || "",
+
+      subtitle: item.subtitle || "",
+      ogTitle: item.ogTitle || "",
+      ogDescription: item.ogDescription || "",
+      ogImage: item.ogImage || "",
+      canonicalUrl: item.canonicalUrl || "",
+    };
+  }
+
+  function updatePreviewDevice(device) {
+    previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
+    previewWrap.classList.add(`device-${device}`);
+
+    [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
+      btn.classList.remove("active")
+    );
+
+    if (device === "desktop") desktopViewBtn.classList.add("active");
+    if (device === "tablet") tabletViewBtn.classList.add("active");
+    if (device === "mobile") mobileViewBtn.classList.add("active");
+  }
+
+  function setTab(tabId) {
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === tabId);
+    });
+    document.querySelectorAll(".tab-panel").forEach((panel) => {
+      panel.classList.toggle("active", panel.id === tabId);
+    });
+  }
+
+  function getDynamicButtons() {
+    return dynamicButtonsStore
+      .map((btn, index) => {
+        const labelEl = $(`dynBtnLabel_${index}`);
+        const urlEl = $(`dynBtnUrl_${index}`);
         return {
-          ...item,
-          backend: "primary",
-          slug: item.slug || "",
-          advancedSlug: item.advancedSlug || item.aliasSlug || item.alias_slug || "",
-          url: item.url || "",
-          clicks: Number(item.clicks || 0),
-          paused: !!item.paused,
-          expire: item.expire ? Number(item.expire) : null,
-          createdAt: Number(item.createdAt || item.created_at || 0),
-          domain: normalizeDomain(item.domain || ""),
-          linkType: String(
-            item.linkType || item.link_type || "redirect"
-          ).toLowerCase(),
-
-          landingTitle:
-            item.landingTitle || item.landing_title || item.title || "",
-          landingDescription:
-            item.landingDescription ||
-            item.landing_description ||
-            item.description ||
-            "",
-          landingImage:
-            item.landingImage || item.landing_image || item.image || "",
-          landingTheme:
-            item.landingTheme || item.landing_theme || item.theme || "#00ffff",
-          landingButtons: parsedButtons,
-          landingCtaLabel:
-            item.landingCtaLabel ||
-            item.landing_cta_label ||
-            item.ctaLabel ||
-            "",
-          landingCtaUrl:
-            item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
-          landingFooter:
-            item.landingFooter || item.landing_footer || item.footer || "",
-          landingHtml: item.landingHtml || item.landing_html || "",
-          landingCss: item.landingCss || item.landing_css || "",
-          landingJs: item.landingJs || item.landing_js || "",
-          metaTitle: item.metaTitle || item.landing_meta_title || "",
-          metaDescription:
-            item.metaDescription || item.landing_meta_description || "",
-
-          subtitle: item.subtitle || "",
-          ogTitle: item.ogTitle || "",
-          ogDescription: item.ogDescription || "",
-          ogImage: item.ogImage || "",
-          canonicalUrl: item.canonicalUrl || "",
+          label: String(labelEl?.value || "").trim(),
+          url: String(urlEl?.value || "").trim(),
         };
-      }
+      })
+      .filter((btn) => btn.label && btn.url);
+  }
 
-      function updatePreviewDevice(device) {
-        previewWrap.classList.remove(
-          "device-desktop",
-          "device-tablet",
-          "device-mobile"
-        );
-        previewWrap.classList.add(`device-${device}`);
+  function addDynamicButton(label = "", url = "") {
+    dynamicButtonsStore.push({ label, url });
+    renderDynamicButtons();
+    triggerAutosave();
+    renderPreview();
+  }
 
-        [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
-          btn.classList.remove("active")
-        );
-        if (device === "desktop") desktopViewBtn.classList.add("active");
-        if (device === "tablet") tabletViewBtn.classList.add("active");
-        if (device === "mobile") mobileViewBtn.classList.add("active");
-      }
+  function removeDynamicButton(index) {
+    dynamicButtonsStore.splice(index, 1);
+    renderDynamicButtons();
+    triggerAutosave();
+    renderPreview();
+  }
 
-      function setTab(tabId) {
-        document.querySelectorAll(".tab-btn").forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.tab === tabId);
-        });
-        document.querySelectorAll(".tab-panel").forEach((panel) => {
-          panel.classList.toggle("active", panel.id === tabId);
-        });
-      }
+  function renderDynamicButtons() {
+    if (!dynamicButtonsStore.length) {
+      dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
+      return;
+    }
 
-      function getDynamicButtons() {
-        return dynamicButtonsStore
-          .map((btn, index) => {
-            const labelEl = document.getElementById(`dynBtnLabel_${index}`);
-            const urlEl = document.getElementById(`dynBtnUrl_${index}`);
-            return {
-              label: String(labelEl?.value || "").trim(),
-              url: String(urlEl?.value || "").trim(),
-            };
-          })
-          .filter((btn) => btn.label && btn.url);
-      }
-
-      function addDynamicButton(label = "", url = "") {
-        dynamicButtonsStore.push({ label, url });
-        renderDynamicButtons();
-      }
-
-      function removeDynamicButton(index) {
-        dynamicButtonsStore.splice(index, 1);
-        renderDynamicButtons();
-        triggerAutosave();
-        renderPreview();
-      }
-
-      function renderDynamicButtons() {
-        if (!dynamicButtonsStore.length) {
-          dynamicButtons.innerHTML = `<div class="empty">No extra buttons added yet</div>`;
-          return;
-        }
-
-        dynamicButtons.innerHTML = dynamicButtonsStore
-          .map(
-            (btn, index) => `
+    dynamicButtons.innerHTML = dynamicButtonsStore
+      .map(
+        (btn, index) => `
         <div class="button-item">
           <div class="button-item-head">
             <div><b>Extra Button ${index + 1}</b></div>
@@ -1784,240 +1768,270 @@
             <div class="field">
               <label for="dynBtnLabel_${index}">Label</label>
               <input id="dynBtnLabel_${index}" value="${escapeHtml(
-              btn.label || ""
-            )}" placeholder="Button label" />
+          btn.label || ""
+        )}" placeholder="Button label" />
             </div>
             <div class="field">
               <label for="dynBtnUrl_${index}">URL</label>
               <input id="dynBtnUrl_${index}" value="${escapeHtml(
-              btn.url || ""
-            )}" placeholder="https://..." />
+          btn.url || ""
+        )}" placeholder="https://..." />
             </div>
           </div>
         </div>
       `
-          )
-          .join("");
+      )
+      .join("");
 
-        dynamicButtons.querySelectorAll("input").forEach((el) => {
-          el.addEventListener("input", () => {
-            triggerAutosave();
-            renderPreview();
-          });
-        });
-      }
-
-      function getLandingButtons() {
-        const buttons = [];
-
-        const b1Label = landingButtonLabel1.value.trim();
-        const b1Url = landingButtonUrl1.value.trim();
-        if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
-
-        const b2Label = landingButtonLabel2.value.trim();
-        const b2Url = landingButtonUrl2.value.trim();
-        if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
-
-        return buttons.concat(getDynamicButtons());
-      }
-
-      async function setPrimaryDomain() {
-        const domain = normalizeDomain(landingDomain.value);
-
-        if (!domain) {
-          showToast("Select a domain first");
-          return;
-        }
-
-        const res = await authorizedFetch("/domains/set-primary", {
-          method: "POST",
-          body: JSON.stringify({ domain }),
-        });
-
-        if (!res.ok) {
-          showToast(res.data?.message || "Failed to set primary");
-          return;
-        }
-
-        showToast("Primary domain updated");
-        await loadDomains();
-      }
-
-      function collectDraft() {
-        return {
-          slug: landingSlug.value.trim(),
-          advancedSlug: advancedSlug.value.trim(),
-          domain: normalizeDomain(landingDomain.value),
-          title: landingTitle.value.trim(),
-          subtitle: landingSubtitle.value.trim(),
-          description: landingDescription.value,
-          image: landingImage.value.trim(),
-          theme: landingTheme.value.trim() || "#00ffff",
-          ctaLabel: landingCtaLabel.value.trim(),
-          ctaUrl: landingCtaUrl.value.trim(),
-          footer: landingFooter.value.trim(),
-          buttonsQuick1: {
-            label: landingButtonLabel1.value.trim(),
-            url: landingButtonUrl1.value.trim(),
-          },
-          buttonsQuick2: {
-            label: landingButtonLabel2.value.trim(),
-            url: landingButtonUrl2.value.trim(),
-          },
-          extraButtons: getDynamicButtons(),
-          metaTitle: landingMetaTitle.value.trim(),
-          metaDescription: landingMetaDescription.value.trim(),
-          ogTitle: landingOgTitle.value.trim(),
-          ogDescription: landingOgDescription.value.trim(),
-          ogImage: landingOgImage.value.trim(),
-          canonicalUrl: landingCanonicalUrl.value.trim(),
-          landingHtml: landingHtml.value,
-          landingCss: landingCss.value,
-          landingJs: landingJs.value,
-          bgStyle: bgStyle.value,
-          cardStyle: cardStyle.value,
-          buttonStyle: buttonStyle.value,
-        };
-      }
-
-      function saveDraft() {
-        if (!autosaveEnabled) return;
-        try {
-          localStorage.setItem(
-            AUTOSAVE_KEY,
-            JSON.stringify({
-              savedAt: Date.now(),
-              data: collectDraft(),
-            })
-          );
-          setDraftIndicator(
-            "Draft",
-            `Saved ${new Date().toLocaleTimeString()}`
-          );
-        } catch {}
-      }
-
-      function loadDraft() {
-        try {
-          const raw = localStorage.getItem(AUTOSAVE_KEY);
-          if (!raw) return false;
-          const parsed = JSON.parse(raw);
-          const d = parsed?.data;
-          if (!d) return false;
-
-          landingSlug.value = d.slug || "";
-          advancedSlug.value = d.advancedSlug || "";
-          restoredDraftDomain = d.domain || "";
-          landingTitle.value = d.title || "";
-          landingSubtitle.value = d.subtitle || "";
-          landingDescription.value = d.description || "";
-          landingImage.value = d.image || "";
-          landingTheme.value = d.theme || "#00ffff";
-          landingCtaLabel.value = d.ctaLabel || "";
-          landingCtaUrl.value = d.ctaUrl || "";
-          landingFooter.value = d.footer || "";
-          landingButtonLabel1.value = d.buttonsQuick1?.label || "";
-          landingButtonUrl1.value = d.buttonsQuick1?.url || "";
-          landingButtonLabel2.value = d.buttonsQuick2?.label || "";
-          landingButtonUrl2.value = d.buttonsQuick2?.url || "";
-          landingMetaTitle.value = d.metaTitle || "";
-          landingMetaDescription.value = d.metaDescription || "";
-          landingOgTitle.value = d.ogTitle || "";
-          landingOgDescription.value = d.ogDescription || "";
-          landingOgImage.value = d.ogImage || "";
-          landingCanonicalUrl.value = d.canonicalUrl || "";
-          landingHtml.value = d.landingHtml || "";
-          landingCss.value = d.landingCss || "";
-          landingJs.value = d.landingJs || "";
-          bgStyle.value = d.bgStyle || "radial";
-          cardStyle.value = d.cardStyle || "glass";
-          buttonStyle.value = d.buttonStyle || "rounded";
-
-          dynamicButtonsStore = Array.isArray(d.extraButtons)
-            ? d.extraButtons.slice(0, 20)
-            : [];
-          renderDynamicButtons();
-
-          const when = parsed?.savedAt
-            ? new Date(parsed.savedAt).toLocaleString()
-            : "previous session";
-          setDraftIndicator("Draft", `Restored from ${when}`);
-          return true;
-        } catch {
-          return false;
-        }
-      }
-
-      function clearSavedDraft() {
-        localStorage.removeItem(AUTOSAVE_KEY);
-        setDraftIndicator("Draft", "Cleared");
-      }
-
-      function triggerAutosave() {
-        if (!autosaveEnabled) return;
-        clearTimeout(window.__builderAutosaveTimer);
-        window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
-      }
-
-      function getPayload() {
-  const slug = landingSlug.value.trim();
-  const domain = normalizeDomain(landingDomain.value);
-  const title = landingTitle.value.trim();
-  const customHtml = landingHtml.value.trim();
-
-  if (!slug) {
-    setResult("Landing slug is required", true);
-    return null;
+    dynamicButtons.querySelectorAll("input").forEach((el) => {
+      el.addEventListener("input", () => {
+        triggerAutosave();
+        renderPreview();
+      });
+    });
   }
 
-  if (!title && !customHtml) {
-    setResult("Landing title or custom HTML is required", true);
-    return null;
+  function getLandingButtons() {
+    const buttons = [];
+
+    const b1Label = landingButtonLabel1.value.trim();
+    const b1Url = landingButtonUrl1.value.trim();
+    if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
+
+    const b2Label = landingButtonLabel2.value.trim();
+    const b2Url = landingButtonUrl2.value.trim();
+    if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
+
+    return buttons.concat(getDynamicButtons());
   }
 
-  return {
-    slug,
-    domain,
-    title,
-    subtitle: landingSubtitle.value.trim(),
-    description: landingDescription.value.trim(),
-    image: landingImage.value.trim(),
-    theme: landingTheme.value.trim() || "#00ffff",
-    buttons: getLandingButtons(),
-    ctaLabel: landingCtaLabel.value.trim(),
-    ctaUrl: landingCtaUrl.value.trim(),
-    footer: landingFooter.value.trim(),
+  async function setPrimaryDomain() {
+    const domain = normalizeDomain(landingDomain.value);
 
-    landingHtml: customHtml ? customHtml : getGeneratedPreviewHtml(),
+    if (!domain) {
+      showToast("Select a domain first");
+      return;
+    }
 
-    landingCss: landingCss.value,
-    landingJs: landingJs.value,
-    advancedSlug: advancedSlug.value.trim(),
-    metaTitle: landingMetaTitle.value.trim(),
-    metaDescription: landingMetaDescription.value.trim(),
-    ogTitle: landingOgTitle.value.trim(),
-    ogDescription: landingOgDescription.value.trim(),
-    ogImage: landingOgImage.value.trim(),
-    canonicalUrl: landingCanonicalUrl.value.trim(),
-  };
-}
-      function getGeneratedPreviewHtml() {
-  const data = collectDraft();
+    const res = await authorizedFetch("/domains/set-primary", {
+      method: "POST",
+      body: JSON.stringify({ domain }),
+    });
 
-  const title = escapeHtml(data.title || data.slug || "Landing Page");
-  const description = escapeHtml(data.description || "");
-  const theme = escapeHtml(data.theme || "#00ffff");
-  const buttons = getLandingButtons();
-  const customCss = String(data.landingCss || "");
-  const customJs = String(data.landingJs || "");
+    if (!res.ok) {
+      showToast(res.data?.message || "Failed to set primary");
+      return;
+    }
 
-  return `<!DOCTYPE html>
+    showToast("Primary domain updated");
+    await loadDomains();
+  }
+
+  function collectDraft() {
+    return {
+      slug: landingSlug.value.trim(),
+      aliasPath: advancedSlug.value.trim(),
+      domain: normalizeDomain(landingDomain.value),
+      title: landingTitle.value.trim(),
+      subtitle: landingSubtitle.value.trim(),
+      description: landingDescription.value,
+      image: landingImage.value.trim(),
+      theme: landingTheme.value.trim() || "#00ffff",
+      ctaLabel: landingCtaLabel.value.trim(),
+      ctaUrl: landingCtaUrl.value.trim(),
+      footer: landingFooter.value.trim(),
+      buttonsQuick1: {
+        label: landingButtonLabel1.value.trim(),
+        url: landingButtonUrl1.value.trim(),
+      },
+      buttonsQuick2: {
+        label: landingButtonLabel2.value.trim(),
+        url: landingButtonUrl2.value.trim(),
+      },
+      extraButtons: getDynamicButtons(),
+      metaTitle: landingMetaTitle.value.trim(),
+      metaDescription: landingMetaDescription.value.trim(),
+      ogTitle: landingOgTitle.value.trim(),
+      ogDescription: landingOgDescription.value.trim(),
+      ogImage: landingOgImage.value.trim(),
+      canonicalUrl: landingCanonicalUrl.value.trim(),
+      landingHtml: landingHtml.value,
+      landingCss: landingCss.value,
+      landingJs: landingJs.value,
+      bgStyle: bgStyle.value,
+      cardStyle: cardStyle.value,
+      buttonStyle: buttonStyle.value,
+    };
+  }
+
+  function saveDraft() {
+    if (!autosaveEnabled) return;
+
+    try {
+      localStorage.setItem(
+        AUTOSAVE_KEY,
+        JSON.stringify({ savedAt: Date.now(), data: collectDraft() })
+      );
+      setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
+    } catch {}
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (!raw) return false;
+
+      const parsed = JSON.parse(raw);
+      const d = parsed?.data;
+      if (!d) return false;
+
+      landingSlug.value = d.slug || "";
+      advancedSlug.value = d.aliasPath || d.advancedSlug || "";
+      restoredDraftDomain = d.domain || "";
+      landingTitle.value = d.title || "";
+      landingSubtitle.value = d.subtitle || "";
+      landingDescription.value = d.description || "";
+      landingImage.value = d.image || "";
+      landingTheme.value = d.theme || "#00ffff";
+      landingCtaLabel.value = d.ctaLabel || "";
+      landingCtaUrl.value = d.ctaUrl || "";
+      landingFooter.value = d.footer || "";
+      landingButtonLabel1.value = d.buttonsQuick1?.label || "";
+      landingButtonUrl1.value = d.buttonsQuick1?.url || "";
+      landingButtonLabel2.value = d.buttonsQuick2?.label || "";
+      landingButtonUrl2.value = d.buttonsQuick2?.url || "";
+      landingMetaTitle.value = d.metaTitle || "";
+      landingMetaDescription.value = d.metaDescription || "";
+      landingOgTitle.value = d.ogTitle || "";
+      landingOgDescription.value = d.ogDescription || "";
+      landingOgImage.value = d.ogImage || "";
+      landingCanonicalUrl.value = d.canonicalUrl || "";
+      landingHtml.value = d.landingHtml || "";
+      landingCss.value = d.landingCss || "";
+      landingJs.value = d.landingJs || "";
+      bgStyle.value = d.bgStyle || "radial";
+      cardStyle.value = d.cardStyle || "glass";
+      buttonStyle.value = d.buttonStyle || "rounded";
+
+      dynamicButtonsStore = Array.isArray(d.extraButtons)
+        ? d.extraButtons.slice(0, 20)
+        : [];
+
+      renderDynamicButtons();
+
+      const when = parsed?.savedAt
+        ? new Date(parsed.savedAt).toLocaleString()
+        : "previous session";
+
+      setDraftIndicator("Draft", `Restored from ${when}`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function clearSavedDraft() {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setDraftIndicator("Draft", "Cleared");
+  }
+
+  function triggerAutosave() {
+    if (!autosaveEnabled) return;
+
+    clearTimeout(window.__builderAutosaveTimer);
+    window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
+  }
+
+  function getPayload({ requireSlug = false } = {}) {
+    const slug = normalizePath(landingSlug.value);
+    const aliasPath = normalizePath(advancedSlug.value);
+    const domain = normalizeDomain(landingDomain.value);
+    const title = landingTitle.value.trim();
+    const customHtml = landingHtml.value.trim();
+
+    if (requireSlug && !slug) {
+      setResult("Landing slug is required for update", true);
+      return null;
+    }
+
+    if (!title && !customHtml) {
+      setResult("Landing title or custom HTML is required", true);
+      return null;
+    }
+
+    const payload = {
+      domain,
+      title,
+      subtitle: landingSubtitle.value.trim(),
+      description: landingDescription.value.trim(),
+      image: landingImage.value.trim(),
+      theme: landingTheme.value.trim() || "#00ffff",
+      buttons: getLandingButtons(),
+      ctaLabel: landingCtaLabel.value.trim(),
+      ctaUrl: landingCtaUrl.value.trim(),
+      footer: landingFooter.value.trim(),
+
+      landingHtml: customHtml || "",
+      landingCss: landingCss.value,
+      landingJs: landingJs.value,
+
+      aliasPath,
+
+      metaTitle: landingMetaTitle.value.trim(),
+      metaDescription: landingMetaDescription.value.trim(),
+      ogTitle: landingOgTitle.value.trim(),
+      ogDescription: landingOgDescription.value.trim(),
+      ogImage: landingOgImage.value.trim(),
+      canonicalUrl: landingCanonicalUrl.value.trim(),
+    };
+
+    if (slug) payload.slug = slug;
+
+    return payload;
+  }
+
+  function getGeneratedPreviewHtml() {
+    const data = collectDraft();
+
+    const title = escapeHtml(data.title || data.slug || "Landing Page");
+    const subtitle = escapeHtml(data.subtitle || "");
+    const description = escapeHtml(data.description || "");
+    const theme = escapeHtml(data.theme || "#00ffff");
+    const image = String(data.image || "").trim();
+    const footer = escapeHtml(data.footer || "Powered by Rattle Link");
+    const ctaLabel = escapeHtml(data.ctaLabel || "");
+    const ctaUrl = String(data.ctaUrl || "").trim();
+    const buttons = getLandingButtons();
+    const customCss = String(data.landingCss || "");
+    const customJs = String(data.landingJs || "");
+
+    const buttonsHtml = buttons
+      .map(
+        (btn) => `
+          <a class="btn locked-link" href="${escapeHtml(
+            btn.url || "#"
+          )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+          btn.label || ""
+        )}</a>
+        `
+      )
+      .join("");
+
+    const ctaHtml =
+      ctaLabel && ctaUrl
+        ? `<a class="btn cta locked-link" href="${escapeHtml(
+            ctaUrl
+          )}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
+        : "";
+
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>${title}</title>
 <style>
+*{box-sizing:border-box}
 body{
   margin:0;
   min-height:100vh;
@@ -2036,9 +2050,25 @@ body{
   background:#0f172a;
   border-radius:24px;
   padding:32px;
+  border:1px solid rgba(255,255,255,.1);
 }
-h1{color:${theme}}
-p{color:#94a3b8}
+.avatar{
+  width:120px;
+  height:120px;
+  margin:0 auto 18px;
+  border-radius:999px;
+  overflow:hidden;
+  border:3px solid ${theme};
+}
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+h1{color:${theme};margin:0 0 8px}
+.eyebrow{color:#67e8f9;margin:0 0 10px;font-size:13px}
+p{color:#94a3b8;line-height:1.7}
 .links{display:grid;gap:12px;margin-top:20px}
 .btn{
   display:block;
@@ -2049,37 +2079,51 @@ p{color:#94a3b8}
   text-decoration:none;
   opacity:.45;
   pointer-events:none;
+  border:1px solid rgba(255,255,255,.08);
 }
 .btn.ready{
   opacity:1;
   pointer-events:auto;
+}
+.cta{
+  background:${theme};
+  color:#020617;
+  font-weight:800;
 }
 .turnstile-box{
   display:flex;
   justify-content:center;
   margin:18px 0;
 }
+.footer{
+  margin-top:22px;
+  color:#94a3b8;
+  font-size:12px;
+}
 ${customCss}
 </style>
 </head>
 <body>
   <div class="card">
+    ${
+      image
+        ? `<div class="avatar"><img src="${escapeHtml(image)}" alt="avatar" /></div>`
+        : ""
+    }
     <h1>${title}</h1>
+    ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
     ${description ? `<p>${description}</p>` : ""}
+
+    <div class="links">${buttonsHtml}${ctaHtml}</div>
 
     <div class="turnstile-box">
       <div class="cf-turnstile"
         data-sitekey="${TURNSTILE_SITE_KEY}"
+        data-theme="dark"
         data-callback="rattleTurnstileDone"></div>
     </div>
 
-    <div class="links">
-      ${buttons.map(btn => `
-        <a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">
-          ${escapeHtml(btn.label || "")}
-        </a>
-      `).join("")}
-    </div>
+    <div class="footer">${footer}</div>
   </div>
 
   ${customJs ? `<script>${customJs}<\/script>` : ""}
@@ -2094,753 +2138,718 @@ ${customCss}
   <\/script>
 </body>
 </html>`;
-}
-
-      function renderPreview() {
-  const customHtml = landingHtml.value.trim();
-
-  if (customHtml) {
-    landingPreviewFrame.srcdoc = customHtml;
-    setResult("Custom HTML preview updated", false);
-    setBuilderStatus("Custom HTML rendered in preview.");
-    return;
   }
 
-  const payload = getPayload();
-  if (!payload) return;
+  function renderPreview() {
+    const customHtml = landingHtml.value.trim();
 
-  landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
-  setResult("Preview updated", false);
-  setBuilderStatus("Preview rendered successfully.");
-}
+    if (customHtml) {
+      landingPreviewFrame.srcdoc = customHtml;
+      setResult("Custom HTML preview updated", false);
+      setBuilderStatus("Custom HTML rendered in preview.");
+      return;
+    }
 
-      function clearForm() {
-        landingSlug.value = "";
-        advancedSlug.value = "";
-        landingDomain.value = "";
-        landingTitle.value = "";
-        landingSubtitle.value = "";
-        landingDescription.value = "";
-        landingImage.value = "";
-        landingTheme.value = "#00ffff";
-        landingCtaLabel.value = "";
-        landingCtaUrl.value = "";
-        landingFooter.value = "";
-        landingButtonLabel1.value = "";
-        landingButtonUrl1.value = "";
-        landingButtonLabel2.value = "";
-        landingButtonUrl2.value = "";
-        landingMetaTitle.value = "";
-        landingMetaDescription.value = "";
-        landingOgTitle.value = "";
-        landingOgDescription.value = "";
-        landingOgImage.value = "";
-        landingCanonicalUrl.value = "";
-        landingHtml.value = "";
-        landingCss.value = "";
-        landingJs.value = "";
-        bgStyle.value = "radial";
-        cardStyle.value = "glass";
-        buttonStyle.value = "rounded";
-        dynamicButtonsStore = [];
-        restoredDraftDomain = "";
-        renderDynamicButtons();
-        landingPreviewFrame.srcdoc = "";
-        setResult("Form cleared", false);
-        setBuilderStatus("Builder reset.");
-        clearSavedDraft();
-      }
+    landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
+    setResult("Preview updated", false);
+    setBuilderStatus("Preview rendered successfully.");
+  }
 
-      function fillForm(item) {
-        landingSlug.value = item.slug || "";
-        advancedSlug.value = item.advancedSlug || item.aliasSlug || "";
-        landingDomain.value = item.domain || "";
-        landingTitle.value = item.landingTitle || "";
-        landingSubtitle.value = item.subtitle || "";
-        landingDescription.value = item.landingDescription || "";
-        landingImage.value = item.landingImage || "";
-        landingTheme.value = item.landingTheme || "#00ffff";
-        landingCtaLabel.value = item.landingCtaLabel || "";
-        landingCtaUrl.value = item.landingCtaUrl || "";
-        landingFooter.value = item.landingFooter || "";
-        landingMetaTitle.value = item.metaTitle || "";
-        landingMetaDescription.value = item.metaDescription || "";
-        landingOgTitle.value = item.ogTitle || "";
-        landingOgDescription.value = item.ogDescription || "";
-        landingOgImage.value = item.ogImage || "";
-        landingCanonicalUrl.value = item.canonicalUrl || "";
-        landingHtml.value = item.landingHtml || "";
-        landingCss.value = item.landingCss || "";
-        landingJs.value = item.landingJs || "";
-        bgStyle.value = item.bgStyle || "radial";
-        cardStyle.value = item.cardStyle || "glass";
-        buttonStyle.value = item.buttonStyle || "rounded";
+  function clearForm() {
+    landingSlug.value = "";
+    advancedSlug.value = "";
+    landingDomain.value = "";
+    landingTitle.value = "";
+    landingSubtitle.value = "";
+    landingDescription.value = "";
+    landingImage.value = "";
+    landingTheme.value = "#00ffff";
+    landingCtaLabel.value = "";
+    landingCtaUrl.value = "";
+    landingFooter.value = "";
+    landingButtonLabel1.value = "";
+    landingButtonUrl1.value = "";
+    landingButtonLabel2.value = "";
+    landingButtonUrl2.value = "";
+    landingMetaTitle.value = "";
+    landingMetaDescription.value = "";
+    landingOgTitle.value = "";
+    landingOgDescription.value = "";
+    landingOgImage.value = "";
+    landingCanonicalUrl.value = "";
+    landingHtml.value = "";
+    landingCss.value = "";
+    landingJs.value = "";
+    bgStyle.value = "radial";
+    cardStyle.value = "glass";
+    buttonStyle.value = "rounded";
+    dynamicButtonsStore = [];
+    restoredDraftDomain = "";
+    renderDynamicButtons();
+    landingPreviewFrame.srcdoc = "";
+    setResult("Form cleared", false);
+    setBuilderStatus("Builder reset.");
+    clearSavedDraft();
+  }
 
-        const buttons = Array.isArray(item.landingButtons)
-          ? item.landingButtons
-          : [];
-        landingButtonLabel1.value = buttons[0]?.label || "";
-        landingButtonUrl1.value = buttons[0]?.url || "";
-        landingButtonLabel2.value = buttons[1]?.label || "";
-        landingButtonUrl2.value = buttons[1]?.url || "";
+  function fillForm(item) {
+    landingSlug.value = item.slug || "";
+    advancedSlug.value = item.aliasPath || "";
+    landingDomain.value = item.domain || "";
+    landingTitle.value = item.landingTitle || "";
+    landingSubtitle.value = item.subtitle || "";
+    landingDescription.value = item.landingDescription || "";
+    landingImage.value = item.landingImage || "";
+    landingTheme.value = item.landingTheme || "#00ffff";
+    landingCtaLabel.value = item.landingCtaLabel || "";
+    landingCtaUrl.value = item.landingCtaUrl || "";
+    landingFooter.value = item.landingFooter || "";
+    landingMetaTitle.value = item.metaTitle || "";
+    landingMetaDescription.value = item.metaDescription || "";
+    landingOgTitle.value = item.ogTitle || "";
+    landingOgDescription.value = item.ogDescription || "";
+    landingOgImage.value = item.ogImage || "";
+    landingCanonicalUrl.value = item.canonicalUrl || "";
+    landingHtml.value = item.landingHtml || "";
+    landingCss.value = item.landingCss || "";
+    landingJs.value = item.landingJs || "";
+    bgStyle.value = item.bgStyle || "radial";
+    cardStyle.value = item.cardStyle || "glass";
+    buttonStyle.value = item.buttonStyle || "rounded";
 
-        dynamicButtonsStore = buttons.slice(2).map((btn) => ({
-          label: btn.label || "",
-          url: btn.url || "",
-        }));
-        renderDynamicButtons();
+    const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
+    landingButtonLabel1.value = buttons[0]?.label || "";
+    landingButtonUrl1.value = buttons[0]?.url || "";
+    landingButtonLabel2.value = buttons[1]?.label || "";
+    landingButtonUrl2.value = buttons[1]?.url || "";
 
-        renderPreview();
-        saveDraft();
-        showToast("Landing loaded");
-        setBuilderStatus("Landing loaded into builder.");
-      }
+    dynamicButtonsStore = buttons.slice(2).map((btn) => ({
+      label: btn.label || "",
+      url: btn.url || "",
+    }));
 
-      async function createLanding() {
-        const payload = getPayload();
-        if (!payload) return;
+    renderDynamicButtons();
+    renderPreview();
+    saveDraft();
+    showToast("Landing loaded");
+    setBuilderStatus("Landing loaded into builder.");
+  }
 
-        setBusy(createBtn, true, "Creating...");
+  async function createLanding() {
+    const payload = getPayload({ requireSlug: false });
+    if (!payload) return;
 
-        const res = await authorizedFetch("/landing/create", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
+    setBusy(createBtn, true, "Creating...");
 
-        setBusy(createBtn, false);
+    const res = await authorizedFetch("/landing/create", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
 
-        if (!res.ok) {
-          setResult(res.data?.message || "Landing create failed", true);
-          setBuilderStatus("Create failed.");
-          return;
-        }
+    setBusy(createBtn, false);
 
-        const publicLink =
-          res.data?.link ||
-          res.data?.publicLink ||
-          buildPublicLink({
-            slug: payload.slug,
-            domain: payload.domain,
-          });
+    if (!res.ok) {
+      setResult(res.data?.message || "Landing create failed", true);
+      setBuilderStatus("Create failed.");
+      return;
+    }
 
-        setResult(`Landing created: ${publicLink}`, false);
-        setBuilderStatus("Landing created successfully.");
-        saveDraft();
-        await loadAll(false);
-        showQR(publicLink, payload.slug);
-      }
+    const publicLink = res.data?.publicLink || buildPublicLink(res.data || payload);
+    const aliasLink = res.data?.aliasLink || "";
 
-      async function updateLanding() {
-        const payload = getPayload();
-        if (!payload) return;
+    if (res.data?.slug) landingSlug.value = res.data.slug;
+    if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-        setBusy(updateBtn, true, "Updating...");
+    setResult(
+      `Landing created:\n${publicLink}${aliasLink ? `\nAlias:\n${aliasLink}` : ""}`,
+      false
+    );
 
-        const res = await authorizedFetch("/landing/update", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
+    setBuilderStatus("Landing created successfully.");
+    saveDraft();
+    await loadAll(false);
+    showQR(publicLink, res.data?.slug || payload.slug || "landing");
+  }
 
-        setBusy(updateBtn, false);
+  async function updateLanding() {
+    const payload = getPayload({ requireSlug: true });
+    if (!payload) return;
 
-        if (!res.ok) {
-          setResult(res.data?.message || "Landing update failed", true);
-          setBuilderStatus("Update failed.");
-          return;
-        }
+    setBusy(updateBtn, true, "Updating...");
 
-        const publicLink = buildPublicLink({
-          slug: payload.slug,
-          domain: payload.domain,
-        });
+    const res = await authorizedFetch("/landing/update", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
 
-        setResult("Landing updated", false);
-        setBuilderStatus("Landing updated successfully.");
-        saveDraft();
-        await loadAll(false);
-        showQR(publicLink, payload.slug);
-      }
+    setBusy(updateBtn, false);
 
-      async function deleteLanding(slug, domain = "") {
-        if (
-          !confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)
+    if (!res.ok) {
+      setResult(res.data?.message || "Landing update failed", true);
+      setBuilderStatus("Update failed.");
+      return;
+    }
+
+    const publicLink = res.data?.publicLink || buildPublicLink(payload);
+    const aliasLink = res.data?.aliasLink || "";
+
+    if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
+
+    setResult(
+      `Landing updated:\n${publicLink}${aliasLink ? `\nAlias:\n${aliasLink}` : ""}`,
+      false
+    );
+
+    setBuilderStatus("Landing updated successfully.");
+    saveDraft();
+    await loadAll(false);
+    showQR(publicLink, payload.slug);
+  }
+
+  async function deleteLanding(slug, domain = "") {
+    if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) {
+      return;
+    }
+
+    const res = await authorizedFetch("/landing/delete", {
+      method: "POST",
+      body: JSON.stringify({ slug, domain }),
+    });
+
+    if (!res.ok) {
+      showToast(res.data?.message || "Delete failed");
+      return;
+    }
+
+    showToast("Landing deleted");
+    await loadAll(false);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied!");
+    } catch {
+      showToast("Copy failed");
+    }
+  }
+
+  function openLink(url) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function loadDomains() {
+    const res = await authorizedFetch("/domains/me", { method: "GET" });
+
+    if (!res.ok) {
+      domainsStore = [];
+      renderDomainSelectors();
+      return;
+    }
+
+    const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
+
+    domainsStore = domains
+      .map((d) => ({
+        ...d,
+        domain: normalizeDomain(d.domain || ""),
+        status: String(d.status || "pending").toLowerCase(),
+        isPrimary: !!(d.isPrimary || d.is_primary),
+        createdAt: Number(d.createdAt || d.created_at || 0),
+      }))
+      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+    renderDomainSelectors();
+  }
+
+  function renderDomainSelectors() {
+    const verifiedDomains = domainsStore.filter((d) => d.status === "verified");
+    const primary = verifiedDomains.find((d) => d.isPrimary);
+
+    const selectedDomain = restoredDraftDomain || landingDomain.value;
+    const selectedFilter = domainFilter.value;
+
+    landingDomain.innerHTML = ['<option value="">Default domain</option>']
+      .concat(
+        verifiedDomains.map(
+          (d) =>
+            `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${
+              d.isPrimary ? " (Primary)" : ""
+            }</option>`
         )
-          return;
+      )
+      .join("");
 
-        const res = await authorizedFetch("/landing/delete", {
-          method: "POST",
-          body: JSON.stringify({ slug, domain }),
-        });
+    domainFilter.innerHTML = ['<option value="all">All domains</option>']
+      .concat(
+        verifiedDomains.map(
+          (d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
+        )
+      )
+      .join("");
 
-        if (!res.ok) {
-          showToast(res.data?.message || "Delete failed");
-          return;
-        }
+    if ([...landingDomain.options].some((o) => o.value === selectedDomain)) {
+      landingDomain.value = selectedDomain;
+    } else {
+      landingDomain.value = "";
+    }
 
-        showToast("Landing deleted");
-        await loadAll(false);
-      }
+    restoredDraftDomain = "";
 
-      async function copyText(text) {
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast("Copied!");
-        } catch {
-          showToast("Copy failed");
-        }
-      }
+    if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
+      domainFilter.value = selectedFilter;
+    }
 
-      function openLink(url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-      }
+    verifiedDomainsCount.textContent = verifiedDomains.length;
+    primaryDomainBadge.textContent = primary
+      ? `Primary: ${primary.domain}`
+      : "Primary: none";
+  }
 
-      async function loadDomains() {
-        const res = await authorizedFetch("/domains/me", { method: "GET" });
-        if (!res.ok) {
-          domainsStore = [];
-          renderDomainSelectors();
-          return;
-        }
+  async function loadLandings() {
+    const res = await authorizedFetch("/list", { method: "GET" });
 
-        const domains = Array.isArray(res.data?.domains)
-          ? res.data.domains
-          : [];
-        domainsStore = domains
-          .map((d) => ({
-            ...d,
-            domain: normalizeDomain(d.domain || ""),
-            status: String(d.status || "pending").toLowerCase(),
-            isPrimary: !!(d.isPrimary || d.is_primary),
-            createdAt: Number(d.createdAt || d.created_at || 0),
-          }))
-          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    if (!res.ok) {
+      landingStore = [];
+      renderLandingTable();
+      updateStats();
+      return;
+    }
 
-        renderDomainSelectors();
-      }
+    const items = Array.isArray(res.data?.items) ? res.data.items : [];
 
-      function renderDomainSelectors() {
-        const verifiedDomains = domainsStore.filter(
-          (d) => d.status === "verified"
-        );
-        const primary = verifiedDomains.find((d) => d.isPrimary);
+    landingStore = items
+      .map(normalizeLandingItem)
+      .filter((item) => item.linkType === "landing")
+      .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
-        const selectedDomain = restoredDraftDomain || landingDomain.value;
-        const selectedFilter = domainFilter.value;
+    renderLandingTable();
+    updateStats();
+  }
 
-        landingDomain.innerHTML = ['<option value="">Default domain</option>']
-          .concat(
-            verifiedDomains.map(
-              (d) =>
-                `<option value="${escapeHtml(d.domain)}">${escapeHtml(
-                  d.domain
-                )}${d.isPrimary ? " (Primary)" : ""}</option>`
-            )
-          )
-          .join("");
+  function updateStats() {
+    totalLandings.textContent = landingStore.length;
+    totalLandingClicks.textContent = landingStore.reduce(
+      (sum, item) => sum + Number(item.clicks || 0),
+      0
+    );
+    activeLandings.textContent = landingStore.filter(
+      (item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())
+    ).length;
+  }
 
-        domainFilter.innerHTML = ['<option value="all">All domains</option>']
-          .concat(
-            verifiedDomains.map(
-              (d) =>
-                `<option value="${escapeHtml(d.domain)}">${escapeHtml(
-                  d.domain
-                )}</option>`
-            )
-          )
-          .join("");
+  function renderLandingTable() {
+    const q = (searchInput.value || "").trim().toLowerCase();
+    const domainOnly = domainFilter.value || "all";
+    const statusOnly = statusFilter.value || "all";
 
-        if (
-          [...landingDomain.options].some((o) => o.value === selectedDomain)
-        ) {
-          landingDomain.value = selectedDomain;
-        } else {
-          landingDomain.value = "";
-        }
-        restoredDraftDomain = "";
+    const filtered = landingStore.filter((item) => {
+      const slug = String(item.slug || "").toLowerCase();
+      const title = String(item.landingTitle || "").toLowerCase();
+      const url = String(item.url || "").toLowerCase();
+      const domain = String(item.domain || "").toLowerCase();
+      const alias = String(item.aliasPath || "").toLowerCase();
 
-        if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
-          domainFilter.value = selectedFilter;
-        }
+      const isPaused = !!item.paused;
+      const statusMatch =
+        statusOnly === "all"
+          ? true
+          : statusOnly === "paused"
+          ? isPaused
+          : !isPaused;
 
-        verifiedDomainsCount.textContent = verifiedDomains.length;
-        primaryDomainBadge.textContent = primary
-          ? `Primary: ${primary.domain}`
-          : "Primary: none";
-      }
+      const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
+      const queryMatch =
+        !q ||
+        slug.includes(q) ||
+        alias.includes(q) ||
+        title.includes(q) ||
+        url.includes(q) ||
+        domain.includes(q);
 
-      async function loadLandings() {
-        const res = await authorizedFetch("/list", { method: "GET" });
+      return domainMatch && queryMatch && statusMatch;
+    });
 
-        if (!res.ok) {
-          landingStore = [];
-          renderLandingTable();
-          updateStats();
-          return;
-        }
+    if (!filtered.length) {
+      landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
+      return;
+    }
 
-        const items = Array.isArray(res.data?.items) ? res.data.items : [];
-        landingStore = items
-          .map(normalizeLandingItem)
-          .filter((item) => item.linkType === "landing")
-          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    landingTable.innerHTML = filtered
+      .map((item) => {
+        const publicLink = buildPublicLink(item);
+        const aliasLink = buildAliasLink(item);
+        const aliasText = normalizePath(item.aliasPath || "");
+        const statusHtml = item.paused
+          ? `<span class="badge pending">Paused</span>`
+          : `<span class="badge live">Live</span>`;
 
-        renderLandingTable();
-        updateStats();
-      }
-
-      function updateStats() {
-        totalLandings.textContent = landingStore.length;
-        totalLandingClicks.textContent = landingStore.reduce(
-          (sum, item) => sum + Number(item.clicks || 0),
-          0
-        );
-        activeLandings.textContent = landingStore.filter(
-          (item) =>
-            !item.paused && (!item.expire || Number(item.expire) > Date.now())
-        ).length;
-      }
-
-      function renderLandingTable() {
-        const q = (searchInput.value || "").trim().toLowerCase();
-        const domainOnly = domainFilter.value || "all";
-        const statusOnly = statusFilter.value || "all";
-
-        const filtered = landingStore.filter((item) => {
-          const slug = String(item.slug || "").toLowerCase();
-          const title = String(item.landingTitle || "").toLowerCase();
-          const url = String(item.url || "").toLowerCase();
-          const domain = String(item.domain || "").toLowerCase();
-
-          const isPaused = !!item.paused;
-          const statusMatch =
-            statusOnly === "all"
-              ? true
-              : statusOnly === "paused"
-              ? isPaused
-              : !isPaused;
-
-          const domainMatch =
-            domainOnly === "all" ? true : domain === domainOnly;
-          const queryMatch =
-            !q ||
-            slug.includes(q) ||
-            title.includes(q) ||
-            url.includes(q) ||
-            domain.includes(q);
-
-          return domainMatch && queryMatch && statusMatch;
-        });
-
-        if (!filtered.length) {
-          landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
-          return;
-        }
-
-        landingTable.innerHTML = filtered
-          .map((item) => {
-            const publicLink = buildPublicLink(item);
-            const aliasLink = buildAliasLink(item); // <-- here
-            const statusHtml = item.paused
-              ? `<span class="badge pending">Paused</span>`
-              : `<span class="badge live">Live</span>`;
-
-            return `
+        return `
 <tr>
   <td>
-  <b>${escapeHtml(item.slug)}</b>
-
-  ${
-    aliasLink
-      ? `
-      <div class="muted">
-        Alias:
-        <a href="${escapeHtml(aliasLink)}"
-           target="_blank"
-           rel="noopener noreferrer">
-          ${escapeHtml(
-            item.advancedSlug ||
-            item.aliasSlug ||
-            item.alias_slug ||
-            ""
-          )}
-        </a>
-      </div>
-    `
-      : ""
-  }
-</td>
-
-  <td>
+    <b>${escapeHtml(item.slug)}</b>
     ${
-      item.domain
-        ? escapeHtml(item.domain)
-        : '<span class="muted">Default</span>'
+      aliasLink
+        ? `
+        <div class="muted">
+          Alias:
+          <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+            aliasText
+          )}</a>
+        </div>
+      `
+        : `<div class="muted">Alias: auto on create</div>`
     }
   </td>
 
+  <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
+
   <td>
-    <div class="table-title">${escapeHtml(
-      item.landingTitle || "-"
-    )}</div>
+    <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
     ${
       item.landingDescription
-        ? `<div class="muted">${escapeHtml(
-            item.landingDescription
-          )}</div>`
+        ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>`
         : ""
     }
   </td>
-            <td>${Number(item.clicks || 0)}</td>
-            <td>
-              <a href="${escapeHtml(
-                publicLink
-              )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-              publicLink
-            )}</a>
-            </td>
-            <td>${statusHtml}</td>
-            <td>${fmtDate(item.createdAt)}</td>
-            <td>
-              <div class="actions">
-                <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(
-                  item.slug
-                )}','${escapeForJs(item.domain || "")}')">Edit</button>
-                <button type="button" class="copy" onclick="copyText('${escapeForJs(
-                  publicLink
-                )}')">Copy</button>
-                <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(
-                  publicLink
-                )}','${escapeForJs(item.slug)}')">QR</button>
-                <button type="button" class="open" onclick="openLink('${escapeForJs(
-                  publicLink
-                )}')">Open</button>
-                <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(
-                  item.slug
-                )}','${escapeForJs(item.domain || "")}')">Delete</button>
-              </div>
-            </td>
-          </tr>
+
+  <td>${Number(item.clicks || 0)}</td>
+
+  <td>
+    <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+          publicLink
+        )}</a>
+    ${
+      aliasLink
+        ? `<div class="muted" style="margin-top:6px;"><a href="${escapeHtml(
+            aliasLink
+          )}" target="_blank" rel="noopener noreferrer">Open alias</a></div>`
+        : ""
+    }
+  </td>
+
+  <td>${statusHtml}</td>
+  <td>${fmtDate(item.createdAt)}</td>
+
+  <td>
+    <div class="actions">
+      <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(
+        item.slug
+      )}','${escapeForJs(item.domain || "")}')">Edit</button>
+      <button type="button" class="copy" onclick="copyText('${escapeForJs(
+        publicLink
+      )}')">Copy</button>
+      ${
+        aliasLink
+          ? `<button type="button" class="copy" onclick="copyText('${escapeForJs(
+              aliasLink
+            )}')">Copy Alias</button>`
+          : ""
+      }
+      <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(
+        publicLink
+      )}','${escapeForJs(item.slug)}')">QR</button>
+      <button type="button" class="open" onclick="openLink('${escapeForJs(
+        publicLink
+      )}')">Open</button>
+      <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(
+        item.slug
+      )}','${escapeForJs(item.domain || "")}')">Delete</button>
+    </div>
+  </td>
+</tr>
         `;
-          })
-          .join("");
-      }
+      })
+      .join("");
+  }
 
-      function editLandingByKey(slug, domain) {
-        const item = landingStore.find(
-          (x) =>
-            String(x.slug || "") === String(slug || "") &&
-            normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
-        );
+  function editLandingByKey(slug, domain) {
+    const item = landingStore.find(
+      (x) =>
+        String(x.slug || "") === String(slug || "") &&
+        normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+    );
 
-        if (!item) {
-          showToast("Landing not found");
-          return;
-        }
+    if (!item) {
+      showToast("Landing not found");
+      return;
+    }
 
-        fillForm(item);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+    fillForm(item);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-      async function loadAll(showMessage = false) {
-        setBusy(refreshBtn, true, "Loading...");
-        await Promise.all([loadDomains(), loadLandings()]);
-        setBusy(refreshBtn, false);
-        if (showMessage) showToast("Landing data refreshed");
-      }
+  async function loadAll(showMessage = false) {
+    setBusy(refreshBtn, true, "Loading...");
+    await Promise.all([loadDomains(), loadLandings()]);
+    setBusy(refreshBtn, false);
+    if (showMessage) showToast("Landing data refreshed");
+  }
 
-      function applyThemePreset(hex) {
-        landingTheme.value = hex;
-        renderPreview();
-        triggerAutosave();
-      }
+  function applyThemePreset(hex) {
+    landingTheme.value = hex;
+    renderPreview();
+    triggerAutosave();
+  }
 
-      function applyTemplate(name) {
-        const templates = {
-          creator: {
-            title: "Your Name",
-            subtitle: "Creator • Content • Socials",
-            description:
-              "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
-            ctaLabel: "Watch Latest Video",
-            ctaUrl: "https://youtube.com/",
-            footer: "Thanks for visiting",
-            theme: "#00ffff",
-            buttons: [
-              { label: "Instagram", url: "https://instagram.com/" },
-              { label: "TikTok", url: "https://tiktok.com/" },
-              { label: "X / Twitter", url: "https://x.com/" },
-            ],
-          },
-          product: {
-            title: "Launch Your Product Faster",
-            subtitle: "New release",
-            description:
-              "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
-            ctaLabel: "Start Free Trial",
-            ctaUrl: "https://example.com/signup",
-            footer: "Built with Rattle Link",
-            theme: "#3b82f6",
-            buttons: [
-              { label: "See Features", url: "https://example.com/features" },
-              { label: "Pricing", url: "https://example.com/pricing" },
-              { label: "Book Demo", url: "https://example.com/demo" },
-            ],
-          },
-          agency: {
-            title: "We Build Brands That Convert",
-            subtitle: "Agency • Design • Growth",
-            description:
-              "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
-            ctaLabel: "Book a Call",
-            ctaUrl: "https://calendly.com/",
-            footer: "Agency inquiries welcome",
-            theme: "#a855f7",
-            buttons: [
-              { label: "Portfolio", url: "https://example.com/portfolio" },
-              { label: "Testimonials", url: "https://example.com/reviews" },
-              { label: "Services", url: "https://example.com/services" },
-            ],
-          },
-          music: {
-            title: "New Single Out Now",
-            subtitle: "Artist • Music • Streaming",
-            description:
-              "Stream my latest release, watch the music video, and follow me everywhere.",
-            ctaLabel: "Listen Now",
-            ctaUrl: "https://spotify.com/",
-            footer: "Thank you for the support",
-            theme: "#ec4899",
-            buttons: [
-              { label: "Spotify", url: "https://spotify.com/" },
-              { label: "Apple Music", url: "https://music.apple.com/" },
-              { label: "YouTube", url: "https://youtube.com/" },
-            ],
-          },
-          event: {
-            title: "Join Our Live Event",
-            subtitle: "Limited seats",
-            description:
-              "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
-            ctaLabel: "Reserve My Spot",
-            ctaUrl: "https://eventbrite.com/",
-            footer: "See you there",
-            theme: "#f59e0b",
-            buttons: [
-              { label: "Agenda", url: "https://example.com/agenda" },
-              { label: "Speakers", url: "https://example.com/speakers" },
-              { label: "Venue", url: "https://example.com/location" },
-            ],
-          },
-          minimal: {
-            title: "My Links",
-            subtitle: "",
-            description: "Everything important in one place.",
-            ctaLabel: "",
-            ctaUrl: "",
-            footer: "Powered by Rattle Link",
-            theme: "#22c55e",
-            buttons: [
-              { label: "Website", url: "https://example.com/" },
-              { label: "Instagram", url: "https://instagram.com/" },
-              { label: "Contact", url: "mailto:hello@example.com" },
-            ],
-          },
-        };
+  function applyTemplate(name) {
+    const templates = {
+      creator: {
+        title: "Your Name",
+        subtitle: "Creator • Content • Socials",
+        description:
+          "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+        ctaLabel: "Watch Latest Video",
+        ctaUrl: "https://youtube.com/",
+        footer: "Thanks for visiting",
+        theme: "#00ffff",
+        buttons: [
+          { label: "Instagram", url: "https://instagram.com/" },
+          { label: "TikTok", url: "https://tiktok.com/" },
+          { label: "X / Twitter", url: "https://x.com/" },
+        ],
+      },
+      product: {
+        title: "Launch Your Product Faster",
+        subtitle: "New release",
+        description:
+          "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+        ctaLabel: "Start Free Trial",
+        ctaUrl: "https://example.com/signup",
+        footer: "Built with Rattle Link",
+        theme: "#3b82f6",
+        buttons: [
+          { label: "See Features", url: "https://example.com/features" },
+          { label: "Pricing", url: "https://example.com/pricing" },
+          { label: "Book Demo", url: "https://example.com/demo" },
+        ],
+      },
+      agency: {
+        title: "We Build Brands That Convert",
+        subtitle: "Agency • Design • Growth",
+        description:
+          "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
+        ctaLabel: "Book a Call",
+        ctaUrl: "https://calendly.com/",
+        footer: "Agency inquiries welcome",
+        theme: "#a855f7",
+        buttons: [
+          { label: "Portfolio", url: "https://example.com/portfolio" },
+          { label: "Testimonials", url: "https://example.com/reviews" },
+          { label: "Services", url: "https://example.com/services" },
+        ],
+      },
+      music: {
+        title: "New Single Out Now",
+        subtitle: "Artist • Music • Streaming",
+        description:
+          "Stream my latest release, watch the music video, and follow me everywhere.",
+        ctaLabel: "Listen Now",
+        ctaUrl: "https://spotify.com/",
+        footer: "Thank you for the support",
+        theme: "#ec4899",
+        buttons: [
+          { label: "Spotify", url: "https://spotify.com/" },
+          { label: "Apple Music", url: "https://music.apple.com/" },
+          { label: "YouTube", url: "https://youtube.com/" },
+        ],
+      },
+      event: {
+        title: "Join Our Live Event",
+        subtitle: "Limited seats",
+        description:
+          "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
+        ctaLabel: "Reserve My Spot",
+        ctaUrl: "https://eventbrite.com/",
+        footer: "See you there",
+        theme: "#f59e0b",
+        buttons: [
+          { label: "Agenda", url: "https://example.com/agenda" },
+          { label: "Speakers", url: "https://example.com/speakers" },
+          { label: "Venue", url: "https://example.com/location" },
+        ],
+      },
+      minimal: {
+        title: "My Links",
+        subtitle: "",
+        description: "Everything important in one place.",
+        ctaLabel: "",
+        ctaUrl: "",
+        footer: "Powered by Rattle Link",
+        theme: "#22c55e",
+        buttons: [
+          { label: "Website", url: "https://example.com/" },
+          { label: "Instagram", url: "https://instagram.com/" },
+          { label: "Contact", url: "mailto:hello@example.com" },
+        ],
+      },
+    };
 
-        const t = templates[name];
-        if (!t) return;
+    const t = templates[name];
+    if (!t) return;
 
-        landingTitle.value = t.title || "";
-        landingSubtitle.value = t.subtitle || "";
-        landingDescription.value = t.description || "";
-        landingCtaLabel.value = t.ctaLabel || "";
-        landingCtaUrl.value = t.ctaUrl || "";
-        landingFooter.value = t.footer || "";
-        landingTheme.value = t.theme || "#00ffff";
-        landingButtonLabel1.value = t.buttons[0]?.label || "";
-        landingButtonUrl1.value = t.buttons[0]?.url || "";
-        landingButtonLabel2.value = t.buttons[1]?.label || "";
-        landingButtonUrl2.value = t.buttons[1]?.url || "";
-        dynamicButtonsStore = t.buttons.slice(2);
-        renderDynamicButtons();
-        renderPreview();
-        triggerAutosave();
-        showToast(`Template loaded: ${name}`);
-      }
+    landingTitle.value = t.title || "";
+    landingSubtitle.value = t.subtitle || "";
+    landingDescription.value = t.description || "";
+    landingCtaLabel.value = t.ctaLabel || "";
+    landingCtaUrl.value = t.ctaUrl || "";
+    landingFooter.value = t.footer || "";
+    landingTheme.value = t.theme || "#00ffff";
+    landingButtonLabel1.value = t.buttons[0]?.label || "";
+    landingButtonUrl1.value = t.buttons[0]?.url || "";
+    landingButtonLabel2.value = t.buttons[1]?.label || "";
+    landingButtonUrl2.value = t.buttons[1]?.url || "";
+    dynamicButtonsStore = t.buttons.slice(2);
 
-      function attachLivePreview() {
-        [
-          landingSlug,
-          advancedSlug,
-          landingDomain,
-          landingTitle,
-          landingSubtitle,
-          landingDescription,
-          landingImage,
-          landingTheme,
-          landingCtaLabel,
-          landingCtaUrl,
-          landingFooter,
-          landingButtonLabel1,
-          landingButtonUrl1,
-          landingButtonLabel2,
-          landingButtonUrl2,
-          landingMetaTitle,
-          landingMetaDescription,
-          landingOgTitle,
-          landingOgDescription,
-          landingOgImage,
-          landingCanonicalUrl,
-          landingHtml,
-          landingCss,
-          landingJs,
-          bgStyle,
-          cardStyle,
-          buttonStyle,
-        ].forEach((el) => {
-          el.addEventListener("input", () => {
-            clearTimeout(window.__landingPreviewTimer);
-            window.__landingPreviewTimer = setTimeout(() => {
-              try {
-                renderPreview();
-                triggerAutosave();
-              } catch {}
-            }, 220);
-          });
-          el.addEventListener("change", () => {
-            try {
-              renderPreview();
-              triggerAutosave();
-            } catch {}
-          });
-        });
-      }
+    renderDynamicButtons();
+    renderPreview();
+    triggerAutosave();
+    showToast(`Template loaded: ${name}`);
+  }
 
-      function setupEvents() {
-        refreshBtn.addEventListener("click", () => loadAll(true));
-        clearBtn.addEventListener("click", clearForm);
-        previewBtn.addEventListener("click", renderPreview);
-        createBtn.addEventListener("click", createLanding);
-        updateBtn.addEventListener("click", updateLanding);
-
-        autosaveBtn.addEventListener("click", () => {
-          autosaveEnabled = !autosaveEnabled;
-          autosaveBtn.textContent = `Autosave: ${
-            autosaveEnabled ? "On" : "Off"
-          }`;
-          if (autosaveEnabled) saveDraft();
-        });
-
-        openPreviewBtn.addEventListener("click", () => {
-          const html = landingPreviewFrame.srcdoc || "";
-          if (!html) renderPreview();
-          const win = window.open("", "_blank");
-          if (win) {
-            win.document.open();
-            win.document.write(landingPreviewFrame.srcdoc || "");
-            win.document.close();
-          }
-        });
-
-        desktopViewBtn.addEventListener("click", () =>
-          updatePreviewDevice("desktop")
-        );
-        tabletViewBtn.addEventListener("click", () =>
-          updatePreviewDevice("tablet")
-        );
-        mobileViewBtn.addEventListener("click", () =>
-          updatePreviewDevice("mobile")
-        );
-
-        searchInput.addEventListener("input", renderLandingTable);
-        domainFilter.addEventListener("change", renderLandingTable);
-        statusFilter.addEventListener("change", renderLandingTable);
-
-        addButtonBtn.addEventListener("click", () => addDynamicButton());
-
-        presetNeonBtn.addEventListener("click", () =>
-          applyThemePreset("#00ffff")
-        );
-        presetBlueBtn.addEventListener("click", () =>
-          applyThemePreset("#3b82f6")
-        );
-        presetPinkBtn.addEventListener("click", () =>
-          applyThemePreset("#ec4899")
-        );
-        presetGreenBtn.addEventListener("click", () =>
-          applyThemePreset("#22c55e")
-        );
-
-        document.querySelectorAll(".tab-btn").forEach((btn) => {
-          btn.addEventListener("click", () => setTab(btn.dataset.tab));
-        });
-
-        setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
-
-        document.querySelectorAll(".template-card").forEach((card) => {
-          card.addEventListener("click", () =>
-            applyTemplate(card.dataset.template)
-          );
-        });
-
-        [landingSlug, landingTitle, landingDescription].forEach((el) => {
-          el.addEventListener("keydown", (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
-          });
-        });
-
-        document
-          .getElementById("closeQrModalBtn")
-          .addEventListener("click", () => closeModal(qrModal));
-        document
-          .getElementById("downloadQrBtn")
-          .addEventListener("click", downloadCurrentQR);
-        document
-          .getElementById("copyQrUrlBtn")
-          .addEventListener("click", () => copyText(currentQrImageUrl));
-        document
-          .getElementById("openQrImageBtn")
-          .addEventListener("click", () => openLink(currentQrImageUrl));
-        document
-          .getElementById("copyQrLinkBtn")
-          .addEventListener("click", () => copyText(currentQrLink));
-        document
-          .getElementById("openQrLinkBtn")
-          .addEventListener("click", () => openLink(currentQrLink));
-
-        overlay.addEventListener("click", () => {
-          closeModal(qrModal);
-        });
-      }
-
-      window.copyText = copyText;
-      window.openLink = openLink;
-      window.deleteLanding = deleteLanding;
-      window.editLandingByKey = editLandingByKey;
-      window.removeDynamicButton = removeDynamicButton;
-      window.showQR = showQR;
-
-      (async function init() {
-        if (!ensureAuth()) return;
-        setupEvents();
-        attachLivePreview();
-        renderDynamicButtons();
-        loadDraft();
-        await loadAll(false);
-        renderPreview();
-        updatePreviewDevice("desktop");
-
-        clearInterval(refreshTimer);
-        refreshTimer = setInterval(() => {
-          if (document.hidden) return;
-          loadAll(false);
-        }, 20000);
-      })();
-
-      window.addEventListener("beforeunload", () => {
-        clearInterval(refreshTimer);
-        if (autosaveEnabled) saveDraft();
+  function attachLivePreview() {
+    [
+      landingSlug,
+      advancedSlug,
+      landingDomain,
+      landingTitle,
+      landingSubtitle,
+      landingDescription,
+      landingImage,
+      landingTheme,
+      landingCtaLabel,
+      landingCtaUrl,
+      landingFooter,
+      landingButtonLabel1,
+      landingButtonUrl1,
+      landingButtonLabel2,
+      landingButtonUrl2,
+      landingMetaTitle,
+      landingMetaDescription,
+      landingOgTitle,
+      landingOgDescription,
+      landingOgImage,
+      landingCanonicalUrl,
+      landingHtml,
+      landingCss,
+      landingJs,
+      bgStyle,
+      cardStyle,
+      buttonStyle,
+    ].forEach((el) => {
+      el.addEventListener("input", () => {
+        clearTimeout(window.__landingPreviewTimer);
+        window.__landingPreviewTimer = setTimeout(() => {
+          try {
+            renderPreview();
+            triggerAutosave();
+          } catch {}
+        }, 220);
       });
-    </script>
+
+      el.addEventListener("change", () => {
+        try {
+          renderPreview();
+          triggerAutosave();
+        } catch {}
+      });
+    });
+  }
+
+  function setupEvents() {
+    refreshBtn.addEventListener("click", () => loadAll(true));
+    clearBtn.addEventListener("click", clearForm);
+    previewBtn.addEventListener("click", renderPreview);
+    createBtn.addEventListener("click", createLanding);
+    updateBtn.addEventListener("click", updateLanding);
+
+    autosaveBtn.addEventListener("click", () => {
+      autosaveEnabled = !autosaveEnabled;
+      autosaveBtn.textContent = `Autosave: ${autosaveEnabled ? "On" : "Off"}`;
+      if (autosaveEnabled) saveDraft();
+    });
+
+    openPreviewBtn.addEventListener("click", () => {
+      if (!landingPreviewFrame.srcdoc) renderPreview();
+
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.open();
+        win.document.write(landingPreviewFrame.srcdoc || "");
+        win.document.close();
+      }
+    });
+
+    desktopViewBtn.addEventListener("click", () => updatePreviewDevice("desktop"));
+    tabletViewBtn.addEventListener("click", () => updatePreviewDevice("tablet"));
+    mobileViewBtn.addEventListener("click", () => updatePreviewDevice("mobile"));
+
+    searchInput.addEventListener("input", renderLandingTable);
+    domainFilter.addEventListener("change", renderLandingTable);
+    statusFilter.addEventListener("change", renderLandingTable);
+
+    addButtonBtn.addEventListener("click", () => addDynamicButton());
+
+    presetNeonBtn.addEventListener("click", () => applyThemePreset("#00ffff"));
+    presetBlueBtn.addEventListener("click", () => applyThemePreset("#3b82f6"));
+    presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
+    presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => setTab(btn.dataset.tab));
+    });
+
+    setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
+
+    document.querySelectorAll(".template-card").forEach((card) => {
+      card.addEventListener("click", () => applyTemplate(card.dataset.template));
+    });
+
+    [landingSlug, landingTitle, landingDescription].forEach((el) => {
+      el.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
+      });
+    });
+
+    $("closeQrModalBtn").addEventListener("click", () => closeModal(qrModal));
+    $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
+    $("copyQrUrlBtn").addEventListener("click", () => copyText(currentQrImageUrl));
+    $("openQrImageBtn").addEventListener("click", () => openLink(currentQrImageUrl));
+    $("copyQrLinkBtn").addEventListener("click", () => copyText(currentQrLink));
+    $("openQrLinkBtn").addEventListener("click", () => openLink(currentQrLink));
+
+    overlay.addEventListener("click", () => closeModal(qrModal));
+  }
+
+  window.copyText = copyText;
+  window.openLink = openLink;
+  window.deleteLanding = deleteLanding;
+  window.editLandingByKey = editLandingByKey;
+  window.removeDynamicButton = removeDynamicButton;
+  window.showQR = showQR;
+
+  (async function init() {
+    if (!ensureAuth()) return;
+
+    setupEvents();
+    attachLivePreview();
+    renderDynamicButtons();
+    loadDraft();
+    await loadAll(false);
+    renderPreview();
+    updatePreviewDevice("desktop");
+
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      if (document.hidden) return;
+      loadAll(false);
+    }, 20000);
+  })();
+
+  window.addEventListener("beforeunload", () => {
+    clearInterval(refreshTimer);
+    if (autosaveEnabled) saveDraft();
+  });
+</script>
   </body>
 </html>
