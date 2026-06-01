@@ -1631,7 +1631,7 @@
         if (domain) return `https://${domain}/${slug}`;
         return `${PUBLIC_HOST.replace(/\/+$/, "")}/${slug}`;
       }
-      
+
       function buildAliasLink(item) {
   const alias = String(item.advancedSlug || "").trim();
   if (!alias) return "";
@@ -2448,14 +2448,24 @@ ${customCss}
 <tr>
   <td>
   <b>${escapeHtml(item.slug)}</b>
+
   ${
     aliasLink
-      ? `<div class="muted">
-           Alias:
-           <a href="${escapeHtml(aliasLink)}" target="_blank">
-             ${escapeHtml(item.advancedSlug)}
-           </a>
-         </div>`
+      ? `
+      <div class="muted">
+        Alias:
+        <a href="${escapeHtml(aliasLink)}"
+           target="_blank"
+           rel="noopener noreferrer">
+          ${escapeHtml(
+            item.advancedSlug ||
+            item.aliasSlug ||
+            item.alias_slug ||
+            ""
+          )}
+        </a>
+      </div>
+    `
       : ""
   }
 </td>
