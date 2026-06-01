@@ -1930,14 +1930,14 @@
   const slug = landingSlug.value.trim();
   const domain = normalizeDomain(landingDomain.value);
   const title = landingTitle.value.trim();
-  const html = landingHtml.value.trim();
+  const customHtml = landingHtml.value.trim();
 
   if (!slug) {
     setResult("Landing slug is required", true);
     return null;
   }
 
-  if (!title && !html) {
+  if (!title && !customHtml) {
     setResult("Landing title or custom HTML is required", true);
     return null;
   }
@@ -1955,7 +1955,7 @@
     ctaUrl: landingCtaUrl.value.trim(),
     footer: landingFooter.value.trim(),
 
-    landingHtml: html || getGeneratedPreviewHtml(),
+    landingHtml: customHtml ? customHtml : getGeneratedPreviewHtml(),
 
     landingCss: landingCss.value,
     landingJs: landingJs.value,
@@ -1967,7 +1967,6 @@
     canonicalUrl: landingCanonicalUrl.value.trim(),
   };
 }
-
       function getGeneratedPreviewHtml() {
   const data = collectDraft();
 
@@ -2064,14 +2063,22 @@ ${customCss}
 }
 
       function renderPreview() {
-        const payload = getPayload();
-        if (!payload) return;
+  const customHtml = landingHtml.value.trim();
 
-        const html = getGeneratedPreviewHtml();
-        landingPreviewFrame.srcdoc = html;
-        setResult("Preview updated", false);
-        setBuilderStatus("Preview rendered successfully.");
-      }
+  if (customHtml) {
+    landingPreviewFrame.srcdoc = customHtml;
+    setResult("Custom HTML preview updated", false);
+    setBuilderStatus("Custom HTML rendered in preview.");
+    return;
+  }
+
+  const payload = getPayload();
+  if (!payload) return;
+
+  landingPreviewFrame.srcdoc = getGeneratedPreviewHtml();
+  setResult("Preview updated", false);
+  setBuilderStatus("Preview rendered successfully.");
+}
 
       function clearForm() {
         landingSlug.value = "";
