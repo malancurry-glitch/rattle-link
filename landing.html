@@ -1236,7 +1236,7 @@
                 <th>Domain</th>
                 <th>Title</th>
                 <th>Clicks</th>
-                <th>Public Link</th>
+                <th>Public / Alias Links</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th>Actions</th>
@@ -1296,7 +1296,7 @@
 <script>
 const PRIMARY_API = "https://api.rattleshortapi.it.com";
 const PUBLIC_HOST = "https://rattleshortapi.it.com";
-const AUTOSAVE_KEY = "rattle_landing_builder_draft_v5";
+const AUTOSAVE_KEY = "rattle_landing_builder_draft_v6";
 const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
 let landingStore = [];
@@ -1486,9 +1486,7 @@ function syncOverlay() {
 }
 
 function buildQrImageUrl(link, size = 280) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-    String(link || "").trim()
-  )}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(String(link || "").trim())}`;
 }
 
 function getQrFilename(slug = "landing") {
@@ -1522,7 +1520,6 @@ async function showQR(link, slug = "") {
     <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
       <a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>
     </div>
-    <div class="muted" style="margin-top:8px;"><b>Download:</b> PNG</div>
   `;
 
   openModal(qrModal);
@@ -1596,6 +1593,7 @@ async function authorizedFetch(path, options = {}) {
 }
 
 function buildPublicLink(item) {
+  if (item.publicLink) return String(item.publicLink);
   const slug = normalizePath(item.slug || "");
   const domain = normalizeDomain(item.domain || "");
   if (!slug) return "#";
@@ -1604,6 +1602,8 @@ function buildPublicLink(item) {
 }
 
 function buildAliasLink(item) {
+  if (item.aliasLink) return String(item.aliasLink);
+
   const alias = normalizePath(
     item.aliasPath ||
       item.alias_path ||
@@ -1619,21 +1619,20 @@ function buildAliasLink(item) {
   return `${base}/${alias}`;
 }
 
-function normalizeLandingItem(item) {
-  let parsedButtons = [];
-
+function parseButtonsFromItem(item) {
   try {
-    if (Array.isArray(item.landingButtons)) parsedButtons = item.landingButtons;
-    else if (Array.isArray(item.buttons)) parsedButtons = item.buttons;
-    else if (Array.isArray(item.landing_buttons)) parsedButtons = item.landing_buttons;
-    else if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
+    if (Array.isArray(item.landingButtons)) return item.landingButtons;
+    if (Array.isArray(item.buttons)) return item.buttons;
+    if (Array.isArray(item.landing_buttons)) return item.landing_buttons;
+    if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
       const parsed = JSON.parse(item.landing_buttons);
-      parsedButtons = Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed : [];
     }
-  } catch {
-    parsedButtons = [];
-  }
+  } catch {}
+  return [];
+}
 
+function normalizeLandingItem(item) {
   const aliasPath =
     item.aliasPath ||
     item.alias_path ||
@@ -1645,6 +1644,8 @@ function normalizeLandingItem(item) {
     ...item,
     slug: item.slug || "",
     aliasPath,
+    aliasLink: item.aliasLink || "",
+    publicLink: item.publicLink || "",
     url: item.url || "",
     clicks: Number(item.clicks || 0),
     paused: !!item.paused,
@@ -1652,6 +1653,7 @@ function normalizeLandingItem(item) {
     createdAt: Number(item.createdAt || item.created_at || 0),
     domain: normalizeDomain(item.domain || ""),
     linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
+
     landingTitle: item.landingTitle || item.landing_title || item.title || "",
     landingDescription:
       item.landingDescription ||
@@ -1660,7 +1662,7 @@ function normalizeLandingItem(item) {
       "",
     landingImage: item.landingImage || item.landing_image || item.image || "",
     landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
-    landingButtons: parsedButtons,
+    landingButtons: parseButtonsFromItem(item),
     landingCtaLabel:
       item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
     landingCtaUrl:
@@ -1730,7 +1732,7 @@ function renderLandingTable() {
     const title = String(item.landingTitle || "").toLowerCase();
     const url = String(item.url || "").toLowerCase();
     const domain = String(item.domain || "").toLowerCase();
-    const alias = String(item.aliasPath || "").toLowerCase();
+    const alias = String(item.aliasPath || item.aliasLink || "").toLowerCase();
 
     const isPaused = !!item.paused;
     const statusMatch =
@@ -1769,23 +1771,28 @@ function renderLandingTable() {
     ${
       aliasText
         ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
-        : `<div class="muted">Alias: auto generated</div>`
+        : `<div class="muted">Alias missing. Refresh after backend update.</div>`
     }
   </td>
+
   <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
+
   <td>
     <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
     ${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}
   </td>
+
   <td>${Number(item.clicks || 0)}</td>
+
   <td>
-    <div style="display:grid;gap:8px;min-width:320px;">
+    <div style="display:grid;gap:10px;min-width:340px;">
       <div>
         <b class="small">Public Link</b>
         <div class="muted" style="word-break:break-all;">
           <a href="${escapeHtml(publicLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(publicLink)}</a>
         </div>
       </div>
+
       ${
         aliasLink
           ? `<div>
@@ -1794,12 +1801,14 @@ function renderLandingTable() {
                 <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(aliasLink)}</a>
               </div>
             </div>`
-          : `<div class="muted">Alias link will appear after create.</div>`
+          : `<div class="muted">Alias link not returned by /list yet.</div>`
       }
     </div>
   </td>
+
   <td>${statusHtml}</td>
   <td>${fmtDate(item.createdAt)}</td>
+
   <td>
     <div class="actions">
       <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
@@ -2284,8 +2293,8 @@ async function createLanding() {
     return;
   }
 
-  const publicLink = res.data?.publicLink || buildPublicLink(res.data || payload);
-  const aliasLink = res.data?.aliasLink || "";
+  const publicLink = res.data?.publicLink || res.data?.item?.publicLink || buildPublicLink(res.data || payload);
+  const aliasLink = res.data?.aliasLink || res.data?.item?.aliasLink || "";
 
   if (res.data?.slug) landingSlug.value = res.data.slug;
   if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
@@ -2320,8 +2329,8 @@ async function updateLanding() {
     return;
   }
 
-  const publicLink = res.data?.publicLink || buildPublicLink(payload);
-  const aliasLink = res.data?.aliasLink || "";
+  const publicLink = res.data?.publicLink || res.data?.item?.publicLink || buildPublicLink(payload);
+  const aliasLink = res.data?.aliasLink || res.data?.item?.aliasLink || "";
 
   if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
