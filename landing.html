@@ -1566,20 +1566,25 @@ async function authorizedFetch(path, options = {}) {
 
 function buildPublicLink(item) {
   if (item.publicLink) return String(item.publicLink);
+  if (item.public_link) return String(item.public_link);
+
   const slug = normalizePath(item.slug || "");
   const domain = normalizeDomain(item.domain || "");
   if (!slug) return "#";
+
   const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
   return `${base}/${slug}`;
 }
 
 function buildAliasLink(item) {
   if (item.aliasLink) return String(item.aliasLink);
+  if (item.alias_link) return String(item.alias_link);
 
   const alias = normalizePath(
     item.aliasPath ||
       item.alias_path ||
       item.landing_alias_path ||
+      item.landingAliasPath ||
       item.advancedSlug ||
       ""
   );
@@ -1609,15 +1614,16 @@ function normalizeLandingItem(item) {
     item.aliasPath ||
     item.alias_path ||
     item.landing_alias_path ||
+    item.landingAliasPath ||
     item.advancedSlug ||
     "";
 
-  return {
+  const normalized = {
     ...item,
     slug: item.slug || "",
     aliasPath,
-    aliasLink: item.aliasLink || "",
-    publicLink: item.publicLink || "",
+    publicLink: item.publicLink || item.public_link || "",
+    aliasLink: item.aliasLink || item.alias_link || "",
     url: item.url || "",
     clicks: Number(item.clicks || 0),
     paused: !!item.paused,
@@ -1639,11 +1645,16 @@ function normalizeLandingItem(item) {
     metaTitle: item.metaTitle || item.landing_meta_title || "",
     metaDescription: item.metaDescription || item.landing_meta_description || "",
     subtitle: item.subtitle || "",
-    ogTitle: item.ogTitle || "",
-    ogDescription: item.ogDescription || "",
-    ogImage: item.ogImage || "",
-    canonicalUrl: item.canonicalUrl || "",
+    ogTitle: item.ogTitle || item.landing_og_title || "",
+    ogDescription: item.ogDescription || item.landing_og_description || "",
+    ogImage: item.ogImage || item.landing_og_image || "",
+    canonicalUrl: item.canonicalUrl || item.landing_canonical_url || "",
   };
+
+  if (!normalized.aliasLink) normalized.aliasLink = buildAliasLink(normalized);
+  if (!normalized.publicLink) normalized.publicLink = buildPublicLink(normalized);
+
+  return normalized;
 }
 
 function extractListItems(data) {
@@ -1664,12 +1675,12 @@ async function hydrateAliasIfMissing(item) {
   if (!res.ok) return item;
 
   const hydrated = normalizeLandingItem(res.data || {});
-  return {
+  return normalizeLandingItem({
     ...item,
     ...hydrated,
     aliasPath: hydrated.aliasPath || item.aliasPath || "",
     aliasLink: hydrated.aliasLink || buildAliasLink(hydrated) || "",
-  };
+  });
 }
 
 async function loadLandings() {
@@ -1732,14 +1743,22 @@ function renderLandingTable() {
   landingTable.innerHTML = filtered.map((item) => {
     const publicLink = buildPublicLink(item);
     const aliasLink = buildAliasLink(item);
-    const aliasText = normalizePath(item.aliasPath || "");
+    const aliasText = normalizePath(item.aliasPath || item.landing_alias_path || "");
     const statusHtml = item.paused ? `<span class="badge pending">Paused</span>` : `<span class="badge live">Live</span>`;
+    const safeSlug = escapeForJs(item.slug);
+    const safeDomain = escapeForJs(item.domain || "");
+    const safePublicLink = escapeForJs(publicLink);
+    const safeAliasLink = escapeForJs(aliasLink || "");
 
     return `
 <tr>
   <td>
     <div class="table-title">${escapeHtml(item.slug)}</div>
-    ${aliasText ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>` : `<div class="muted">Alias missing</div>`}
+    ${
+      aliasText
+        ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
+        : `<div class="muted">Alias missing. Refresh after backend update.</div>`
+    }
   </td>
 
   <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
@@ -1768,7 +1787,7 @@ function renderLandingTable() {
                 <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(aliasLink)}</a>
               </div>
             </div>`
-          : `<div class="muted">Alias link not found yet.</div>`
+          : `<div class="muted">Alias link not returned by /list yet.</div>`
       }
     </div>
   </td>
@@ -1778,26 +1797,14 @@ function renderLandingTable() {
 
   <td>
     <div class="actions">
-      <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
-      <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy Public</button>
-      <button
-  type="button"
-  class="copy"
-  onclick="${aliasLink ? `copyText('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
->
-  Copy Alias
-</button>
-      <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(publicLink)}','${escapeForJs(item.slug)}')">QR Public</button>
-      ${aliasLink ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(aliasLink)}','${escapeForJs(item.slug)}-alias')">QR Alias</button>` : ""}
-      <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open Public</button>
-      <button
-  type="button"
-  class="open"
-  onclick="${aliasLink ? `openLink('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
->
-  Open Alias
-</button>
-      <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
+      <button type="button" class="ghost-btn" onclick="editLandingByKey('${safeSlug}','${safeDomain}')">Edit</button>
+      <button type="button" class="copy" onclick="copyText('${safePublicLink}')">Copy Public</button>
+      <button type="button" class="copy" onclick="${aliasLink ? `copyText('${safeAliasLink}')` : `showToast('Alias link not available yet')`}">Copy Alias</button>
+      <button type="button" class="purple-btn" onclick="showQR('${safePublicLink}','${safeSlug}')">QR Public</button>
+      <button type="button" class="purple-btn" onclick="${aliasLink ? `showQR('${safeAliasLink}','${safeSlug}-alias')` : `showToast('Alias link not available yet')`}">QR Alias</button>
+      <button type="button" class="open" onclick="openLink('${safePublicLink}')">Open Public</button>
+      <button type="button" class="open" onclick="${aliasLink ? `openLink('${safeAliasLink}')` : `showToast('Alias link not available yet')`}">Open Alias</button>
+      <button type="button" class="danger-btn" onclick="deleteLanding('${safeSlug}','${safeDomain}')">Delete</button>
     </div>
   </td>
 </tr>`;
@@ -2041,11 +2048,7 @@ function getPayload({ requireSlug = false } = {}) {
     landingCss: landingCss.value,
     landingJs: landingJs.value,
     metaTitle: landingMetaTitle.value.trim(),
-    metaDescription: landingMetaDescription.value.trim(),
-    ogTitle: landingOgTitle.value.trim(),
-    ogDescription: landingOgDescription.value.trim(),
-    ogImage: landingOgImage.value.trim(),
-    canonicalUrl: landingCanonicalUrl.value.trim(),
+    metaDescription: landingMetaDescription.value.trim()
   };
 
   if (slug) payload.slug = slug;
@@ -2379,6 +2382,48 @@ function applyTemplate(name) {
         { label: "See Features", url: "https://example.com/features" },
         { label: "Pricing", url: "https://example.com/pricing" },
         { label: "Book Demo", url: "https://example.com/demo" },
+      ],
+    },
+    agency: {
+      title: "Book More Clients",
+      subtitle: "Agency • Services • Growth",
+      description: "We help brands launch better funnels, websites, and campaigns that turn traffic into revenue.",
+      ctaLabel: "Book a Call",
+      ctaUrl: "https://example.com/book",
+      footer: "Built with Rattle Link",
+      theme: "#a855f7",
+      buttons: [
+        { label: "Services", url: "https://example.com/services" },
+        { label: "Portfolio", url: "https://example.com/portfolio" },
+        { label: "Contact", url: "https://example.com/contact" },
+      ],
+    },
+    music: {
+      title: "New Release Out Now",
+      subtitle: "Artist • Music • Videos",
+      description: "Stream the latest release, watch the video, and follow for updates.",
+      ctaLabel: "Stream Now",
+      ctaUrl: "https://spotify.com/",
+      footer: "Thanks for listening",
+      theme: "#ec4899",
+      buttons: [
+        { label: "Spotify", url: "https://spotify.com/" },
+        { label: "YouTube", url: "https://youtube.com/" },
+        { label: "Instagram", url: "https://instagram.com/" },
+      ],
+    },
+    event: {
+      title: "Join the Event",
+      subtitle: "Live • RSVP • Tickets",
+      description: "Reserve your spot for the upcoming event and get all important links in one place.",
+      ctaLabel: "Get Tickets",
+      ctaUrl: "https://example.com/tickets",
+      footer: "See you there",
+      theme: "#f59e0b",
+      buttons: [
+        { label: "Agenda", url: "https://example.com/agenda" },
+        { label: "Location", url: "https://example.com/location" },
+        { label: "RSVP", url: "https://example.com/rsvp" },
       ],
     },
     minimal: {
