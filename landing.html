@@ -1296,7 +1296,7 @@
 <script>
 const PRIMARY_API = "https://api.rattleshortapi.it.com";
 const PUBLIC_HOST = "https://rattleshortapi.it.com";
-const AUTOSAVE_KEY = "rattle_landing_builder_draft_v6";
+const AUTOSAVE_KEY = "rattle_landing_builder_draft_v7";
 const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
 let landingStore = [];
@@ -1385,11 +1385,7 @@ const domainFilter = $("domainFilter");
 const statusFilter = $("statusFilter");
 
 function normalizeDomain(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/+$/g, "");
+  return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
 }
 
 function normalizePath(value) {
@@ -1414,23 +1410,17 @@ function escapeForJs(str) {
 }
 
 function authHeaders() {
-  const token =
-    localStorage.getItem("rattle_token") ||
-    localStorage.getItem("token") ||
-    "";
+  const token = localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function ensureAuth() {
-  const token =
-    localStorage.getItem("rattle_token") || localStorage.getItem("token");
-
+  const token = localStorage.getItem("rattle_token") || localStorage.getItem("token");
   if (!token) {
     alert("Missing login token. Please log in again.");
     window.location.href = "index.html";
     return false;
   }
-
   return true;
 }
 
@@ -1481,8 +1471,7 @@ function closeModal(modal) {
 }
 
 function syncOverlay() {
-  const anyOpen = [qrModal].some((m) => m.style.display === "block");
-  overlay.style.display = anyOpen ? "block" : "none";
+  overlay.style.display = qrModal.style.display === "block" ? "block" : "none";
 }
 
 function buildQrImageUrl(link, size = 280) {
@@ -1532,18 +1521,9 @@ async function showQR(link, slug = "") {
 }
 
 function downloadCurrentQR() {
-  if (currentQrImageUrl) {
-    const link = document.createElement("a");
-    link.download = getQrFilename(currentQrSlug);
-    link.href = currentQrImageUrl;
-    link.click();
-    return;
-  }
-
-  if (!qrCanvas) return;
   const link = document.createElement("a");
   link.download = getQrFilename(currentQrSlug);
-  link.href = qrCanvas.toDataURL("image/png");
+  link.href = currentQrImageUrl || qrCanvas.toDataURL("image/png");
   link.click();
 }
 
@@ -1569,21 +1549,13 @@ async function safeFetchRaw(path, options = {}) {
 
     return { ok: res.ok, status: res.status, data, raw };
   } catch (e) {
-    return {
-      ok: false,
-      status: 0,
-      data: { message: e?.message || "Failed to fetch" },
-      raw: "",
-    };
+    return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
   }
 }
 
 async function authorizedFetch(path, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
-  const headers = {
-    ...authHeaders(),
-    ...(options.headers || {}),
-  };
+  const headers = { ...authHeaders(), ...(options.headers || {}) };
 
   if (method !== "GET" && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
@@ -1653,20 +1625,13 @@ function normalizeLandingItem(item) {
     createdAt: Number(item.createdAt || item.created_at || 0),
     domain: normalizeDomain(item.domain || ""),
     linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
-
     landingTitle: item.landingTitle || item.landing_title || item.title || "",
-    landingDescription:
-      item.landingDescription ||
-      item.landing_description ||
-      item.description ||
-      "",
+    landingDescription: item.landingDescription || item.landing_description || item.description || "",
     landingImage: item.landingImage || item.landing_image || item.image || "",
     landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
     landingButtons: parseButtonsFromItem(item),
-    landingCtaLabel:
-      item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
-    landingCtaUrl:
-      item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+    landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
+    landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
     landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
     landingHtml: item.landingHtml || item.landing_html || "",
     landingCss: item.landingCss || item.landing_css || "",
@@ -1690,6 +1655,23 @@ function extractListItems(data) {
   return [];
 }
 
+async function hydrateAliasIfMissing(item) {
+  if (item.aliasPath || item.aliasLink || !item.slug) return item;
+
+  const query = item.domain ? `?domain=${encodeURIComponent(item.domain)}` : "";
+  const res = await authorizedFetch(`/landing/${encodeURIComponent(item.slug)}${query}`, { method: "GET" });
+
+  if (!res.ok) return item;
+
+  const hydrated = normalizeLandingItem(res.data || {});
+  return {
+    ...item,
+    ...hydrated,
+    aliasPath: hydrated.aliasPath || item.aliasPath || "",
+    aliasLink: hydrated.aliasLink || buildAliasLink(hydrated) || "",
+  };
+}
+
 async function loadLandings() {
   const res = await authorizedFetch("/list", { method: "GET" });
 
@@ -1702,10 +1684,13 @@ async function loadLandings() {
 
   const items = extractListItems(res.data);
 
-  landingStore = items
+  let normalized = items
     .map(normalizeLandingItem)
-    .filter((item) => item.linkType === "landing")
-    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    .filter((item) => item.linkType === "landing");
+
+  normalized = await Promise.all(normalized.map(hydrateAliasIfMissing));
+
+  landingStore = normalized.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
   renderLandingTable();
   updateStats();
@@ -1713,10 +1698,7 @@ async function loadLandings() {
 
 function updateStats() {
   totalLandings.textContent = landingStore.length;
-  totalLandingClicks.textContent = landingStore.reduce(
-    (sum, item) => sum + Number(item.clicks || 0),
-    0
-  );
+  totalLandingClicks.textContent = landingStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
   activeLandings.textContent = landingStore.filter(
     (item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())
   ).length;
@@ -1735,17 +1717,9 @@ function renderLandingTable() {
     const alias = String(item.aliasPath || item.aliasLink || "").toLowerCase();
 
     const isPaused = !!item.paused;
-    const statusMatch =
-      statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
-
+    const statusMatch = statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
     const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
-    const queryMatch =
-      !q ||
-      slug.includes(q) ||
-      alias.includes(q) ||
-      title.includes(q) ||
-      url.includes(q) ||
-      domain.includes(q);
+    const queryMatch = !q || slug.includes(q) || alias.includes(q) || title.includes(q) || url.includes(q) || domain.includes(q);
 
     return domainMatch && queryMatch && statusMatch;
   });
@@ -1755,24 +1729,17 @@ function renderLandingTable() {
     return;
   }
 
-  landingTable.innerHTML = filtered
-    .map((item) => {
-      const publicLink = buildPublicLink(item);
-      const aliasLink = buildAliasLink(item);
-      const aliasText = normalizePath(item.aliasPath || "");
-      const statusHtml = item.paused
-        ? `<span class="badge pending">Paused</span>`
-        : `<span class="badge live">Live</span>`;
+  landingTable.innerHTML = filtered.map((item) => {
+    const publicLink = buildPublicLink(item);
+    const aliasLink = buildAliasLink(item);
+    const aliasText = normalizePath(item.aliasPath || "");
+    const statusHtml = item.paused ? `<span class="badge pending">Paused</span>` : `<span class="badge live">Live</span>`;
 
-      return `
+    return `
 <tr>
   <td>
     <div class="table-title">${escapeHtml(item.slug)}</div>
-    ${
-      aliasText
-        ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
-        : `<div class="muted">Alias missing. Refresh after backend update.</div>`
-    }
+    ${aliasText ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>` : `<div class="muted">Alias missing</div>`}
   </td>
 
   <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
@@ -1801,7 +1768,7 @@ function renderLandingTable() {
                 <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(aliasLink)}</a>
               </div>
             </div>`
-          : `<div class="muted">Alias link not returned by /list yet.</div>`
+          : `<div class="muted">Alias link not found yet.</div>`
       }
     </div>
   </td>
@@ -1822,17 +1789,14 @@ function renderLandingTable() {
     </div>
   </td>
 </tr>`;
-    })
-    .join("");
+  }).join("");
 }
 
 function updatePreviewDevice(device) {
   previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
   previewWrap.classList.add(`device-${device}`);
 
-  [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
-    btn.classList.remove("active")
-  );
+  [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) => btn.classList.remove("active"));
 
   if (device === "desktop") desktopViewBtn.classList.add("active");
   if (device === "tablet") tabletViewBtn.classList.add("active");
@@ -1881,27 +1845,24 @@ function renderDynamicButtons() {
     return;
   }
 
-  dynamicButtons.innerHTML = dynamicButtonsStore
-    .map(
-      (btn, index) => `
-      <div class="button-item">
-        <div class="button-item-head">
-          <div><b>Extra Button ${index + 1}</b></div>
-          <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
+  dynamicButtons.innerHTML = dynamicButtonsStore.map((btn, index) => `
+    <div class="button-item">
+      <div class="button-item-head">
+        <div><b>Extra Button ${index + 1}</b></div>
+        <button type="button" class="danger-btn" onclick="removeDynamicButton(${index})">Remove</button>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="dynBtnLabel_${index}">Label</label>
+          <input id="dynBtnLabel_${index}" value="${escapeHtml(btn.label || "")}" placeholder="Button label" />
         </div>
-        <div class="form-row">
-          <div class="field">
-            <label for="dynBtnLabel_${index}">Label</label>
-            <input id="dynBtnLabel_${index}" value="${escapeHtml(btn.label || "")}" placeholder="Button label" />
-          </div>
-          <div class="field">
-            <label for="dynBtnUrl_${index}">URL</label>
-            <input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." />
-          </div>
+        <div class="field">
+          <label for="dynBtnUrl_${index}">URL</label>
+          <input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." />
         </div>
-      </div>`
-    )
-    .join("");
+      </div>
+    </div>
+  `).join("");
 
   dynamicButtons.querySelectorAll("input").forEach((el) => {
     el.addEventListener("input", () => {
@@ -1914,34 +1875,27 @@ function renderDynamicButtons() {
 function getLandingButtons() {
   const buttons = [];
 
-  const b1Label = landingButtonLabel1.value.trim();
-  const b1Url = landingButtonUrl1.value.trim();
-  if (b1Label && b1Url) buttons.push({ label: b1Label, url: b1Url });
+  if (landingButtonLabel1.value.trim() && landingButtonUrl1.value.trim()) {
+    buttons.push({ label: landingButtonLabel1.value.trim(), url: landingButtonUrl1.value.trim() });
+  }
 
-  const b2Label = landingButtonLabel2.value.trim();
-  const b2Url = landingButtonUrl2.value.trim();
-  if (b2Label && b2Url) buttons.push({ label: b2Label, url: b2Url });
+  if (landingButtonLabel2.value.trim() && landingButtonUrl2.value.trim()) {
+    buttons.push({ label: landingButtonLabel2.value.trim(), url: landingButtonUrl2.value.trim() });
+  }
 
   return buttons.concat(getDynamicButtons());
 }
 
 async function setPrimaryDomain() {
   const domain = normalizeDomain(landingDomain.value);
-
-  if (!domain) {
-    showToast("Select a domain first");
-    return;
-  }
+  if (!domain) return showToast("Select a domain first");
 
   const res = await authorizedFetch("/domains/set-primary", {
     method: "POST",
     body: JSON.stringify({ domain }),
   });
 
-  if (!res.ok) {
-    showToast(res.data?.message || "Failed to set primary");
-    return;
-  }
+  if (!res.ok) return showToast(res.data?.message || "Failed to set primary");
 
   showToast("Primary domain updated");
   await loadDomains();
@@ -1960,14 +1914,8 @@ function collectDraft() {
     ctaLabel: landingCtaLabel.value.trim(),
     ctaUrl: landingCtaUrl.value.trim(),
     footer: landingFooter.value.trim(),
-    buttonsQuick1: {
-      label: landingButtonLabel1.value.trim(),
-      url: landingButtonUrl1.value.trim(),
-    },
-    buttonsQuick2: {
-      label: landingButtonLabel2.value.trim(),
-      url: landingButtonUrl2.value.trim(),
-    },
+    buttonsQuick1: { label: landingButtonLabel1.value.trim(), url: landingButtonUrl1.value.trim() },
+    buttonsQuick2: { label: landingButtonLabel2.value.trim(), url: landingButtonUrl2.value.trim() },
     extraButtons: getDynamicButtons(),
     metaTitle: landingMetaTitle.value.trim(),
     metaDescription: landingMetaDescription.value.trim(),
@@ -1986,12 +1934,8 @@ function collectDraft() {
 
 function saveDraft() {
   if (!autosaveEnabled) return;
-
   try {
-    localStorage.setItem(
-      AUTOSAVE_KEY,
-      JSON.stringify({ savedAt: Date.now(), data: collectDraft() })
-    );
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: Date.now(), data: collectDraft() }));
     setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
   } catch {}
 }
@@ -2033,17 +1977,10 @@ function loadDraft() {
     cardStyle.value = d.cardStyle || "glass";
     buttonStyle.value = d.buttonStyle || "rounded";
 
-    dynamicButtonsStore = Array.isArray(d.extraButtons)
-      ? d.extraButtons.slice(0, 20)
-      : [];
-
+    dynamicButtonsStore = Array.isArray(d.extraButtons) ? d.extraButtons.slice(0, 20) : [];
     renderDynamicButtons();
 
-    const when = parsed?.savedAt
-      ? new Date(parsed.savedAt).toLocaleString()
-      : "previous session";
-
-    setDraftIndicator("Draft", `Restored from ${when}`);
+    setDraftIndicator("Draft", `Restored from ${parsed?.savedAt ? new Date(parsed.savedAt).toLocaleString() : "previous session"}`);
     return true;
   } catch {
     return false;
@@ -2100,35 +2037,28 @@ function getPayload({ requireSlug = false } = {}) {
   };
 
   if (slug) payload.slug = slug;
-
   return payload;
 }
 
 function getGeneratedPreviewHtml() {
   const data = collectDraft();
-
   const title = escapeHtml(data.title || data.slug || "Landing Page");
   const subtitle = escapeHtml(data.subtitle || "");
   const description = escapeHtml(data.description || "");
   const theme = escapeHtml(data.theme || "#00ffff");
   const image = String(data.image || "").trim();
   const footer = escapeHtml(data.footer || "Powered by Rattle Link");
-  const ctaLabel = escapeHtml(data.ctaLabel || "");
-  const ctaUrl = String(data.ctaUrl || "").trim();
   const buttons = getLandingButtons();
   const customCss = String(data.landingCss || "");
   const customJs = String(data.landingJs || "");
 
-  const buttonsHtml = buttons
-    .map(
-      (btn) => `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
-    )
-    .join("");
+  const buttonsHtml = buttons.map((btn) =>
+    `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
+  ).join("");
 
-  const ctaHtml =
-    ctaLabel && ctaUrl
-      ? `<a class="btn cta locked-link" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${ctaLabel}</a>`
-      : "";
+  const ctaHtml = data.ctaLabel && data.ctaUrl
+    ? `<a class="btn cta locked-link" href="${escapeHtml(data.ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.ctaLabel)}</a>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2170,9 +2100,7 @@ ${customCss}
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer><\/script>
   <script>
     function rattleTurnstileDone(){
-      document.querySelectorAll(".locked-link").forEach(function(a){
-        a.classList.add("ready");
-      });
+      document.querySelectorAll(".locked-link").forEach(function(a){ a.classList.add("ready"); });
     }
   <\/script>
 </body>
@@ -2195,30 +2123,16 @@ function renderPreview() {
 }
 
 function clearForm() {
-  landingSlug.value = "";
-  advancedSlug.value = "";
+  [
+    landingSlug, advancedSlug, landingTitle, landingSubtitle, landingDescription,
+    landingImage, landingCtaLabel, landingCtaUrl, landingFooter,
+    landingButtonLabel1, landingButtonUrl1, landingButtonLabel2, landingButtonUrl2,
+    landingMetaTitle, landingMetaDescription, landingOgTitle, landingOgDescription,
+    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs
+  ].forEach((el) => el.value = "");
+
   landingDomain.value = "";
-  landingTitle.value = "";
-  landingSubtitle.value = "";
-  landingDescription.value = "";
-  landingImage.value = "";
   landingTheme.value = "#00ffff";
-  landingCtaLabel.value = "";
-  landingCtaUrl.value = "";
-  landingFooter.value = "";
-  landingButtonLabel1.value = "";
-  landingButtonUrl1.value = "";
-  landingButtonLabel2.value = "";
-  landingButtonUrl2.value = "";
-  landingMetaTitle.value = "";
-  landingMetaDescription.value = "";
-  landingOgTitle.value = "";
-  landingOgDescription.value = "";
-  landingOgImage.value = "";
-  landingCanonicalUrl.value = "";
-  landingHtml.value = "";
-  landingCss.value = "";
-  landingJs.value = "";
   bgStyle.value = "radial";
   cardStyle.value = "glass";
   buttonStyle.value = "rounded";
@@ -2252,26 +2166,18 @@ function fillForm(item) {
   landingHtml.value = item.landingHtml || "";
   landingCss.value = item.landingCss || "";
   landingJs.value = item.landingJs || "";
-  bgStyle.value = item.bgStyle || "radial";
-  cardStyle.value = item.cardStyle || "glass";
-  buttonStyle.value = item.buttonStyle || "rounded";
 
   const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
   landingButtonLabel1.value = buttons[0]?.label || "";
   landingButtonUrl1.value = buttons[0]?.url || "";
   landingButtonLabel2.value = buttons[1]?.label || "";
   landingButtonUrl2.value = buttons[1]?.url || "";
-
-  dynamicButtonsStore = buttons.slice(2).map((btn) => ({
-    label: btn.label || "",
-    url: btn.url || "",
-  }));
+  dynamicButtonsStore = buttons.slice(2).map((btn) => ({ label: btn.label || "", url: btn.url || "" }));
 
   renderDynamicButtons();
   renderPreview();
   saveDraft();
   showToast("Landing loaded");
-  setBuilderStatus("Landing loaded into builder.");
 }
 
 async function createLanding() {
@@ -2289,7 +2195,6 @@ async function createLanding() {
 
   if (!res.ok) {
     setResult(res.data?.message || "Landing create failed", true);
-    setBuilderStatus("Create failed.");
     return;
   }
 
@@ -2299,12 +2204,8 @@ async function createLanding() {
   if (res.data?.slug) landingSlug.value = res.data.slug;
   if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-  setResult(
-    `Landing created:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
-    false
-  );
+  setResult(`Landing created:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`, false);
 
-  setBuilderStatus("Landing created successfully.");
   saveDraft();
   await loadAll(false);
   showQR(publicLink, res.data?.slug || payload.slug || "landing");
@@ -2325,7 +2226,6 @@ async function updateLanding() {
 
   if (!res.ok) {
     setResult(res.data?.message || "Landing update failed", true);
-    setBuilderStatus("Update failed.");
     return;
   }
 
@@ -2334,12 +2234,8 @@ async function updateLanding() {
 
   if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-  setResult(
-    `Landing updated:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`,
-    false
-  );
+  setResult(`Landing updated:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`, false);
 
-  setBuilderStatus("Landing updated successfully.");
   saveDraft();
   await loadAll(false);
   showQR(publicLink, payload.slug);
@@ -2353,10 +2249,7 @@ async function deleteLanding(slug, domain = "") {
     body: JSON.stringify({ slug, domain }),
   });
 
-  if (!res.ok) {
-    showToast(res.data?.message || "Delete failed");
-    return;
-  }
+  if (!res.ok) return showToast(res.data?.message || "Delete failed");
 
   showToast("Landing deleted");
   await loadAll(false);
@@ -2386,15 +2279,13 @@ async function loadDomains() {
 
   const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
 
-  domainsStore = domains
-    .map((d) => ({
-      ...d,
-      domain: normalizeDomain(d.domain || ""),
-      status: String(d.status || "pending").toLowerCase(),
-      isPrimary: !!(d.isPrimary || d.is_primary),
-      createdAt: Number(d.createdAt || d.created_at || 0),
-    }))
-    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  domainsStore = domains.map((d) => ({
+    ...d,
+    domain: normalizeDomain(d.domain || ""),
+    status: String(d.status || "pending").toLowerCase(),
+    isPrimary: !!(d.isPrimary || d.is_primary),
+    createdAt: Number(d.createdAt || d.created_at || 0),
+  })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
   renderDomainSelectors();
 }
@@ -2402,35 +2293,18 @@ async function loadDomains() {
 function renderDomainSelectors() {
   const verifiedDomains = domainsStore.filter((d) => d.status === "verified");
   const primary = verifiedDomains.find((d) => d.isPrimary);
-
   const selectedDomain = restoredDraftDomain || landingDomain.value;
   const selectedFilter = domainFilter.value;
 
   landingDomain.innerHTML = ['<option value="">Default domain</option>']
-    .concat(
-      verifiedDomains.map(
-        (d) =>
-          `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${
-            d.isPrimary ? " (Primary)" : ""
-          }</option>`
-      )
-    )
+    .concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`))
     .join("");
 
   domainFilter.innerHTML = ['<option value="all">All domains</option>']
-    .concat(
-      verifiedDomains.map(
-        (d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
-      )
-    )
+    .concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`))
     .join("");
 
-  if ([...landingDomain.options].some((o) => o.value === selectedDomain)) {
-    landingDomain.value = selectedDomain;
-  } else {
-    landingDomain.value = "";
-  }
-
+  landingDomain.value = [...landingDomain.options].some((o) => o.value === selectedDomain) ? selectedDomain : "";
   restoredDraftDomain = "";
 
   if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
@@ -2443,15 +2317,10 @@ function renderDomainSelectors() {
 
 function editLandingByKey(slug, domain) {
   const item = landingStore.find(
-    (x) =>
-      String(x.slug || "") === String(slug || "") &&
-      normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+    (x) => String(x.slug || "") === String(slug || "") && normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
   );
 
-  if (!item) {
-    showToast("Landing not found");
-    return;
-  }
+  if (!item) return showToast("Landing not found");
 
   fillForm(item);
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2475,8 +2344,7 @@ function applyTemplate(name) {
     creator: {
       title: "Your Name",
       subtitle: "Creator • Content • Socials",
-      description:
-        "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+      description: "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
       ctaLabel: "Watch Latest Video",
       ctaUrl: "https://youtube.com/",
       footer: "Thanks for visiting",
@@ -2490,8 +2358,7 @@ function applyTemplate(name) {
     product: {
       title: "Launch Your Product Faster",
       subtitle: "New release",
-      description:
-        "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+      description: "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
       ctaLabel: "Start Free Trial",
       ctaUrl: "https://example.com/signup",
       footer: "Built with Rattle Link",
@@ -2500,51 +2367,6 @@ function applyTemplate(name) {
         { label: "See Features", url: "https://example.com/features" },
         { label: "Pricing", url: "https://example.com/pricing" },
         { label: "Book Demo", url: "https://example.com/demo" },
-      ],
-    },
-    agency: {
-      title: "We Build Brands That Convert",
-      subtitle: "Agency • Design • Growth",
-      description:
-        "We help founders and creators scale with better branding, websites, funnels, and creative campaigns.",
-      ctaLabel: "Book a Call",
-      ctaUrl: "https://calendly.com/",
-      footer: "Agency inquiries welcome",
-      theme: "#a855f7",
-      buttons: [
-        { label: "Portfolio", url: "https://example.com/portfolio" },
-        { label: "Testimonials", url: "https://example.com/reviews" },
-        { label: "Services", url: "https://example.com/services" },
-      ],
-    },
-    music: {
-      title: "New Single Out Now",
-      subtitle: "Artist • Music • Streaming",
-      description:
-        "Stream my latest release, watch the music video, and follow me everywhere.",
-      ctaLabel: "Listen Now",
-      ctaUrl: "https://spotify.com/",
-      footer: "Thank you for the support",
-      theme: "#ec4899",
-      buttons: [
-        { label: "Spotify", url: "https://spotify.com/" },
-        { label: "Apple Music", url: "https://music.apple.com/" },
-        { label: "YouTube", url: "https://youtube.com/" },
-      ],
-    },
-    event: {
-      title: "Join Our Live Event",
-      subtitle: "Limited seats",
-      description:
-        "Reserve your spot for our upcoming event and get access to special sessions, networking, and more.",
-      ctaLabel: "Reserve My Spot",
-      ctaUrl: "https://eventbrite.com/",
-      footer: "See you there",
-      theme: "#f59e0b",
-      buttons: [
-        { label: "Agenda", url: "https://example.com/agenda" },
-        { label: "Speakers", url: "https://example.com/speakers" },
-        { label: "Venue", url: "https://example.com/location" },
       ],
     },
     minimal: {
@@ -2563,8 +2385,7 @@ function applyTemplate(name) {
     },
   };
 
-  const t = templates[name];
-  if (!t) return;
+  const t = templates[name] || templates.minimal;
 
   landingTitle.value = t.title || "";
   landingSubtitle.value = t.subtitle || "";
@@ -2582,54 +2403,29 @@ function applyTemplate(name) {
   renderDynamicButtons();
   renderPreview();
   triggerAutosave();
-  showToast(`Template loaded: ${name}`);
 }
 
 function attachLivePreview() {
   [
-    landingSlug,
-    advancedSlug,
-    landingDomain,
-    landingTitle,
-    landingSubtitle,
-    landingDescription,
-    landingImage,
-    landingTheme,
-    landingCtaLabel,
-    landingCtaUrl,
-    landingFooter,
-    landingButtonLabel1,
-    landingButtonUrl1,
-    landingButtonLabel2,
-    landingButtonUrl2,
-    landingMetaTitle,
-    landingMetaDescription,
-    landingOgTitle,
-    landingOgDescription,
-    landingOgImage,
-    landingCanonicalUrl,
-    landingHtml,
-    landingCss,
-    landingJs,
-    bgStyle,
-    cardStyle,
-    buttonStyle,
+    landingSlug, advancedSlug, landingDomain, landingTitle, landingSubtitle,
+    landingDescription, landingImage, landingTheme, landingCtaLabel,
+    landingCtaUrl, landingFooter, landingButtonLabel1, landingButtonUrl1,
+    landingButtonLabel2, landingButtonUrl2, landingMetaTitle,
+    landingMetaDescription, landingOgTitle, landingOgDescription,
+    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs,
+    bgStyle, cardStyle, buttonStyle
   ].forEach((el) => {
     el.addEventListener("input", () => {
       clearTimeout(window.__landingPreviewTimer);
       window.__landingPreviewTimer = setTimeout(() => {
-        try {
-          renderPreview();
-          triggerAutosave();
-        } catch {}
+        renderPreview();
+        triggerAutosave();
       }, 220);
     });
 
     el.addEventListener("change", () => {
-      try {
-        renderPreview();
-        triggerAutosave();
-      } catch {}
+      renderPreview();
+      triggerAutosave();
     });
   });
 }
@@ -2649,7 +2445,6 @@ function setupEvents() {
 
   openPreviewBtn.addEventListener("click", () => {
     if (!landingPreviewFrame.srcdoc) renderPreview();
-
     const win = window.open("", "_blank");
     if (win) {
       win.document.open();
@@ -2673,21 +2468,10 @@ function setupEvents() {
   presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
   presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
 
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setTab(btn.dataset.tab));
-  });
+  document.querySelectorAll(".tab-btn").forEach((btn) => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+  document.querySelectorAll(".template-card").forEach((card) => card.addEventListener("click", () => applyTemplate(card.dataset.template)));
 
   setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
-
-  document.querySelectorAll(".template-card").forEach((card) => {
-    card.addEventListener("click", () => applyTemplate(card.dataset.template));
-  });
-
-  [landingSlug, landingTitle, landingDescription].forEach((el) => {
-    el.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") renderPreview();
-    });
-  });
 
   $("closeQrModalBtn").addEventListener("click", () => closeModal(qrModal));
   $("downloadQrBtn").addEventListener("click", downloadCurrentQR);
