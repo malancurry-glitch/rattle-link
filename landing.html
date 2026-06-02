@@ -1294,10 +1294,9 @@
     <div class="toast" id="toast">Copied!</div>
 
 <script>
-/* IMPORTANT: this version always shows Copy Alias/Open Alias buttons */
 const PRIMARY_API = "https://api.rattleshortapi.it.com";
 const PUBLIC_HOST = "https://rattleshortapi.it.com";
-const AUTOSAVE_KEY = "rattle_landing_builder_draft_v8";
+const AUTOSAVE_KEY = "rattle_landing_builder_draft_v7";
 const TURNSTILE_SITE_KEY = "0x4AAAAAADbwW35706G-URSl";
 
 let landingStore = [];
@@ -1386,11 +1385,7 @@ const domainFilter = $("domainFilter");
 const statusFilter = $("statusFilter");
 
 function normalizeDomain(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/+$/g, "");
+  return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
 }
 
 function normalizePath(value) {
@@ -1415,23 +1410,17 @@ function escapeForJs(str) {
 }
 
 function authHeaders() {
-  const token =
-    localStorage.getItem("rattle_token") ||
-    localStorage.getItem("token") ||
-    "";
+  const token = localStorage.getItem("rattle_token") || localStorage.getItem("token") || "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function ensureAuth() {
-  const token =
-    localStorage.getItem("rattle_token") || localStorage.getItem("token");
-
+  const token = localStorage.getItem("rattle_token") || localStorage.getItem("token");
   if (!token) {
     alert("Missing login token. Please log in again.");
     window.location.href = "index.html";
     return false;
   }
-
   return true;
 }
 
@@ -1443,9 +1432,7 @@ function fmtDate(ts) {
 
 function setBusy(button, busy, text = "") {
   if (!button) return;
-  if (!button.dataset.originalText) {
-    button.dataset.originalText = button.textContent;
-  }
+  if (!button.dataset.originalText) button.dataset.originalText = button.textContent;
   button.disabled = !!busy;
   button.textContent = busy ? text : button.dataset.originalText;
 }
@@ -1488,9 +1475,7 @@ function syncOverlay() {
 }
 
 function buildQrImageUrl(link, size = 280) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-    String(link || "").trim()
-  )}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(String(link || "").trim())}`;
 }
 
 function getQrFilename(slug = "landing") {
@@ -1516,23 +1501,13 @@ async function showQR(link, slug = "") {
   currentQrImageUrl = buildQrImageUrl(safeLink, 280);
 
   qrLink.textContent = safeLink;
-  qrImageUrl.innerHTML = `<a href="${escapeHtml(
-    currentQrImageUrl
-  )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-    currentQrImageUrl
-  )}</a>`;
+  qrImageUrl.innerHTML = `<a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>`;
 
   qrMetaDetails.innerHTML = `
     <div class="muted"><b>Slug:</b> ${escapeHtml(slug || "-")}</div>
-    <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(
-      safeLink
-    )}</div>
+    <div class="muted" style="margin-top:8px;"><b>Destination:</b> ${escapeHtml(safeLink)}</div>
     <div class="muted" style="margin-top:8px;"><b>QR image URL:</b><br>
-      <a href="${escapeHtml(
-        currentQrImageUrl
-      )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-    currentQrImageUrl
-  )}</a>
+      <a href="${escapeHtml(currentQrImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(currentQrImageUrl)}</a>
     </div>
   `;
 
@@ -1574,12 +1549,7 @@ async function safeFetchRaw(path, options = {}) {
 
     return { ok: res.ok, status: res.status, data, raw };
   } catch (e) {
-    return {
-      ok: false,
-      status: 0,
-      data: { message: e?.message || "Failed to fetch" },
-      raw: "",
-    };
+    return { ok: false, status: 0, data: { message: e?.message || "Failed to fetch" }, raw: "" };
   }
 }
 
@@ -1596,11 +1566,9 @@ async function authorizedFetch(path, options = {}) {
 
 function buildPublicLink(item) {
   if (item.publicLink) return String(item.publicLink);
-
   const slug = normalizePath(item.slug || "");
   const domain = normalizeDomain(item.domain || "");
   if (!slug) return "#";
-
   const base = domain ? `https://${domain}` : PUBLIC_HOST.replace(/\/+$/, "");
   return `${base}/${slug}`;
 }
@@ -1628,16 +1596,11 @@ function parseButtonsFromItem(item) {
     if (Array.isArray(item.landingButtons)) return item.landingButtons;
     if (Array.isArray(item.buttons)) return item.buttons;
     if (Array.isArray(item.landing_buttons)) return item.landing_buttons;
-
-    if (
-      typeof item.landing_buttons === "string" &&
-      item.landing_buttons.trim()
-    ) {
+    if (typeof item.landing_buttons === "string" && item.landing_buttons.trim()) {
       const parsed = JSON.parse(item.landing_buttons);
       return Array.isArray(parsed) ? parsed : [];
     }
   } catch {}
-
   return [];
 }
 
@@ -1649,7 +1612,7 @@ function normalizeLandingItem(item) {
     item.advancedSlug ||
     "";
 
-  const normalized = {
+  return {
     ...item,
     slug: item.slug || "",
     aliasPath,
@@ -1662,21 +1625,13 @@ function normalizeLandingItem(item) {
     createdAt: Number(item.createdAt || item.created_at || 0),
     domain: normalizeDomain(item.domain || ""),
     linkType: String(item.linkType || item.link_type || "redirect").toLowerCase(),
-
     landingTitle: item.landingTitle || item.landing_title || item.title || "",
-    landingDescription:
-      item.landingDescription ||
-      item.landing_description ||
-      item.description ||
-      "",
+    landingDescription: item.landingDescription || item.landing_description || item.description || "",
     landingImage: item.landingImage || item.landing_image || item.image || "",
-    landingTheme:
-      item.landingTheme || item.landing_theme || item.theme || "#00ffff",
+    landingTheme: item.landingTheme || item.landing_theme || item.theme || "#00ffff",
     landingButtons: parseButtonsFromItem(item),
-    landingCtaLabel:
-      item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
-    landingCtaUrl:
-      item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
+    landingCtaLabel: item.landingCtaLabel || item.landing_cta_label || item.ctaLabel || "",
+    landingCtaUrl: item.landingCtaUrl || item.landing_cta_url || item.ctaUrl || "",
     landingFooter: item.landingFooter || item.landing_footer || item.footer || "",
     landingHtml: item.landingHtml || item.landing_html || "",
     landingCss: item.landingCss || item.landing_css || "",
@@ -1684,17 +1639,11 @@ function normalizeLandingItem(item) {
     metaTitle: item.metaTitle || item.landing_meta_title || "",
     metaDescription: item.metaDescription || item.landing_meta_description || "",
     subtitle: item.subtitle || "",
-    ogTitle: item.ogTitle || item.landing_og_title || "",
-    ogDescription: item.ogDescription || item.landing_og_description || "",
-    ogImage: item.ogImage || item.landing_og_image || "",
-    canonicalUrl: item.canonicalUrl || item.landing_canonical_url || "",
+    ogTitle: item.ogTitle || "",
+    ogDescription: item.ogDescription || "",
+    ogImage: item.ogImage || "",
+    canonicalUrl: item.canonicalUrl || "",
   };
-
-  if (!normalized.aliasLink && normalized.aliasPath) {
-    normalized.aliasLink = buildAliasLink(normalized);
-  }
-
-  return normalized;
 }
 
 function extractListItems(data) {
@@ -1710,15 +1659,11 @@ async function hydrateAliasIfMissing(item) {
   if (item.aliasPath || item.aliasLink || !item.slug) return item;
 
   const query = item.domain ? `?domain=${encodeURIComponent(item.domain)}` : "";
-  const res = await authorizedFetch(
-    `/landing/${encodeURIComponent(item.slug)}${query}`,
-    { method: "GET" }
-  );
+  const res = await authorizedFetch(`/landing/${encodeURIComponent(item.slug)}${query}`, { method: "GET" });
 
   if (!res.ok) return item;
 
   const hydrated = normalizeLandingItem(res.data || {});
-
   return {
     ...item,
     ...hydrated,
@@ -1732,9 +1677,7 @@ async function loadLandings() {
 
   if (!res.ok) {
     landingStore = [];
-    landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">Failed to load landing pages: ${escapeHtml(
-      res.data?.message || "Check /list endpoint"
-    )}</div></td></tr>`;
+    landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">Failed to load landing pages: ${escapeHtml(res.data?.message || "Check /list endpoint")}</div></td></tr>`;
     updateStats();
     return;
   }
@@ -1747,9 +1690,7 @@ async function loadLandings() {
 
   normalized = await Promise.all(normalized.map(hydrateAliasIfMissing));
 
-  landingStore = normalized.sort(
-    (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)
-  );
+  landingStore = normalized.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
   renderLandingTable();
   updateStats();
@@ -1757,19 +1698,10 @@ async function loadLandings() {
 
 function updateStats() {
   totalLandings.textContent = landingStore.length;
-  totalLandingClicks.textContent = landingStore.reduce(
-    (sum, item) => sum + Number(item.clicks || 0),
-    0
-  );
-
+  totalLandingClicks.textContent = landingStore.reduce((sum, item) => sum + Number(item.clicks || 0), 0);
   activeLandings.textContent = landingStore.filter(
-    (item) =>
-      !item.paused && (!item.expire || Number(item.expire) > Date.now())
+    (item) => !item.paused && (!item.expire || Number(item.expire) > Date.now())
   ).length;
-}
-
-function aliasUnavailable() {
-  showToast("Alias link not available yet");
 }
 
 function renderLandingTable() {
@@ -1785,18 +1717,9 @@ function renderLandingTable() {
     const alias = String(item.aliasPath || item.aliasLink || "").toLowerCase();
 
     const isPaused = !!item.paused;
-    const statusMatch =
-      statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
-
+    const statusMatch = statusOnly === "all" ? true : statusOnly === "paused" ? isPaused : !isPaused;
     const domainMatch = domainOnly === "all" ? true : domain === domainOnly;
-
-    const queryMatch =
-      !q ||
-      slug.includes(q) ||
-      alias.includes(q) ||
-      title.includes(q) ||
-      url.includes(q) ||
-      domain.includes(q);
+    const queryMatch = !q || slug.includes(q) || alias.includes(q) || title.includes(q) || url.includes(q) || domain.includes(q);
 
     return domainMatch && queryMatch && statusMatch;
   });
@@ -1806,43 +1729,24 @@ function renderLandingTable() {
     return;
   }
 
-  landingTable.innerHTML = filtered
-    .map((item) => {
-      const publicLink = buildPublicLink(item);
-      const aliasLink = buildAliasLink(item);
-      const aliasText = normalizePath(item.aliasPath || "");
-      const statusHtml = item.paused
-        ? `<span class="badge pending">Paused</span>`
-        : `<span class="badge live">Live</span>`;
+  landingTable.innerHTML = filtered.map((item) => {
+    const publicLink = buildPublicLink(item);
+    const aliasLink = buildAliasLink(item);
+    const aliasText = normalizePath(item.aliasPath || "");
+    const statusHtml = item.paused ? `<span class="badge pending">Paused</span>` : `<span class="badge live">Live</span>`;
 
-      const copyAliasAction = aliasLink
-        ? `copyText('${escapeForJs(aliasLink)}')`
-        : `aliasUnavailable()`;
-
-      const openAliasAction = aliasLink
-        ? `openLink('${escapeForJs(aliasLink)}')`
-        : `aliasUnavailable()`;
-
-      return `
+    return `
 <tr>
   <td>
     <div class="table-title">${escapeHtml(item.slug)}</div>
-    ${
-      aliasText
-        ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>`
-        : `<div class="muted">Alias missing</div>`
-    }
+    ${aliasText ? `<div class="muted">Alias path:<br>${escapeHtml(aliasText)}</div>` : `<div class="muted">Alias missing</div>`}
   </td>
 
   <td>${item.domain ? escapeHtml(item.domain) : '<span class="muted">Default</span>'}</td>
 
   <td>
     <div class="table-title">${escapeHtml(item.landingTitle || "-")}</div>
-    ${
-      item.landingDescription
-        ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>`
-        : ""
-    }
+    ${item.landingDescription ? `<div class="muted">${escapeHtml(item.landingDescription)}</div>` : ""}
   </td>
 
   <td>${Number(item.clicks || 0)}</td>
@@ -1864,7 +1768,7 @@ function renderLandingTable() {
                 <a href="${escapeHtml(aliasLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(aliasLink)}</a>
               </div>
             </div>`
-          : `<div class="muted">Alias link not available yet.</div>`
+          : `<div class="muted">Alias link not found yet.</div>`
       }
     </div>
   </td>
@@ -1876,30 +1780,35 @@ function renderLandingTable() {
     <div class="actions">
       <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
       <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy Public</button>
-      <button type="button" class="copy" onclick="${copyAliasAction}">Copy Alias</button>
+      <button
+  type="button"
+  class="copy"
+  onclick="${aliasLink ? `copyText('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
+>
+  Copy Alias
+</button>
       <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(publicLink)}','${escapeForJs(item.slug)}')">QR Public</button>
-      ${
-        aliasLink
-          ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(aliasLink)}','${escapeForJs(item.slug)}-alias')">QR Alias</button>`
-          : `<button type="button" class="purple-btn" onclick="aliasUnavailable()">QR Alias</button>`
-      }
+      ${aliasLink ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(aliasLink)}','${escapeForJs(item.slug)}-alias')">QR Alias</button>` : ""}
       <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open Public</button>
-      <button type="button" class="open" onclick="${openAliasAction}">Open Alias</button>
+      <button
+  type="button"
+  class="open"
+  onclick="${aliasLink ? `openLink('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
+>
+  Open Alias
+</button>
       <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
     </div>
   </td>
 </tr>`;
-    })
-    .join("");
+  }).join("");
 }
 
 function updatePreviewDevice(device) {
   previewWrap.classList.remove("device-desktop", "device-tablet", "device-mobile");
   previewWrap.classList.add(`device-${device}`);
 
-  [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) =>
-    btn.classList.remove("active")
-  );
+  [desktopViewBtn, tabletViewBtn, mobileViewBtn].forEach((btn) => btn.classList.remove("active"));
 
   if (device === "desktop") desktopViewBtn.classList.add("active");
   if (device === "tablet") tabletViewBtn.classList.add("active");
@@ -1910,7 +1819,6 @@ function setTab(tabId) {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
   });
-
   document.querySelectorAll(".tab-panel").forEach((panel) => {
     panel.classList.toggle("active", panel.id === tabId);
   });
@@ -1921,7 +1829,6 @@ function getDynamicButtons() {
     .map((btn, index) => {
       const labelEl = $(`dynBtnLabel_${index}`);
       const urlEl = $(`dynBtnUrl_${index}`);
-
       return {
         label: String(labelEl?.value || "").trim(),
         url: String(urlEl?.value || "").trim(),
@@ -1950,9 +1857,7 @@ function renderDynamicButtons() {
     return;
   }
 
-  dynamicButtons.innerHTML = dynamicButtonsStore
-    .map(
-      (btn, index) => `
+  dynamicButtons.innerHTML = dynamicButtonsStore.map((btn, index) => `
     <div class="button-item">
       <div class="button-item-head">
         <div><b>Extra Button ${index + 1}</b></div>
@@ -1968,9 +1873,8 @@ function renderDynamicButtons() {
           <input id="dynBtnUrl_${index}" value="${escapeHtml(btn.url || "")}" placeholder="https://..." />
         </div>
       </div>
-    </div>`
-    )
-    .join("");
+    </div>
+  `).join("");
 
   dynamicButtons.querySelectorAll("input").forEach((el) => {
     el.addEventListener("input", () => {
@@ -1984,17 +1888,11 @@ function getLandingButtons() {
   const buttons = [];
 
   if (landingButtonLabel1.value.trim() && landingButtonUrl1.value.trim()) {
-    buttons.push({
-      label: landingButtonLabel1.value.trim(),
-      url: landingButtonUrl1.value.trim(),
-    });
+    buttons.push({ label: landingButtonLabel1.value.trim(), url: landingButtonUrl1.value.trim() });
   }
 
   if (landingButtonLabel2.value.trim() && landingButtonUrl2.value.trim()) {
-    buttons.push({
-      label: landingButtonLabel2.value.trim(),
-      url: landingButtonUrl2.value.trim(),
-    });
+    buttons.push({ label: landingButtonLabel2.value.trim(), url: landingButtonUrl2.value.trim() });
   }
 
   return buttons.concat(getDynamicButtons());
@@ -2028,14 +1926,8 @@ function collectDraft() {
     ctaLabel: landingCtaLabel.value.trim(),
     ctaUrl: landingCtaUrl.value.trim(),
     footer: landingFooter.value.trim(),
-    buttonsQuick1: {
-      label: landingButtonLabel1.value.trim(),
-      url: landingButtonUrl1.value.trim(),
-    },
-    buttonsQuick2: {
-      label: landingButtonLabel2.value.trim(),
-      url: landingButtonUrl2.value.trim(),
-    },
+    buttonsQuick1: { label: landingButtonLabel1.value.trim(), url: landingButtonUrl1.value.trim() },
+    buttonsQuick2: { label: landingButtonLabel2.value.trim(), url: landingButtonUrl2.value.trim() },
     extraButtons: getDynamicButtons(),
     metaTitle: landingMetaTitle.value.trim(),
     metaDescription: landingMetaDescription.value.trim(),
@@ -2054,12 +1946,8 @@ function collectDraft() {
 
 function saveDraft() {
   if (!autosaveEnabled) return;
-
   try {
-    localStorage.setItem(
-      AUTOSAVE_KEY,
-      JSON.stringify({ savedAt: Date.now(), data: collectDraft() })
-    );
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ savedAt: Date.now(), data: collectDraft() }));
     setDraftIndicator("Draft", `Saved ${new Date().toLocaleTimeString()}`);
   } catch {}
 }
@@ -2101,19 +1989,10 @@ function loadDraft() {
     cardStyle.value = d.cardStyle || "glass";
     buttonStyle.value = d.buttonStyle || "rounded";
 
-    dynamicButtonsStore = Array.isArray(d.extraButtons)
-      ? d.extraButtons.slice(0, 20)
-      : [];
-
+    dynamicButtonsStore = Array.isArray(d.extraButtons) ? d.extraButtons.slice(0, 20) : [];
     renderDynamicButtons();
 
-    setDraftIndicator(
-      "Draft",
-      `Restored from ${
-        parsed?.savedAt ? new Date(parsed.savedAt).toLocaleString() : "previous session"
-      }`
-    );
-
+    setDraftIndicator("Draft", `Restored from ${parsed?.savedAt ? new Date(parsed.savedAt).toLocaleString() : "previous session"}`);
     return true;
   } catch {
     return false;
@@ -2127,7 +2006,6 @@ function clearSavedDraft() {
 
 function triggerAutosave() {
   if (!autosaveEnabled) return;
-
   clearTimeout(window.__builderAutosaveTimer);
   window.__builderAutosaveTimer = setTimeout(saveDraft, 300);
 }
@@ -2171,7 +2049,6 @@ function getPayload({ requireSlug = false } = {}) {
   };
 
   if (slug) payload.slug = slug;
-
   return payload;
 }
 
@@ -2187,25 +2064,13 @@ function getGeneratedPreviewHtml() {
   const customCss = String(data.landingCss || "");
   const customJs = String(data.landingJs || "");
 
-  const buttonsHtml = buttons
-    .map(
-      (btn) =>
-        `<a class="btn locked-link" href="${escapeHtml(
-          btn.url || "#"
-        )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-          btn.label || ""
-        )}</a>`
-    )
-    .join("");
+  const buttonsHtml = buttons.map((btn) =>
+    `<a class="btn locked-link" href="${escapeHtml(btn.url || "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label || "")}</a>`
+  ).join("");
 
-  const ctaHtml =
-    data.ctaLabel && data.ctaUrl
-      ? `<a class="btn cta locked-link" href="${escapeHtml(
-          data.ctaUrl
-        )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-          data.ctaLabel
-        )}</a>`
-      : "";
+  const ctaHtml = data.ctaLabel && data.ctaUrl
+    ? `<a class="btn cta locked-link" href="${escapeHtml(data.ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.ctaLabel)}</a>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2271,29 +2136,12 @@ function renderPreview() {
 
 function clearForm() {
   [
-    landingSlug,
-    advancedSlug,
-    landingTitle,
-    landingSubtitle,
-    landingDescription,
-    landingImage,
-    landingCtaLabel,
-    landingCtaUrl,
-    landingFooter,
-    landingButtonLabel1,
-    landingButtonUrl1,
-    landingButtonLabel2,
-    landingButtonUrl2,
-    landingMetaTitle,
-    landingMetaDescription,
-    landingOgTitle,
-    landingOgDescription,
-    landingOgImage,
-    landingCanonicalUrl,
-    landingHtml,
-    landingCss,
-    landingJs,
-  ].forEach((el) => (el.value = ""));
+    landingSlug, advancedSlug, landingTitle, landingSubtitle, landingDescription,
+    landingImage, landingCtaLabel, landingCtaUrl, landingFooter,
+    landingButtonLabel1, landingButtonUrl1, landingButtonLabel2, landingButtonUrl2,
+    landingMetaTitle, landingMetaDescription, landingOgTitle, landingOgDescription,
+    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs
+  ].forEach((el) => el.value = "");
 
   landingDomain.value = "";
   landingTheme.value = "#00ffff";
@@ -2336,11 +2184,7 @@ function fillForm(item) {
   landingButtonUrl1.value = buttons[0]?.url || "";
   landingButtonLabel2.value = buttons[1]?.label || "";
   landingButtonUrl2.value = buttons[1]?.url || "";
-
-  dynamicButtonsStore = buttons.slice(2).map((btn) => ({
-    label: btn.label || "",
-    url: btn.url || "",
-  }));
+  dynamicButtonsStore = buttons.slice(2).map((btn) => ({ label: btn.label || "", url: btn.url || "" }));
 
   renderDynamicButtons();
   renderPreview();
@@ -2366,27 +2210,13 @@ async function createLanding() {
     return;
   }
 
-  const publicLink =
-    res.data?.publicLink ||
-    res.data?.item?.publicLink ||
-    buildPublicLink(res.data || payload);
-
-  const aliasLink =
-    res.data?.aliasLink ||
-    res.data?.item?.aliasLink ||
-    buildAliasLink(res.data?.item || res.data || {});
+  const publicLink = res.data?.publicLink || res.data?.item?.publicLink || buildPublicLink(res.data || payload);
+  const aliasLink = res.data?.aliasLink || res.data?.item?.aliasLink || "";
 
   if (res.data?.slug) landingSlug.value = res.data.slug;
-  if (res.data?.aliasPath || res.data?.landing_alias_path) {
-    advancedSlug.value = res.data.aliasPath || res.data.landing_alias_path;
-  }
+  if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-  setResult(
-    `Landing created:\nPublic: ${publicLink}${
-      aliasLink ? `\nAlias: ${aliasLink}` : ""
-    }`,
-    false
-  );
+  setResult(`Landing created:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`, false);
 
   saveDraft();
   await loadAll(false);
@@ -2411,24 +2241,12 @@ async function updateLanding() {
     return;
   }
 
-  const publicLink =
-    res.data?.publicLink || res.data?.item?.publicLink || buildPublicLink(payload);
+  const publicLink = res.data?.publicLink || res.data?.item?.publicLink || buildPublicLink(payload);
+  const aliasLink = res.data?.aliasLink || res.data?.item?.aliasLink || "";
 
-  const aliasLink =
-    res.data?.aliasLink ||
-    res.data?.item?.aliasLink ||
-    buildAliasLink(res.data?.item || res.data || {});
+  if (res.data?.aliasPath) advancedSlug.value = res.data.aliasPath;
 
-  if (res.data?.aliasPath || res.data?.landing_alias_path) {
-    advancedSlug.value = res.data.aliasPath || res.data.landing_alias_path;
-  }
-
-  setResult(
-    `Landing updated:\nPublic: ${publicLink}${
-      aliasLink ? `\nAlias: ${aliasLink}` : ""
-    }`,
-    false
-  );
+  setResult(`Landing updated:\nPublic: ${publicLink}${aliasLink ? `\nAlias: ${aliasLink}` : ""}`, false);
 
   saveDraft();
   await loadAll(false);
@@ -2436,9 +2254,7 @@ async function updateLanding() {
 }
 
 async function deleteLanding(slug, domain = "") {
-  if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) {
-    return;
-  }
+  if (!confirm(`Delete landing "${slug}"${domain ? ` on ${domain}` : ""}?`)) return;
 
   const res = await authorizedFetch("/landing/delete", {
     method: "POST",
@@ -2475,15 +2291,13 @@ async function loadDomains() {
 
   const domains = Array.isArray(res.data?.domains) ? res.data.domains : [];
 
-  domainsStore = domains
-    .map((d) => ({
-      ...d,
-      domain: normalizeDomain(d.domain || ""),
-      status: String(d.status || "pending").toLowerCase(),
-      isPrimary: !!(d.isPrimary || d.is_primary),
-      createdAt: Number(d.createdAt || d.created_at || 0),
-    }))
-    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  domainsStore = domains.map((d) => ({
+    ...d,
+    domain: normalizeDomain(d.domain || ""),
+    status: String(d.status || "pending").toLowerCase(),
+    isPrimary: !!(d.isPrimary || d.is_primary),
+    createdAt: Number(d.createdAt || d.created_at || 0),
+  })).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
   renderDomainSelectors();
 }
@@ -2495,30 +2309,14 @@ function renderDomainSelectors() {
   const selectedFilter = domainFilter.value;
 
   landingDomain.innerHTML = ['<option value="">Default domain</option>']
-    .concat(
-      verifiedDomains.map(
-        (d) =>
-          `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${
-            d.isPrimary ? " (Primary)" : ""
-          }</option>`
-      )
-    )
+    .concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isPrimary ? " (Primary)" : ""}</option>`))
     .join("");
 
   domainFilter.innerHTML = ['<option value="all">All domains</option>']
-    .concat(
-      verifiedDomains.map(
-        (d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`
-      )
-    )
+    .concat(verifiedDomains.map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}</option>`))
     .join("");
 
-  landingDomain.value = [...landingDomain.options].some(
-    (o) => o.value === selectedDomain
-  )
-    ? selectedDomain
-    : "";
-
+  landingDomain.value = [...landingDomain.options].some((o) => o.value === selectedDomain) ? selectedDomain : "";
   restoredDraftDomain = "";
 
   if ([...domainFilter.options].some((o) => o.value === selectedFilter)) {
@@ -2526,16 +2324,12 @@ function renderDomainSelectors() {
   }
 
   verifiedDomainsCount.textContent = verifiedDomains.length;
-  primaryDomainBadge.textContent = primary
-    ? `Primary: ${primary.domain}`
-    : "Primary: none";
+  primaryDomainBadge.textContent = primary ? `Primary: ${primary.domain}` : "Primary: none";
 }
 
 function editLandingByKey(slug, domain) {
   const item = landingStore.find(
-    (x) =>
-      String(x.slug || "") === String(slug || "") &&
-      normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
+    (x) => String(x.slug || "") === String(slug || "") && normalizeDomain(x.domain || "") === normalizeDomain(domain || "")
   );
 
   if (!item) return showToast("Landing not found");
@@ -2548,7 +2342,6 @@ async function loadAll(showMessage = false) {
   setBusy(refreshBtn, true, "Loading...");
   await Promise.all([loadDomains(), loadLandings()]);
   setBusy(refreshBtn, false);
-
   if (showMessage) showToast("Landing data refreshed");
 }
 
@@ -2563,8 +2356,7 @@ function applyTemplate(name) {
     creator: {
       title: "Your Name",
       subtitle: "Creator • Content • Socials",
-      description:
-        "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
+      description: "Welcome to my official link page. Find my latest content, socials, and favorite links below.",
       ctaLabel: "Watch Latest Video",
       ctaUrl: "https://youtube.com/",
       footer: "Thanks for visiting",
@@ -2578,8 +2370,7 @@ function applyTemplate(name) {
     product: {
       title: "Launch Your Product Faster",
       subtitle: "New release",
-      description:
-        "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
+      description: "Discover our new product built to help teams move faster, work smarter, and grow revenue.",
       ctaLabel: "Start Free Trial",
       ctaUrl: "https://example.com/signup",
       footer: "Built with Rattle Link",
@@ -2628,33 +2419,13 @@ function applyTemplate(name) {
 
 function attachLivePreview() {
   [
-    landingSlug,
-    advancedSlug,
-    landingDomain,
-    landingTitle,
-    landingSubtitle,
-    landingDescription,
-    landingImage,
-    landingTheme,
-    landingCtaLabel,
-    landingCtaUrl,
-    landingFooter,
-    landingButtonLabel1,
-    landingButtonUrl1,
-    landingButtonLabel2,
-    landingButtonUrl2,
-    landingMetaTitle,
-    landingMetaDescription,
-    landingOgTitle,
-    landingOgDescription,
-    landingOgImage,
-    landingCanonicalUrl,
-    landingHtml,
-    landingCss,
-    landingJs,
-    bgStyle,
-    cardStyle,
-    buttonStyle,
+    landingSlug, advancedSlug, landingDomain, landingTitle, landingSubtitle,
+    landingDescription, landingImage, landingTheme, landingCtaLabel,
+    landingCtaUrl, landingFooter, landingButtonLabel1, landingButtonUrl1,
+    landingButtonLabel2, landingButtonUrl2, landingMetaTitle,
+    landingMetaDescription, landingOgTitle, landingOgDescription,
+    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs,
+    bgStyle, cardStyle, buttonStyle
   ].forEach((el) => {
     el.addEventListener("input", () => {
       clearTimeout(window.__landingPreviewTimer);
@@ -2686,7 +2457,6 @@ function setupEvents() {
 
   openPreviewBtn.addEventListener("click", () => {
     if (!landingPreviewFrame.srcdoc) renderPreview();
-
     const win = window.open("", "_blank");
     if (win) {
       win.document.open();
@@ -2710,13 +2480,8 @@ function setupEvents() {
   presetPinkBtn.addEventListener("click", () => applyThemePreset("#ec4899"));
   presetGreenBtn.addEventListener("click", () => applyThemePreset("#22c55e"));
 
-  document.querySelectorAll(".tab-btn").forEach((btn) =>
-    btn.addEventListener("click", () => setTab(btn.dataset.tab))
-  );
-
-  document.querySelectorAll(".template-card").forEach((card) =>
-    card.addEventListener("click", () => applyTemplate(card.dataset.template))
-  );
+  document.querySelectorAll(".tab-btn").forEach((btn) => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+  document.querySelectorAll(".template-card").forEach((card) => card.addEventListener("click", () => applyTemplate(card.dataset.template)));
 
   setPrimaryDomainBtn.addEventListener("click", setPrimaryDomain);
 
@@ -2736,7 +2501,6 @@ window.deleteLanding = deleteLanding;
 window.editLandingByKey = editLandingByKey;
 window.removeDynamicButton = removeDynamicButton;
 window.showQR = showQR;
-window.aliasUnavailable = aliasUnavailable;
 
 (async function init() {
   if (!ensureAuth()) return;
