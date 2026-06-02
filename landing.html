@@ -1780,11 +1780,23 @@ function renderLandingTable() {
     <div class="actions">
       <button type="button" class="ghost-btn" onclick="editLandingByKey('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Edit</button>
       <button type="button" class="copy" onclick="copyText('${escapeForJs(publicLink)}')">Copy Public</button>
-      ${aliasLink ? `<button type="button" class="copy" onclick="copyText('${escapeForJs(aliasLink)}')">Copy Alias</button>` : ""}
+      <button
+  type="button"
+  class="copy"
+  onclick="${aliasLink ? `copyText('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
+>
+  Copy Alias
+</button>
       <button type="button" class="purple-btn" onclick="showQR('${escapeForJs(publicLink)}','${escapeForJs(item.slug)}')">QR Public</button>
       ${aliasLink ? `<button type="button" class="purple-btn" onclick="showQR('${escapeForJs(aliasLink)}','${escapeForJs(item.slug)}-alias')">QR Alias</button>` : ""}
       <button type="button" class="open" onclick="openLink('${escapeForJs(publicLink)}')">Open Public</button>
-      ${aliasLink ? `<button type="button" class="open" onclick="openLink('${escapeForJs(aliasLink)}')">Open Alias</button>` : ""}
+      <button
+  type="button"
+  class="open"
+  onclick="${aliasLink ? `openLink('${escapeForJs(aliasLink)}')` : `showToast('Alias link not available yet')`}"
+>
+  Open Alias
+</button>
       <button type="button" class="danger-btn" onclick="deleteLanding('${escapeForJs(item.slug)}','${escapeForJs(item.domain || "")}')">Delete</button>
     </div>
   </td>
