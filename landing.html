@@ -945,6 +945,26 @@
               </div>
 
               <div class="form-row">
+  <div class="field">
+    <label for="emailCaptureEnabled">Email capture</label>
+    <select id="emailCaptureEnabled">
+      <option value="false">Off</option>
+      <option value="true">On</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="emailCaptureTitle">Email form title</label>
+    <input id="emailCaptureTitle" placeholder="Join the list" />
+  </div>
+
+  <div class="field">
+    <label for="emailCaptureButton">Email button text</label>
+    <input id="emailCaptureButton" placeholder="Submit Email" />
+  </div>
+</div>
+
+              <div class="form-row">
                 <div class="field">
                   <label for="bgStyle">Background style</label>
                   <select id="bgStyle">
@@ -1370,6 +1390,9 @@ const cardStyle = $("cardStyle");
 const buttonStyle = $("buttonStyle");
 const landingPreviewFrame = $("landingPreviewFrame");
 const dynamicButtons = $("dynamicButtons");
+const emailCaptureEnabled = $("emailCaptureEnabled");
+const emailCaptureTitle = $("emailCaptureTitle");
+const emailCaptureButton = $("emailCaptureButton");
 
 const addButtonBtn = $("addButtonBtn");
 const presetNeonBtn = $("presetNeonBtn");
@@ -1948,6 +1971,9 @@ function collectDraft() {
     bgStyle: bgStyle.value,
     cardStyle: cardStyle.value,
     buttonStyle: buttonStyle.value,
+    emailCaptureEnabled: emailCaptureEnabled.value === "true",
+    emailCaptureTitle: emailCaptureTitle.value.trim(),
+    emailCaptureButton: emailCaptureButton.value.trim(),
   };
 }
 
@@ -1995,6 +2021,9 @@ function loadDraft() {
     bgStyle.value = d.bgStyle || "radial";
     cardStyle.value = d.cardStyle || "glass";
     buttonStyle.value = d.buttonStyle || "rounded";
+    emailCaptureEnabled.value = d.emailCaptureEnabled ? "true" : "false";
+    emailCaptureTitle.value = d.emailCaptureTitle || "";
+    emailCaptureButton.value = d.emailCaptureButton || "";
 
     dynamicButtonsStore = Array.isArray(d.extraButtons) ? d.extraButtons.slice(0, 20) : [];
     renderDynamicButtons();
@@ -2049,6 +2078,9 @@ function getPayload({ requireSlug = false } = {}) {
     landingJs: landingJs.value,
     metaTitle: landingMetaTitle.value.trim(),
     metaDescription: landingMetaDescription.value.trim()
+    emailCaptureEnabled: emailCaptureEnabled.value === "true",
+    emailCaptureTitle: emailCaptureTitle.value.trim(),
+    emailCaptureButton: emailCaptureButton.value.trim(),
   };
 
   if (slug) payload.slug = slug;
@@ -2074,6 +2106,25 @@ function getGeneratedPreviewHtml() {
   const ctaHtml = data.ctaLabel && data.ctaUrl
     ? `<a class="btn cta locked-link" href="${escapeHtml(data.ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(data.ctaLabel)}</a>`
     : "";
+
+    const emailCaptureHtml = data.emailCaptureEnabled
+  ? `
+    <form style="display:grid;gap:10px;margin-top:18px;">
+      <div style="color:${theme};font-weight:800;">
+        ${escapeHtml(data.emailCaptureTitle || "Join the list")}
+      </div>
+      <input
+        type="email"
+        placeholder="Enter your email"
+        style="padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:#020617;color:white;"
+      />
+      <button
+        type="button"
+        style="padding:14px;border:0;border-radius:14px;background:#22c55e;color:#020617;font-weight:800;">
+        ${escapeHtml(data.emailCaptureButton || "Submit Email")}
+      </button>
+    </form>`
+  : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2106,6 +2157,7 @@ ${customCss}
     ${subtitle ? `<div class="eyebrow">${subtitle}</div>` : ""}
     ${description ? `<p>${description}</p>` : ""}
     <div class="links">${buttonsHtml}${ctaHtml}</div>
+${emailCaptureHtml}
     <div class="turnstile-box">
       <div class="cf-turnstile" data-sitekey="${TURNSTILE_SITE_KEY}" data-theme="dark" data-callback="rattleTurnstileDone"></div>
     </div>
@@ -2143,7 +2195,7 @@ function clearForm() {
     landingImage, landingCtaLabel, landingCtaUrl, landingFooter,
     landingButtonLabel1, landingButtonUrl1, landingButtonLabel2, landingButtonUrl2,
     landingMetaTitle, landingMetaDescription, landingOgTitle, landingOgDescription,
-    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs
+    landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs, emailCaptureTitle, emailCaptureButton,
   ].forEach((el) => el.value = "");
 
   landingDomain.value = "";
@@ -2153,6 +2205,7 @@ function clearForm() {
   buttonStyle.value = "rounded";
   dynamicButtonsStore = [];
   restoredDraftDomain = "";
+  emailCaptureEnabled.value = "false";
   renderDynamicButtons();
   landingPreviewFrame.srcdoc = "";
   setResult("Form cleared", false);
@@ -2181,6 +2234,9 @@ function fillForm(item) {
   landingHtml.value = item.landingHtml || "";
   landingCss.value = item.landingCss || "";
   landingJs.value = item.landingJs || "";
+  emailCaptureEnabled.value = item.emailCaptureEnabled ? "true" : "false";
+  emailCaptureTitle.value = item.emailCaptureTitle || "";
+  emailCaptureButton.value = item.emailCaptureButton || "";
 
   const buttons = Array.isArray(item.landingButtons) ? item.landingButtons : [];
   landingButtonLabel1.value = buttons[0]?.label || "";
@@ -2470,7 +2526,7 @@ function attachLivePreview() {
     landingButtonLabel2, landingButtonUrl2, landingMetaTitle,
     landingMetaDescription, landingOgTitle, landingOgDescription,
     landingOgImage, landingCanonicalUrl, landingHtml, landingCss, landingJs,
-    bgStyle, cardStyle, buttonStyle
+    bgStyle, cardStyle, buttonStyle, emailCaptureEnabled, emailCaptureTitle, emailCaptureButton
   ].forEach((el) => {
     el.addEventListener("input", () => {
       clearTimeout(window.__landingPreviewTimer);
