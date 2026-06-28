@@ -1269,6 +1269,26 @@
     </div>
 
     <div id="overlay" class="overlay"></div>
+    <div class="card">
+  <div class="section-head">
+    <h2>📧 Email Leads</h2>
+    <button id="refreshLeadsBtn" type="button">Refresh Leads</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Landing</th>
+          <th>Domain</th>
+          <th>Captured</th>
+        </tr>
+      </thead>
+      <tbody id="emailLeadsTable"></tbody>
+    </table>
+  </div>
+</div>
 
     <div id="qrModal" class="modal">
       <div class="section-head">
@@ -1406,6 +1426,8 @@ const landingTable = $("landingTable");
 const searchInput = $("searchInput");
 const domainFilter = $("domainFilter");
 const statusFilter = $("statusFilter");
+const emailLeadsTable = $("emailLeadsTable");
+const refreshLeadsBtn = $("refreshLeadsBtn");
 
 function normalizeDomain(value) {
   return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
@@ -1745,6 +1767,35 @@ async function loadLandings() {
 
   renderLandingTable();
   updateStats();
+}
+
+async function loadEmailLeads() {
+  const res = await authorizedFetch("/landing/email-leads", { method: "GET" });
+
+  if (!res.ok) {
+    emailLeadsTable.innerHTML = `<tr><td colspan="4"><div class="empty">Failed to load email leads</div></td></tr>`;
+    return;
+  }
+
+  const leads = Array.isArray(res.data?.leads)
+    ? res.data.leads
+    : Array.isArray(res.data?.items)
+      ? res.data.items
+      : [];
+
+  if (!leads.length) {
+    emailLeadsTable.innerHTML = `<tr><td colspan="4"><div class="empty">No emails captured yet</div></td></tr>`;
+    return;
+  }
+
+  emailLeadsTable.innerHTML = leads.map((lead) => `
+    <tr>
+      <td>${escapeHtml(lead.email || "")}</td>
+      <td>${escapeHtml(lead.slug || "")}</td>
+      <td>${lead.domain ? escapeHtml(lead.domain) : '<span class="muted">Default</span>'}</td>
+      <td>${fmtDate(lead.created_at)}</td>
+    </tr>
+  `).join("");
 }
 
 function updateStats() {
@@ -2416,7 +2467,7 @@ function editLandingByKey(slug, domain) {
 
 async function loadAll(showMessage = false) {
   setBusy(refreshBtn, true, "Loading...");
-  await Promise.all([loadDomains(), loadLandings()]);
+  await Promise.all([loadDomains(), loadLandings(), loadEmailLeads()]);
   setBusy(refreshBtn, false);
   if (showMessage) showToast("Landing data refreshed");
 }
@@ -2561,7 +2612,7 @@ function attachLivePreview() {
 }
 
 function setupEvents() {
-  refreshBtn.addEventListener("click", () => loadAll(true));
+  refreshLeadsBtn.addEventListener("click", loadEmailLeads);
   clearBtn.addEventListener("click", clearForm);
   previewBtn.addEventListener("click", renderPreview);
   createBtn.addEventListener("click", createLanding);
