@@ -1256,6 +1256,7 @@
                 <th>Domain</th>
                 <th>Title</th>
                 <th>Clicks</th>
+                <th>ID</th>
                 <th>Public / Alias Links</th>
                 <th>Status</th>
                 <th>Created</th>
@@ -1827,7 +1828,7 @@ function renderLandingTable() {
   });
 
   if (!filtered.length) {
-    landingTable.innerHTML = `<tr><td colspan="8"><div class="empty">No landing pages found</div></td></tr>`;
+    landingTable.innerHTML = `<tr><td colspan="9"><div class="empty">No landing pages found</div></td></tr>`;
     return;
   }
 
@@ -1843,6 +1844,10 @@ function renderLandingTable() {
 
     return `
 <tr>
+  <td>
+    <div class="table-title">#${escapeHtml(item.id || "-")}</div>
+  </td>
+
   <td>
     <div class="table-title">${escapeHtml(item.slug)}</div>
     ${
