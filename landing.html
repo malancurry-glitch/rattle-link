@@ -1672,6 +1672,23 @@ function normalizeLandingItem(item) {
     ogDescription: item.ogDescription || item.landing_og_description || "",
     ogImage: item.ogImage || item.landing_og_image || "",
     canonicalUrl: item.canonicalUrl || item.landing_canonical_url || "",
+    emailCaptureEnabled:
+  item.emailCaptureEnabled ||
+  item.email_capture_enabled ||
+  item.landing_email_capture_enabled ||
+  false,
+
+emailCaptureTitle:
+  item.emailCaptureTitle ||
+  item.email_capture_title ||
+  item.landing_email_capture_title ||
+  "",
+
+emailCaptureButton:
+  item.emailCaptureButton ||
+  item.email_capture_button ||
+  item.landing_email_capture_button ||
+  "",
   };
 
   if (!normalized.aliasLink) normalized.aliasLink = buildAliasLink(normalized);
@@ -2077,7 +2094,7 @@ function getPayload({ requireSlug = false } = {}) {
     landingCss: landingCss.value,
     landingJs: landingJs.value,
     metaTitle: landingMetaTitle.value.trim(),
-    metaDescription: landingMetaDescription.value.trim()
+    metaDescription: landingMetaDescription.value.trim(),
     emailCaptureEnabled: emailCaptureEnabled.value === "true",
     emailCaptureTitle: emailCaptureTitle.value.trim(),
     emailCaptureButton: emailCaptureButton.value.trim(),
