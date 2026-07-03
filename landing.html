@@ -1729,6 +1729,27 @@ function extractListItems(data) {
   return [];
 }
 
+async function hydrateAliasIfMissing(item) {
+  if (item.aliasPath || item.aliasLink || !item.slug) return item;
+
+  const query = item.domain ? `?domain=${encodeURIComponent(item.domain)}` : "";
+  const res = await authorizedFetch(`/landing/${encodeURIComponent(item.slug)}${query}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) return item;
+
+  const hydrated = normalizeLandingItem(res.data || {});
+
+  return normalizeLandingItem({
+    ...item,
+    ...hydrated,
+    aliasPath: hydrated.aliasPath || item.aliasPath || "",
+    aliasLink: hydrated.aliasLink || buildAliasLink(hydrated) || "",
+  });
+}
+
+
 async function loadLandings() {
   const res = await authorizedFetch("/list", { method: "GET" });
 
@@ -1742,12 +1763,18 @@ async function loadLandings() {
   const items = extractListItems(res.data);
 
   let normalized = items
-    .map(normalizeLandingItem)
-    .filter((item) => item.linkType === "landing");
+  .map(normalizeLandingItem)
+  .filter((item) => item.linkType === "landing");
 
-  normalized = normalized.filter(item => item.slug);
+normalized = normalized.filter((item) => item.slug);
 
-  landingStore = normalized.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+normalized = await Promise.all(
+  normalized.map(hydrateAliasIfMissing)
+);
+
+landingStore = normalized.sort(
+  (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)
+);
 
   renderLandingTable();
   updateStats();
