@@ -1729,15 +1729,6 @@ function extractListItems(data) {
   return [];
 }
 
-  const hydrated = normalizeLandingItem(res.data || {});
-  return normalizeLandingItem({
-    ...item,
-    ...hydrated,
-    aliasPath: hydrated.aliasPath || item.aliasPath || "",
-    aliasLink: hydrated.aliasLink || buildAliasLink(hydrated) || "",
-  });
-}
-
 async function loadLandings() {
   const res = await authorizedFetch("/list", { method: "GET" });
 
